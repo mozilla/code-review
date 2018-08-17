@@ -63,9 +63,9 @@ export default {
     <footer>
       Built by <a href="https://wiki.mozilla.org/Release_Management" target="_blank">Release Management team</a>
       <span>&bull;</span>
-      <a href="https://github.com/La0/mozilla-static-analysis" target="_blank">Source Code</a>
+      <a href="https://github.com/mozilla/release-services/tree/master/src/staticanalysis/frontend" target="_blank">Source Code</a>
       <span>&bull;</span>
-      <a href="https://github.com/La0/mozilla-static-analysis/issues" target="_blank">Report an issue</a>
+      <a href="https://github.com/mozilla/release-services/issues" target="_blank">Report an issue</a>
     </footer>
   </div>
 </template>
