@@ -1,0 +1,43 @@
+{
+  "result": [
+    {
+      "id": "51",
+      "phid": "PHID-DREV-wsdktdyp2prfxmlzu4vm",
+      "title": "Bug 1387052 - Make Firefox code worse intentionally. r=clangbot",
+      "uri": "https://phabricator.services.mozilla.com/D389",
+      "dateCreated": "1516026749",
+      "dateModified": "1516035024",
+      "authorPHID": "PHID-USER-j3olszo6rgfclrn7abj4",
+      "status": "0",
+      "statusName": "Needs Review",
+      "properties": [],
+      "branch": "default",
+      "summary": "MozReview-Commit-ID: 65EixGF10HH",
+      "testPlan": "",
+      "lineCount": "255",
+      "activeDiffPHID": "PHID-DIFF-xiiqglwqw2tjrqdb3g3w",
+      "diffs": [
+        "42"
+      ],
+      "commits": [],
+      "reviewers": [],
+      "ccs": [
+        "PHID-USER-2pljsekqcs4ysqgc7pxm"
+      ],
+      "hashes": [
+        [
+          "hgcm",
+          "coffeedeadbeef123456789"
+        ]
+      ],
+      "auxiliary": {
+        "bugzilla.bug-id": "",
+        "phabricator:projects": [],
+        "phabricator:depends-on": []
+      },
+      "repositoryPHID": "PHID-REPO-saax4qdxlbbhahhp2kg5"
+    }
+  ],
+  "error_code": null,
+  "error_info": null
+}

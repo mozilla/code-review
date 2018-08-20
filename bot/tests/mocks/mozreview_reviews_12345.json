@@ -1,0 +1,67 @@
+{
+    "links": {
+        "create": {
+            "href": "http://mozreview.test/api/review-requests/12345/reviews/",
+            "method": "POST"
+        },
+        "review_draft": {
+            "href": "http://mozreview.test/api/review-requests/12345/reviews/draft/",
+            "method": "GET"
+        },
+        "self": {
+            "href": "http://mozreview.test/api/review-requests/12345/reviews/",
+            "method": "GET"
+        }
+    },
+    "reviews": [
+        {
+            "body_bottom": "",
+            "body_bottom_text_type": "plain",
+            "body_top": "Unit test dummy review",
+            "body_top_text_type": "plain",
+            "extra_data": {},
+            "id": 51,
+            "links": {
+                "delete": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/",
+                    "method": "DELETE"
+                },
+                "diff_comments": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/",
+                    "method": "GET"
+                },
+                "file_attachment_comments": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/file-attachment-comments/",
+                    "method": "GET"
+                },
+                "replies": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/replies/",
+                    "method": "GET"
+                },
+                "screenshot_comments": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/screenshot-comments/",
+                    "method": "GET"
+                },
+                "self": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/",
+                    "method": "GET"
+                },
+                "update": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/",
+                    "method": "PUT"
+                },
+                "user": {
+                    "href": "http://mozreview.test/api/users/devbot/",
+                    "method": "GET",
+                    "title": "devbot"
+                }
+            },
+            "public": true,
+            "ship_it": false,
+            "text_type": null,
+            "timestamp": "2010-08-28T02:25:31Z"
+        }
+    ],
+    "stat": "ok",
+    "total_results": 1
+}

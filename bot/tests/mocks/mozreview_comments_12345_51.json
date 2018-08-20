@@ -1,0 +1,127 @@
+{
+    "diff_comments": [
+        {
+            "extra_data": {},
+            "first_line": 1,
+            "id": 4,
+            "interfilediff": null,
+            "issue_opened": false,
+            "issue_status": "",
+            "links": {
+                "delete": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/4/",
+                    "method": "DELETE"
+                },
+                "filediff": {
+                    "href": "http://mozreview.test/api/review-requests/12345/diffs/2/files/31/",
+                    "method": "GET",
+                    "title": "/trunk/reviewboard/settings_local.py.tmpl (1797) -> /trunk/reviewboard/settings_local.py.tmpl ((working copy))"
+                },
+                "self": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/4/",
+                    "method": "GET"
+                },
+                "update": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/4/",
+                    "method": "PUT"
+                },
+                "user": {
+                    "href": "http://mozreview.test/api/users/anotherUser/",
+                    "method": "GET",
+                    "title": "anotherUser"
+                }
+            },
+            "num_lines": 1,
+            "public": true,
+            "text": "This is a comment by another user. Should not be picked by bot.",
+            "text_type": "plain",
+            "timestamp": "2010-08-21T17:22:00Z"
+        },
+        {
+            "extra_data": {},
+            "first_line": 12,
+            "id": 5,
+            "interfilediff": null,
+            "issue_opened": false,
+            "issue_status": "",
+            "links": {
+                "delete": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/5/",
+                    "method": "DELETE"
+                },
+                "filediff": {
+                    "href": "http://mozreview.test/api/review-requests/12345/diffs/2/files/31/",
+                    "method": "GET",
+                    "title": "/trunk/reviewboard/settings_local.py.tmpl (1797) -> /trunk/reviewboard/settings_local.py.tmpl ((working copy))"
+                },
+                "self": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/5/",
+                    "method": "GET"
+                },
+                "update": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/5/",
+                    "method": "PUT"
+                },
+                "user": {
+                    "href": "http://mozreview.test/api/users/devbot/",
+                    "method": "GET",
+                    "title": "devbot"
+                }
+            },
+            "num_lines": 3,
+            "public": true,
+            "text": "Error: Dummy test error [linter]",
+            "text_type": "plain",
+            "timestamp": "2010-08-22T17:25:41Z"
+        },
+        {
+            "extra_data": {},
+            "first_line": 29,
+            "id": 6,
+            "interfilediff": null,
+            "issue_opened": false,
+            "issue_status": "",
+            "links": {
+                "delete": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/6/",
+                    "method": "DELETE"
+                },
+                "filediff": {
+                    "href": "http://mozreview.test/api/review-requests/12345/diffs/2/files/31/",
+                    "method": "GET",
+                    "title": "/trunk/reviewboard/settings_local.py.tmpl (1797) -> /trunk/reviewboard/settings_local.py.tmpl ((working copy))"
+                },
+                "self": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/6/",
+                    "method": "GET"
+                },
+                "update": {
+                    "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/6/",
+                    "method": "PUT"
+                },
+                "user": {
+                    "href": "http://mozreview.test/api/users/devbot/",
+                    "method": "GET",
+                    "title": "devbot"
+                }
+            },
+            "num_lines": 3,
+            "public": true,
+            "text": "Error: another complex test error [linter]",
+            "text_type": "plain",
+            "timestamp": "2010-08-22T17:25:52Z"
+        }
+    ],
+    "links": {
+        "create": {
+            "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/",
+            "method": "POST"
+        },
+        "self": {
+            "href": "http://mozreview.test/api/review-requests/12345/reviews/51/diff-comments/",
+            "method": "GET"
+        }
+    },
+    "stat": "ok",
+    "total_results": 3
+}

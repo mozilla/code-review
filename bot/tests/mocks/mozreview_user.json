@@ -1,0 +1,36 @@
+{
+    "stat": "ok",
+    "user": {
+        "avatar_url": "http://www.gravatar.com/avatar/e64c7d89f26bd1972efa854d13d7dd61?d=mm",
+        "email": "devbot@example.com",
+        "first_name": "devbot",
+        "fullname": "devbot User",
+        "id": 42,
+        "is_active": true,
+        "last_name": "User",
+        "links": {
+            "api_tokens": {
+                "href": "http://mozreview.test/api/users/devbot/api-tokens/",
+                "method": "GET"
+            },
+            "archived_review_requests": {
+                "href": "http://mozreview.test/api/users/devbot/archived-review-requests/",
+                "method": "GET"
+            },
+            "muted_review_requests": {
+                "href": "http://mozreview.test/api/users/devbot/muted-review-requests/",
+                "method": "GET"
+            },
+            "self": {
+                "href": "http://mozreview.test/api/users/devbot/",
+                "method": "GET"
+            },
+            "watched": {
+                "href": "http://mozreview.test/api/users/devbot/watched/",
+                "method": "GET"
+            }
+        },
+        "url": "/users/devbot/",
+        "username": "devbot"
+    }
+}

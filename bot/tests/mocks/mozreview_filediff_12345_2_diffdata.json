@@ -1,0 +1,90 @@
+{
+    "diff_data": {
+        "binary": false,
+        "changed_chunk_indexes": [
+            2
+        ],
+        "chunks": [
+            {
+                "change": "insert",
+                "collapsable": false,
+                "index": 4,
+                "lines": [
+                    [
+                        2,
+                        "",
+                        "",
+                        [],
+                        2,
+                        "# Local time zone for this installation. All choices can be found here:",
+                        [],
+                        false,
+                        {
+                            "from": [
+                                16,
+                                true
+                            ]
+                        }
+                    ],
+                    [
+                        12,
+                        "",
+                        "",
+                        [],
+                        12,
+                        "# http://www.postgresql.org/docs/8.1/static/datetime-keywords.html#DATETIME-TIMEZONE-SET-TABLE",
+                        [],
+                        false,
+                        {
+                            "from": [
+                                17,
+                                false
+                            ]
+                        }
+                    ],
+                    [
+                        27,
+                        "",
+                        "",
+                        [],
+                        23,
+                        "TIME_ZONE = &#39;US/Pacific&#39;",
+                        [],
+                        false,
+                        {
+                            "from": [
+                                18,
+                                false
+                            ]
+                        }
+                    ],
+                    [
+                        28,
+                        "",
+                        "",
+                        [],
+                        24,
+                        "",
+                        [],
+                        false
+                    ]
+                ],
+                "meta": {
+                    "left_headers": [],
+                    "moved-from": {
+                        "21": 16,
+                        "22": 17,
+                        "23": 18
+                    },
+                    "right_headers": [],
+                    "whitespace_chunk": false,
+                    "whitespace_lines": []
+                },
+                "numlines": 4
+            }
+        ],
+        "new_file": false,
+        "num_changes": 1
+    },
+    "stat": "ok"
+}

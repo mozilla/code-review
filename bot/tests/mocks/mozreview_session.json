@@ -1,0 +1,21 @@
+{
+    "session": {
+        "authenticated": true,
+        "links": {
+            "delete": {
+                "href": "http://mozreview.test/api/session/",
+                "method": "DELETE"
+            },
+            "self": {
+                "href": "http://mozreview.test/api/session/",
+                "method": "GET"
+            },
+            "user": {
+                "href": "http://mozreview.test/api/users/devbot/",
+                "method": "GET",
+                "title": "devbot"
+            }
+        }
+    },
+    "stat": "ok"
+}

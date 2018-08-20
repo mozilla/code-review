@@ -1,0 +1,46 @@
+{
+    "file": {
+        "dest_attachment": null,
+        "dest_detail": "(working copy)",
+        "dest_file": "test.cpp",
+        "extra_data": {
+            "delete_count": 5,
+            "equal_count": 35,
+            "insert_count": 4,
+            "orig_sha1": "5ab9c202636417016379061749915006efac40a0",
+            "patched_sha1": "2c08ecb7ba61733c2ef794c1fa7e49090a4a334f",
+            "raw_delete_count": 5,
+            "raw_insert_count": 4,
+            "replace_count": 0,
+            "total_line_count": 44
+        },
+        "id": 31,
+        "links": {
+            "diff_comments": {
+                "href": "http://mozreview.test/api/review-requests/12345/diffs/2/files/31/diff-comments/",
+                "method": "GET"
+            },
+            "original_file": {
+                "href": "http://mozreview.test/api/review-requests/12345/diffs/2/files/31/original-file/",
+                "method": "GET"
+            },
+            "patched_file": {
+                "href": "http://mozreview.test/api/review-requests/12345/diffs/2/files/31/patched-file/",
+                "method": "GET"
+            },
+            "self": {
+                "href": "http://mozreview.test/api/review-requests/12345/diffs/2/files/31/",
+                "method": "GET"
+            },
+            "update": {
+                "href": "http://mozreview.test/api/review-requests/12345/diffs/2/files/31/",
+                "method": "PUT"
+            }
+        },
+        "source_attachment": null,
+        "source_file": "test.cpp",
+        "source_revision": "1797",
+        "status": "unknown"
+    },
+    "stat": "ok"
+}

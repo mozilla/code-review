@@ -1,0 +1,13 @@
+---
+target: obj-x86_64-pc-linux-gnu
+clang_checkers:
+ - name: -*
+   publish: !!bool no
+ - name: clang-analyzer-deadcode.DeadStores
+   publish: !!bool yes
+ - name: clang-analyzer-security.*
+   publish: !!bool no
+ - name: modernize-use-nullptr
+   publish: !!bool yes
+
+third_party: 3rdparty.txt

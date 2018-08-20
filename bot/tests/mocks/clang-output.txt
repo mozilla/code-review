@@ -1,0 +1,186 @@
+/nix/store/lhp5rw0dagi5mgqwr9i3x41240ba4ypz-gnumake-4.2.1/bin/make -C /app/tmp/sa-central/obj-x86_64-pc-linux-gnu -j4 -s -w pre-export
+make: Entering directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu'
+BUILDSTATUS TIERS pre-export
+BUILDSTATUS TIER_START pre-export
+make[1]: Entering directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu'
+Elapsed: 0.00s; From dist/private: Kept 0 existing; Added/updated 0; Removed 0 files and 0 directories.
+Elapsed: 0.00s; From dist/public: Kept 0 existing; Added/updated 0; Removed 0 files and 0 directories.
+Elapsed: 0.00s; From dist/xpi-stage: Kept 18 existing; Added/updated 0; Removed 0 files and 0 directories.
+Elapsed: 0.20s; From _tests: Kept 1023 existing; Added/updated 0; Removed 0 files and 0 directories.
+Elapsed: 0.57s; From dist/include: Kept 5315 existing; Added/updated 0; Removed 0 files and 0 directories.
+Elapsed: 0.35s; From dist/bin: Kept 2379 existing; Added/updated 0; Removed 0 files and 0 directories.
+make[1]: Leaving directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu'
+BUILDSTATUS TIER_FINISH pre-export
+make: Leaving directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu'
+/nix/store/lhp5rw0dagi5mgqwr9i3x41240ba4ypz-gnumake-4.2.1/bin/make -C /app/tmp/sa-central/obj-x86_64-pc-linux-gnu -j4 -s -w export
+make: Entering directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu'
+buildid.h.stub
+source-repo.h.stub
+BUILDSTATUS TIERS export
+BUILDSTATUS TIER_START export
+make[1]: Entering directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu'
+make[2]: Entering directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/build'
+application.ini.stub
+application.ini.h.stub
+make[2]: Leaving directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/build'
+make[2]: Entering directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/browser/locales'
+make[2]: Leaving directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/browser/locales'
+make[2]: Entering directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/xpcom/xpidl'
+make[2]: Leaving directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/xpcom/xpidl'
+make[2]: Entering directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/toolkit/components/telemetry'
+TelemetryEventData.h.stub
+make[2]: Leaving directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/toolkit/components/telemetry'
+make[1]: Leaving directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu'
+BUILDSTATUS TIER_FINISH export
+make: Leaving directory '/app/tmp/sa-central/obj-x86_64-pc-linux-gnu'
+/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/_virtualenvs/init/bin/python /tmp/mozilla-state/clang-tools/clang/share/clang/run-clang-tidy.py -p /app/tmp/sa-central/obj-x86_64-pc-linux-gnu -j 0 js/src/jsapi.cpp devtools/client/shared/scroll.js js/src/ctypes/libffi/src/prep_cif.c devtools/client/menus.js devtools/client/definitions.js .arcconfig toolkit/components/telemetry/gen_event_data.py -clang-tidy-binary /tmp/mozilla-state/clang-tools/clang/bin/clang-tidy -clang-apply-replacements-binary /tmp/mozilla-state/clang-tools/clang/bin/clang-apply-replacements -checks=-*,clang-analyzer-deadcode.DeadStores,clang-analyzer-security.FloatLoopCounter,clang-analyzer-security.insecureAPI.getpw,clang-analyzer-security.insecureAPI.mkstemp,clang-analyzer-security.insecureAPI.mktemp,clang-analyzer-security.insecureAPI.rand,clang-analyzer-security.insecureAPI.strcpy,clang-analyzer-security.insecureAPI.UncheckedReturn,clang-analyzer-security.insecureAPI.vfork,misc-argument-comment,misc-assert-side-effect,misc-forward-declaration-namespace,misc-suspicious-missing-comma,misc-suspicious-semicolon,misc-unused-using-decls,modernize-avoid-bind,modernize-loop-convert,modernize-raw-string-literal,modernize-redundant-void-arg,modernize-shrink-to-fit,modernize-use-auto,modernize-use-bool-literals,modernize-use-equals-default,modernize-use-equals-delete,modernize-use-nullptr,modernize-use-override,mozilla-*,performance-faster-string-find,performance-for-range-copy,performance-inefficient-string-concatenation,performance-inefficient-vector-operation,performance-type-promotion-in-math-fn,performance-unnecessary-copy-initialization,performance-unnecessary-value-param,readability-container-size-empty,readability-else-after-return,readability-misleading-indentation,readability-redundant-control-flow,readability-redundant-smartptr-get,readability-redundant-string-cstr,readability-redundant-string-init,readability-uniqueptr-delete-release -extra-arg=-DMOZ_CLANG_PLUGIN -header-filter=jsapi.cpp|scroll.js|prep_cif.c|menus.js|definitions.js|.arcconfig|gen_event_data.py
+Enabled checks:
+    clang-analyzer-core.CallAndMessage
+    clang-analyzer-core.DivideZero
+    clang-analyzer-core.DynamicTypePropagation
+    clang-analyzer-core.NonNullParamChecker
+    clang-analyzer-core.NullDereference
+    clang-analyzer-core.StackAddressEscape
+    clang-analyzer-core.UndefinedBinaryOperatorResult
+    clang-analyzer-core.VLASize
+    clang-analyzer-core.builtin.BuiltinFunctions
+    clang-analyzer-core.builtin.NoReturnFunctions
+    clang-analyzer-core.uninitialized.ArraySubscript
+    clang-analyzer-core.uninitialized.Assign
+    clang-analyzer-core.uninitialized.Branch
+    clang-analyzer-core.uninitialized.CapturedBlockVariable
+    clang-analyzer-core.uninitialized.UndefReturn
+    clang-analyzer-deadcode.DeadStores
+    clang-analyzer-security.FloatLoopCounter
+    clang-analyzer-security.insecureAPI.UncheckedReturn
+    clang-analyzer-security.insecureAPI.getpw
+    clang-analyzer-security.insecureAPI.mkstemp
+    clang-analyzer-security.insecureAPI.mktemp
+    clang-analyzer-security.insecureAPI.rand
+    clang-analyzer-security.insecureAPI.strcpy
+    clang-analyzer-security.insecureAPI.vfork
+    misc-argument-comment
+    misc-assert-side-effect
+    misc-forward-declaration-namespace
+    misc-suspicious-missing-comma
+    misc-suspicious-semicolon
+    misc-unused-using-decls
+    modernize-avoid-bind
+    modernize-loop-convert
+    modernize-raw-string-literal
+    modernize-redundant-void-arg
+    modernize-shrink-to-fit
+    modernize-use-auto
+    modernize-use-bool-literals
+    modernize-use-equals-default
+    modernize-use-equals-delete
+    modernize-use-nullptr
+    modernize-use-override
+    mozilla-arithmetic-argument
+    mozilla-assignment-in-assert
+    mozilla-can-run-script
+    mozilla-dangling-on-temporary
+    mozilla-explicit-operator-bool
+    mozilla-implicit-constructor
+    mozilla-kungfu-death-grip
+    mozilla-must-override
+    mozilla-must-return-from-caller
+    mozilla-must-use
+    mozilla-nan-expr
+    mozilla-needs-no-vtable-type
+    mozilla-no-addref-release-on-return
+    mozilla-no-auto-type
+    mozilla-no-duplicate-refcnt-member
+    mozilla-no-explicit-move-constructor
+    mozilla-non-memmovable-member
+    mozilla-non-memmovable-template-arg
+    mozilla-override-base-call
+    mozilla-override-base-call-usage
+    mozilla-paramtraits-enum
+    mozilla-refcounted-copy-constructor
+    mozilla-refcounted-inside-lambda
+    mozilla-scope
+    mozilla-sprintf-literal
+    mozilla-trivial-constructor-destructor
+    performance-faster-string-find
+    performance-for-range-copy
+    performance-inefficient-string-concatenation
+    performance-inefficient-vector-operation
+    performance-type-promotion-in-math-fn
+    performance-unnecessary-copy-initialization
+    performance-unnecessary-value-param
+    readability-container-size-empty
+    readability-else-after-return
+    readability-misleading-indentation
+    readability-redundant-control-flow
+    readability-redundant-smartptr-get
+    readability-redundant-string-cstr
+    readability-redundant-string-init
+    readability-uniqueptr-delete-release
+
+
+Error while processing /app/tmp/sa-central/js/src/ctypes/libffi/src/prep_cif.c.
+/app/tmp/sa-central/js/src/ctypes/libffi/include/ffi_common.h:23:12: error: 'alloca.h' file not found [clang-diagnostic-error]
+#  include <alloca.h>
+           ^
+Warning: readability-else-after-return in /app/tmp/sa-central/js/src/ctypes/libffi/src/prep_cif.c: do not use 'else' after 'return'
+/app/tmp/sa-central/js/src/ctypes/libffi/src/prep_cif.c:88:3: warning: do not use 'else' after 'return' [readability-else-after-return]
+  else // readability-else-after-return
+  ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+796 warnings and 3 errors generated.
+Error while processing /app/tmp/sa-central/js/src/jsapi.cpp.
+/app/tmp/sa-central/js/src/jsapi.cpp:132:39: error: methods annotated with MOZ_NO_DANGLING_ON_TEMPORARIES cannot be && ref-qualified [mozilla-dangling-on-temporary]
+  MOZ_NO_DANGLING_ON_TEMPORARIES int *get() && { return nullptr; } // mozilla-dangling-on-temporary
+                                      ^
+/app/tmp/sa-central/js/src/jsapi.cpp:133:38: error: methods annotated with MOZ_NO_DANGLING_ON_TEMPORARIES must return a pointer [mozilla-dangling-on-temporary]
+  MOZ_NO_DANGLING_ON_TEMPORARIES int test() { return 0; } // mozilla-dangling-on-temporary
+                                     ^
+Warning: modernize-redundant-void-arg in /app/tmp/sa-central/js/src/jsapi.cpp: redundant void argument list in function definition
+/app/tmp/sa-central/js/src/jsapi.cpp:244:42: warning: redundant void argument list in function definition [modernize-redundant-void-arg]
+JS::ObjectOpResult::failCantRedefineProp(void) // modernize-redundant-void-arg
+                                         ^~~~~
+Warning: modernize-redundant-void-arg in /app/tmp/sa-central/js/src/jsapi.cpp: redundant void argument list in function definition
+/app/tmp/sa-central/js/src/jsapi.cpp:648:29: warning: redundant void argument list in function definition [modernize-redundant-void-arg]
+JS_GetImplementationVersion(void)
+                            ^~~~~
+Warning: modernize-raw-string-literal in /app/tmp/sa-central/js/src/jsapi.cpp: escaped string literal can be written as a raw string literal
+/app/tmp/sa-central/js/src/jsapi.cpp:1715:32: warning: escaped string literal can be written as a raw string literal [modernize-raw-string-literal]
+                               "\"string\", \"number\", or \"default\"", source);
+                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+                               R"("string", "number", or "default")"
+Warning: modernize-use-auto in /app/tmp/sa-central/js/src/jsapi.cpp: use auto when initializing with a cast to avoid duplicating the type name
+/app/tmp/sa-central/js/src/jsapi.cpp:3204:5: warning: use auto when initializing with a cast to avoid duplicating the type name [modernize-use-auto]
+    uintptr_t u = reinterpret_cast<uintptr_t>(name);
+    ^~~~~~~~~
+    auto
+Warning: modernize-use-equals-default in /app/tmp/sa-central/js/src/jsapi.cpp: use '= default' to define a trivial default constructor
+/app/tmp/sa-central/js/src/jsapi.cpp:3830:5: warning: use '= default' to define a trivial default constructor [modernize-use-equals-default]
+    AutoFile()
+    ^
+Warning: modernize-use-equals-default in /app/tmp/sa-central/js/src/jsapi.cpp: use '= default' to define a trivial destructor
+/app/tmp/sa-central/js/src/jsapi.cpp:3833:5: warning: use '= default' to define a trivial destructor [modernize-use-equals-default]
+    ~AutoFile()
+    ^
+Warning: modernize-use-equals-default in /app/tmp/sa-central/js/src/jsapi.cpp: use '= default' to define a trivial destructor
+/app/tmp/sa-central/js/src/jsapi.cpp:5746:35: warning: use '= default' to define a trivial destructor [modernize-use-equals-default]
+JS::AutoSetAsyncStackForNewCalls::~AutoSetAsyncStackForNewCalls()
+                                  ^
+Warning: modernize-use-equals-default in /app/tmp/sa-central/js/src/jsapi.cpp: use '= default' to define a trivial default constructor
+/app/tmp/sa-central/js/src/jsapi.cpp:6968:15: warning: use '= default' to define a trivial default constructor [modernize-use-equals-default]
+JSErrorNotes::JSErrorNotes()
+              ^
+Warning: modernize-use-equals-default in /app/tmp/sa-central/js/src/jsapi.cpp: use '= default' to define a trivial destructor
+/app/tmp/sa-central/js/src/jsapi.cpp:6972:15: warning: use '= default' to define a trivial destructor [modernize-use-equals-default]
+JSErrorNotes::~JSErrorNotes()
+              ^
+Warning: modernize-redundant-void-arg in /app/tmp/sa-central/js/src/jsapi.cpp: redundant void argument list in function definition
+/app/tmp/sa-central/js/src/jsapi.cpp:7806:15: warning: redundant void argument list in function definition [modernize-redundant-void-arg]
+JS_PUBLIC_API(void)
+              ^~~~~
+/app/tmp/sa-central/obj-x86_64-pc-linux-gnu/dist/system_wrappers/cstddef:3:15: error: 'cstddef' file not found [clang-diagnostic-error]
+#include_next <cstddef>
+              ^
+Suppressed 786 warnings (786 in non-user code).
+Use -header-filter=.* to display errors from all non-system headers. Use -system-headers to display errors from system headers as well.
+ce-for-range-copy,performance-inefficient-string-concatenation,performance-inefficient-vector-operation,performance-type-promotion-in-math-fn,performance-unnecessary-copy-initialization,performance-unnecessary-value-param,readability-container-size-empty,readability-else-after-return,readability-misleading-indentation,readability-redundant-control-flow,readability-redundant-smartptr-get,readability-redundant-string-cstr,readability-redundant-string-init,readability-uniqueptr-delete-release -extra-arg=-DMOZ_CLANG_PLUGIN -p=/app/tmp/sa-central/obj-x86_64-pc-linux-gnu /app/tmp/sa-central/js/src/ctypes/libffi/src/prep_cif.c
+11 warnings present.
