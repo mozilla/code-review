@@ -132,10 +132,14 @@ export default new Vuex.Store({
 
     // Load indexed tasks summary from Taskcluster
     load_index (state, namespace) {
-      let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.shipit_static_analysis.' + namespace
-      return axios.get(url).then(resp => {
-        state.commit('use_tasks', resp.data.tasks)
-      })
+      // Support multiple project name, as it evolved
+      let projects = ['static_analysis_bot', 'shipit_static_analysis']
+      return Promise.all(projects.map(project => {
+        let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.' + project + '.' + namespace
+        return axios.get(url).then(resp => {
+          state.commit('use_tasks', resp.data.tasks)
+        })
+      }))
     },
 
     // Load the report for a given task
