@@ -28,14 +28,9 @@ def test_phabricator(mock_phabricator, mock_repository, mock_config):
     Test a phabricator revision
     '''
     from static_analysis_bot.revisions import PhabricatorRevision
-    from static_analysis_bot.report.phabricator import PhabricatorReporter
 
-    api = PhabricatorReporter({
-        'url': 'http://phabricator.test/api/',
-        'api_key': 'deadbeef',
-    })
-
-    r = PhabricatorRevision('PHID-DIFF-testABcd12', api)
+    with mock_phabricator as api:
+        r = PhabricatorRevision('PHID-DIFF-testABcd12', api)
     assert not hasattr(r, 'mercurial')
     assert r.diff_id == 42
     assert r.diff_phid == 'PHID-DIFF-testABcd12'

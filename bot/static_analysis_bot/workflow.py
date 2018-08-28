@@ -15,6 +15,7 @@ import hglib
 
 from cli_common.command import run_check
 from cli_common.log import get_logger
+from cli_common.phabricator import PhabricatorAPI
 from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import CLANG_TIDY
 from static_analysis_bot import MOZLINT
@@ -41,13 +42,17 @@ class Workflow(object):
     '''
     Static analysis workflow
     '''
-    def __init__(self, reporters, analyzers, index_service):
+    def __init__(self, reporters, analyzers, index_service, phabricator_api):
         assert isinstance(analyzers, list)
         assert len(analyzers) > 0, \
             'No analyzers specified, will not run.'
         self.analyzers = analyzers
         assert 'MOZCONFIG' in os.environ, \
             'Missing MOZCONFIG in environment'
+
+        # Use share phabricator API client
+        assert isinstance(phabricator_api, PhabricatorAPI)
+        self.phabricator = phabricator_api
 
         # Save Taskcluster ID for logging
         if 'TASK_ID' in os.environ and 'RUN_ID' in os.environ:

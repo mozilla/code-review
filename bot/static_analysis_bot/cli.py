@@ -8,6 +8,7 @@ import click
 from cli_common.cli import taskcluster_options
 from cli_common.log import get_logger
 from cli_common.log import init_logger
+from cli_common.phabricator import PhabricatorAPI
 from cli_common.taskcluster import get_secrets
 from cli_common.taskcluster import get_service
 from static_analysis_bot import config
@@ -61,6 +62,7 @@ def main(source,
                               'APP_CHANNEL',
                               'REPORTERS',
                               'ANALYZERS',
+                              'PHABRICATOR',
                           ),
                           existing={
                               'APP_CHANNEL': 'development',
@@ -101,12 +103,14 @@ def main(source,
         taskcluster_access_token,
     )
 
+    # Load Phabricator API
+    phabricator_api = PhabricatorAPI(**secrets['PHABRICATOR'])
+    if 'phabricator' in reporters:
+        reporters['phabricator'].setup_api(phabricator_api)
+
     # Load unique revision
     if source == 'phabricator':
-        api = reporters.get('phabricator')
-        assert api is not None, \
-            'Cannot use a phabricator revision without a phabricator reporter'
-        revision = PhabricatorRevision(id, api)
+        revision = PhabricatorRevision(id, phabricator_api)
 
     elif source == 'mozreview':
         revision = MozReviewRevision(id, mozreview_revision, mozreview_diffset)
@@ -114,7 +118,7 @@ def main(source,
     else:
         raise Exception('Unsupported analysis source: {}'.format(source))
 
-    w = Workflow(reporters, secrets['ANALYZERS'], index_service)
+    w = Workflow(reporters, secrets['ANALYZERS'], index_service, phabricator_api)
     try:
         w.run(revision)
     except Exception as e:

@@ -54,12 +54,6 @@ def test_mail(mock_issues, mock_phabricator):
     '''
     from static_analysis_bot.report.mail import MailReporter
     from static_analysis_bot.revisions import MozReviewRevision, PhabricatorRevision
-    from static_analysis_bot.report.phabricator import PhabricatorReporter
-
-    phab = PhabricatorReporter({
-        'url': 'http://phabricator.test/api/',
-        'api_key': 'deadbeef',
-    })
 
     def _check_email(request):
         payload = json.loads(request.body)
@@ -93,8 +87,9 @@ def test_mail(mock_issues, mock_phabricator):
     mrev = MozReviewRevision('12345', 'abcdef', '1')
     r.publish(mock_issues, mrev)
 
-    prev = PhabricatorRevision('PHID-DIFF-test', phab)
-    r.publish(mock_issues, prev)
+    with mock_phabricator as api:
+        prev = PhabricatorRevision('PHID-DIFF-test', api)
+        r.publish(mock_issues, prev)
 
     # Check stats
     mock_cls = mock_issues[0].__class__

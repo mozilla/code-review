@@ -11,6 +11,7 @@ import hglib
 from parsepatch.patch import Patch
 
 from cli_common import log
+from cli_common.phabricator import PhabricatorAPI
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import REPO_REVIEW
@@ -91,6 +92,7 @@ class PhabricatorRevision(Revision):
     regex = re.compile(r'^(PHID-DIFF-(?:\w+))$')
 
     def __init__(self, description, api):
+        assert isinstance(api, PhabricatorAPI)
         self.api = api
 
         # Parse Diff description
@@ -101,9 +103,13 @@ class PhabricatorRevision(Revision):
         self.diff_phid = groups[0]
 
         # Load diff details to get the diff revision
-        diff = self.api.load_diff(self.diff_phid)
+        diffs = self.api.search_diffs(diff_phid=self.diff_phid)
+        assert len(diffs) == 1, 'No diff available for {}'.format(self.diff_phid)
+        diff = diffs[0]
+
         self.diff_id = diff['id']
-        self.phid = diff['fields']['revisionPHID']
+        self.phid = diff['revisionPHID']
+        self.hg_base = diff['baseRevision']
         revision = self.api.load_revision(self.phid)
         self.id = revision['id']
 
@@ -140,6 +146,15 @@ class PhabricatorRevision(Revision):
         Apply patch from Phabricator to Mercurial local repository
         '''
         assert isinstance(repo, hglib.client.hgclient)
+
+        # Update the repo to base revision
+        try:
+            repo.update(
+                rev=self.hg_base,
+                clean=True,
+            )
+        except hglib.error.CommandError as e:
+            logger.warning('Failed to update to base revision', revision=self.hg_base, error=e)
 
         # Apply the patch on top of repository
         repo.import_(
