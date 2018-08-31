@@ -6,6 +6,7 @@
 import io
 import os
 import re
+from collections import OrderedDict
 
 import hglib
 from parsepatch.patch import Patch
@@ -105,11 +106,10 @@ class PhabricatorRevision(Revision):
         # Load diff details to get the diff revision
         diffs = self.api.search_diffs(diff_phid=self.diff_phid)
         assert len(diffs) == 1, 'No diff available for {}'.format(self.diff_phid)
-        diff = diffs[0]
+        self.diff = diffs[0]
+        self.diff_id = self.diff['id']
+        self.phid = self.diff['revisionPHID']
 
-        self.diff_id = diff['id']
-        self.phid = diff['revisionPHID']
-        self.hg_base = diff['baseRevision']
         revision = self.api.load_revision(self.phid)
         self.id = revision['id']
 
@@ -134,12 +134,64 @@ class PhabricatorRevision(Revision):
 
     def load(self, repo):
         '''
-        Load patch from Phabricator
+        Load full stack of patches from Phabricator:
+        * setup repo to base revision from Mozilla Central
+        * Apply previous needed patches from Phabricator
         '''
         assert isinstance(repo, hglib.client.hgclient)
 
-        # Load raw patch
-        self.patch = self.api.load_raw_diff(self.diff_id)
+        # Diff PHIDs from our patch to its base
+        patches = OrderedDict()
+        patches[self.diff_phid] = self.diff_id
+
+        parents = self.api.load_parents(self.phid)
+        if parents:
+
+            # Load all parent diffs
+            for parent in parents:
+                logger.info('Loading parent diff', phid=parent)
+
+                # Sort parent diffs by their id to load the most recent patch
+                parent_diffs = sorted(
+                    self.api.search_diffs(revision_phid=parent),
+                    key=lambda x: x['id'],
+                )
+                last_diff = parent_diffs[-1]
+                patches[last_diff['phid']] = last_diff['id']
+
+                # Use base revision of last parent
+                hg_base = last_diff['baseRevision']
+
+        else:
+            # Use base revision from top diff
+            hg_base = self.diff['baseRevision']
+
+        # Load all patches from their numerical ID
+        for diff_phid, diff_id in patches.items():
+            patches[diff_phid] = self.api.load_raw_diff(diff_id)
+
+        # Expose current patch to workflow
+        self.patch = patches[self.diff_phid]
+
+        # Update the repo to base revision
+        try:
+            logger.info('Updating repo to base revision', rev=hg_base)
+            repo.update(
+                rev=hg_base,
+                clean=True,
+            )
+        except hglib.error.CommandError as e:
+            logger.warning('Failed to update to base revision', revision=hg_base, error=e)
+
+        # Apply all patches from base to top
+        # except our current (top) patch
+        for diff_phid, patch in reversed(list(patches.items())[1:]):
+            logger.info('Applying parent diff', phid=diff_phid)
+            repo.import_(
+                patches=io.BytesIO(patch.encode('utf-8')),
+                message='SA Imported patch {}'.format(diff_phid),
+                user='reviewbot',
+            )
 
     def apply(self, repo):
         '''
@@ -147,20 +199,12 @@ class PhabricatorRevision(Revision):
         '''
         assert isinstance(repo, hglib.client.hgclient)
 
-        # Update the repo to base revision
-        try:
-            repo.update(
-                rev=self.hg_base,
-                clean=True,
-            )
-        except hglib.error.CommandError as e:
-            logger.warning('Failed to update to base revision', revision=self.hg_base, error=e)
-
         # Apply the patch on top of repository
         repo.import_(
             patches=io.BytesIO(self.patch.encode('utf-8')),
             nocommit=True,
         )
+        logger.info('Applied target patch', phid=self.diff_phid)
 
     def as_dict(self):
         '''

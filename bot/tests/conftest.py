@@ -295,6 +295,13 @@ def mock_phabricator():
         content_type='application/json',
     )
 
+    responses.add(
+        responses.POST,
+        'http://phabricator.test/api/edge.search',
+        body=_response('edge_search'),
+        content_type='application/json',
+    )
+
     yield PhabricatorAPI(
         url='http://phabricator.test/api/',
         api_key='deadbeef',
