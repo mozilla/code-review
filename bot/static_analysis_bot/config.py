@@ -97,6 +97,7 @@ class Settings(object):
         '''
         Is this check publishable ?
         Support the wildcard expansion
+        Publication is enabled by default, even when missing
         '''
         if check is None:
             return False
@@ -106,11 +107,11 @@ class Settings(object):
 
             if name.endswith('*') and check.startswith(name[:-1]):
                 # Wildcard at end of check name
-                return c['publish']
+                return c.get('publish', True)
 
             elif name == check:
                 # Same exact check name
-                return c['publish']
+                return c.get('publish', True)
 
         return False
 
