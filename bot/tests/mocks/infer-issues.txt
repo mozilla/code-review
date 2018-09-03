@@ -1,0 +1,12 @@
+ERROR: Object returned by `getRootException(e)` could be null and is dereferenced by call to `getExceptionStackTrace(...)` at line 268. [infer: NULL_DEREFERENCE]
+--------------------
+ERROR: Object `s` last assigned on line 612 could be null and is dereferenced at line 613. [infer: NULL_DEREFERENCE]
+--------------------
+ERROR: Object `sections` last assigned on line 804 could be null and is dereferenced at line 805. [infer: NULL_DEREFERENCE]
+--------------------
+ERROR: Object returned by `get(getApplicationContext()).getDir()` could be null and is dereferenced at line 1348. [infer: NULL_DEREFERENCE]
+--------------------
+ERROR: Resource of type `java.io.PipedOutputStream` acquired by call to `PipedOutputStream()` at line 1763 is not released after line 1766. [infer: RESOURCE_LEAK]
+--------------------
+ERROR: Resource of type `java.io.PipedOutputStream` acquired to `output` by call to `PipedOutputStream()` at line 1763 is not released after line 1778.
+**Note**: potential exception at line 1764 [infer: RESOURCE_LEAK]

@@ -85,6 +85,18 @@ class Revision(object):
 
         return any(_is_clang(f) for f in self.files)
 
+    @property
+    def has_infer_files(self):
+        '''
+        Check if this revision has any file that might
+        be a Java file
+        '''
+        def _is_infer(filename):
+            _, ext = os.path.splitext(filename)
+            return ext.lower() in settings.java_extensions
+
+        return any(_is_infer(f) for f in self.files)
+
 
 class PhabricatorRevision(Revision):
     '''

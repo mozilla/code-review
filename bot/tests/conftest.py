@@ -474,3 +474,49 @@ def mock_clang_repeats(mock_config):
     path = os.path.join(MOCK_DIR, 'clang-repeats.txt')
     with open(path) as f:
         return f.read().replace('{REPO}', mock_config.repo_dir)
+
+
+@pytest.fixture
+def mock_infer(tmpdir, monkeypatch):
+    # Create a temp mozbuild path
+    infer_dir = tmpdir.mkdir('infer').mkdir('infer').mkdir('bin')
+    os.environ['MOZBUILD_STATE_PATH'] = str(tmpdir.realpath())
+
+    open(str(infer_dir.join('infer').realpath()), 'w+')
+
+
+@pytest.fixture
+def mock_infer_output():
+    '''
+    Load a real case clang output
+    '''
+    path = os.path.join(MOCK_DIR, 'infer-output.txt')
+    with open(path) as f:
+        return f.read()
+
+
+@pytest.fixture
+def mock_infer_issues():
+    '''
+    Load parsed issues from a real case (above)
+    '''
+    path = os.path.join(MOCK_DIR, 'infer-issues.txt')
+    with open(path) as f:
+        return f.read()
+
+
+@pytest.fixture
+def mock_infer_repeats(mock_config):
+    '''
+    Load parsed issues with repeated issues
+    '''
+    # Write dummy test_repeat.cpp file in repo
+    # Needed to build line hash
+    test_java = os.path.join(mock_config.repo_dir, 'test_repeats.java')
+    with open(test_java, 'w') as f:
+        for i in range(5):
+            f.write('line {}\n'.format(i))
+
+    path = os.path.join(MOCK_DIR, 'infer-repeats.txt')
+    with open(path) as f:
+        return f.read().replace('{REPO}', mock_config.repo_dir)

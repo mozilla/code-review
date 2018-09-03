@@ -1,0 +1,170 @@
+[
+  {
+    "bug_class": "PROVER",
+    "kind": "ERROR",
+    "bug_type": "NULL_DEREFERENCE",
+    "qualifier": "object returned by `getRootException(e)` could be null and is dereferenced by call to `getExceptionStackTrace(...)` at line 268.",
+    "severity": "HIGH",
+    "visibility": "user",
+    "line": 268,
+    "column": -1,
+    "procedure": "String GeckoAppShell.getExceptionStackTrace(Throwable)",
+    "procedure_id": "org.mozilla.gecko.GeckoAppShell.getExceptionStackTrace(java.lang.Throwable):java.lang.String.2579b77f3c527fd0e244a558ee700ea0",
+    "procedure_start_line": 268,
+    "file": "{REPO}/test_repeats.java",
+    "bug_trace": [
+      {
+        "level": 0,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java",
+        "line_number": 268,
+        "column_number": -1,
+        "description": "start of procedure getExceptionStackTrace(...)"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 55,
+        "column_number": -1,
+        "description": "start of procedure getRootException(...)"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 56,
+        "column_number": -1,
+        "description": "Taking false branch"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 59,
+        "column_number": -1,
+        "description": "return from a call to Throwable CrashHandler.getRootException(Throwable)"
+      },
+      {
+        "level": 0,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java",
+        "line_number": 268,
+        "column_number": -1,
+        "description": ""
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 68,
+        "column_number": -1,
+        "description": "start of procedure getExceptionStackTrace(...)"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 69,
+        "column_number": -1,
+        "description": "Skipping StringWriter(): unknown method"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 70,
+        "column_number": -1,
+        "description": "Skipping PrintWriter(...): unknown method"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 71,
+        "column_number": -1,
+        "description": "Skipping printStackTrace(...): unknown method"
+      }
+    ],
+    "key": "GeckoAppShell.java|getExceptionStackTrace|NULL_DEREFERENCE",
+    "node_key": "d6170fb5d3d229077ee51eb7960a81a2",
+    "hash": "a49d2c1c6af1cab755faffd802a791c8",
+    "bug_type_hum": "Null Dereference",
+    "censored_reason": ""
+  },
+  {
+    "bug_class": "PROVER",
+    "kind": "ERROR",
+    "bug_type": "NULL_DEREFERENCE",
+    "qualifier": "object returned by `getRootException(e)` could be null and is dereferenced by call to `getExceptionStackTrace(...)` at line 268.",
+    "severity": "HIGH",
+    "visibility": "user",
+    "line": 268,
+    "column": -1,
+    "procedure": "String GeckoAppShell.getExceptionStackTrace(Throwable)",
+    "procedure_id": "org.mozilla.gecko.GeckoAppShell.getExceptionStackTrace(java.lang.Throwable):java.lang.String.2579b77f3c527fd0e244a558ee700ea0",
+    "procedure_start_line": 268,
+    "file": "{REPO}/test_repeats.java",
+    "bug_trace": [
+      {
+        "level": 0,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java",
+        "line_number": 268,
+        "column_number": -1,
+        "description": "start of procedure getExceptionStackTrace(...)"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 55,
+        "column_number": -1,
+        "description": "start of procedure getRootException(...)"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 56,
+        "column_number": -1,
+        "description": "Taking false branch"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 59,
+        "column_number": -1,
+        "description": "return from a call to Throwable CrashHandler.getRootException(Throwable)"
+      },
+      {
+        "level": 0,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java",
+        "line_number": 268,
+        "column_number": -1,
+        "description": ""
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 68,
+        "column_number": -1,
+        "description": "start of procedure getExceptionStackTrace(...)"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 69,
+        "column_number": -1,
+        "description": "Skipping StringWriter(): unknown method"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 70,
+        "column_number": -1,
+        "description": "Skipping PrintWriter(...): unknown method"
+      },
+      {
+        "level": 1,
+        "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/CrashHandler.java",
+        "line_number": 71,
+        "column_number": -1,
+        "description": "Skipping printStackTrace(...): unknown method"
+      }
+    ],
+    "key": "GeckoAppShell.java|getExceptionStackTrace|NULL_DEREFERENCE",
+    "node_key": "d6170fb5d3d229077ee51eb7960a81a2",
+    "hash": "a49d2c1c6af1cab755faffd802a791c8",
+    "bug_type_hum": "Null Dereference",
+    "censored_reason": ""
+  }
+]

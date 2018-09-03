@@ -50,6 +50,7 @@ class Settings(object):
         self.app_channel = app_channel
         self.download({
             'cpp_extensions': frozenset(['.c', '.h', '.cpp', '.cc', '.cxx', '.hh', '.hpp', '.hxx', '.m', '.mm']),
+            'java_extensions': frozenset(['.java']),
         })
         assert 'clang_checkers' in self.config
         assert 'target' in self.config
