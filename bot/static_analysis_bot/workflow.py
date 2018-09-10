@@ -25,7 +25,7 @@ from static_analysis_bot.clang import setup as setup_clang
 from static_analysis_bot.clang.format import ClangFormat
 from static_analysis_bot.clang.tidy import ClangTidy
 from static_analysis_bot.config import ARTIFACT_URL
-from static_analysis_bot.config import REPO_CENTRAL
+from static_analysis_bot.config import REPO_UNIFIED
 from static_analysis_bot.config import Publication
 from static_analysis_bot.config import settings
 from static_analysis_bot.infer import setup as setup_infer
@@ -81,15 +81,15 @@ class Workflow(object):
     @stats.api.timed('runtime.clone')
     def clone(self):
         '''
-        Clone mozilla-central
+        Clone mozilla-unified
         '''
-        logger.info('Clone mozilla central', dir=settings.repo_dir)
+        logger.info('Clone mozilla unified', dir=settings.repo_dir)
         cmd = hglib.util.cmdbuilder('robustcheckout',
-                                    REPO_CENTRAL,
+                                    REPO_UNIFIED,
                                     settings.repo_dir,
                                     purge=True,
                                     sharebase=settings.repo_shared_dir,
-                                    branch=b'tip')
+                                    branch=b'central')
 
         cmd.insert(0, hglib.HGPATH)
         proc = hglib.util.popen(cmd)
@@ -102,7 +102,7 @@ class Workflow(object):
 
         # Store MC top revision after robustcheckout
         self.top_revision = client.log('reverse(public())', limit=1)[0].node
-        logger.info('Mozilla central top revision', revision=self.top_revision)
+        logger.info('Mozilla unified top revision', revision=self.top_revision)
 
         return client
 
@@ -142,7 +142,7 @@ class Workflow(object):
             # Force cleanup to reset top of MC
             # otherwise previous pull are there
             self.hg.update(rev=self.top_revision, clean=True)
-            logger.info('Set repo back to Mozilla central top', rev=self.hg.identify())
+            logger.info('Set repo back to Mozilla unified top', rev=self.hg.identify())
 
             # Load and analyze revision patch
             revision.load(self.hg)
