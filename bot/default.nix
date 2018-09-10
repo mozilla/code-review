@@ -50,6 +50,9 @@ let
 
           # Needed to index the task in the TaskCluster index
           ("index:insert-task:project.releng.services.project." + branch + ".static_analysis_bot.*")
+
+          # Needed to download the Android sdks for Infer
+          "queue:get-artifact:project/gecko/android-*"
         ];
         cache = {
           "${cacheKey}" = "/cache";
