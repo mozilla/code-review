@@ -20,6 +20,7 @@ from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import CLANG_TIDY
 from static_analysis_bot import INFER
 from static_analysis_bot import MOZLINT
+from static_analysis_bot import AnalysisException
 from static_analysis_bot import stats
 from static_analysis_bot.clang import setup as setup_clang
 from static_analysis_bot.clang.format import ClangFormat
@@ -134,15 +135,18 @@ class Workflow(object):
         )
         stats.api.increment('analysis')
 
-        # Start by cloning the mercurial repository
-        self.hg = self.clone()
-        self.index(revision, state='cloned')
-
         with stats.api.timer('runtime.mercurial'):
-            # Force cleanup to reset top of MC
-            # otherwise previous pull are there
-            self.hg.update(rev=self.top_revision, clean=True)
-            logger.info('Set repo back to Mozilla unified top', rev=self.hg.identify())
+            try:
+                # Start by cloning the mercurial repository
+                self.hg = self.clone()
+                self.index(revision, state='cloned')
+
+                # Force cleanup to reset top of MU
+                # otherwise previous pull are there
+                self.hg.update(rev=self.top_revision, clean=True)
+                logger.info('Set repo back to Mozilla unified top', rev=self.hg.identify())
+            except hglib.error.CommandError as e:
+                raise AnalysisException('mercurial', str(e))
 
             # Load and analyze revision patch
             revision.load(self.hg)
@@ -153,17 +157,20 @@ class Workflow(object):
             if revision.has_clang_files:
 
                 # Mach pre-setup with mozconfig
-                logger.info('Mach configure...')
-                run_check(['gecko-env', './mach', 'configure'], cwd=settings.repo_dir)
+                try:
+                    logger.info('Mach configure...')
+                    run_check(['gecko-env', './mach', 'configure'], cwd=settings.repo_dir)
 
-                logger.info('Mach compile db...')
-                run_check(['gecko-env', './mach', 'build-backend', '--backend=CompileDB'], cwd=settings.repo_dir)
+                    logger.info('Mach compile db...')
+                    run_check(['gecko-env', './mach', 'build-backend', '--backend=CompileDB'], cwd=settings.repo_dir)
 
-                logger.info('Mach pre-export...')
-                run_check(['gecko-env', './mach', 'build', 'pre-export'], cwd=settings.repo_dir)
+                    logger.info('Mach pre-export...')
+                    run_check(['gecko-env', './mach', 'build', 'pre-export'], cwd=settings.repo_dir)
 
-                logger.info('Mach export...')
-                run_check(['gecko-env', './mach', 'build', 'export'], cwd=settings.repo_dir)
+                    logger.info('Mach export...')
+                    run_check(['gecko-env', './mach', 'build', 'export'], cwd=settings.repo_dir)
+                except Exception as e:
+                    raise AnalysisException('mach', str(e))
 
                 # Download clang build from Taskcluster
                 logger.info('Setup Taskcluster clang build...')
@@ -178,6 +185,7 @@ class Workflow(object):
                     analyzers.append(ClangFormat)
                 else:
                     logger.info('Skip clang-format')
+
             if revision.has_infer_files:
                 if INFER in self.analyzers:
                     analyzers.append(Infer)
@@ -185,6 +193,7 @@ class Workflow(object):
                     setup_infer(self.index_service)
                 else:
                     logger.info('Skip infer')
+
             if not (revision.has_clang_files or revision.has_clang_files):
                 logger.info('No clang or java files detected, skipping mach, infer and clang-*')
 
@@ -192,8 +201,8 @@ class Workflow(object):
             logger.info('Mach lint setup...')
             cmd = ['gecko-env', './mach', 'lint', '--list']
             out = run_check(cmd, cwd=settings.repo_dir)
-            assert 'error: problem with lint setup' not in out.decode('utf-8'), \
-                'Mach lint setup failed'
+            if 'error: problem with lint setup' in out.decode('utf-8'):
+                raise AnalysisException('mach', 'Mach lint setup failed')
 
             # Always use mozlint
             if MOZLINT in self.analyzers:

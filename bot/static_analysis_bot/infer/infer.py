@@ -9,6 +9,7 @@ import subprocess
 
 from cli_common.command import run_check
 from cli_common.log import get_logger
+from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
@@ -79,8 +80,8 @@ class Infer(object):
             try:
                 infer_output = subprocess.check_output(cmd, cwd=settings.repo_dir)
             except subprocess.CalledProcessError as e:
-                logger.error('Mach static analysis failed: {}'.format(e.output))
-                raise
+                raise AnalysisException('infer', 'Mach static analysis failed: {}'.format(e.output))
+
         report_file = os.path.join(settings.repo_dir, 'infer-out', 'report.json')
         infer_output = json.load(open(report_file))
 

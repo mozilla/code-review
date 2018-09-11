@@ -11,6 +11,7 @@ from cli_common.log import init_logger
 from cli_common.phabricator import PhabricatorAPI
 from cli_common.taskcluster import get_secrets
 from cli_common.taskcluster import get_service
+from static_analysis_bot import AnalysisException
 from static_analysis_bot import config
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
@@ -130,7 +131,11 @@ def main(source,
         )
 
         # Index analysis state
-        w.index(revision, state='error')
+        extras = {}
+        if isinstance(e, AnalysisException):
+            extras['error_code'] = e.code
+            extras['error_message'] = str(e)
+        w.index(revision, state='error', **extras)
 
         # Then raise to mark task as erroneous
         raise

@@ -5,6 +5,7 @@ import os
 
 from cli_common.command import run
 from cli_common.log import get_logger
+from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
@@ -215,8 +216,7 @@ class MozLint(object):
             lines = list(filter(None, output.split('\n')))
             payload = json.loads(lines[-1])
         except json.decoder.JSONDecodeError:
-            logger.warn('Invalid json output', path=path, lines=lines)
-            raise
+            raise AnalysisException('mozlint', 'Invalid json output', path=path, lines=lines)
 
         if full_path not in payload and path not in payload:
             logger.warn('Missing path in linter output', path=path)

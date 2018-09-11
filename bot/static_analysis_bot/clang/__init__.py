@@ -8,6 +8,7 @@ import requests
 import io
 import os
 import cli_common.utils
+from static_analysis_bot import AnalysisException
 
 
 def setup(product='static-analysis', job_name='linux64-clang-tidy', revision='latest', artifact='public/build/clang-tidy.tar.xz'):
@@ -29,7 +30,8 @@ def setup(product='static-analysis', job_name='linux64-clang-tidy', revision='la
     def _download():
         # Download Taskcluster archive
         resp = requests.get(artifact_url, stream=True)
-        resp.raise_for_status()
+        if not resp.ok:
+            raise AnalysisException('artifact', 'Download failed {}'.format(artifact_url))
 
         # Extract archive into destination
         with tarfile.open(fileobj=io.BytesIO(resp.content)) as tar:

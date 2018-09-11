@@ -14,7 +14,8 @@ export default new Vuex.Store({
     channel: 'production',
     tasks: [],
     report: null,
-    stats: null
+    stats: null,
+    states: null
   },
   mutations: {
     load_preferences (state) {
@@ -58,14 +59,42 @@ export default new Vuex.Store({
     },
     use_tasks (state, tasks) {
       // Filter tasks without extra data
-      state.tasks = state.tasks.concat(
+      let currentTasks = state.tasks.concat(
         tasks.filter(task => task.data.indexed !== undefined)
       )
 
       // Sort by indexation date
-      state.tasks.sort((x, y) => {
+      currentTasks.sort((x, y) => {
         return new Date(y.data.indexed) - new Date(x.data.indexed)
       })
+
+      // Crunch stats about status
+      let states = {}
+      states = currentTasks.reduce((states, task) => {
+        let state = task.data.state
+        if (state === 'error' && task.data.error_code) {
+          state += '.' + task.data.error_code
+        }
+        if (states[state] === undefined) {
+          states[state] = 0
+        }
+        states[state] += 1
+        return states
+      }, states)
+
+      // Save tasks
+      state.tasks = currentTasks
+
+      // Order states by their nb, and calc percents
+      state.states = Object.keys(states).map(state => {
+        let nb = states[state]
+        return {
+          'key': state,
+          'name': state.startsWith('error.') ? 'error: ' + state.substring(6) : state,
+          'nb': nb,
+          'percent': currentTasks && currentTasks.length > 0 ? Math.round(nb * 100 / currentTasks.length) : 0
+        }
+      }).sort((x, y) => { return y.nb - x.nb })
     },
     use_report (state, report) {
       state.report = report
@@ -116,30 +145,17 @@ export default new Vuex.Store({
     // Switch data channel to use
     switch_channel (state, channel) {
       state.commit('use_channel', channel)
-      state.dispatch('load_all_indexes')
+      state.dispatch('load_index')
       router.push({ name: 'tasks' })
     },
 
-    // Load all indexes available
-    load_all_indexes (state) {
+    // Load Phabricator indexed tasks summary from Taskcluster
+    load_index (state) {
       state.commit('reset_tasks')
-
-      return Promise.all([
-        state.dispatch('load_index', 'mozreview'),
-        state.dispatch('load_index', 'phabricator')
-      ])
-    },
-
-    // Load indexed tasks summary from Taskcluster
-    load_index (state, namespace) {
-      // Support multiple project name, as it evolved
-      let projects = ['static_analysis_bot', 'shipit_static_analysis']
-      return Promise.all(projects.map(project => {
-        let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.' + project + '.' + namespace
-        return axios.get(url).then(resp => {
-          state.commit('use_tasks', resp.data.tasks)
-        })
-      }))
+      let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.static_analysis_bot.phabricator'
+      return axios.get(url).then(resp => {
+        state.commit('use_tasks', resp.data.tasks)
+      })
     },
 
     // Load the report for a given task
@@ -159,7 +175,7 @@ export default new Vuex.Store({
       }
 
       // Load all indexes to get task ids
-      var indexes = state.dispatch('load_all_indexes')
+      var indexes = state.dispatch('load_index')
       indexes.then(() => {
         console.log('Start analysis')
         state.commit('reset_stats')

@@ -9,6 +9,7 @@ import re
 import subprocess
 
 from cli_common.log import get_logger
+from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import CONFIG_URL
@@ -108,8 +109,7 @@ class ClangTidy(object):
         try:
             clang_output = subprocess.check_output(cmd, cwd=settings.repo_dir)
         except subprocess.CalledProcessError as e:
-            logger.error('Mach static analysis failed: {}'.format(e.output))
-            raise
+            raise AnalysisException('clang-tidy', 'Mach static analysis failed: {}'.format(e.output))
 
         clang_output = clang_output.decode('utf-8')
 
@@ -150,7 +150,7 @@ class ClangTidy(object):
             key=lambda h: h.start()
         )
         if not headers:
-            raise Exception('No clang-tidy header was found even though a clang output was provided')
+            raise AnalysisException('clang-tidy', 'No clang-tidy header was found even though a clang output was provided')
 
         def _remove_footer(start_pos, end_pos):
             '''

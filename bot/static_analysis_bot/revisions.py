@@ -13,6 +13,7 @@ from parsepatch.patch import Patch
 
 from cli_common import log
 from cli_common.phabricator import PhabricatorAPI
+from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import REPO_REVIEW
@@ -122,8 +123,8 @@ class PhabricatorRevision(Revision):
         self.diff_id = self.diff['id']
         self.phid = self.diff['revisionPHID']
 
-        revision = self.api.load_revision(self.phid)
-        self.id = revision['id']
+        self.revision = self.api.load_revision(self.phid)
+        self.id = self.revision['id']
 
     @property
     def namespaces(self):
@@ -178,6 +179,11 @@ class PhabricatorRevision(Revision):
             # Use base revision from top diff
             hg_base = self.diff['baseRevision']
 
+        # When base revision is missing, update to top of Central
+        if hg_base is None:
+            logger.warning('Missing base revision from Phabricator')
+            hg_base = 'central'
+
         # Load all patches from their numerical ID
         for diff_phid, diff_id in patches.items():
             patches[diff_phid] = self.api.load_raw_diff(diff_id)
@@ -187,23 +193,26 @@ class PhabricatorRevision(Revision):
 
         # Update the repo to base revision
         try:
-            logger.info('Updating repo to base revision', rev=hg_base)
+            logger.info('Updating repo to revision', rev=hg_base)
             repo.update(
                 rev=hg_base,
                 clean=True,
             )
         except hglib.error.CommandError as e:
-            logger.warning('Failed to update to base revision', revision=hg_base, error=e)
+            raise AnalysisException('mercurial', 'Failed to update to revision {}'.format(hg_base))
 
         # Apply all patches from base to top
         # except our current (top) patch
         for diff_phid, patch in reversed(list(patches.items())[1:]):
             logger.info('Applying parent diff', phid=diff_phid)
-            repo.import_(
-                patches=io.BytesIO(patch.encode('utf-8')),
-                message='SA Imported patch {}'.format(diff_phid),
-                user='reviewbot',
-            )
+            try:
+                repo.import_(
+                    patches=io.BytesIO(patch.encode('utf-8')),
+                    message='SA Imported patch {}'.format(diff_phid),
+                    user='reviewbot',
+                )
+            except hglib.error.CommandError as e:
+                raise AnalysisException('mercurial', 'Failed to import parent patch {}'.format(diff_phid))
 
     def apply(self, repo):
         '''
@@ -212,11 +221,14 @@ class PhabricatorRevision(Revision):
         assert isinstance(repo, hglib.client.hgclient)
 
         # Apply the patch on top of repository
-        repo.import_(
-            patches=io.BytesIO(self.patch.encode('utf-8')),
-            nocommit=True,
-        )
-        logger.info('Applied target patch', phid=self.diff_phid)
+        try:
+            repo.import_(
+                patches=io.BytesIO(self.patch.encode('utf-8')),
+                nocommit=True,
+            )
+            logger.info('Applied target patch', phid=self.diff_phid)
+        except hglib.error.CommandError as e:
+            raise AnalysisException('mercurial', 'Failed to import target patch')
 
     def as_dict(self):
         '''
@@ -229,6 +241,10 @@ class PhabricatorRevision(Revision):
             'id': self.id,
             'url': self.url,
             'has_clang_files': self.has_clang_files,
+
+            # Extra infos for frontend
+            'title': self.revision['fields'].get('title'),
+            'bugzilla_id': self.revision['fields'].get('bugzilla.bug-id'),
         }
 
 

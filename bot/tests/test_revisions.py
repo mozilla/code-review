@@ -3,6 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import os.path
+from unittest.mock import MagicMock
 
 import responses
 from parsepatch.patch import Patch
@@ -43,8 +44,12 @@ def test_phabricator(mock_phabricator, mock_repository, mock_config):
     assert open(test_txt).read() == 'Hello World\n'
 
     # Load full patch
+    # Mock the mercurial repo update as we use a dummy revision
     assert r.patch is None
+    __update = mock_repository.update
+    mock_repository.update = MagicMock(return_value=True)
     r.load(mock_repository)
+    mock_repository.update = __update
     assert r.patch is not None
     assert isinstance(r.patch, str)
     assert len(r.patch.split('\n')) == 7
