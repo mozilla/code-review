@@ -8,7 +8,7 @@ export default {
   ],
   data () {
     return {
-      sort: 'detected'
+      sort: 'published'
     }
   },
   computed: {
