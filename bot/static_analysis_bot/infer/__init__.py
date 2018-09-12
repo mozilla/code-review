@@ -10,6 +10,7 @@ import os
 import shutil
 import subprocess
 import cli_common.utils
+import taskcluster
 
 from cli_common.log import get_logger
 from static_analysis_bot.config import settings
@@ -47,9 +48,16 @@ def setup(index, job_name='linux64-infer', revision='latest',
                      'project/gecko/android-ndk/android-ndk.tar.xz']
         for job, artifact in zip(job_names, artifacts):
             namespace = NAMESPACE.format(job, revision)
-            artifact_url = index.buildSignedUrl('findArtifactFromTask',
-                                                indexPath=namespace,
-                                                name=artifact)
+            # on staging buildSignedUrl will fail, because the artifacts are downloaded from
+            # a proxy, therefore we need to use buildUrl in case the signed version fails
+            try:
+                artifact_url = index.buildSignedUrl('findArtifactFromTask',
+                                                    indexPath=namespace,
+                                                    name=artifact)
+            except taskcluster.exceptions.TaskclusterAuthFailure:
+                artifact_url = index.buildUrl('findArtifactFromTask',
+                                              indexPath=namespace,
+                                              name=artifact)
             target = os.path.join(
                 os.environ['MOZBUILD_STATE_PATH'],
                 os.path.basename(artifact).split('.')[0],
