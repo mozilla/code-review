@@ -22,6 +22,17 @@ from static_analysis_bot.config import settings
 logger = log.get_logger(__name__)
 
 
+def revision_available(repo, revision):
+    '''
+    Check a revision is available on a Mercurial repo
+    '''
+    try:
+        repo.identify(revision)
+        return True
+    except hglib.error.CommandError as e:
+        return False
+
+
 class Revision(object):
     '''
     A common DCM revision
@@ -180,7 +191,7 @@ class PhabricatorRevision(Revision):
             hg_base = self.diff['baseRevision']
 
         # When base revision is missing, update to top of Central
-        if hg_base is None:
+        if hg_base is None or not revision_available(repo, hg_base):
             logger.warning('Missing base revision from Phabricator')
             hg_base = 'central'
 
