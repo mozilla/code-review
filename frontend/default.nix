@@ -9,4 +9,5 @@ releng_pkgs.lib.mkYarnFrontend {
     libpng.dev
     pkgconfig
   ];
+	csp = "default-src 'none'; img-src 'self' data:; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self';";
 }
