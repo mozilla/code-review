@@ -25,10 +25,7 @@ ac_add_options --target=arm-linux-androideabi
 
 # With the following Android SDK and NDK:
 ac_add_options --with-android-sdk="{mozbuild}/android-sdk-linux/android-sdk-linux"
-ac_add_options --with-android-ndk="{mozbuild}/android-ndk/android-ndk"
-
-ac_add_options --with-java-bin-path="{openjdk}/bin"
-'''
+ac_add_options --with-android-ndk="{mozbuild}/android-ndk/android-ndk"'''
 
 
 def setup(index, job_name='linux64-infer', revision='latest',
@@ -88,9 +85,7 @@ class AndroidConfig():
         os.environ['MOZCONFIG'] = self.__android_mozconfig
         subprocess.run(['chmod', 'u+w', self.__android_mozconfig])
         with open(self.__android_mozconfig, 'a') as f:
-            f.write(ANDROID_MOZCONFIG.format(
-                mozbuild='/tmp/mozilla-state',
-                openjdk=os.getenv('JAVA_HOME')))
+            f.write(ANDROID_MOZCONFIG.format(mozbuild='/tmp/mozilla-state'))
 
     def __exit__(self, type, value, traceback):
         os.environ['MOZCONFIG'] = self.__old_config

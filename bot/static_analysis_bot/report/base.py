@@ -7,12 +7,17 @@ import itertools
 
 from static_analysis_bot.clang.format import ClangFormatIssue
 from static_analysis_bot.clang.tidy import ClangTidyIssue
+from static_analysis_bot.infer.infer import InferIssue
 from static_analysis_bot.lint import MozLintIssue
 
 COMMENT_PARTS = {
     ClangTidyIssue: {
         'defect': ' - {nb} found by clang-tidy',
         'analyzer': ' - `./mach static-analysis check path/to/file.cpp` (C/C++)',
+    },
+    InferIssue: {
+        'defect': ' - {nb} found by infer',
+        'analyzer': ' - `./mach static-analysis check-java path/to/file.java` (Java)',
     },
     ClangFormatIssue: {
         'defect': ' - {nb} found by clang-format',
