@@ -19,13 +19,14 @@ class PhabricatorReporter(Reporter):
     '''
     API connector to report on Phabricator
     '''
-    def __init__(self, api=None, *args, **kwargs):
-        if api is not None:
-            self.setup_api(api)
+    def __init__(self, *args, **kwargs):
+        if kwargs.get('api') is not None:
+            self.setup_api(kwargs['api'])
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
         self.api = api
+        logger.info('Phabricator reporter enabled')
 
     def publish(self, issues, revision):
         '''
