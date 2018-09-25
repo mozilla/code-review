@@ -105,13 +105,14 @@ class ClangTidy(object):
         ] + list(revision.files)
         logger.info('Running static-analysis', cmd=' '.join(cmd))
 
-        # Run command
+        # Run command, without checking its exit code as clang-tidy 7+
+        # exits with an error code when finding errors (which we want to report !)
         try:
-            clang_output = subprocess.check_output(cmd, cwd=settings.repo_dir)
+            clang = subprocess.run(cmd, cwd=settings.repo_dir, check=False, stdout=subprocess.PIPE)
         except subprocess.CalledProcessError as e:
             raise AnalysisException('clang-tidy', 'Mach static analysis failed: {}'.format(e.output))
 
-        clang_output = clang_output.decode('utf-8')
+        clang_output = clang.stdout.decode('utf-8')
 
         # Dump raw clang-tidy output as a Taskcluster artifact (for debugging)
         clang_output_path = os.path.join(

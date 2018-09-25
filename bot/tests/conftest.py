@@ -250,18 +250,19 @@ def mock_clang(tmpdir, monkeypatch):
         )
 
     # Monkeypatch the mach static analysis by using directly clang-tidy
-    real_check_output = subprocess.check_output
+    real_run = subprocess.run
 
     def mock_mach(command, *args, **kwargs):
         if command[:5] == ['gecko-env', './mach', '--log-no-times', 'static-analysis', 'check']:
             command = ['clang-tidy', ] + command[5:]
-            output = real_check_output(command, *args, **kwargs)
-            return output + b'\n42 warnings present.'
+            res = real_run(command, *args, **kwargs)
+            res.stdout = res.stdout + b'\n42 warnings present.'
+            return res
 
-        # Really run command through normal check_output
-        return real_check_output(command, *args, **kwargs)
+        # Really run command through normal run
+        return real_run(command, *args, **kwargs)
 
-    monkeypatch.setattr(subprocess, 'check_output', mock_mach)
+    monkeypatch.setattr(subprocess, 'run', mock_mach)
 
 
 @responses.activate
