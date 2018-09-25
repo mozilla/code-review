@@ -16,7 +16,6 @@ from static_analysis_bot import config
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 from static_analysis_bot.report import get_reporters
-from static_analysis_bot.revisions import MozReviewRevision
 from static_analysis_bot.revisions import PhabricatorRevision
 from static_analysis_bot.workflow import Workflow
 
@@ -34,14 +33,6 @@ logger = get_logger(__name__)
     envvar='ANALYSIS_ID',
 )
 @click.option(
-    '--mozreview-diffset',
-    envvar='MOZREVIEW_DIFFSET',
-)
-@click.option(
-    '--mozreview-revision',
-    envvar='MOZREVIEW_REVISION',
-)
-@click.option(
     '--cache-root',
     required=True,
     help='Cache root, used to pull changesets'
@@ -50,8 +41,6 @@ logger = get_logger(__name__)
 def main(source,
          id,
          cache_root,
-         mozreview_diffset,
-         mozreview_revision,
          taskcluster_secret,
          taskcluster_client_id,
          taskcluster_access_token,
@@ -112,10 +101,6 @@ def main(source,
     # Load unique revision
     if source == 'phabricator':
         revision = PhabricatorRevision(id, phabricator_api)
-
-    elif source == 'mozreview':
-        revision = MozReviewRevision(id, mozreview_revision, mozreview_diffset)
-
     else:
         raise Exception('Unsupported analysis source: {}'.format(source))
 

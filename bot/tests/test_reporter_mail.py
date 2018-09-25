@@ -53,13 +53,12 @@ def test_mail(mock_issues, mock_phabricator):
     Test mail sending through Taskcluster
     '''
     from static_analysis_bot.report.mail import MailReporter
-    from static_analysis_bot.revisions import MozReviewRevision, PhabricatorRevision
+    from static_analysis_bot.revisions import PhabricatorRevision
 
     def _check_email(request):
         payload = json.loads(request.body)
 
         assert payload['subject'] in (
-            '[test] New Static Analysis MozReview #12345 - 1',
             '[test] New Static Analysis Phabricator #42 - PHID-DIFF-test',
         )
         assert payload['address'] == 'test@mozilla.com'
@@ -82,10 +81,6 @@ def test_mail(mock_issues, mock_phabricator):
         ],
     }
     r = MailReporter(conf, 'test_tc', 'token_tc')
-
-    # Publish for mozreview
-    mrev = MozReviewRevision('12345', 'abcdef', '1')
-    r.publish(mock_issues, mrev)
 
     with mock_phabricator as api:
         prev = PhabricatorRevision('PHID-DIFF-test', api)

@@ -16,7 +16,6 @@ from cli_common.phabricator import PhabricatorAPI
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
-from static_analysis_bot.config import REPO_REVIEW
 from static_analysis_bot.config import settings
 
 logger = log.get_logger(__name__)
@@ -256,93 +255,4 @@ class PhabricatorRevision(Revision):
             # Extra infos for frontend
             'title': self.revision['fields'].get('title'),
             'bugzilla_id': self.revision['fields'].get('bugzilla.bug-id'),
-        }
-
-
-class MozReviewRevision(Revision):
-    '''
-    A mozreview revision to process
-    '''
-    def __init__(self, review_request_id, mercurial, diffset_revision):
-        self.mercurial = mercurial
-        self.review_request_id = int(review_request_id)
-        self.diffset_revision = int(diffset_revision)
-
-    def __repr__(self):
-        return '{}-{}-{}'.format(
-            self.mercurial[:8],
-            self.review_request_id,
-            self.diffset_revision,
-        )
-
-    def __str__(self):
-        return 'MozReview #{} - {}'.format(self.review_request_id, self.diffset_revision)
-
-    @property
-    def url(self):
-        return 'https://reviewboard.mozilla.org/r/{}/'.format(self.review_request_id) # noqa
-
-    @property
-    def namespaces(self):
-        return [
-            'mozreview.{}'.format(self.review_request_id),
-            'mozreview.{}.{}'.format(self.review_request_id, self.diffset_revision),
-            'mozreview.rev.{}'.format(self.mercurial),
-        ]
-
-    def load(self, repo):
-        '''
-        Load required revision from mercurial remote repo
-        The repository will then be set to the ancestor of analysed revision
-        '''
-        assert isinstance(repo, hglib.client.hgclient)
-
-        # Get top revision
-        top = repo.log('reverse(public())', limit=1)[0].node.decode('utf-8')
-
-        # Pull revision from review
-        repo.pull(
-            source=REPO_REVIEW,
-            rev=self.mercurial,
-            update=True,
-            force=True,
-        )
-
-        # Find common ancestor revision
-        out = repo.log('ancestor({}, {})'.format(top, self.mercurial))
-        assert out is not None and len(out) > 0, \
-            'Failed to find ancestor for {}'.format(self.mercurial)
-        ancestor = out[0].node.decode('utf-8')
-        logger.info('Found HG ancestor', current=self.mercurial, ancestor=ancestor)
-
-        # Load full diff from revision up to ancestor
-        # using Git format for compatibility with improvement patch builder
-        self.patch = repo.diff(revs=[ancestor, self.mercurial], git=True).decode('utf-8')
-
-        # Move repo to ancestor so we don't trigger an unecessary clobber
-        repo.update(rev=ancestor, clean=True)
-
-    def apply(self, repo):
-        '''
-        Load required revision from mercurial remote repo
-        '''
-        assert isinstance(repo, hglib.client.hgclient)
-
-        # Update to the target revision
-        repo.update(
-            rev=self.mercurial,
-            clean=True,
-        )
-
-    def as_dict(self):
-        '''
-        Outputs a serializable representation of this revision
-        '''
-        return {
-            'source': 'mozreview',
-            'rev': self.mercurial,
-            'review_request': self.review_request_id,
-            'diffset': self.diffset_revision,
-            'url': self.url,
-            'has_clang_files': self.has_clang_files,
         }

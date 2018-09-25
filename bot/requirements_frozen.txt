@@ -28,7 +28,6 @@ flake8-debugger==3.1.0
 flake8-isort==2.5
 flake8-mypy==17.8.0
 flake8-quotes==1.0.0
-httpretty==0.9.5
 idna==2.7
 idna-ssl==1.1.0
 ipdb==0.11

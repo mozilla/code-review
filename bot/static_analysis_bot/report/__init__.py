@@ -4,7 +4,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from cli_common.log import get_logger
-from static_analysis_bot.report.mozreview import MozReviewReporter
 from static_analysis_bot.report.mail import MailReporter
 from static_analysis_bot.report.phabricator import PhabricatorReporter
 
@@ -18,7 +17,6 @@ def get_reporters(configuration, client_id=None, access_token=None):
     assert isinstance(configuration, list)
     reporters = {
         'mail': MailReporter,
-        'mozreview': MozReviewReporter,
         'phabricator': PhabricatorReporter,
     }
     out = {}

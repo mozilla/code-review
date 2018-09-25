@@ -4,9 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import itertools
-import json
 import os.path
-import re
 import subprocess
 import tempfile
 import time
@@ -15,7 +13,6 @@ from distutils.spawn import find_executable
 from unittest.mock import Mock
 
 import hglib
-import httpretty
 import pytest
 import responses
 
@@ -112,141 +109,6 @@ def mock_issues():
         MockIssue(i)
         for i in range(5)
     ]
-
-
-@pytest.fixture
-def mock_mozreview():
-    '''
-    Mock mozreview authentication process
-    Need to use httpretty as mozreview uses low level urlopen
-    '''
-    api_url = 'http://mozreview.test/api/'
-    auth_url = api_url + 'extensions/mozreview.extension.MozReviewExtension/bugzilla-api-key-logins/'
-    session_url = api_url + 'session/'
-
-    def _response(name, extension='json'):
-        path = os.path.join(MOCK_DIR, 'mozreview_{}.{}'.format(name, extension))
-        assert os.path.exists(path)
-        return open(path).read()
-
-    # Start httpretty session
-    httpretty.enable()
-
-    # API Root endpoint
-    httpretty.register_uri(
-        httpretty.GET,
-        api_url,
-        body=_response('root'),
-        content_type='application/vnd.reviewboard.org.root+json',
-    )
-
-    # Initial query to get auth endpoints
-    httpretty.register_uri(
-        httpretty.GET,
-        auth_url,
-        body=_response('auth'),
-        content_type='application/vnd.reviewboard.org.bugzilla-api-key-logins+json',
-    )
-
-    # Current session query
-    httpretty.register_uri(
-        httpretty.GET,
-        session_url,
-        body=_response('session'),
-        content_type='application/vnd.reviewboard.org.session+json',
-    )
-
-    # User details queries
-    httpretty.register_uri(
-        httpretty.GET,
-        api_url + 'users/devbot/',
-        body=_response('user'),
-        content_type='application/vnd.reviewboard.org.user+json',
-    )
-    httpretty.register_uri(
-        httpretty.GET,
-        api_url + 'users/anotherUser/',
-        body=_response('user_another'),
-        content_type='application/vnd.reviewboard.org.user+json',
-    )
-
-    # Dummy Reviews list
-    httpretty.register_uri(
-        httpretty.GET,
-        api_url + 'review-requests/12345/reviews/',
-        body=_response('reviews_12345'),
-        content_type='application/vnd.reviewboard.org.review+json',
-    )
-
-    # Dummy Review comment list
-    httpretty.register_uri(
-        httpretty.GET,
-        api_url + 'review-requests/12345/reviews/51/diff-comments/',
-        body=_response('comments_12345_51'),
-        content_type='application/vnd.reviewboard.org.review-diff-comments+json',
-    )
-
-    # Dummy Review file diff
-    httpretty.register_uri(
-        httpretty.GET,
-        api_url + 'review-requests/12345/diffs/2/files/',
-        body=_response('files_12345'),
-        content_type='application/vnd.reviewboard.org.files+json',
-        adding_headers={
-            'Item-Content-Type': 'application/vnd.reviewboard.org.file+json',
-        }
-    )
-
-    def _filediff(request, uri, headers):
-
-        if request.headers.get('Accept') == 'application/vnd.reviewboard.org.diff.data+json':
-            # Diff data
-            body = _response('filediff_12345_2_diffdata')
-            headers['content-type'] = 'application/vnd.reviewboard.org.diff.data+json'
-
-        else:
-
-            # Basic data
-            body = _response('filediff_12345_2')
-            headers['content-type'] = 'application/vnd.reviewboard.org.file+json'
-
-        return (200, headers, body)
-
-    httpretty.register_uri(
-        httpretty.GET,
-        api_url + 'review-requests/12345/diffs/2/files/31/',
-        body=_filediff,
-    )
-
-    def _check_credentials(request, uri, headers):
-
-        # Dirty multipart form data "parser"
-        form = dict(re.findall(r'name="([\w_]+)"\r\n\r\n(\w+)\r\n', request.body.decode('utf-8')))
-        assert form['username'] == 'devbot'
-        assert form['api_key'] == 'deadbeef123'
-
-        body = json.dumps({
-            'stat': 'ok',
-            'bugzilla_api_key_login': {
-                'email': 'devbot@mozilla.org',
-            },
-        })
-        return (201, headers, body)
-
-    # Initial query to get auth endpoints
-    httpretty.register_uri(
-        httpretty.POST,
-        auth_url,
-        status_code=201,
-        body=_check_credentials,
-        content_type='application/vnd.reviewboard.org.bugzilla-api-key-logins+json',
-    )
-
-    # Pass context to test runtime
-    yield
-
-    # Close httpretty session
-    httpretty.disable()
 
 
 @contextmanager

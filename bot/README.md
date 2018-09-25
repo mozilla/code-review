@@ -16,8 +16,8 @@ The following configuration variables are currently supported:
 * `SENTRY_DSN` is the optional Sentry full url to report runtime errors.
 * `MOZDEF` is the optional MozDef log destination.
 
-The `REPORTERS` configuratin is a list of dictionaries describing which reporting tool to use at the end of the patches static analysis.
-Supported reporting tools are emails (for admins), MozReview and Phabricator.
+The `REPORTERS` configuration is a list of dictionaries describing which reporting tool to use at the end of the patches static analysis.
+Supported reporting tools are emails (for admins) and Phabricator.
 
 Each reporter configuration must contain a `reporter` key with a unique name per tool. Each tool has its own configuration requirement.
 
@@ -31,20 +31,6 @@ The emails are sent through Taskcluster notify service, the hook must have `noti
 Only one configuration is required: `emails` is a list of emails addresses receiving the admin output for each analysis.
 
 This reporter will send detailed informations about every issue.
-
-Reporter: MozReview
--------------------
-
-Key `reporter` is `mozreview`
-
-Configuration:
-
- * `url` : The Mozreview api url
- * `username` : The Mozreview account's username
- * `api_key` : The Mozreview account's api key 
- * `analyzers` : Limit the reported issues to those produced by specified analyzers. Choices are: `clang-tidy`, `clang-format`, `mozlint`.
- * `publish_success` : a boolean describing if a successfull analysis must be reported (disabled by default)
-
 
 Reporter: Phabricator
 ---------------------
@@ -102,13 +88,6 @@ Example configuration
         "reporter": "phabricator",
         "url": "https://dev.phabricator.mozilla.com",
         "api_key": "deadbeef123456"
-      },
-      {
-        "reporter": "mozreview",
-        "url": "https://reviewboard.mozilla.org",
-        "api_key": "coffee123456",
-        "username": "sa-bot-staging",
-        "analyzers": ["clang-tidy", "clang-format", "mozlint"]
       }
     ],
     "ANALYZERS": [

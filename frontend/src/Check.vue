@@ -45,7 +45,6 @@ export default {
             </td>
             <td>
               <a :href="issue.revision.url" target="_blank" v-if="issue.revision.source == 'phabricator'">Phabricator {{ issue.revision.id }}</a>
-              <a :href="issue.revision.url" target="_blank" v-else-if="issue.revision.source == 'mozreview'">Mozreview {{ issue.revision.review_reques }}</a>
               <span v-else>Unknown</span>
             </td>
             <td class="mono">{{ issue.path }}</td>

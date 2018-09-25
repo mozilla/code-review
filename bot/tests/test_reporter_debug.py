@@ -5,21 +5,26 @@
 import json
 import os.path
 
+import responses
 
-def test_publication(tmpdir, mock_issues):
+
+@responses.activate
+def test_publication(tmpdir, mock_issues, mock_phabricator):
     '''
     Test debug publication and report analysis
     '''
     from static_analysis_bot.report.debug import DebugReporter
-    from static_analysis_bot.revisions import MozReviewRevision
+    from static_analysis_bot.revisions import PhabricatorRevision
 
     report_dir = str(tmpdir.mkdir('public').realpath())
     report_path = os.path.join(report_dir, 'report.json')
     assert not os.path.exists(report_path)
 
+    with mock_phabricator as api:
+        prev = PhabricatorRevision('PHID-DIFF-abcdef', api)
+
     r = DebugReporter(report_dir)
-    mrev = MozReviewRevision('12345', 'abcdef', '1')
-    r.publish(mock_issues, mrev)
+    r.publish(mock_issues, prev)
 
     assert os.path.exists(report_path)
     with open(report_path) as f:
@@ -30,12 +35,14 @@ def test_publication(tmpdir, mock_issues):
 
     assert 'revision' in report
     assert report['revision'] == {
-        'source': 'mozreview',
-        'rev': 'abcdef',
-        'review_request': 12345,
-        'diffset': 1,
+        'source': 'phabricator',
+        'id': 51,
+        'url': 'https://phabricator.test/D51',
+        'bugzilla_id': '',
+        'diff_phid': 'PHID-DIFF-abcdef',
+        'phid': 'PHID-DREV-zzzzz',
+        'title': 'Static Analysis tests',
         'has_clang_files': False,
-        'url': 'https://reviewboard.mozilla.org/r/12345/'
     }
 
     assert 'time' in report

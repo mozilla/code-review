@@ -659,23 +659,6 @@ let
       };
     };
 
-    "httpretty" = python.mkDerivation {
-      name = "httpretty-0.9.5";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/84/60/b25c38767dee62f7cec49dc12a094128c7d2d9e946289db21331d748bb6d/httpretty-0.9.5.tar.gz"; sha256 = "543fa2bd9c319bfa1e1de9e37d7c9c08fa926a692b65b0be5df4b2f069fd0ad7"; };
-      doCheck = commonDoCheck;
-      checkPhase = "";
-      installCheckPhase = "";
-      buildInputs = commonBuildInputs;
-      propagatedBuildInputs = [
-      self."six"
-    ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "https://httpretty.readthedocs.io";
-        license = licenses.mit;
-        description = "HTTP client mock for Python";
-      };
-    };
-
     "idna" = python.mkDerivation {
       name = "idna-2.7";
       src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/65/c4/80f97e9c9628f3cac9b98bfca0402ede54e0563b56482e3e6e45c43c4935/idna-2.7.tar.gz"; sha256 = "684a38a6f903c1d71d6d5fac066b58d7768af4de2b832e426ec79c30daa94a16"; };
