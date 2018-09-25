@@ -18,7 +18,7 @@ def setup(product='static-analysis', job_name='linux64-clang-tidy', revision='la
     - Download the artifact from latest Taskcluster build
     - Extracts it into the MOZBUILD_STATE_PATH as expected by mach
     '''
-    namespace = 'gecko.v2.mozilla-central.{}.{}.{}'.format(revision, product, job_name)
+    namespace = 'gecko.v2.autoland.{}.{}.{}'.format(revision, product, job_name)
     artifact_url = 'https://index.taskcluster.net/v1/task/{}/artifacts/{}'.format(namespace, artifact)
 
     # Mach expects clang binaries in this specific root dir
