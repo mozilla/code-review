@@ -170,6 +170,10 @@ let
       # Export linters tools
       export CODESPELL=${python.packages.codespell}/bin/codespell
       export SHELLCHECK=${shellcheck}/bin/shellcheck
+
+      # Needed to run clang Taskcluster static build
+      # in developers shell
+      export LD_LIBRARY_PATH=${zlib}/lib:${gcc-unwrapped.lib}/lib
     '';
 
     dockerEnv =
@@ -184,7 +188,7 @@ let
 
         # Needed to run clang Taskcluster static build
         # only on built docker image from scratch
-        "LD_LIBRARY_PATH=${zlib}/lib"
+        "LD_LIBRARY_PATH=${zlib}/lib:${gcc-unwrapped.lib}/lib"
       ];
     dockerCmd = [];
 
