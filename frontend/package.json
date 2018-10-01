@@ -2,7 +2,7 @@
   "name": "static-analysis-frontend",
   "version": "1.0.0",
   "repository": "https://github.com/mozilla/release-services",
-  "author": "Bastien Abadie <babadie@mozilla.com>",
+  "author": "",
   "description": "Mozilla static analysis frontend",
   "main": "index.js",
   "dependencies": {
@@ -25,6 +25,5 @@
     "test": "neutrino test"
   },
   "keywords": [],
-  "author": "",
   "license": "MPLv2"
 }

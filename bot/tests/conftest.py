@@ -29,8 +29,8 @@ int main(void){
 '''
 
 
-@responses.activate
 @pytest.fixture(scope='session')
+@responses.activate
 def mock_config():
     '''
     Mock configuration for bot
@@ -111,8 +111,9 @@ def mock_issues():
     ]
 
 
-@contextmanager
 @pytest.fixture
+@responses.activate
+@contextmanager
 def mock_phabricator():
     '''
     Mock phabricator authentication process
@@ -265,8 +266,8 @@ def mock_clang(tmpdir, monkeypatch):
     monkeypatch.setattr(subprocess, 'run', mock_mach)
 
 
-@responses.activate
 @pytest.fixture
+@responses.activate
 def mock_workflow(tmpdir, mock_repository, mock_config, mock_phabricator):
     '''
     Mock the full workflow, without cloning
