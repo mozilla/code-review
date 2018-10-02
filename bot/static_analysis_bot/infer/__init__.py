@@ -36,15 +36,28 @@ def setup(index, job_name='linux64-infer', revision='latest',
     - Download the artifact from latest Taskcluster build
     - Extracts it into the MOZBUILD_STATE_PATH as expected by mach
     '''
-    NAMESPACE = 'gecko.cache.level-1.toolchains.v2.{}.{}'
     if job_name == 'linux64-infer':
-        job_names = ['linux64-infer', 'linux64-android-sdk-linux-repack',
-                     'linux64-android-ndk-linux-repack']
-        artifacts = ['public/build/infer.tar.xz',
-                     'project/gecko/android-sdk/android-sdk-linux.tar.xz',
-                     'project/gecko/android-ndk/android-ndk.tar.xz']
-        for job, artifact in zip(job_names, artifacts):
-            namespace = NAMESPACE.format(job, revision)
+        jobs = [
+            {
+                'job-name': 'linux64-infer',
+                'artifact': 'public/build/infer.tar.xz',
+                'namespace': 'gecko.v2.autoland.latest.static-analysis.linux64-infer'
+            },
+            {
+                'job-name': 'linux64-android-sdk-linux-repack',
+                'artifact': 'project/gecko/android-sdk/android-sdk-linux.tar.xz',
+                'namespace': 'gecko.cache.level-1.toolchains.v2.linux64-android-sdk-linux-repack.latest'
+            },
+            {
+                'job-name': 'linux64-android-ndk-linux-repack',
+                'artifact': 'project/gecko/android-ndk/android-ndk.tar.xz',
+                'namespace': 'gecko.cache.level-1.toolchains.v2.linux64-android-ndk-linux-repack.latest'
+            }
+        ]
+
+        for element in jobs:
+            namespace = element['namespace']
+            artifact = element['artifact']
             # on staging buildSignedUrl will fail, because the artifacts are downloaded from
             # a proxy, therefore we need to use buildUrl in case the signed version fails
             try:
