@@ -10,7 +10,7 @@ from static_analysis_bot import stats
 from static_analysis_bot.report.base import Reporter
 from static_analysis_bot.revisions import PhabricatorRevision
 
-BUG_REPORT_URL = 'https://bit.ly/2tb8Qk3'
+BUG_REPORT_URL = 'https://bit.ly/2IyNRy2'
 
 logger = log.get_logger(__name__)
 
