@@ -159,16 +159,20 @@ class Workflow(object):
                 # Mach pre-setup with mozconfig
                 try:
                     logger.info('Mach configure...')
-                    run_check(['gecko-env', './mach', 'configure'], cwd=settings.repo_dir)
+                    with stats.api.timer('runtime.mach.configure'):
+                        run_check(['gecko-env', './mach', 'configure'], cwd=settings.repo_dir)
 
                     logger.info('Mach compile db...')
-                    run_check(['gecko-env', './mach', 'build-backend', '--backend=CompileDB'], cwd=settings.repo_dir)
+                    with stats.api.timer('runtime.mach.build-backend'):
+                        run_check(['gecko-env', './mach', 'build-backend', '--backend=CompileDB'], cwd=settings.repo_dir)
 
                     logger.info('Mach pre-export...')
-                    run_check(['gecko-env', './mach', 'build', 'pre-export'], cwd=settings.repo_dir)
+                    with stats.api.timer('runtime.mach.pre-export'):
+                        run_check(['gecko-env', './mach', 'build', 'pre-export'], cwd=settings.repo_dir)
 
                     logger.info('Mach export...')
-                    run_check(['gecko-env', './mach', 'build', 'export'], cwd=settings.repo_dir)
+                    with stats.api.timer('runtime.mach.export'):
+                        run_check(['gecko-env', './mach', 'build', 'export'], cwd=settings.repo_dir)
                 except Exception as e:
                     raise AnalysisException('mach', str(e))
 
@@ -200,7 +204,8 @@ class Workflow(object):
             # Setup python environment
             logger.info('Mach lint setup...')
             cmd = ['gecko-env', './mach', 'lint', '--list']
-            out = run_check(cmd, cwd=settings.repo_dir)
+            with stats.api.timer('runtime.mach.lint'):
+                out = run_check(cmd, cwd=settings.repo_dir)
             if 'error: problem with lint setup' in out.decode('utf-8'):
                 raise AnalysisException('mach', 'Mach lint setup failed')
 
