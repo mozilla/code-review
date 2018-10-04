@@ -63,7 +63,8 @@ def setup(index, job_name='linux64-infer', revision='latest',
             try:
                 artifact_url = index.buildSignedUrl('findArtifactFromTask',
                                                     indexPath=namespace,
-                                                    name=artifact)
+                                                    name=artifact,
+                                                    expiration=7200)
             except taskcluster.exceptions.TaskclusterAuthFailure:
                 artifact_url = index.buildUrl('findArtifactFromTask',
                                               indexPath=namespace,
