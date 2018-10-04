@@ -307,7 +307,7 @@ class ClangTidyIssue(Issue):
 
         # Always add body as it's been cleaned up
         if self.body:
-            body += '\n{}'.format(self.body)
+            body += '\n```\n{}\n```'.format(self.body)
 
         return body
 

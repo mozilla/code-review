@@ -184,14 +184,14 @@ class ClangFormatIssue(Issue):
         '''
         out = 'Warning: Incorrect coding style [clang-format]\n'
         if self.mode == OPCODE_REPLACE:
-            out += 'Replace by: \n\n{}\n'.format(self.new)
+            out += 'Replace by:\n\n```\n{}\n```\n'.format(self.new)
 
         elif self.mode == OPCODE_INSERT:
-            out += 'Insert at this line: \n\n{}\n'.format(self.new)
+            out += 'Insert at this line:\n\n```\n{}\n```\n'.format(self.new)
 
         elif self.mode == OPCODE_DELETE:
             if self.nb_lines > 1:
-                out += 'Delete these {} lines'.format(self.nb_lines)
+                out += 'Delete these {} lines.'.format(self.nb_lines)
             out += 'Delete this line.'
 
         else:

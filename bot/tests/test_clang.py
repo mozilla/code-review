@@ -243,7 +243,7 @@ def test_as_text(mock_revision):
     issue = ClangTidyIssue(parts, mock_revision)
     issue.body = 'Dummy body withUppercaseChars'
 
-    assert issue.as_text() == 'Error: Dummy message withUppercaseChars [clang-tidy: dummy-check]\nDummy body withUppercaseChars'
+    assert issue.as_text() == 'Error: Dummy message withUppercaseChars [clang-tidy: dummy-check]\n```\nDummy body withUppercaseChars\n```'
 
 
 def test_as_markdown(mock_revision):
