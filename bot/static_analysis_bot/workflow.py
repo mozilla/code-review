@@ -311,8 +311,8 @@ class Workflow(object):
                     full_path,
                 ]
                 cmd_output = subprocess.run(cmd)
-                assert cmd_output.returncode == 0, \
-                    'Generated patch {} application failed on {}'.format(patch_path, full_path)
+                if cmd_output.returncode == 0:
+                    logger.error('Generated patch application failed', patch=patch_path, src=full_path)
 
         # Get clean Mercurial diff on modified files
         files = list(map(lambda x: os.path.join(settings.repo_dir, x).encode('utf-8'), revision.files))
