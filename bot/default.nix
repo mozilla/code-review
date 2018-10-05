@@ -4,18 +4,9 @@
 let
 
   inherit (releng_pkgs.lib) mkTaskclusterHook mkTaskclusterMergeEnv mkTaskclusterMergeRoutes mkPython fromRequirementsFile filterSource ;
-  inherit (releng_pkgs.pkgs) writeScript gcc cacert gcc-unwrapped glibc glibcLocales xorg patch nodejs-8_x git python27 python36 coreutils clang_5 zlib;
+  inherit (releng_pkgs.pkgs) writeScript gcc cacert gcc-unwrapped glibc glibcLocales xorg patch nodejs-8_x git python27 python36 coreutils clang_5 zlib shellcheck;
   inherit (releng_pkgs.pkgs.lib) fileContents concatStringsSep ;
   inherit (releng_pkgs.tools) pypi2nix mercurial;
-
-  # we require shellcheck 0.4.7 which is in older nixpkgs
-  old-nixpkgs = import (releng_pkgs.pkgs.fetchFromGitHub {
-    owner = "NixOS";
-    repo = "nixpkgs-channels";
-    rev = "cc4677c36ee8d880e881459ad114fd2224b3ac1c";
-    sha256 = "1rc1pjnvfi194gka45zc1nivzsncc819kvxlfv277l2c8ryhgbpc";
-  }) {};
-  shellcheck = old-nixpkgs.shellcheck;
 
   nodejs = nodejs-8_x;
   python = import ./requirements.nix { inherit (releng_pkgs) pkgs; };
