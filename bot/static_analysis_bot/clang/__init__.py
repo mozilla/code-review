@@ -11,14 +11,20 @@ import cli_common.utils
 from static_analysis_bot import AnalysisException
 
 
-def setup(product='static-analysis', job_name='linux64-clang-tidy', revision='latest', artifact='public/build/clang-tidy.tar.xz'):
+def setup(
+    product='static-analysis',
+    job_name='linux64-clang-tidy',
+    revision='latest',
+    artifact='public/build/clang-tidy.tar.xz',
+    repository='autoland',
+):
     '''
     Setup Taskcluster clang build for static-analysis
     Defaults values are from https://dxr.mozilla.org/mozilla-central/source/taskcluster/ci/toolchain/linux.yml
     - Download the artifact from latest Taskcluster build
     - Extracts it into the MOZBUILD_STATE_PATH as expected by mach
     '''
-    namespace = 'gecko.v2.autoland.{}.{}.{}'.format(revision, product, job_name)
+    namespace = 'gecko.v2.{}.{}.{}.{}'.format(repository, revision, product, job_name)
     artifact_url = 'https://index.taskcluster.net/v1/task/{}/artifacts/{}'.format(namespace, artifact)
 
     # Mach expects clang binaries in this specific root dir

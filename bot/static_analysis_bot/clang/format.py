@@ -47,7 +47,7 @@ class ClangFormat(object):
     def __init__(self):
         self.binary = os.path.join(
             os.environ['MOZBUILD_STATE_PATH'],
-            'clang-tools', 'clang', 'bin', 'clang-format',
+            'clang-tools', 'clang-tidy', 'bin', 'clang-format',
         )
         assert os.path.exists(self.binary), \
             'Missing clang-format in {}'.format(self.binary)

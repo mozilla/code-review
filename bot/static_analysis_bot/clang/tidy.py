@@ -69,7 +69,7 @@ class ClangTidy(object):
     def __init__(self, validate_checks=True):
         self.binary = os.path.join(
             os.environ['MOZBUILD_STATE_PATH'],
-            'clang-tools', 'clang', 'bin', 'clang-tidy',
+            'clang-tools', 'clang-tidy', 'bin', 'clang-tidy',
         )
         assert os.path.exists(self.binary), \
             'Missing clang-tidy in {}'.format(self.binary)

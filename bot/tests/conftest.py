@@ -241,7 +241,7 @@ def mock_clang(tmpdir, monkeypatch):
     '''
 
     # Create a temp mozbuild path
-    clang_dir = tmpdir.mkdir('clang-tools').mkdir('clang').mkdir('bin')
+    clang_dir = tmpdir.mkdir('clang-tools').mkdir('clang-tidy').mkdir('bin')
     os.environ['MOZBUILD_STATE_PATH'] = str(tmpdir.realpath())
 
     for tool in ('clang-tidy', 'clang-format'):

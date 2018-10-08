@@ -177,8 +177,9 @@ class Workflow(object):
                     raise AnalysisException('mach', str(e))
 
                 # Download clang build from Taskcluster
+                # Use new clang-tidy paths, https://bugzilla.mozilla.org/show_bug.cgi?id=1495641
                 logger.info('Setup Taskcluster clang build...')
-                setup_clang()
+                setup_clang(repository='mozilla-inbound', revision='revision.874a07fdb045b725edc2aaa656a8620ff439ec10')
 
                 # Use clang-tidy & clang-format
                 if CLANG_TIDY in self.analyzers:
