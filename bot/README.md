@@ -1,5 +1,5 @@
-Static Analysis
-===============
+Static Analysis Bot
+===================
 
 Configuration
 -------------
@@ -40,7 +40,7 @@ Key `reporter` is `phabricator`
 Configuration:
 
  * `url` : The Phabricator api url
- * `api_key` : The Phabricator account's api key 
+ * `api_key` : The Phabricator account's api key
 
 This reporter will send detailed informations about every **publishable** issue.
 
