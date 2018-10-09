@@ -376,8 +376,8 @@ let
     };
 
     "codespell" = python.mkDerivation {
-      name = "codespell-1.13.0";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/fa/75/b28d76bf412bc8e6253b10b7d148486d9e3395b3806a7301251eaaaa835e/codespell-1.13.0.tar.gz"; sha256 = "771b36e393e39d67829335b23a817e4cd08035d8b64048a9de60c6b178b38901"; };
+      name = "codespell-1.14.0";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/b6/a0/954b77775d73c4943413d4aa486b8eb1a8864ea8e8941d55d4ce8e040b14/codespell-1.14.0.tar.gz"; sha256 = "b1b60867773ffc5643a3724b62d12fe6797aa735831733f8a45f6d28db5ef34f"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";
