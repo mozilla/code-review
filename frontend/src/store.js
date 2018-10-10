@@ -63,6 +63,15 @@ export default new Vuex.Store({
         tasks.filter(task => task.data.indexed !== undefined)
       )
 
+      // Add a descriptive state key name to tasks
+      currentTasks.map(task => {
+        task.state_full = task.data.state
+        if (task.state_full === 'error' && task.data.error_code) {
+          task.state_full += '.' + task.data.error_code
+        }
+        return task
+      })
+
       // Sort by indexation date
       currentTasks.sort((x, y) => {
         return new Date(y.data.indexed) - new Date(x.data.indexed)
@@ -71,14 +80,10 @@ export default new Vuex.Store({
       // Crunch stats about status
       let states = {}
       states = currentTasks.reduce((states, task) => {
-        let state = task.data.state
-        if (state === 'error' && task.data.error_code) {
-          state += '.' + task.data.error_code
+        if (states[task.state_full] === undefined) {
+          states[task.state_full] = 0
         }
-        if (states[state] === undefined) {
-          states[state] = 0
-        }
-        states[state] += 1
+        states[task.state_full] += 1
         return states
       }, states)
 

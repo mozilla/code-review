@@ -1,16 +1,69 @@
 <script>
 import mixins from './mixins.js'
+import _ from 'lodash'
+import Choice from './Choice.vue'
 
 export default {
   mounted () {
     this.$store.dispatch('load_index')
+  },
+  components: {
+    Choice: Choice
+  },
+  data: function () {
+    return {
+      filters: {
+        state: null,
+        issues: null,
+        revision: null
+      },
+      choices: {
+        issues: [
+          {
+            name: 'No issues',
+            func: t => t.data.issues === undefined || t.data.issues === 0
+          },
+          {
+            name: 'Has issues',
+            func: t => t.data.issues && t.data.issues > 0
+          },
+          {
+            name: 'Publishable issues',
+            func: t => t.data.issues_publishable && t.data.issues_publishable > 0
+          }
+        ]
+      }
+    }
   },
   mixins: [
     mixins.date
   ],
   computed: {
     tasks () {
-      return this.$store.state.tasks
+      let tasks = this.$store.state.tasks
+
+      // Filter by states
+      if (this.filters.state !== null) {
+        tasks = _.filter(tasks, t => t.state_full === this.filters.state.key)
+      }
+
+      // Filter by issues
+      if (this.filters.issues !== null) {
+        tasks = _.filter(tasks, this.filters.issues.func)
+      }
+
+      // Filter by revision
+      if (this.filters.revision !== null) {
+        tasks = _.filter(tasks, t => {
+          let payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid
+          return payload.toLowerCase().indexOf(this.filters.revision.toLowerCase()) !== -1
+        })
+      }
+
+      return tasks
+    },
+    tasks_total () {
+      return this.$store.state.tasks ? this.$store.state.tasks.length : 0
     },
     states () {
       return this.$store.state.states
@@ -22,13 +75,13 @@ export default {
 <template>
   <section>
 
-    <div class="states" v-if="tasks.length > 0">
+    <div class="states" >
       <div class="state columns" v-for="state in states">
         <div class="column is-one-third">
           <progress class="progress" :class="{'is-danger': state.key.startsWith('error'), 'is-success': state.key == 'done', 'is-info': state.key != 'done' && !state.key.startsWith('error')}" :value="state.percent" max="100">{{ state.percent }}%</progress>
         </div>
         <div class="column is-one-third">
-          <strong>{{ state.name }}</strong> - <span class="has-text-grey-light">{{ state.nb }}/{{ tasks.length }} tasks or {{ state.percent }}%</span>
+          <strong>{{ state.name }}</strong> - <span class="has-text-grey-light">{{ state.nb }}/{{ tasks_total }} tasks or {{ state.percent }}%</span>
         </div>
       </div>
     </div>
@@ -37,9 +90,15 @@ export default {
       <thead>
         <tr>
           <td>#</td>
-          <td>Revision</td>
-          <td>State</td>
-          <td>Nb. Issues</td>
+          <td>
+            <input class="input" type="text" v-model="filters.revision" placeholder="Filter using phabricator, bugzilla Id or word, ..."/>
+          </td>
+          <td>
+            <Choice :choices="states" name="state" v-on:new-choice="filters.state = $event"/>
+          </td>
+          <td>
+            <Choice :choices="choices.issues" name="issue" v-on:new-choice="filters.issues = $event"/>
+          </td>
           <td>Indexed</td>
           <td>Actions</td>
         </tr>
@@ -110,5 +169,9 @@ div.states div.column {
 
 div.states div.column progress {
   margin-top: 0.3rem;
+}
+
+div.table input.input {
+  display: inline-block;
 }
 </style>
