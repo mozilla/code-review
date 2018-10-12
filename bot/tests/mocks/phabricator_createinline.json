@@ -1,0 +1,14 @@
+{
+    "result": {
+        "id": 17073,
+        "authorPHID": "PHID-USER-qvozgl7osyqxo226fzye",
+        "filePath": ".arcconfig",
+        "isNewFile": false,
+        "lineNumber": 2,
+        "lineLength": 0,
+        "diffID": "1158",
+        "content": "Such comment, wow"
+    },
+    "error_code": null,
+    "error_info": null
+}

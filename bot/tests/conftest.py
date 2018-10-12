@@ -160,8 +160,22 @@ def mock_phabricator():
 
     responses.add(
         responses.POST,
+        'http://phabricator.test/api/differential.createinline',
+        body=_response('createinline'),
+        content_type='application/json',
+    )
+
+    responses.add(
+        responses.POST,
         'http://phabricator.test/api/edge.search',
         body=_response('edge_search'),
+        content_type='application/json',
+    )
+
+    responses.add(
+        responses.POST,
+        'http://phabricator.test/api/transaction.search',
+        body=_response('transaction_search'),
         content_type='application/json',
     )
 
