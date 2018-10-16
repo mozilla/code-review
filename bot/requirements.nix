@@ -209,8 +209,8 @@ let
     };
 
     "async-timeout" = python.mkDerivation {
-      name = "async-timeout-3.0.0";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/35/82/6c7975afd97661e6115eee5105359ee191a71ff3267fde081c7c8d05fae6/async-timeout-3.0.0.tar.gz"; sha256 = "b3c0ddc416736619bd4a95ca31de8da6920c3b9a140c64dbef2b2fa7bf521287"; };
+      name = "async-timeout-3.0.1";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/a1/78/aae1545aba6e87e23ecab8d212b58bb70e72164b67eb090b81bb17ad38e3/async-timeout-3.0.1.tar.gz"; sha256 = "0c3c816a028d47f659d6ff5c745cb2acf1f966da1fe5c19c77a70282b25f4c5f"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";
@@ -288,8 +288,8 @@ let
     };
 
     "boto3" = python.mkDerivation {
-      name = "boto3-1.9.13";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/88/65/53a5dcd23c9185ae54e89289ffc427e13412afd563093d6e9a6a75ce4533/boto3-1.9.13.tar.gz"; sha256 = "67e89880fceedab0dc922b42206affd19bc52dd8bc113e56e1354b40fff4f4ea"; };
+      name = "boto3-1.9.19";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/0c/bb/31cc029973fc04da5ffd42bc43326e95faa98bb806cd6d4d683c7ddb8f41/boto3-1.9.19.tar.gz"; sha256 = "b9664b5e11dc5d3e2b546609f2c86e457ac1b4b596fee18322fa3667ce730f88"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";
@@ -307,8 +307,8 @@ let
     };
 
     "botocore" = python.mkDerivation {
-      name = "botocore-1.12.13";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/09/08/4315f1eff0e3b81952316f1442cbc62bceab997afc9cb86c9566849f4194/botocore-1.12.13.tar.gz"; sha256 = "d3a286aaa63c3388afb49feb36b61992dd37c735462c8b40add79c48bd845bc7"; };
+      name = "botocore-1.12.19";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/aa/5c/fdb79b8cd116f63504f255f702508285bdd34a1622244668c0acf9416773/botocore-1.12.19.tar.gz"; sha256 = "bc2fa51e05afb944f4f684c7d52a0db165898985d46b2fcb55fb842028fcc7a6"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";
@@ -767,15 +767,17 @@ let
     };
 
     "jedi" = python.mkDerivation {
-      name = "jedi-0.12.1";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/49/2f/cdfb8adc8cfc9fc2e5673e724d9b9098619dc1a2772cc6b8af34c6b7bef9/jedi-0.12.1.tar.gz"; sha256 = "b409ed0f6913a701ed474a614a3bb46e6953639033e31f769ca7581da5bd1ec1"; };
+      name = "jedi-0.13.1";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/c1/fd/cba30adcd2a739b1288b9dc87830c28797181492757080294523d03599e6/jedi-0.13.1.tar.gz"; sha256 = "b7493f73a2febe0dc33d51c99b474547f7f6c0b2c8fb2b21f453eef204c12148"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";
       buildInputs = commonBuildInputs;
       propagatedBuildInputs = [
+      self."colorama"
       self."docopt"
       self."parso"
+      self."pytest"
     ];
       meta = with pkgs.stdenv.lib; {
         homepage = "https://github.com/davidhalter/jedi";
@@ -942,8 +944,8 @@ let
     };
 
     "parsepatch" = python.mkDerivation {
-      name = "parsepatch-0.1.1";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/0e/12/803339a56eb6d7685c0566801b98ef1d4aa7cef9d3821ec8f589882e8f00/parsepatch-0.1.1.tar.gz"; sha256 = "7df8c3e4943e04ff52f17038523a72ff85ef5800f27cc457671b0fc448331876"; };
+      name = "parsepatch-0.1.2";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/56/23/0bd8d31563f7b46e2de1f2ad8884a22c81abd5e59d0f8abf6f788585a086/parsepatch-0.1.2.tar.gz"; sha256 = "136c7c6000cb6aa11a425bf63dea79238d4079dbf1c5ae632e16154915721a7f"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";
@@ -1055,8 +1057,8 @@ let
     };
 
     "prompt-toolkit" = python.mkDerivation {
-      name = "prompt-toolkit-2.0.4";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/77/bf/5d7664605c91db8f39a3e49abb57a3c933731a90b7a58cdcafd4a9bcbe97/prompt_toolkit-2.0.4.tar.gz"; sha256 = "ff58ce8bb82c11c43416dd3eec7701dcbe8c576e2d7649f1d2b9d21a2fd93808"; };
+      name = "prompt-toolkit-2.0.5";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/20/a0/ab97596da4ae545d4b936600c3ddc23b2b9ad8d0f96a4414cb3d6668aa32/prompt_toolkit-2.0.5.tar.gz"; sha256 = "5eff0c9fd652384ecfe730bbcdf3658868725c6928fbf608d9338834d7a974b6"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";
@@ -1148,8 +1150,8 @@ let
     };
 
     "pytest" = python.mkDerivation {
-      name = "pytest-3.8.1";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/22/77/8dba15a7ec756b040e82bc216120d19dffb5f4a1e4f896822fd3a45bd0a8/pytest-3.8.1.tar.gz"; sha256 = "95529588ff4e85114a0b0ad8e9cf0131ca47d46b28230e25366c5aba66b1d854"; };
+      name = "pytest-3.8.2";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/5f/d2/7f77f406ac505abda02ab4afb50d06ebf304f6ea42fca34f8f37529106b2/pytest-3.8.2.tar.gz"; sha256 = "9332147e9af2dcf46cd7ceb14d5acadb6564744ddff1fe8c17f0ce60ece7d9a2"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";
@@ -1572,8 +1574,8 @@ let
     };
 
     "yamllint" = python.mkDerivation {
-      name = "yamllint-1.11.1";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/70/24/c1db9026a3e4a5d6148344997e97000522833a2a9b9f4a5ba33fae55e45a/yamllint-1.11.1.tar.gz"; sha256 = "e9b7dec24921ef13180902e5dbcaae9157c773e3e3e2780ef77d3a4dd67d799f"; };
+      name = "yamllint-1.12.0";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/d5/9c/aae754b0391ba56540fc88c80e31db95575b96cce87d8c9918f8bcbcb05c/yamllint-1.12.0.tar.gz"; sha256 = "00a4de4319aac4e242c7e6a917d3e848e6b0eec37ead19bc7a245545588af1b3"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";

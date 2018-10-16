@@ -234,7 +234,8 @@ class PhabricatorRevision(Revision):
         try:
             repo.import_(
                 patches=io.BytesIO(self.patch.encode('utf-8')),
-                nocommit=True,
+                message='SA Analyzed patch',
+                user='reviewbot',
             )
             logger.info('Applied target patch', phid=self.diff_phid)
         except hglib.error.CommandError as e:

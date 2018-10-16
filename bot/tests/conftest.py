@@ -248,7 +248,7 @@ def mock_revision():
 
 
 @pytest.fixture
-def mock_clang(tmpdir, monkeypatch):
+def mock_clang(mock_config, tmpdir, monkeypatch):
     '''
     Mock clang binary setup by linking the system wide
     clang tools into the expected repo sub directory
@@ -273,6 +273,18 @@ def mock_clang(tmpdir, monkeypatch):
             res = real_run(command, *args, **kwargs)
             res.stdout = res.stdout + b'\n42 warnings present.'
             return res
+
+        if command[:5] == ['gecko-env', './mach', '--log-no-times', 'clang-format']:
+            # Mock ./mach clang-format behaviour by analysing repo bad file
+            # with the embedded clang-format from Nix
+            # and replace this file with the output
+            target = os.path.join(mock_config.repo_dir, 'bad.cpp')
+            out = real_run(['clang-format', target], *args, **kwargs)
+            with open(target, 'w') as f:
+                f.write(out.stdout.decode('utf-8'))
+
+            # Must return command output as it's saved as TC artifact
+            return out
 
         # Really run command through normal run
         return real_run(command, *args, **kwargs)

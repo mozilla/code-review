@@ -25,7 +25,7 @@ Code analysis found 1 defect in this patch:
 You can run this analysis locally with:
  - `./mach clang-format -p path/to/file.cpp` (C/C++)
 
-For your convenience, here is a patch that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply`): https://diff.url
+For your convenience, here is a patch that fixes all the clang-format defects: https://diff.url (use it in your repository with `hg import` or `git apply`)
 
 If you see a problem in this automated review, please report it here: https://bit.ly/2IyNRy2
 '''
@@ -119,12 +119,7 @@ def test_phabricator_clang_format(mock_repository, mock_phabricator):
         }
         reporter = PhabricatorReporter(api=api)
 
-    a = []
-    b = []
-    mode = 'insert'
-    line = 42
-    opcode = (mode, line, 0, 0, 0)
-    issue = ClangFormatIssue('test.cpp', a, b, opcode, revision)
+    issue = ClangFormatIssue('test.cpp', 42, 1, revision)
     assert issue.is_publishable()
 
     revision.diff_url = 'https://diff.url'

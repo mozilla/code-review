@@ -78,6 +78,10 @@ def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock
     with open(bad_file, 'w') as f:
         f.write(BAD_CPP_SRC)
 
+    # Commit bad.cpp
+    mock_repository.add(bad_file.encode('utf-8'))
+    _, rev = mock_repository.commit(b'Bad file', user=b'Tester')
+
     # Get formatting issues
     cf = ClangFormat()
     mock_revision.files = ['bad.cpp', ]
@@ -94,9 +98,9 @@ def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock
     assert issue.is_publishable()
 
     assert issue.path == 'bad.cpp'
-    assert issue.line == 1
-    assert issue.nb_lines == 3
-    assert issue.as_diff() == BAD_CPP_DIFF
+    assert issue.line == 2
+    assert issue.nb_lines == 2
+    assert issue.as_diff() is None
 
     # At the end of the process, original file is patched
     mock_workflow.build_improvement_patch(mock_revision, set(issues))
@@ -122,6 +126,9 @@ def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock
     metrics = mock_stats.get_metrics('runtime.clang-format.avg')
     assert len(metrics) == 1
     assert metrics[0][1] > 0
+
+    # Cleanup the repo
+    mock_repository.update(rev, clean=True)
 
 
 def test_clang_tidy(mock_repository, mock_config, mock_clang, mock_stats, mock_revision):

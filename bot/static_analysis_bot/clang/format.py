@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
-import difflib
 import os
 import subprocess
+
+import hglib
+from parsepatch.patch import Patch
 
 from cli_common.log import get_logger
 from static_analysis_bot import Issue
@@ -11,30 +13,12 @@ from static_analysis_bot.revisions import Revision
 
 logger = get_logger(__name__)
 
-OPCODE_REPLACE = 'replace'
-OPCODE_INSERT = 'insert'
-OPCODE_DELETE = 'delete'
-OPCODES = (OPCODE_REPLACE, OPCODE_INSERT, OPCODE_DELETE,)
-
 ISSUE_MARKDOWN = '''
 ## clang-format
 
 - **Path**: {path}
-- **Mode**: {mode}
 - **Lines**: from {line}, on {nb_lines} lines
 - **Is new**: {is_new}
-
-Old lines:
-
-```
-{old}
-```
-
-New lines:
-
-```
-{new}
-```
 '''
 
 
@@ -45,53 +29,23 @@ class ClangFormat(object):
     from a patch
     '''
     def __init__(self):
-        self.binary = os.path.join(
-            os.environ['MOZBUILD_STATE_PATH'],
-            'clang-tools', 'clang-tidy', 'bin', 'clang-format',
-        )
-        assert os.path.exists(self.binary), \
-            'Missing clang-format in {}'.format(self.binary)
+        self.diff = ''
 
     @stats.api.timed('runtime.clang-format')
     def run(self, revision):
         '''
-        Run clang-format on those modified files
+        Run ./mach clang-format on the current patch
         '''
         assert isinstance(revision, Revision)
         issues = []
-        for path in revision.files:
 
-            # Check file extension is supported
-            _, ext = os.path.splitext(path)
-            if ext not in settings.cpp_extensions:
-                logger.info('Skip clang-format for non C/C++ file', path=path)
-                continue
+        # Commit the current revision for `./mach clang-format` to reformat its changes
 
-            # Build issues for modified file
-            issues += self.run_clang_format(path, revision)
-
-        return issues
-
-    def run_clang_format(self, filename, revision):
-        '''
-        Clang-format is very fast, no need for a worker queue here
-        '''
-        # Check file exists (before mode)
-        full_path = os.path.join(settings.repo_dir, filename)
-        if not os.path.exists(full_path):
-            logger.info('Modified file not found {}'.format(full_path))
-            return []
-
-        # Build command line for a filename
         cmd = [
-            self.binary,
-
-            # Use style from directories
-            '-style=file',
-
-            full_path,
+            'gecko-env',
+            './mach', '--log-no-times', 'clang-format',
         ]
-        logger.info('Running clang-format', cmd=' '.join(cmd))
+        logger.info('Running ./mach clang-format', cmd=' '.join(cmd))
 
         # Run command
         clang_output = subprocess.check_output(cmd, cwd=settings.repo_dir).decode('utf-8')
@@ -104,20 +58,42 @@ class ClangFormat(object):
         with open(clang_output_path, 'w') as f:
             f.write(clang_output)
 
-        # Compare output with original file
-        src_lines = [x.rstrip('\n') for x in open(full_path).readlines()]
-        clang_lines = clang_output.split('\n')
+        # Look for any fixes `./mach clang-format` may have found
+        client = hglib.open(settings.repo_dir)
+        self.diff = client.diff(unified=8).decode('utf-8')
 
-        # Build issues from diff of diff !
-        diff = difflib.SequenceMatcher(
-            a=src_lines,
-            b=clang_lines,
-        )
-        issues = [
-            ClangFormatIssue(filename, src_lines, clang_lines, opcode, revision)
-            for opcode in diff.get_opcodes()
-            if opcode[0] in OPCODES
-        ]
+        if len(self.diff) > 0:
+            # Generate a reverse diff for `parsepatch` (in order to get original
+            # line numbers from the dev's patch instead of new line numbers)
+            reverse_diff = client.diff(unified=8, reverse=True).decode('utf-8')
+
+            # List all the lines that were fixed by `./mach clang-format`
+            patch = Patch.parse_patch(reverse_diff, skip_comments=False)
+            assert patch != {}, \
+                'Empty patch'
+
+            # Build `ClangFormatIssue`s
+            for filename, diff in patch.items():
+                lines = sorted(diff.get('touched', []) + diff.get('added', []))
+
+                # Group consecutive lines together (algorithm by calixte)
+                groups = []
+                group = [lines[0]]
+                for line in lines[1:]:
+                    # If the line is not consecutive with the group, start a new
+                    # group
+                    if line != group[-1] + 1:
+                        groups.append(group)
+                        group = []
+                    group.append(line)
+
+                # Don't forget to add the last group
+                groups.append(group)
+
+                issues += [
+                    ClangFormatIssue(filename, group[0], len(group), revision)
+                    for group in groups
+                ]
 
         stats.report_issues('clang-format', issues)
         return issues
@@ -125,48 +101,26 @@ class ClangFormat(object):
 
 class ClangFormatIssue(Issue):
     '''
-    An issue created by Clang Format tool
+    An issue created by the Clang Format tool
     '''
-    def __init__(self, path, a, b, opcode, revision):
-        self.mode, self.positions = opcode[0], opcode[1:]
-        assert self.mode in OPCODES
-        assert isinstance(self.positions, tuple)
-        assert len(self.positions) == 4
+    def __init__(self, path, line, nb_lines, revision):
         self.path = path
+        self.line = line
+        self.nb_lines = nb_lines
         self.revision = revision
-
-        # Lines used to make the diff
-        # replace: a[i1:i2] should be replaced by b[j1:j2].
-        # delete: a[i1:i2] should be deleted.
-        # insert: b[j1:j2] should be inserted at a[i1:i1].
-        # These indexes are starting from 1
-        # need to offset them
-        i1, i2, j1, j2 = self.positions
-        self.old = '\n'.join(a[i1 - 1:i2])
-        self.new = self.mode != OPCODE_DELETE and '\n'.join(b[j1 - 1:j2])
-
-        # i1 is alsways the starting point
-        i1, i2, j1, j2 = self.positions
-        self.line = i1
-        if self.mode == OPCODE_INSERT:
-            self.line -= 1
-            self.nb_lines = 1
-        else:
-            assert i2 > i1
-            self.nb_lines = i2 - i1 + 1
+        self.is_new = True
 
     def build_extra_identifiers(self):
         '''
         Used to compare with same-class issues
         '''
         return {
-            'mode': self.mode,
+            'nb_lines': self.nb_lines,
         }
 
     def __str__(self):
-        return 'clang-format issue {} {} line {}-{}'.format(
+        return 'clang-format issue {} line {}-{}'.format(
             self.path,
-            self.mode,
             self.line,
             self.nb_lines,
         )
@@ -182,22 +136,7 @@ class ClangFormatIssue(Issue):
         Build the text body published on reporters
         According to diff mode
         '''
-        out = 'Warning: Incorrect coding style [clang-format]\n'
-        if self.mode == OPCODE_REPLACE:
-            out += 'Replace by:\n\n```\n{}\n```\n'.format(self.new)
-
-        elif self.mode == OPCODE_INSERT:
-            out += 'Insert at this line:\n\n```\n{}\n```\n'.format(self.new)
-
-        elif self.mode == OPCODE_DELETE:
-            if self.nb_lines > 1:
-                out += 'Delete these {} lines.'.format(self.nb_lines)
-            out += 'Delete this line.'
-
-        else:
-            raise Exception('Unsupported mode')
-
-        return out
+        return 'Warning: Incorrect coding style [clang-format]'
 
     def as_markdown(self):
         '''
@@ -205,49 +144,15 @@ class ClangFormatIssue(Issue):
         '''
         return ISSUE_MARKDOWN.format(
             path=self.path,
-            mode=self.mode,
             line=self.line,
             nb_lines=self.nb_lines,
             is_new='yes' if self.is_new else 'no',
-            old=self.old,
-            new=self.new,
         )
 
     def as_diff(self):
         '''
-        Build the standard diff output
+        No diff available
         '''
-        def _prefix_lines(content, char):
-            return '\n'.join([
-                '{} {}'.format(char, line)
-                for line in content.split('\n')
-            ])
-
-        i1, i2, j1, j2 = self.positions
-        if self.mode == OPCODE_REPLACE:
-            patch = [
-                '{},{}c{},{}'.format(i1, i2, j1, j2),
-                _prefix_lines(self.old, '<'),
-                '---',
-                _prefix_lines(self.new, '>')
-            ]
-
-        elif self.mode == OPCODE_INSERT:
-            patch = [
-                '{}a{},{}'.format(i1, j1, j2),
-                _prefix_lines(self.new, '>'),
-            ]
-
-        elif self.mode == OPCODE_DELETE:
-            patch = [
-                '{},{}d{},{}'.format(i1, i2, j1, j2),
-                _prefix_lines(self.old, '<'),
-            ]
-
-        else:
-            raise Exception('Invalid mode')
-
-        return '\n'.join(patch) + '\n'
 
     def as_dict(self):
         '''
@@ -255,13 +160,9 @@ class ClangFormatIssue(Issue):
         '''
         return {
             'analyzer': 'clang-format',
-            'mode': self.mode,
             'path': self.path,
             'line': self.line,
             'nb_lines': self.nb_lines,
-            'old_lines': self.old,
-            'new_lines': self.new,
-            'diff': self.as_diff(),
             'validation': {
             },
             'in_patch': self.revision.contains(self),

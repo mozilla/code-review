@@ -29,6 +29,9 @@ def test_phabricator(mock_phabricator, mock_repository, mock_config):
     test_txt = os.path.join(mock_config.repo_dir, 'test.txt')
     assert open(test_txt).read() == 'Hello World\n'
 
+    # Cleanup the repo
+    mock_repository.update(clean=True)
+
     # Load full patch
     # Mock the mercurial repo update as we use a dummy revision
     assert r.patch is None
