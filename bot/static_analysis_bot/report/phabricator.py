@@ -19,9 +19,13 @@ class PhabricatorReporter(Reporter):
     '''
     API connector to report on Phabricator
     '''
-    def __init__(self, *args, **kwargs):
+    def __init__(self, configuration={}, *args, **kwargs):
         if kwargs.get('api') is not None:
             self.setup_api(kwargs['api'])
+
+        self.analyzers = configuration.get('analyzers')
+        assert self.analyzers is not None, \
+            'No analyzers setup on Phabricator reporter'
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
@@ -34,14 +38,20 @@ class PhabricatorReporter(Reporter):
         '''
         if not isinstance(revision, PhabricatorRevision):
             logger.info('Phabricator reporter only publishes Phabricator revisions. Skipping.')
-            return
+            return None, None
 
         # Load existing comments for this revision
         existing_comments = self.api.list_comments(revision.phid)
         logger.info('Found {} existing comments on review'.format(len(existing_comments)))
 
-        # Use only publishable issues
-        issues = list(filter(lambda i: i.is_publishable(), issues))
+        # Use only publishable issues and patches
+        issues = list(filter(lambda i: i.is_publishable() and i.ANALYZER in self.analyzers, issues))
+        patches = {
+            analyzer: url
+            for analyzer, url in revision.improvement_patches.items()
+            if analyzer in self.analyzers
+        }
+
         if issues:
 
             # First publish inlines as drafts
@@ -59,7 +69,7 @@ class PhabricatorReporter(Reporter):
                 revision.id,
                 self.build_comment(
                     issues=issues,
-                    patches=revision.improvement_patches,
+                    patches=patches,
                     bug_report_url=BUG_REPORT_URL,
                 ),
             )
@@ -70,6 +80,8 @@ class PhabricatorReporter(Reporter):
         else:
             # TODO: Publish a validated comment ?
             logger.info('No issues to publish on phabricator')
+
+        return issues, patches
 
     def comment_inline(self, revision, issue, existing_comments=[]):
         '''

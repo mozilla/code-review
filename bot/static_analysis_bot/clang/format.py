@@ -6,6 +6,7 @@ import hglib
 from parsepatch.patch import Patch
 
 from cli_common.log import get_logger
+from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
@@ -108,6 +109,8 @@ class ClangFormatIssue(Issue):
     '''
     An issue created by the Clang Format tool
     '''
+    ANALYZER = CLANG_FORMAT
+
     def __init__(self, path, line, nb_lines, revision):
         self.path = path
         self.line = line

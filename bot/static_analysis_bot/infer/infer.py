@@ -9,6 +9,7 @@ import subprocess
 
 from cli_common.command import run_check
 from cli_common.log import get_logger
+from static_analysis_bot import INFER
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
@@ -119,6 +120,8 @@ class InferIssue(Issue):
     '''
     An issue reported by infer
     '''
+    ANALYZER = INFER
+
     def __init__(self, entry, revision):
         assert isinstance(entry, dict)
         assert not settings.repo_dir.endswith('/')

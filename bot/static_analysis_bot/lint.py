@@ -5,6 +5,7 @@ import os
 
 from cli_common.command import run
 from cli_common.log import get_logger
+from static_analysis_bot import MOZLINT
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
@@ -31,6 +32,8 @@ ISSUE_MARKDOWN = '''
 
 
 class MozLintIssue(Issue):
+    ANALYZER = MOZLINT
+
     def __init__(self, path, column, level, lineno, linter, message, rule, revision, **kwargs):
         self.nb_lines = 1
         self.column = column

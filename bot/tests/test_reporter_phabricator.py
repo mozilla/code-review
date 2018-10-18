@@ -4,8 +4,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import json
+import os
+import unittest
 import urllib
 
+import pytest
 import responses
 
 VALID_CLANG_TIDY_MESSAGE = '''
@@ -72,13 +75,15 @@ def test_phabricator_clang_tidy(mock_repository, mock_phabricator):
             # Add dummy lines diff
             'test.cpp': [41, 42, 43],
         }
-        reporter = PhabricatorReporter(api=api)
+        reporter = PhabricatorReporter({'analyzers': ['clang-tidy']}, api=api)
 
     issue_parts = ('test.cpp', '42', '51', 'error', 'dummy message', 'modernize-use-nullptr')
     issue = ClangTidyIssue(issue_parts, revision)
     assert issue.is_publishable()
 
-    reporter.publish([issue, ], revision)
+    issues, patches = reporter.publish([issue, ], revision)
+    assert len(issues) == 1
+    assert len(patches) == 0
 
     # Check the callback has been used
     assert len(responses.calls) > 0
@@ -123,7 +128,7 @@ def test_phabricator_clang_format(mock_repository, mock_phabricator):
             # Add dummy lines diff
             'test.cpp': [41, 42, 43],
         }
-        reporter = PhabricatorReporter(api=api)
+        reporter = PhabricatorReporter({'analyzers': ['clang-format']}, api=api)
 
     issue = ClangFormatIssue('test.cpp', 42, 1, revision)
     assert issue.is_publishable()
@@ -132,10 +137,115 @@ def test_phabricator_clang_format(mock_repository, mock_phabricator):
         'clang-format': 'https://diff.url'
     }
 
-    reporter.publish([issue, ], revision)
+    issues, patches = reporter.publish([issue, ], revision)
+    assert len(issues) == 1
+    assert len(patches) == 1
 
     # Check the callback has been used
     assert len(responses.calls) > 0
     call = responses.calls[-1]
     assert call.request.url == 'http://phabricator.test/api/differential.createcomment'
     assert call.response.headers.get('unittest') == 'clang-format'
+
+
+@responses.activate
+def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
+    '''
+    Test analyzers filtering on phabricator reporter
+    '''
+    from static_analysis_bot.report.phabricator import PhabricatorReporter
+    from static_analysis_bot.revisions import PhabricatorRevision
+    from static_analysis_bot.clang.format import ClangFormatIssue
+    from static_analysis_bot.infer.infer import InferIssue
+    from static_analysis_bot.clang.tidy import ClangTidyIssue
+    from static_analysis_bot.lint import MozLintIssue
+
+    # needed by Mozlint issue
+    with open(os.path.join(mock_config.repo_dir, 'test.cpp'), 'w') as f:
+        f.write('empty')
+
+    def _test_reporter(api, analyzers):
+        # Always use the same setup, only varies the analyzers
+        revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
+        revision.lines = {
+            'test.cpp': [41, 42, 43],
+        }
+        reporter = PhabricatorReporter({'analyzers': analyzers}, api=api)
+
+        issues = [
+            ClangFormatIssue('test.cpp', 42, 1, revision),
+            ClangTidyIssue(('test.cpp', '42', '51', 'error', 'dummy message', 'modernize-use-nullptr'), revision),
+            InferIssue({
+                'file': 'test.cpp',
+                'line': 42,
+                'column': 1,
+                'bug_type': 'dummy',
+                'kind': 'whatever',
+                'qualifier': 'dummy message.',
+            }, revision),
+            MozLintIssue('test.cpp', 1, 'danger', 42, 'flake8', 'Python error', 'EXXX', revision),
+        ]
+
+        assert all(i.is_publishable() for i in issues)
+
+        revision.improvement_patches = {
+            'dummy': 'not gonna work',
+            'clang-format': 'https://diff.url/clang-format',
+            'clang-tidy': 'https://diff.url/clang-tidy',
+            'mozlint': 'https://diff.url/mozlint',
+            'infer': 'https://diff.url/infer',
+        }
+
+        return reporter.publish(issues, revision)
+
+    # Use same instance of api
+    with mock_phabricator as api:
+
+        # Skip commenting on phabricator
+        # we only care about filtering issues
+        api.comment = unittest.mock.Mock(return_value=True)
+
+        # No analyzers at all
+        with pytest.raises(AssertionError):
+            _test_reporter(api, None)
+
+        # Only clang-tidy
+        issues, patches = _test_reporter(api, ['clang-tidy'])
+        assert len(issues) == 1
+        assert len(patches) == 1
+        assert 'clang-tidy' in patches
+
+        # Only clang-format
+        issues, patches = _test_reporter(api, ['clang-format'])
+        assert len(issues) == 1
+        assert len(patches) == 1
+        assert 'clang-format' in patches
+
+        # Only infer
+        issues, patches = _test_reporter(api, ['infer'])
+        assert len(issues) == 1
+        assert len(patches) == 1
+        assert 'infer' in patches
+
+        # Only mozlint
+        issues, patches = _test_reporter(api, ['mozlint'])
+        assert len(issues) == 1
+        assert len(patches) == 1
+        assert 'mozlint' in patches
+
+        # clang-format + clang-tidy
+        issues, patches = _test_reporter(api, ['clang-tidy', 'clang-format'])
+        assert len(issues) == 2
+        assert len(patches) == 2
+        assert 'clang-format' in patches
+        assert 'clang-tidy' in patches
+
+        # All of them
+        issues, patches = _test_reporter(api, ['clang-tidy', 'clang-format', 'infer', 'mozlint'])
+        assert len(issues) == 4
+        assert len(patches) == 4
+        assert 'clang-format' in patches
+        assert 'clang-tidy' in patches
+        assert 'infer' in patches
+        assert 'mozlint' in patches
+        assert 'dummy' not in patches
