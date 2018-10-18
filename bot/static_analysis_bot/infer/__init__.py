@@ -99,7 +99,16 @@ class AndroidConfig():
         os.environ['MOZCONFIG'] = self.__android_mozconfig
         subprocess.run(['chmod', 'u+w', self.__android_mozconfig])
         with open(self.__android_mozconfig, 'a') as f:
-            f.write(ANDROID_MOZCONFIG.format(mozbuild='/tmp/mozilla-state'))
+            f.write(ANDROID_MOZCONFIG.format(
+                mozbuild=os.environ['MOZBUILD_STATE_PATH']))
+
+        # set GRADLE_USER_HOME as it is needed for Gradle to use sane paths.
+        gradle_home_dir = os.path.join(
+            os.environ['MOZBUILD_STATE_PATH'], 'gradle')
+        if not os.path.exists(gradle_home_dir):
+            os.makedirs(gradle_home_dir)
+        logger.info('Setting GRADLE_USER_HOME to {}.'.format(gradle_home_dir))
+        os.environ['GRADLE_USER_HOME'] = gradle_home_dir
 
     def __exit__(self, type, value, traceback):
         os.environ['MOZCONFIG'] = self.__old_config
