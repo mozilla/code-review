@@ -8,6 +8,28 @@ import json
 import pytest
 import responses
 
+MAIL_CONTENT = '''
+# Found 3 publishable issues (5 total)
+
+* **MockIssue**: 3 publishable (5 total)
+
+Review Url: https://phabricator.test/D51
+
+## Improvement patches:
+
+* Improvement patch from clang-tidy : https://my.patch/clang-tidy.diff
+* Improvement patch from clang-format : https://another.patch/clang-format.diff
+
+This is the mock issue n°0
+
+This is the mock issue n°1
+
+This is the mock issue n°2
+
+This is the mock issue n°3
+
+This is the mock issue n°4'''
+
 
 @responses.activate
 def test_conf(mock_config):
@@ -63,7 +85,7 @@ def test_mail(mock_issues, mock_phabricator):
         )
         assert payload['address'] == 'test@mozilla.com'
         assert payload['template'] == 'fullscreen'
-        assert payload['content'].startswith('\n# Found 3 publishable issues (5 total)')
+        assert payload['content'] == MAIL_CONTENT
 
         return (200, {}, '')  # ack
 
@@ -84,6 +106,10 @@ def test_mail(mock_issues, mock_phabricator):
 
     with mock_phabricator as api:
         prev = PhabricatorRevision('PHID-DIFF-test', api)
+        prev.improvement_patches = {
+            'clang-tidy': 'https://my.patch/clang-tidy.diff',
+            'clang-format': 'https://another.patch/clang-format.diff',
+        }
         r.publish(mock_issues, prev)
 
     # Check stats

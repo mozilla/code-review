@@ -36,10 +36,11 @@ class Revision(object):
     '''
     A common DCM revision
     '''
-    files = []
-    lines = {}
-    patch = None
-    diff_url = None
+    def __init__(self):
+        self.files = []
+        self.lines = {}
+        self.patch = None
+        self.improvement_patches = {}
 
     def analyze_patch(self):
         '''
@@ -108,6 +109,24 @@ class Revision(object):
 
         return any(_is_infer(f) for f in self.files)
 
+    def add_improvement_patch(self, analyzer_name, content):
+        '''
+        Save an improvement patch, and make it available
+        as a Taskcluster artifact
+        '''
+        assert isinstance(content, str)
+        assert len(content) > 0
+
+        # Build name from analyzer and revision
+        diff_name = '{}-{}.diff'.format(analyzer_name, repr(self))
+        diff_path = os.path.join(settings.taskcluster.results_dir, diff_name)
+        with open(diff_path, 'w') as f:
+            length = f.write(content)
+            logger.info('Improvement patch saved', path=diff_path, length=length)
+
+        # Build diff download url
+        self.improvement_patches[analyzer_name] = settings.build_artifact_url(diff_path)
+
 
 class PhabricatorRevision(Revision):
     '''
@@ -116,6 +135,7 @@ class PhabricatorRevision(Revision):
     regex = re.compile(r'^(PHID-DIFF-(?:\w+))$')
 
     def __init__(self, description, api):
+        super().__init__()
         assert isinstance(api, PhabricatorAPI)
         self.api = api
 

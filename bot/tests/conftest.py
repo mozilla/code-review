@@ -92,7 +92,7 @@ def mock_issues():
             self.nb = nb
 
         def as_markdown(self):
-            return str(self.nb)
+            return 'This is the mock issue n°{}'.format(self.nb)
 
         def as_text(self):
             return str(self.nb)

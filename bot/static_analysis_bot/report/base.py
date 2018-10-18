@@ -39,7 +39,7 @@ BUG_REPORT = '''
 If you see a problem in this automated review, please report it here: {bug_report_url}
 '''
 COMMENT_DIFF_DOWNLOAD = '''
-For your convenience, here is a patch that fixes all the clang-format defects: {url} (use it in your repository with `hg import` or `git apply`)
+For your convenience, here is a patch that fixes all the {analyzer} defects: {url} (use it in your repository with `hg import` or `git apply`)
 '''
 
 
@@ -54,7 +54,7 @@ class Reporter(object):
         '''
         raise NotImplementedError
 
-    def publish(self, issues, revision, diff_url):
+    def publish(self, issues, revision):
         '''
         Publish a new report
         '''
@@ -99,7 +99,7 @@ class Reporter(object):
             for cls, items in groups
         ])
 
-    def build_comment(self, issues, bug_report_url, diff_url=None, max_comments=None):
+    def build_comment(self, issues, bug_report_url, patches={}, max_comments=None):
         '''
         Build a human readable comment about published issues
         '''
@@ -135,9 +135,10 @@ class Reporter(object):
             defects='\n'.join(defects),
             analyzers='\n'.join(analyzers),
         )
-        if ClangFormatIssue in stats and diff_url is not None:
+        for analyzer, url in patches.items():
             comment += COMMENT_DIFF_DOWNLOAD.format(
-                url=diff_url,
+                analyzer=analyzer,
+                url=url,
             )
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 

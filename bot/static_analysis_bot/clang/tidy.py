@@ -116,7 +116,7 @@ class ClangTidy(object):
 
         # Dump raw clang-tidy output as a Taskcluster artifact (for debugging)
         clang_output_path = os.path.join(
-            settings.taskcluster_results_dir,
+            settings.taskcluster.results_dir,
             '{}-clang-tidy.txt'.format(repr(revision)),
         )
         with open(clang_output_path, 'w') as f:
@@ -332,11 +332,6 @@ class ClangTidyIssue(Issue):
                 ) for n in self.notes
             ]),
         )
-
-    def as_diff(self):
-        '''
-        No diff available
-        '''
 
     def as_dict(self):
         '''

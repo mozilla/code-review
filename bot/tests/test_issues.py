@@ -13,9 +13,6 @@ class DummyIssue(Issue):
         for k, v in kwargs.items():
             setattr(self, k, v)
 
-    def as_diff(self):
-        pass
-
     def as_markdown(self):
         return 'empty'
 

@@ -131,13 +131,6 @@ class Issue(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def as_diff(self):
-        '''
-        Build the ED compatible diff to build an improvement patch
-        '''
-        raise NotImplementedError
-
-    @abc.abstractmethod
     def as_dict(self):
         '''
         Build the serializable dict representation of the issue

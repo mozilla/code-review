@@ -87,7 +87,7 @@ class Infer(object):
 
         # Dump raw infer output as a Taskcluster artifact (for debugging)
         infer_output_path = os.path.join(
-            settings.taskcluster_results_dir,
+            settings.taskcluster.results_dir,
             '{}-infer.txt'.format(repr(revision)),
         )
         with open(infer_output_path, 'w') as f:
@@ -177,11 +177,6 @@ class InferIssue(Issue):
             publishable='yes' if self.is_publishable() else 'no',
             is_new='yes' if self.is_new else 'no'
         )
-
-    def as_diff(self):
-        '''
-        No diff available
-        '''
 
     def as_dict(self):
         '''

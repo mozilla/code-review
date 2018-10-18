@@ -117,11 +117,6 @@ class MozLintIssue(Issue):
             is_new=self.is_new and 'yes' or 'no',
         )
 
-    def as_diff(self):
-        '''
-        No diff available
-        '''
-
     def as_dict(self):
         '''
         Outputs all available information into a serializable dict
@@ -197,7 +192,7 @@ class MozLint(object):
 
         # Dump raw mozlint output as a Taskcluster artifact (for debugging)
         output_path = os.path.join(
-            settings.taskcluster_results_dir,
+            settings.taskcluster.results_dir,
             '{}-mozlint.txt'.format(repr(revision)),
         )
         with open(output_path, 'a') as f:

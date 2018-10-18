@@ -59,7 +59,7 @@ class PhabricatorReporter(Reporter):
                 revision.id,
                 self.build_comment(
                     issues=issues,
-                    diff_url=revision.diff_url,
+                    patches=revision.improvement_patches,
                     bug_report_url=BUG_REPORT_URL,
                 ),
             )

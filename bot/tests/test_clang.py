@@ -100,15 +100,13 @@ def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock
     assert issue.path == 'bad.cpp'
     assert issue.line == 2
     assert issue.nb_lines == 2
-    assert issue.as_diff() is None
 
     # At the end of the process, original file is patched
-    mock_workflow.build_improvement_patch(mock_revision, set(issues))
     assert open(bad_file).read() == BAD_CPP_VALID
 
     # Ensure the raw output dump exists
     clang_output_path = os.path.join(
-        settings.taskcluster_results_dir,
+        settings.taskcluster.results_dir,
         '{}-clang-format.txt'.format(repr(mock_revision)),
     )
     assert os.path.isfile(clang_output_path)
@@ -162,7 +160,7 @@ def test_clang_tidy(mock_repository, mock_config, mock_clang, mock_stats, mock_r
 
     # Ensure the raw output dump exists
     clang_output_path = os.path.join(
-        settings.taskcluster_results_dir,
+        settings.taskcluster.results_dir,
         '{}-clang-tidy.txt'.format(repr(mock_revision)),
     )
     assert os.path.isfile(clang_output_path)

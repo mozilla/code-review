@@ -5,6 +5,7 @@
 
 from __future__ import absolute_import
 
+import collections
 import enum
 import os
 import tempfile
@@ -18,10 +19,11 @@ PROJECT_NAME = 'static-analysis-bot'
 CONFIG_URL = 'https://hg.mozilla.org/mozilla-central/raw-file/tip/tools/clang-tidy/config.yaml'
 REPO_CENTRAL = b'https://hg.mozilla.org/mozilla-central'
 REPO_UNIFIED = b'https://hg.mozilla.org/mozilla-unified'
-ARTIFACT_URL = 'https://queue.taskcluster.net/v1/task/{task_id}/runs/{run_id}/artifacts/public/results/{diff_name}'
 
 
 logger = get_logger(__name__)
+
+TaskCluster = collections.namedtuple('TaskCluster', 'results_dir, task_id, run_id, local')
 
 
 class Publication(enum.Enum):
@@ -44,7 +46,7 @@ class Settings(object):
         self.cache_root = None
         self.repo_dir = None
         self.repo_shared_dir = None
-        self.taskcluster_results_dir = None
+        self.taskcluster = None
 
     def setup(self, app_channel, cache_root, publication):
         self.app_channel = app_channel
@@ -66,12 +68,13 @@ class Settings(object):
         self.repo_dir = os.path.join(self.cache_root, 'sa-unified')
         self.repo_shared_dir = os.path.join(self.cache_root, 'sa-unified-shared')
 
+        # Save Taskcluster ID for logging
         if 'TASK_ID' in os.environ and 'RUN_ID' in os.environ:
-            self.taskcluster_results_dir = '/tmp/results'
+            self.taskcluster = TaskCluster('/tmp/results', os.environ['TASK_ID'], os.environ['RUN_ID'], False)
         else:
-            self.taskcluster_results_dir = tempfile.mkdtemp()
-        if not os.path.isdir(self.taskcluster_results_dir):
-            os.makedirs(self.taskcluster_results_dir)
+            self.taskcluster = TaskCluster(tempfile.mkdtemp(), 'local instance', 0, True)
+        if not os.path.isdir(self.taskcluster.results_dir):
+            os.makedirs(self.taskcluster.results_dir)
 
     def __getattr__(self, key):
         if key not in self.config:
@@ -115,6 +118,18 @@ class Settings(object):
                 return c.get('publish', True)
 
         return False
+
+    def build_artifact_url(self, path):
+        '''
+        Build an url for a file in the results dir
+        '''
+        assert path.startswith(self.taskcluster.results_dir), \
+            'Path is not the artifact results dir'
+        return 'https://queue.taskcluster.net/v1/task/{}/runs/{}/artifacts/public/results/{}'.format(
+            self.taskcluster.task_id,
+            self.taskcluster.run_id,
+            path[len(self.taskcluster.results_dir)+1:],
+        )
 
 
 # Shared instance

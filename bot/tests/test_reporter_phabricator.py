@@ -58,7 +58,7 @@ def test_phabricator_clang_tidy(mock_repository, mock_phabricator):
             'error_code': None,
             'result': None,
         }
-        return 201, {'Content-Type': 'application/json'}, json.dumps(resp)
+        return 201, {'Content-Type': 'application/json', 'unittest': 'clang-tidy'}, json.dumps(resp)
 
     responses.add_callback(
         responses.POST,
@@ -79,6 +79,12 @@ def test_phabricator_clang_tidy(mock_repository, mock_phabricator):
     assert issue.is_publishable()
 
     reporter.publish([issue, ], revision)
+
+    # Check the callback has been used
+    assert len(responses.calls) > 0
+    call = responses.calls[-1]
+    assert call.request.url == 'http://phabricator.test/api/differential.createcomment'
+    assert call.response.headers.get('unittest') == 'clang-tidy'
 
 
 @responses.activate
@@ -103,7 +109,7 @@ def test_phabricator_clang_format(mock_repository, mock_phabricator):
             'error_code': None,
             'result': None,
         }
-        return 201, {'Content-Type': 'application/json'}, json.dumps(resp)
+        return 201, {'Content-Type': 'application/json', 'unittest': 'clang-format'}, json.dumps(resp)
 
     responses.add_callback(
         responses.POST,
@@ -122,6 +128,14 @@ def test_phabricator_clang_format(mock_repository, mock_phabricator):
     issue = ClangFormatIssue('test.cpp', 42, 1, revision)
     assert issue.is_publishable()
 
-    revision.diff_url = 'https://diff.url'
+    revision.improvement_patches = {
+        'clang-format': 'https://diff.url'
+    }
 
     reporter.publish([issue, ], revision)
+
+    # Check the callback has been used
+    assert len(responses.calls) > 0
+    call = responses.calls[-1]
+    assert call.request.url == 'http://phabricator.test/api/differential.createcomment'
+    assert call.response.headers.get('unittest') == 'clang-format'
