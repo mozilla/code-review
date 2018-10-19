@@ -40,7 +40,6 @@ class ClangFormat(object):
         assert isinstance(revision, Revision)
 
         # Commit the current revision for `./mach clang-format` to reformat its changes
-
         cmd = [
             'gecko-env',
             './mach', '--log-no-times', 'clang-format',
@@ -63,7 +62,7 @@ class ClangFormat(object):
         self.diff = client.diff(unified=8).decode('utf-8')
 
         if not self.diff:
-            return [], None
+            return []
 
         # Generate a reverse diff for `parsepatch` (in order to get original
         # line numbers from the dev's patch instead of new line numbers)
