@@ -35,6 +35,11 @@ void assignment() {
 int *ret_ptr() {
   return 0;
 }
+
+void test(){
+    int x;
+    x = 1;
+}
 '''
 
 
@@ -150,13 +155,19 @@ def test_clang_tidy(mock_repository, mock_config, mock_clang, mock_stats, mock_r
         'bad.cpp': range(len(BAD_CPP_TIDY.split('\n'))),
     }
     issues = ct.run(mock_revision)
-    assert len(issues) == 2
+    assert len(issues) == 3
     assert isinstance(issues[0], ClangTidyIssue)
     assert issues[0].check == 'modernize-use-nullptr'
+    assert issues[0].reason == 'Modernize our code base to C++11'
     assert issues[0].line == 3
     assert isinstance(issues[1], ClangTidyIssue)
     assert issues[1].check == 'modernize-use-nullptr'
+    assert issues[1].reason == 'Modernize our code base to C++11'
     assert issues[1].line == 8
+    assert isinstance(issues[2], ClangTidyIssue)
+    assert issues[2].check == 'clang-analyzer-deadcode.DeadStores'
+    assert issues[2].reason is None
+    assert issues[2].line == 13
 
     # Ensure the raw output dump exists
     clang_output_path = os.path.join(
@@ -169,11 +180,11 @@ def test_clang_tidy(mock_repository, mock_config, mock_clang, mock_stats, mock_r
     mock_stats.flush()
     metrics = mock_stats.get_metrics('issues.clang-tidy')
     assert len(metrics) == 1
-    assert metrics[0][1] == 2
+    assert metrics[0][1] == 3
 
     metrics = mock_stats.get_metrics('issues.clang-tidy.publishable')
     assert len(metrics) == 1
-    assert metrics[0][1] == 2
+    assert metrics[0][1] == 3
 
     metrics = mock_stats.get_metrics('runtime.clang-tidy.avg')
     assert len(metrics) == 1

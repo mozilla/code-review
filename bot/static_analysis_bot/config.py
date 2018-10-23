@@ -106,18 +106,26 @@ class Settings(object):
         if check is None:
             return False
 
+        clang_check = self.get_clang_check(check)
+        return clang_check.get('publish', True) if clang_check else False
+
+    def get_clang_check(self, check):
+
+        if check is None:
+            return None
+
         for c in self.clang_checkers:
             name = c['name']
 
             if name.endswith('*') and check.startswith(name[:-1]):
                 # Wildcard at end of check name
-                return c.get('publish', True)
+                return c
 
             elif name == check:
                 # Same exact check name
-                return c.get('publish', True)
+                return c
 
-        return False
+        return None
 
     def build_artifact_url(self, path):
         '''

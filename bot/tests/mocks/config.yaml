@@ -9,5 +9,6 @@ clang_checkers:
    publish: !!bool no
  - name: modernize-use-nullptr
    publish: !!bool yes
+   reason: "Modernize our code base to C++11"
 
 third_party: 3rdparty.txt

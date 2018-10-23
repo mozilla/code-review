@@ -247,6 +247,11 @@ class ClangTidyIssue(Issue):
         self.body = None
         self.notes = []
 
+        self.reason = None
+        check = settings.get_clang_check(self.check)
+        if check is not None:
+            self.reason = check.get('reason')
+
     def __str__(self):
         return '[{}] {} {} {}:{}'.format(self.type, self.check, self.path, self.line, self.char)
 
@@ -311,6 +316,8 @@ class ClangTidyIssue(Issue):
         # Always add body as it's been cleaned up
         if self.body:
             body += '\n```\n{}\n```'.format(self.body)
+        if self.reason:
+            body += '\n{}'.format(self.reason)
 
         return body
 
@@ -320,6 +327,7 @@ class ClangTidyIssue(Issue):
             message=self.message,
             location='{}:{}:{}'.format(self.path, self.line, self.char),
             body=self.body,
+            reason=self.reason,
             check=self.check,
             in_patch='yes' if self.revision.contains(self) else 'no',
             third_party='yes' if self.is_third_party() else 'no',
@@ -350,6 +358,7 @@ class ClangTidyIssue(Issue):
             'type': self.type,
             'message': self.message,
             'body': self.body,
+            'reason': self.reason,
             'notes': [note.as_dict() for note in self.notes],
             'validation': {
                 'publishable_check': self.has_publishable_check(),
