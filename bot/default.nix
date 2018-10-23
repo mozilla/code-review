@@ -4,7 +4,7 @@
 let
 
   inherit (releng_pkgs.lib) mkTaskclusterHook mkTaskclusterMergeEnv mkTaskclusterMergeRoutes mkPython fromRequirementsFile filterSource ;
-  inherit (releng_pkgs.pkgs) writeScript gcc cacert gcc-unwrapped glibc glibcLocales xorg patch nodejs-8_x git python27 python36 coreutils clang_5 zlib shellcheck;
+  inherit (releng_pkgs.pkgs) writeScript gcc cacert gcc-unwrapped glibc glibcLocales xorg patch nodejs-8_x git python27 python36 coreutils clang_5 zlib shellcheck tzdata;
   inherit (releng_pkgs.pkgs.lib) fileContents concatStringsSep ;
   inherit (releng_pkgs.tools) pypi2nix mercurial;
 
@@ -106,6 +106,7 @@ let
         gcc
         patch
         shellcheck
+        tzdata
 
         # Needed for linters
         nodejs
@@ -115,9 +116,10 @@ let
       ] ++
       (fromRequirementsFile ./requirements.txt python.packages);
     postInstall = ''
+      mkdir -p $out/etc
       mkdir -p $out/tmp
       mkdir -p $out/bin
-      mkdir -p $out/usr/bin
+      mkdir -p $out/usr/bin $out/usr/share
       mkdir -p $out/lib64
       ln -s ${mercurial}/bin/hg $out/bin
       ln -s ${patch}/bin/patch $out/bin
@@ -141,6 +143,11 @@ let
 
       # Expose gecko env in final output
       ln -s ${gecko-env}/bin/gecko-env $out/bin
+
+      # Use UTC as timezone
+      ln -s ${tzdata}/share/zoneinfo/UTC $out/etc/localtime
+      ln -s ${tzdata}/share/zoneinfo $out/usr/share
+      echo UTC > $out/etc/timezone
     '';
     shellHook = ''
       export PATH="${mercurial}/bin:${git}/bin:${python27}/bin:${python36}/bin:${nodejs}/bin:$PATH"
