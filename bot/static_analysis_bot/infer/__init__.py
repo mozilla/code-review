@@ -27,6 +27,12 @@ ac_add_options --target=arm-linux-androideabi
 ac_add_options --with-android-sdk="{mozbuild}/android-sdk-linux/android-sdk-linux"
 ac_add_options --with-android-ndk="{mozbuild}/android-ndk/android-ndk"'''
 
+GRADLE_PROPERTIES = '''
+// Per https://docs.gradle.org/current/userguide/build_environment.html, this
+// overrides the gradle.properties in topsrcdir.
+org.gradle.daemon=false
+'''
+
 
 def setup(index, job_name='linux64-infer', revision='latest',
           artifact='public/build/infer.tar.xz'):
@@ -109,6 +115,10 @@ class AndroidConfig():
             os.makedirs(gradle_home_dir)
         logger.info('Setting GRADLE_USER_HOME to {}.'.format(gradle_home_dir))
         os.environ['GRADLE_USER_HOME'] = gradle_home_dir
+
+        # Create the gradle.properties file and add the necessary flags
+        with open(os.path.join(gradle_home_dir, 'gradle.properties'), 'a') as f:
+            f.write(GRADLE_PROPERTIES)
 
     def __exit__(self, type, value, traceback):
         os.environ['MOZCONFIG'] = self.__old_config
