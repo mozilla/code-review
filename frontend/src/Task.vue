@@ -109,10 +109,11 @@ export default {
             <td>
               <span v-if="issue.analyzer == 'mozlint'">{{ issue.rule }}</span>
               <span v-if="issue.analyzer == 'clang-tidy'">{{ issue.check }}</span>
+              <span v-if="issue.analyzer == 'infer'">{{ issue.bug_type }}</span>
             </td>
             <td>
-              <span v-if="issue.level == 'error' || issue.type == 'error'" class="tag is-danger">Error</span>
-              <span v-if="issue.level == 'warning' || issue.type == 'warning'" class="tag is-warning">Warning</span>
+              <span v-if="issue.level == 'error' || issue.type == 'error' || issue.kind == 'ERROR'" class="tag is-danger">Error</span>
+              <span v-if="issue.level == 'warning' || issue.type == 'warning' || issue.kind == 'WARNING'" class="tag is-warning">Warning</span>
             </td>
             <td>
               {{ issue.message }}
