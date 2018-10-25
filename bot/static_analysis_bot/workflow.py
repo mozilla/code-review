@@ -185,7 +185,7 @@ class Workflow(object):
                 else:
                     logger.info('Skip infer')
 
-            if not (revision.has_clang_files or revision.has_clang_files):
+            if not (revision.has_clang_files or revision.has_infer_files):
                 logger.info('No clang or java files detected, skipping mach, infer and clang-*')
 
             # Setup python environment
