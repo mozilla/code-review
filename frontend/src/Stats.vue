@@ -1,5 +1,6 @@
 <script>
 import mixins from './mixins.js'
+import Progress from './Progress.vue'
 
 export default {
   mixins: [
@@ -10,6 +11,10 @@ export default {
     return {
       sort: 'published'
     }
+  },
+  components: { Progress },
+  mounted () {
+    this.$store.dispatch('calc_stats')
   },
   computed: {
     checks () {
@@ -40,15 +45,9 @@ export default {
 
 <template>
   <div>
-    <h1 class="title">Statistics</h1>
-    <h2 class="subtitle" v-if="stats && stats.ids">
-      <span>Loaded {{ stats.loaded }}/{{ stats.ids.length }} tasks with issues</span>
-      <span v-if="stats && stats.start_date" :title="stats.start_date">, since {{ stats.start_date|since }} ago</span>
-    </h2>
+    <Progress name="Statistics" />
 
     <div v-if="stats">
-      <progress class="progress is-info" :class="{'is-info': progress < 100, 'is-success': progress >= 100}" :value="progress" max="100">{{ progress }}%</progress>
-
       <table class="table is-fullwidth" v-if="checks">
         <thead>
           <tr>

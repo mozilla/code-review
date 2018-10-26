@@ -13,8 +13,14 @@ export default new Vuex.Store({
   state: {
     channel: 'production',
     tasks: [],
-    report: null,
-    stats: null,
+    indexes: [],
+    stats: {
+      loaded: 0,
+      errors: 0,
+      ids: [],
+      checks: {},
+      start_date: new Date()
+    },
     states: null
   },
   mutations: {
@@ -36,31 +42,26 @@ export default new Vuex.Store({
     },
     use_channel (state, channel) {
       state.channel = channel
-      state.stats = null
-      state.report = null
-      this.commit('save_preferences')
-    },
-    reset_tasks (state) {
-      state.tasks = []
-    },
-    reset_stats (state) {
-      // List all active tasks Ids
-      var ids =
-        state.tasks
-          .filter((task) => task.data.state === 'done' && task.data.issues > 0)
-          .map(t => t.taskId)
 
+      // Reset state
+      state.tasks = []
+      state.indexes = []
       state.stats = {
         loaded: 0,
-        ids: ids,
+        errors: 0,
+        ids: [],
         checks: {},
         start_date: new Date()
       }
+      this.commit('save_preferences')
     },
-    use_tasks (state, tasks) {
+    use_tasks (state, payload) {
+      // Save url
+      state.indexes.push(payload.url)
+
       // Filter tasks without extra data
       let currentTasks = state.tasks.concat(
-        tasks.filter(task => task.data.indexed !== undefined)
+        payload.tasks.filter(task => task.data.indexed !== undefined)
       )
 
       // Add a descriptive state key name to tasks
@@ -100,17 +101,42 @@ export default new Vuex.Store({
           'percent': currentTasks && currentTasks.length > 0 ? Math.round(nb * 100 / currentTasks.length) : 0
         }
       }).sort((x, y) => { return y.nb - x.nb })
+
+      // List all active tasks Ids for stats calculations
+      state.stats.ids = state.stats.ids.concat(
+        payload.tasks
+          .filter((task) => task.data.state === 'done' && task.data.issues > 0)
+          .map(t => t.taskId)
+      )
     },
     use_report (state, report) {
-      state.report = report
+      if (report === null) {
+        return
+      }
 
-      if (report !== null && state.stats !== null) {
+      if (report.response && report.response.status !== 200) {
+        // Manage errors
+        state.stats.errors += 1
+        return
+      }
+
+      if (state.stats !== null) {
         // Calc stats for this report
-        // clang-format does not provide any check information
-        var checks = report.issues.filter(i => i.analyzer !== 'clang-format')
-        state.stats.checks = checks.reduce((stats, issue) => {
+        state.stats.checks = report.issues.reduce((stats, issue) => {
           var analyzer = issue.analyzer + (issue.analyzer === 'mozlint' ? '.' + issue.linter : '')
-          var check = issue.analyzer === 'clang-tidy' ? issue.check : issue.rule
+          var check = null
+          if (issue.analyzer === 'clang-tidy') {
+            check = issue.check
+          } else if (issue.analyzer === 'clang-format') {
+            check = 'lint' // No check informations on clang-format
+          } else if (issue.analyzer === 'infer') {
+            check = issue.bug_type
+          } else if (issue.analyzer === 'mozlint') {
+            check = issue.rule
+          } else {
+            console.warn('Unsupported analyzer', issue.analyzer)
+            return
+          }
           var key = analyzer + '.' + check
           if (stats[key] === undefined) {
             stats[key] = {
@@ -155,11 +181,26 @@ export default new Vuex.Store({
     },
 
     // Load Phabricator indexed tasks summary from Taskcluster
-    load_index (state) {
-      state.commit('reset_tasks')
+    load_index (state, payload) {
       let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.static_analysis_bot.phabricator'
+      url += '?limit=200'
+      if (payload && payload.continuationToken) {
+        url += '&continuationToken=' + payload.continuationToken
+      }
+      if (state.state.indexes.includes(url)) {
+        console.debug('Already loaded', url)
+        return
+      }
       return axios.get(url).then(resp => {
-        state.commit('use_tasks', resp.data.tasks)
+        state.commit('use_tasks', {
+          tasks: resp.data.tasks,
+          url: url
+        })
+
+        // Continue loading available tasks
+        if (resp.data.continuationToken) {
+          state.dispatch('load_index', { continuationToken: resp.data.continuationToken })
+        }
       })
     },
 
@@ -169,21 +210,23 @@ export default new Vuex.Store({
       state.commit('use_report', null)
       return axios.get(url).then(resp => {
         state.commit('use_report', Object.assign({ taskId }, resp.data))
+      }).catch(err => {
+        state.commit('use_report', err)
       })
     },
 
     // Load multiple reports for stats crunching
     calc_stats (state, tasksId) {
       // Avoid multiple loads
-      if (state.state.stats !== null) {
+      if (state.state.stats.loaded > 0) {
         return
       }
 
       // Load all indexes to get task ids
-      var indexes = state.dispatch('load_index')
+      // and avoid reloading tasks
+      var indexes = state.state.tasks.length > 0 ? Promise.resolve(true) : state.dispatch('load_index')
       indexes.then(() => {
         console.log('Start analysis')
-        state.commit('reset_stats')
 
         // Start processing by batches
         state.dispatch('load_report_batch', 0)
@@ -196,7 +239,9 @@ export default new Vuex.Store({
 
       // Slice full loading in smaller batches to avoid using too many ressources
       var slice = state.state.stats.ids.slice(step * TASKS_SLICE, (step + 1) * TASKS_SLICE)
-      var batch = Promise.all(slice.map(taskId => state.dispatch('load_report', taskId)))
+      var batch = Promise.all(
+        slice.map(taskId => state.dispatch('load_report', taskId))
+      )
       batch.then(resp => console.info('Loaded batch', step))
       batch.then(resp => state.dispatch('load_report_batch', step + 1))
     }

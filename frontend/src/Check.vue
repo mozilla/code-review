@@ -1,10 +1,15 @@
 <script>
 import mixins from './mixins.js'
+import Progress from './Progress.vue'
 
 export default {
   mixins: [
     mixins.stats
   ],
+  components: { Progress },
+  mounted () {
+    this.$store.dispatch('calc_stats')
+  },
   computed: {
     check_name () {
       return this.$route.params.check
@@ -22,12 +27,9 @@ export default {
 
 <template>
   <div>
-    <h1 class="title">Check {{ check_name }}</h1>
-    <h2 class="subtitle" v-if="stats && stats.ids">Loaded {{ stats.loaded }}/{{ stats.ids.length }} tasks</h2>
+    <Progress :name="'Check ' + check_name" />
 
     <div v-if="stats">
-      <progress class="progress is-info" :class="{'is-info': progress < 100, 'is-success': progress >= 100}" :value="progress" max="100">{{ progress }}%</progress>
-
       <table class="table is-fullwidth" v-if="check">
         <thead>
           <tr>

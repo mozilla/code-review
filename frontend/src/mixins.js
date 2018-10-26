@@ -1,15 +1,12 @@
 export default {
   stats: {
-    mounted () {
-      this.$store.dispatch('calc_stats')
-    },
     computed: {
       stats () {
         return this.$store.state.stats
       },
       progress () {
-        if (!this.stats || !this.stats.ids) {
-          return null
+        if (!this.stats.ids || !this.stats.loaded) {
+          return 0.0
         }
         return 100 * this.stats.loaded / this.stats.ids.length
       }
