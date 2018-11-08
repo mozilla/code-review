@@ -64,12 +64,12 @@ class ClangFormat(object):
         if not self.diff:
             return []
 
+        # Store that diff as an improvement patch sent to devs
+        revision.add_improvement_patch('clang-format', self.diff)
+
         # Generate a reverse diff for `parsepatch` (in order to get original
         # line numbers from the dev's patch instead of new line numbers)
         reverse_diff = client.diff(unified=8, reverse=True).decode('utf-8')
-
-        # Store that diff as an improvement sent to devs
-        revision.add_improvement_patch('clang-format', reverse_diff)
 
         # List all the lines that were fixed by `./mach clang-format`
         patch = Patch.parse_patch(reverse_diff, skip_comments=False)
