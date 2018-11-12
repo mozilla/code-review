@@ -28,7 +28,7 @@ def revision_available(repo, revision):
     try:
         repo.identify(revision)
         return True
-    except hglib.error.CommandError as e:
+    except hglib.error.CommandError:
         return False
 
 
@@ -228,7 +228,7 @@ class PhabricatorRevision(Revision):
                 rev=hg_base,
                 clean=True,
             )
-        except hglib.error.CommandError as e:
+        except hglib.error.CommandError:
             raise AnalysisException('mercurial', 'Failed to update to revision {}'.format(hg_base))
 
         # Apply all patches from base to top
@@ -241,7 +241,7 @@ class PhabricatorRevision(Revision):
                     message='SA Imported patch {}'.format(diff_phid),
                     user='reviewbot',
                 )
-            except hglib.error.CommandError as e:
+            except hglib.error.CommandError:
                 raise AnalysisException('mercurial', 'Failed to import parent patch {}'.format(diff_phid))
 
     def apply(self, repo):
@@ -258,7 +258,7 @@ class PhabricatorRevision(Revision):
                 user='reviewbot',
             )
             logger.info('Applied target patch', phid=self.diff_phid)
-        except hglib.error.CommandError as e:
+        except hglib.error.CommandError:
             raise AnalysisException('mercurial', 'Failed to import target patch')
 
     def as_dict(self):

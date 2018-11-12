@@ -3,21 +3,22 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import tarfile
-import requests
 import io
 import os
+import requests
 import shutil
 import subprocess
-import cli_common.utils
-import taskcluster
+import tarfile
 
-from cli_common.log import get_logger
+import taskcluster.exceptions
+
+import cli_common.log
+import cli_common.utils
 from static_analysis_bot.config import settings
 from static_analysis_bot import AnalysisException
 
 
-logger = get_logger(__name__)
+logger = cli_common.log.get_logger(__name__)
 
 ANDROID_MOZCONFIG = '''# Build Firefox for Android:
 ac_add_options --enable-application=mobile/android

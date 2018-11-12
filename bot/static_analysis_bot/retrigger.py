@@ -4,7 +4,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import requests
-import taskcluster
+
+import cli_common.taskcluster
 
 TC_INDEX_URL = 'https://index.taskcluster.net/v1/tasks/project.releng.services.project.{}.static_analysis_bot.phabricator'
 
@@ -25,7 +26,7 @@ def is_not_error(issue):
 
 
 def main(env):
-    hooks = taskcluster.Hooks()
+    hooks = cli_common.taskcluster.get_service('hooks')
 
     # List all tasks on the env
     all_tasks = list_tasks(env)
