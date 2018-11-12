@@ -944,8 +944,8 @@ let
     };
 
     "parsepatch" = python.mkDerivation {
-      name = "parsepatch-0.1.2";
-      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/56/23/0bd8d31563f7b46e2de1f2ad8884a22c81abd5e59d0f8abf6f788585a086/parsepatch-0.1.2.tar.gz"; sha256 = "136c7c6000cb6aa11a425bf63dea79238d4079dbf1c5ae632e16154915721a7f"; };
+      name = "parsepatch-0.1.3";
+      src = pkgs.fetchurl { url = "https://files.pythonhosted.org/packages/d2/73/9eaedc53bdf9c5690d22812aaadce997634d74d2fbaf79f91b8f209be121/parsepatch-0.1.3.tar.gz"; sha256 = "1f08654d3c737c7f43e5b5a03b078d0bb206684ba106df714db89f8c87fbd58a"; };
       doCheck = commonDoCheck;
       checkPhase = "";
       installCheckPhase = "";
