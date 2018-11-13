@@ -1,5 +1,5 @@
-{ releng_pkgs 
-}: 
+{ releng_pkgs
+}:
 
 let
 
@@ -10,8 +10,7 @@ let
 
   nodejs = nodejs-8_x;
   python = import ./requirements.nix { inherit (releng_pkgs) pkgs; };
-  name = "mozilla-static-analysis-bot";
-  dirname = "static_analysis_bot";
+  project_name = "staticanalysis/bot";
 
   # Customize gecko environment with Nodejs & Python 3 for linters
   gecko-env = releng_pkgs.gecko-env.overrideDerivation(old : {
@@ -91,12 +90,11 @@ let
   ];
 
   self = mkPython {
-    inherit python name dirname;
+    inherit python project_name;
     version = fileContents ./VERSION;
-    src = filterSource ./. { inherit name; };
-    src_path = "src/staticanalysis/bot";
+    src = filterSource ./. { inherit(self) name; };
     buildInputs =
-      [ mercurial clang_5 ] ++ 
+      [ mercurial clang_5 ] ++
       (fromRequirementsFile ./../../../lib/cli_common/requirements-dev.txt python.packages) ++
       (fromRequirementsFile ./requirements-dev.txt python.packages);
     propagatedBuildInputs =
@@ -197,7 +195,7 @@ let
         staging = mkBot "staging";
         production = mkBot "production";
       };
-      update = writeScript "update-${name}" ''
+      update = writeScript "update-${self.name}" ''
         pushd ${self.src_path}
         ${pypi2nix}/bin/pypi2nix -v \
           -V 3.6 \
