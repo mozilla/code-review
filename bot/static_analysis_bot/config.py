@@ -7,6 +7,7 @@ from __future__ import absolute_import
 
 import collections
 import enum
+import fnmatch
 import os
 import tempfile
 
@@ -48,7 +49,7 @@ class Settings(object):
         self.repo_shared_dir = None
         self.taskcluster = None
 
-    def setup(self, app_channel, cache_root, publication):
+    def setup(self, app_channel, cache_root, publication, allowed_paths):
         self.app_channel = app_channel
         self.download({
             'cpp_extensions': frozenset(['.c', '.h', '.cpp', '.cc', '.cxx', '.hh', '.hpp', '.hxx', '.m', '.mm']),
@@ -75,6 +76,11 @@ class Settings(object):
             self.taskcluster = TaskCluster(tempfile.mkdtemp(), 'local instance', 0, True)
         if not os.path.isdir(self.taskcluster.results_dir):
             os.makedirs(self.taskcluster.results_dir)
+
+        # Save allowed paths
+        assert isinstance(allowed_paths, list)
+        assert all(map(lambda p: isinstance(p, str), allowed_paths))
+        self.allowed_paths = allowed_paths
 
     def __getattr__(self, key):
         if key not in self.config:
@@ -108,6 +114,15 @@ class Settings(object):
 
         clang_check = self.get_clang_check(check)
         return clang_check.get('publish', True) if clang_check else False
+
+    def is_allowed_path(self, path):
+        '''
+        Is this path allowed for reporting ?
+        '''
+        return any([
+            fnmatch.fnmatch(path, rule)
+            for rule in self.allowed_paths
+        ])
 
     def get_clang_check(self, check):
 

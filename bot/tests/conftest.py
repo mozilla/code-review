@@ -45,7 +45,7 @@ def mock_config():
 
     from static_analysis_bot.config import settings
     tempdir = tempfile.mkdtemp()
-    settings.setup('test', tempdir, 'IN_PATCH')
+    settings.setup('test', tempdir, 'IN_PATCH', ['dom/*', 'tests/*.py'])
 
     return settings
 
@@ -278,7 +278,7 @@ def mock_clang(mock_config, tmpdir, monkeypatch):
             # Mock ./mach clang-format behaviour by analysing repo bad file
             # with the embedded clang-format from Nix
             # and replace this file with the output
-            target = os.path.join(mock_config.repo_dir, 'bad.cpp')
+            target = os.path.join(mock_config.repo_dir, 'dom', 'bad.cpp')
             out = real_run(['clang-format', target], *args, **kwargs)
             with open(target, 'w') as f:
                 f.write(out.stdout.decode('utf-8'))

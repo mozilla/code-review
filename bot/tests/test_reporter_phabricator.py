@@ -127,10 +127,11 @@ def test_phabricator_clang_format(mock_repository, mock_phabricator):
         revision.lines = {
             # Add dummy lines diff
             'test.cpp': [41, 42, 43],
+            'dom/test.cpp': [42, ],
         }
         reporter = PhabricatorReporter({'analyzers': ['clang-format']}, api=api)
 
-    issue = ClangFormatIssue('test.cpp', 42, 1, revision)
+    issue = ClangFormatIssue('dom/test.cpp', 42, 1, revision)
     assert issue.is_publishable()
 
     revision.improvement_patches = {
@@ -169,11 +170,12 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
         revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
         revision.lines = {
             'test.cpp': [41, 42, 43],
+            'dom/test.cpp': [42, ],
         }
         reporter = PhabricatorReporter({'analyzers': analyzers}, api=api)
 
         issues = [
-            ClangFormatIssue('test.cpp', 42, 1, revision),
+            ClangFormatIssue('dom/test.cpp', 42, 1, revision),
             ClangTidyIssue(('test.cpp', '42', '51', 'error', 'dummy message', 'modernize-use-nullptr'), revision),
             InferIssue({
                 'file': 'test.cpp',

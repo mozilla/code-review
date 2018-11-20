@@ -79,7 +79,8 @@ def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock
     from static_analysis_bot.config import settings
 
     # Write badly formatted c file
-    bad_file = os.path.join(mock_config.repo_dir, 'bad.cpp')
+    bad_file = os.path.join(mock_config.repo_dir, 'dom', 'bad.cpp')
+    os.makedirs(os.path.dirname(bad_file))
     with open(bad_file, 'w') as f:
         f.write(BAD_CPP_SRC)
 
@@ -89,9 +90,9 @@ def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock
 
     # Get formatting issues
     cf = ClangFormat()
-    mock_revision.files = ['bad.cpp', ]
+    mock_revision.files = ['dom/bad.cpp', ]
     mock_revision.lines = {
-        'bad.cpp': [1, 2, 3],
+        'dom/bad.cpp': [1, 2, 3],
     }
     issues = cf.run(mock_revision)
 
@@ -102,7 +103,7 @@ def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock
     assert isinstance(issue, ClangFormatIssue)
     assert issue.is_publishable()
 
-    assert issue.path == 'bad.cpp'
+    assert issue.path == 'dom/bad.cpp'
     assert issue.line == 2
     assert issue.nb_lines == 2
 

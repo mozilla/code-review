@@ -134,9 +134,9 @@ class ClangFormatIssue(Issue):
 
     def validates(self):
         '''
-        No specific rule on clang-format issues
+        Should match one of the allowed paths rules
         '''
-        return True
+        return settings.is_allowed_path(self.path)
 
     def as_text(self):
         '''
