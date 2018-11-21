@@ -58,8 +58,13 @@ class ClangFormat(object):
             f.write(clang_output)
 
         # Look for any fixes `./mach clang-format` may have found
+        # on allowed files
+        allowed_paths = [
+            os.path.join(settings.repo_dir, path).encode('utf-8')  # needed for hglib
+            for path in filter(settings.is_allowed_path, revision.files)
+        ]
         client = hglib.open(settings.repo_dir)
-        self.diff = client.diff(unified=8).decode('utf-8')
+        self.diff = client.diff(files=allowed_paths, unified=8).decode('utf-8')
 
         if not self.diff:
             return []
