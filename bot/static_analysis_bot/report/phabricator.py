@@ -45,11 +45,13 @@ class PhabricatorReporter(Reporter):
         logger.info('Found {} existing comments on review'.format(len(existing_comments)))
 
         # Use only publishable issues and patches
+        # and avoid publishing a non related patch from an anlyzer partly activated (allowed paths)
         issues = list(filter(lambda i: i.is_publishable() and i.ANALYZER in self.analyzers, issues))
+        analyzers_available = set(i.ANALYZER for i in issues).intersection(self.analyzers)
         patches = {
             analyzer: url
             for analyzer, url in revision.improvement_patches.items()
-            if analyzer in self.analyzers
+            if analyzer in analyzers_available
         }
 
         if issues:
