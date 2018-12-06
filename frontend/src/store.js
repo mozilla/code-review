@@ -21,7 +21,8 @@ export default new Vuex.Store({
       checks: {},
       start_date: new Date()
     },
-    states: null
+    states: null,
+    report: null
   },
   mutations: {
     load_preferences (state) {
@@ -113,6 +114,9 @@ export default new Vuex.Store({
       if (report === null) {
         return
       }
+
+      // Save raw report for issues listing
+      state.report = report
 
       if (report.response && report.response.status !== 200) {
         // Manage errors

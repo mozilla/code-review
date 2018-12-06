@@ -47,7 +47,7 @@ export default {
     <div class="notification is-info" v-if="state == 'loading'">Loading report...</div>
     <div class="notification is-warning" v-else-if="state == 'missing'">No report, so no issues !</div>
     <div class="notification is-danger" v-else-if="state == 'error'">Failure</div>
-    <div v-else>
+    <div v-else-if="state == 'loaded'">
 
       <nav class="level" v-if="report">
         <div class="level-item has-text-centered">
@@ -65,7 +65,7 @@ export default {
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">Source</p>
-            <p class="title"><a :href="report.revision.url" target="_blank">{{ report.revision.source }}</a></p>
+            <p class="title"><a :href="report.revision.url" target="_blank">{{ report.revision.title }}</a></p>
           </div>
         </div>
         <div class="level-item has-text-centered">
@@ -139,8 +139,8 @@ export default {
           </tr>
         </tbody>
       </table>
-      <p class="notification is-info" v-else>No issues !</p>
     </div>
+    <div class="notification is-info" v-else>No issues !</div>
   </div>
 </template>
 
