@@ -1,1 +1,5 @@
-../../../nix/requirements_override.nix
+{ pkgs, python }:
+
+self: super: {
+
+}

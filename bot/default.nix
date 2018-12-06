@@ -197,9 +197,18 @@ let
       };
       update = writeScript "update-${self.name}" ''
         pushd ${self.src_path}
-        ${pypi2nix}/bin/pypi2nix -v \
-          -V 3.6 \
-          -E "libffi openssl pkgconfig freetype.dev" \
+        cache_dir=$PWD/../../../tmp/pypi2nix
+        mkdir -p $cache_dir
+        eval ${pypi2nix}/bin/pypi2nix -v \
+          -C $cache_dir \
+          -V 3.7 \
+          -O ../../../nix/requirements_override.nix \
+          -E libffi \
+          -E openssl \
+          -E pkgconfig \
+          -E freetype.dev \
+          -e pytest-runner \
+          -e setuptools-scm \
           -r requirements.txt \
           -r requirements-dev.txt
         popd
