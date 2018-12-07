@@ -315,3 +315,21 @@ def test_repeats(mock_clang_repeats, mock_revision, mock_config):
     assert len(issues) == 3
     count = Counter(i.check for i in issues)
     assert count['modernize-loop-convert'] == 1
+
+
+def test_clang_format_3rd_party(mock_repository, mock_revision):
+    '''
+    Test a clang format issue in 3rd party is not publishable
+    '''
+    from static_analysis_bot.clang.format import ClangFormatIssue
+
+    mock_revision.lines = {
+        'test/not_3rd.c': [10, ],
+        'test/dummy/third_party.c': [10, ],
+    }
+    issue = ClangFormatIssue('test/not_3rd.c', 10, 1, mock_revision)
+    assert issue.is_publishable()
+
+    # test/dummy is a third party directory
+    issue = ClangFormatIssue('test/dummy/third_party.c', 10, 1, mock_revision)
+    assert not issue.is_publishable()
