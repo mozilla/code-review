@@ -14,6 +14,7 @@ import hglib
 from cli_common.command import run_check
 from cli_common.log import get_logger
 from cli_common.phabricator import PhabricatorAPI
+from cli_common.taskcluster import TASKCLUSTER_DATE_FORMAT
 from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import CLANG_TIDY
 from static_analysis_bot import INFER
@@ -42,7 +43,7 @@ class Workflow(object):
     '''
     Static analysis workflow
     '''
-    def __init__(self, reporters, analyzers, index_service, phabricator_api):
+    def __init__(self, reporters, analyzers, index_service, queue_service, phabricator_api):
         assert isinstance(analyzers, list)
         assert len(analyzers) > 0, \
             'No analyzers specified, will not run.'
@@ -62,8 +63,9 @@ class Workflow(object):
         # Always add debug reporter and Diff reporter
         self.reporters['debug'] = DebugReporter(output_dir=settings.taskcluster.results_dir)
 
-        # Use TC index service client
+        # Use TC services client
         self.index_service = index_service
+        self.queue_service = queue_service
 
     @stats.api.timed('runtime.clone')
     def clone(self):
@@ -237,6 +239,14 @@ class Workflow(object):
             self.index(revision, state='done', issues=0)
             return
 
+        # Publish patches on Taskcluster
+        # or write locally for local development
+        for patch in revision.improvement_patches:
+            if settings.taskcluster.local:
+                patch.write()
+            else:
+                patch.publish(self.queue_service)
+
         # Report issues publication stats
         nb_issues = len(issues)
         nb_publishable = len([i for i in issues if i.is_publishable()])
@@ -281,8 +291,7 @@ class Workflow(object):
 
         # Always add the indexing
         now = datetime.utcnow()
-        date_format = '%Y-%m-%dT%H:%M:%S.%fZ'
-        payload['indexed'] = now.strftime(date_format)
+        payload['indexed'] = now.strftime(TASKCLUSTER_DATE_FORMAT)
 
         # Index for all required namespaces
         for name in revision.namespaces:
@@ -293,6 +302,6 @@ class Workflow(object):
                     'taskId': settings.taskcluster.task_id,
                     'rank': 0,
                     'data': payload,
-                    'expires': (now + timedelta(days=TASKCLUSTER_INDEX_TTL)).strftime(date_format),
+                    'expires': (now + timedelta(days=TASKCLUSTER_INDEX_TTL)).strftime(TASKCLUSTER_DATE_FORMAT),
                 }
             )

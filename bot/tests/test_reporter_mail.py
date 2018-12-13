@@ -17,8 +17,8 @@ Review Url: https://phabricator.test/D51
 
 ## Improvement patches:
 
-* Improvement patch from clang-tidy : https://my.patch/clang-tidy.diff
-* Improvement patch from clang-format : https://another.patch/clang-format.diff
+* Improvement patch from clang-tidy: {results}/clang-tidy-PHID-DIFF-test.diff
+* Improvement patch from clang-format: {results}/clang-format-PHID-DIFF-test.diff
 
 This is the mock issue n°0
 
@@ -70,12 +70,12 @@ def test_conf(mock_config):
 
 
 @responses.activate
-def test_mail(mock_issues, mock_phabricator):
+def test_mail(mock_config, mock_issues, mock_phabricator):
     '''
     Test mail sending through Taskcluster
     '''
     from static_analysis_bot.report.mail import MailReporter
-    from static_analysis_bot.revisions import PhabricatorRevision
+    from static_analysis_bot.revisions import PhabricatorRevision, ImprovementPatch
 
     def _check_email(request):
         payload = json.loads(request.body)
@@ -85,7 +85,7 @@ def test_mail(mock_issues, mock_phabricator):
         )
         assert payload['address'] == 'test@mozilla.com'
         assert payload['template'] == 'fullscreen'
-        assert payload['content'] == MAIL_CONTENT
+        assert payload['content'] == MAIL_CONTENT.format(results=mock_config.taskcluster.results_dir)
 
         return (200, {}, '')  # ack
 
@@ -106,10 +106,11 @@ def test_mail(mock_issues, mock_phabricator):
 
     with mock_phabricator as api:
         prev = PhabricatorRevision('PHID-DIFF-test', api)
-        prev.improvement_patches = {
-            'clang-tidy': 'https://my.patch/clang-tidy.diff',
-            'clang-format': 'https://another.patch/clang-format.diff',
-        }
+        prev.improvement_patches = [
+            ImprovementPatch('clang-tidy', repr(prev), 'Some code fixes'),
+            ImprovementPatch('clang-format', repr(prev), 'Some lint fixes'),
+        ]
+        list(map(lambda p: p.write(), prev.improvement_patches))  # trigger local write
         r.publish(mock_issues, prev)
 
     # Check stats

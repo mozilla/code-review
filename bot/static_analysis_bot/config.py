@@ -142,18 +142,6 @@ class Settings(object):
 
         return None
 
-    def build_artifact_url(self, path):
-        '''
-        Build an url for a file in the results dir
-        '''
-        assert path.startswith(self.taskcluster.results_dir), \
-            'Path is not the artifact results dir'
-        return 'https://queue.taskcluster.net/v1/task/{}/runs/{}/artifacts/public/results/{}'.format(
-            self.taskcluster.task_id,
-            self.taskcluster.run_id,
-            path[len(self.taskcluster.results_dir)+1:],
-        )
-
 
 # Shared instance
 settings = Settings()

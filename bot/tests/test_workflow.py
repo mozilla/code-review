@@ -5,8 +5,6 @@
 
 from unittest import mock
 
-import pytest
-
 
 def test_taskcluster_index(mock_workflow, mock_config, mock_revision):
     '''
@@ -27,24 +25,3 @@ def test_taskcluster_index(mock_workflow, mock_config, mock_revision):
     assert args[1]['data']['id'] == '1234'
     assert args[1]['data']['source'] == 'mock'
     assert 'indexed' in args[1]['data']
-
-
-def test_taskcluster_artifacts(tmpdir, mock_config, mock_revision):
-    '''
-    Test the Taskcluster artifact url building
-    '''
-
-    from static_analysis_bot.config import TaskCluster
-    results = tmpdir.mkdir('results')
-    mock_config.taskcluster = TaskCluster(str(results), '12345deadbeef', 0, False)
-
-    # Write an artifact
-    artifact = results.join('something.txt')
-    artifact.write('dummy')
-
-    # Build url from absolute path
-    assert mock_config.build_artifact_url(str(artifact)) == 'https://queue.taskcluster.net/v1/task/12345deadbeef/runs/0/artifacts/public/results/something.txt'
-
-    # A path not in results dir should raise an exception
-    with pytest.raises(AssertionError):
-        mock_config.build_artifact_url('/tmp/nowhere.txt')

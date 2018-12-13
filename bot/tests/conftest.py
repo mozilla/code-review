@@ -313,6 +313,7 @@ def mock_workflow(tmpdir, mock_repository, mock_config, mock_phabricator):
             reporters={},
             analyzers=['clang-tidy', 'clang-format', 'mozlint'],
             index_service=None,
+            queue_service=None,
             phabricator_api=api,
         )
     workflow.hg = workflow.clone()

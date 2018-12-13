@@ -100,6 +100,13 @@ def main(source,
         taskcluster_access_token,
     )
 
+    # Load queue service
+    queue_service = get_service(
+        'queue',
+        taskcluster_client_id,
+        taskcluster_access_token,
+    )
+
     # Load Phabricator API
     phabricator_api = PhabricatorAPI(**secrets['PHABRICATOR'])
     if 'phabricator' in reporters:
@@ -111,7 +118,7 @@ def main(source,
     else:
         raise Exception('Unsupported analysis source: {}'.format(source))
 
-    w = Workflow(reporters, secrets['ANALYZERS'], index_service, phabricator_api)
+    w = Workflow(reporters, secrets['ANALYZERS'], index_service, queue_service, phabricator_api)
     try:
         w.run(revision)
     except Exception as e:

@@ -36,10 +36,10 @@ You can run this analysis locally with:
 {analyzers}
 '''
 BUG_REPORT = '''
-If you see a problem in this automated review, please report it here: {bug_report_url}
+If you see a problem in this automated review, [please report it here]({bug_report_url}).
 '''
 COMMENT_DIFF_DOWNLOAD = '''
-For your convenience, here is a patch that fixes all the {analyzer} defects: {url} (use it in your repository with `hg import` or `git apply`)
+For your convenience, [here is a patch]({url}) that fixes all the {analyzer} defects (use it in your repository with `hg import` or `git apply`).
 '''
 
 
@@ -99,9 +99,9 @@ class Reporter(object):
             for cls, items in groups
         ])
 
-    def build_comment(self, issues, bug_report_url, patches={}, max_comments=None):
+    def build_comment(self, issues, bug_report_url, patches=[], max_comments=None):
         '''
-        Build a human readable comment about published issues
+        Build a Markdown comment about published issues
         '''
         def pluralize(word, nb):
             assert isinstance(word, str)
@@ -135,10 +135,10 @@ class Reporter(object):
             defects='\n'.join(defects),
             analyzers='\n'.join(analyzers),
         )
-        for analyzer, url in patches.items():
+        for patch in patches:
             comment += COMMENT_DIFF_DOWNLOAD.format(
-                analyzer=analyzer,
-                url=url,
+                analyzer=patch.analyzer,
+                url=patch.url or patch.path,
             )
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 

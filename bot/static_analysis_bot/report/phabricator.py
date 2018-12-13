@@ -5,12 +5,13 @@
 
 from cli_common import log
 from cli_common.phabricator import PhabricatorAPI
+from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.report.base import Reporter
 from static_analysis_bot.revisions import PhabricatorRevision
 
-BUG_REPORT_URL = 'https://bit.ly/2IyNRy2'
+BUG_REPORT_URL = 'https://github.com/mozilla/release-services/issues/new?title=Problem%20with%20an%20automated%20review:%20SUMMARY&labels=app:staticanalysis/bot&body=**Phabricator%20URL:**%20https://phabricator.services.mozilla.com/D%E2%80%A6%0A%0A**Problem:**%20%E2%80%A6'  # noqa
 
 logger = log.get_logger(__name__)
 
@@ -46,13 +47,17 @@ class PhabricatorReporter(Reporter):
 
         # Use only publishable issues and patches
         # and avoid publishing a non related patch from an anlyzer partly activated (allowed paths)
-        issues = list(filter(lambda i: i.is_publishable() and i.ANALYZER in self.analyzers, issues))
+        issues = [
+            issue
+            for issue in issues
+            if issue.is_publishable() and issue.ANALYZER in self.analyzers
+        ]
         analyzers_available = set(i.ANALYZER for i in issues).intersection(self.analyzers)
-        patches = {
-            analyzer: url
-            for analyzer, url in revision.improvement_patches.items()
-            if analyzer in analyzers_available
-        }
+        patches = [
+            patch
+            for patch in revision.improvement_patches
+            if patch.analyzer in analyzers_available
+        ]
 
         if issues:
 
@@ -60,8 +65,9 @@ class PhabricatorReporter(Reporter):
             inlines = list(filter(None, [
                 self.comment_inline(revision, issue, existing_comments)
                 for issue in issues
+                if issue.ANALYZER != CLANG_FORMAT
             ]))
-            if not inlines:
+            if not inlines and not patches:
                 logger.info('No new comments found, skipping Phabricator publication')
                 return
             logger.info('Added inline comments', ids=[i['id'] for i in inlines])

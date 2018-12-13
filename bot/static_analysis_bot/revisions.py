@@ -7,12 +7,14 @@ import io
 import os
 import re
 from collections import OrderedDict
+from datetime import timedelta
 
 import hglib
 from parsepatch.patch import Patch
 
 from cli_common import log
 from cli_common.phabricator import PhabricatorAPI
+from cli_common.taskcluster import create_blob_artifact
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
@@ -32,6 +34,48 @@ def revision_available(repo, revision):
         return False
 
 
+class ImprovementPatch(object):
+    '''
+    An improvement patch built by the bot
+    '''
+    def __init__(self, analyzer_name, patch_name, content):
+        # Build name from analyzer and revision
+        self.analyzer = analyzer_name
+        self.name = '{}-{}.diff'.format(analyzer_name, patch_name)
+        self.content = content
+        self.url = None
+        self.path = None
+
+    def __str__(self):
+        return '{}: {}'.format(self.analyzer, self.url or self.path or self.name)
+
+    def write(self):
+        '''
+        Write patch on local FS, for dev & tests only
+        '''
+        self.path = os.path.join(settings.taskcluster.results_dir, self.name)
+        with open(self.path, 'w') as f:
+            length = f.write(self.content)
+            logger.info('Improvement patch saved', path=self.path, length=length)
+
+    def publish(self, queue_service, days_ttl=30):
+        '''
+        Push through Taskcluster API to setup the content-type header
+        so it displays nicely in browsers
+        '''
+        assert not settings.taskcluster.local, 'Only publish on online Taskcluster tasks'
+        self.url = create_blob_artifact(
+            queue_service,
+            task_id=settings.taskcluster.task_id,
+            run_id=settings.taskcluster.run_id,
+            path='public/patch/{}'.format(self.name),
+            content=self.content,
+            content_type='text/plain; charset=utf-8',  # Displays instead of download):
+            ttl=timedelta(days=days_ttl - 1),
+        )
+        logger.info('Improvement patch published', url=self.url)
+
+
 class Revision(object):
     '''
     A common DCM revision
@@ -40,7 +84,7 @@ class Revision(object):
         self.files = []
         self.lines = {}
         self.patch = None
-        self.improvement_patches = {}
+        self.improvement_patches = []
 
     def analyze_patch(self):
         '''
@@ -116,16 +160,9 @@ class Revision(object):
         '''
         assert isinstance(content, str)
         assert len(content) > 0
-
-        # Build name from analyzer and revision
-        diff_name = '{}-{}.diff'.format(analyzer_name, repr(self))
-        diff_path = os.path.join(settings.taskcluster.results_dir, diff_name)
-        with open(diff_path, 'w') as f:
-            length = f.write(content)
-            logger.info('Improvement patch saved', path=diff_path, length=length)
-
-        # Build diff download url
-        self.improvement_patches[analyzer_name] = settings.build_artifact_url(diff_path)
+        self.improvement_patches.append(
+            ImprovementPatch(analyzer_name, repr(self), content)
+        )
 
 
 class PhabricatorRevision(Revision):

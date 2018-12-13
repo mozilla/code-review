@@ -18,8 +18,8 @@ Code analysis found 1 defect in this patch:
 You can run this analysis locally with:
  - `./mach static-analysis check path/to/file.cpp` (C/C++)
 
-If you see a problem in this automated review, please report it here: https://bit.ly/2IyNRy2
-'''
+If you see a problem in this automated review, [please report it here](https://github.com/mozilla/release-services/issues/new?title=Problem%20with%20an%20automated%20review:%20SUMMARY&labels=app:staticanalysis/bot&body=**Phabricator%20URL:**%20https://phabricator.services.mozilla.com/D%E2%80%A6%0A%0A**Problem:**%20%E2%80%A6).
+'''  # noqa
 
 VALID_CLANG_FORMAT_MESSAGE = '''
 Code analysis found 1 defect in this patch:
@@ -28,10 +28,10 @@ Code analysis found 1 defect in this patch:
 You can run this analysis locally with:
  - `./mach clang-format -p path/to/file.cpp` (C/C++)
 
-For your convenience, here is a patch that fixes all the clang-format defects: https://diff.url (use it in your repository with `hg import` or `git apply`)
+For your convenience, [here is a patch]({results}/clang-format-PHID-DIFF-abcdef.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply`).
 
-If you see a problem in this automated review, please report it here: https://bit.ly/2IyNRy2
-'''
+If you see a problem in this automated review, [please report it here](https://github.com/mozilla/release-services/issues/new?title=Problem%20with%20an%20automated%20review:%20SUMMARY&labels=app:staticanalysis/bot&body=**Phabricator%20URL:**%20https://phabricator.services.mozilla.com/D%E2%80%A6%0A%0A**Problem:**%20%E2%80%A6).
+'''  # noqa
 
 
 @responses.activate
@@ -93,12 +93,12 @@ def test_phabricator_clang_tidy(mock_repository, mock_phabricator):
 
 
 @responses.activate
-def test_phabricator_clang_format(mock_repository, mock_phabricator):
+def test_phabricator_clang_format(mock_config, mock_repository, mock_phabricator):
     '''
     Test Phabricator reporter publication on a mock clang-format issue
     '''
     from static_analysis_bot.report.phabricator import PhabricatorReporter
-    from static_analysis_bot.revisions import PhabricatorRevision
+    from static_analysis_bot.revisions import PhabricatorRevision, ImprovementPatch
     from static_analysis_bot.clang.format import ClangFormatIssue
 
     def _check_comment(request):
@@ -107,7 +107,7 @@ def test_phabricator_clang_format(mock_repository, mock_phabricator):
         assert payload['output'] == ['json']
         assert len(payload['params']) == 1
         details = json.loads(payload['params'][0])
-        assert details['message'] == VALID_CLANG_FORMAT_MESSAGE
+        assert details['message'] == VALID_CLANG_FORMAT_MESSAGE.format(results=mock_config.taskcluster.results_dir)
 
         # Outputs dummy empty response
         resp = {
@@ -134,9 +134,10 @@ def test_phabricator_clang_format(mock_repository, mock_phabricator):
     issue = ClangFormatIssue('dom/test.cpp', 42, 1, revision)
     assert issue.is_publishable()
 
-    revision.improvement_patches = {
-        'clang-format': 'https://diff.url'
-    }
+    revision.improvement_patches = [
+        ImprovementPatch('clang-format', repr(revision), 'Some lint fixes'),
+    ]
+    list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
     issues, patches = reporter.publish([issue, ], revision)
     assert len(issues) == 1
@@ -155,7 +156,7 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
     Test analyzers filtering on phabricator reporter
     '''
     from static_analysis_bot.report.phabricator import PhabricatorReporter
-    from static_analysis_bot.revisions import PhabricatorRevision
+    from static_analysis_bot.revisions import PhabricatorRevision, ImprovementPatch
     from static_analysis_bot.clang.format import ClangFormatIssue
     from static_analysis_bot.infer.infer import InferIssue
     from static_analysis_bot.clang.tidy import ClangTidyIssue
@@ -190,13 +191,14 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
 
         assert all(i.is_publishable() for i in issues)
 
-        revision.improvement_patches = {
-            'dummy': 'not gonna work',
-            'clang-format': 'https://diff.url/clang-format',
-            'clang-tidy': 'https://diff.url/clang-tidy',
-            'mozlint': 'https://diff.url/mozlint',
-            'infer': 'https://diff.url/infer',
-        }
+        revision.improvement_patches = [
+            ImprovementPatch('dummy', repr(revision), 'Whatever'),
+            ImprovementPatch('clang-tidy', repr(revision), 'Some C fixes'),
+            ImprovementPatch('clang-format', repr(revision), 'Some lint fixes'),
+            ImprovementPatch('infer', repr(revision), 'Some java fixes'),
+            ImprovementPatch('mozlint', repr(revision), 'Some js fixes'),
+        ]
+        list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
         return reporter.publish(issues, revision)
 
@@ -215,39 +217,34 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
         issues, patches = _test_reporter(api, ['clang-tidy'])
         assert len(issues) == 1
         assert len(patches) == 1
-        assert 'clang-tidy' in patches
+        assert [p.analyzer for p in patches] == ['clang-tidy']
 
         # Only clang-format
         issues, patches = _test_reporter(api, ['clang-format'])
         assert len(issues) == 1
         assert len(patches) == 1
-        assert 'clang-format' in patches
+        assert [p.analyzer for p in patches] == ['clang-format']
 
         # Only infer
         issues, patches = _test_reporter(api, ['infer'])
         assert len(issues) == 1
         assert len(patches) == 1
-        assert 'infer' in patches
+        assert [p.analyzer for p in patches] == ['infer']
 
         # Only mozlint
         issues, patches = _test_reporter(api, ['mozlint'])
         assert len(issues) == 1
         assert len(patches) == 1
-        assert 'mozlint' in patches
+        assert [p.analyzer for p in patches] == ['mozlint']
 
         # clang-format + clang-tidy
         issues, patches = _test_reporter(api, ['clang-tidy', 'clang-format'])
         assert len(issues) == 2
         assert len(patches) == 2
-        assert 'clang-format' in patches
-        assert 'clang-tidy' in patches
+        assert [p.analyzer for p in patches] == ['clang-tidy', 'clang-format']
 
         # All of them
         issues, patches = _test_reporter(api, ['clang-tidy', 'clang-format', 'infer', 'mozlint'])
         assert len(issues) == 4
         assert len(patches) == 4
-        assert 'clang-format' in patches
-        assert 'clang-tidy' in patches
-        assert 'infer' in patches
-        assert 'mozlint' in patches
-        assert 'dummy' not in patches
+        assert [p.analyzer for p in patches] == ['clang-tidy', 'clang-format', 'infer', 'mozlint']

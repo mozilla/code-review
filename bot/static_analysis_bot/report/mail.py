@@ -21,7 +21,7 @@ EMAIL_HEADER = '''
 Review Url: {review_url}
 
 '''
-EMAIL_HEADER_PATCH = '* Improvement patch from {} : {}'
+EMAIL_HEADER_PATCH = '* Improvement patch from {}'
 
 
 class MailReporter(Reporter):
@@ -66,8 +66,8 @@ class MailReporter(Reporter):
         if revision.improvement_patches:
             content += '## Improvement patches:\n\n{}\n\n'.format(
                 '\n'.join(
-                    EMAIL_HEADER_PATCH.format(analyzer, url)
-                    for analyzer, url in revision.improvement_patches.items()
+                    EMAIL_HEADER_PATCH.format(patch)
+                    for patch in revision.improvement_patches
                 )
             )
         content += '\n\n'.join([i.as_markdown() for i in issues])
