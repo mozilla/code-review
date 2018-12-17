@@ -164,6 +164,13 @@ class Revision(object):
             ImprovementPatch(analyzer_name, repr(self), content)
         )
 
+    def reset(self):
+        '''
+        Reset temporary data in BEFORE mode
+        * improvement patches
+        '''
+        self.improvement_patches = []
+
 
 class PhabricatorRevision(Revision):
     '''
