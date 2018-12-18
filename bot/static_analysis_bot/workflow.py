@@ -210,15 +210,12 @@ class Workflow(object):
 
         self.index(revision, state='analyzing')
         with stats.api.timer('runtime.issues'):
-            # Detect initial issues (and clean up again)
+            # Detect initial issues
             if settings.publication == Publication.BEFORE_AFTER:
                 before_patch = self.detect_issues(analyzers, revision)
                 logger.info('Detected {} issue(s) before patch'.format(len(before_patch)))
                 stats.api.increment('analysis.issues.before', len(before_patch))
-
                 revision.reset()
-                self.hg.revert(settings.repo_dir.encode('utf-8'), all=True)
-                logger.info('Reverted all uncommitted changes in repo', rev=self.hg.identify())
 
             # Apply patch
             revision.apply(self.hg)
@@ -273,7 +270,17 @@ class Workflow(object):
             analyzer = analyzer_class()
 
             # Run analyzer on revision and store generated issues
-            issues += analyzer.run(revision)
+            analyzer_issues = analyzer.run(revision)
+
+            # Clean up any uncommitted changes left behind by this analyzer.
+            self.hg.revert(settings.repo_dir.encode('utf-8'), all=True)
+            logger.info('Reverted all uncommitted changes in repo', rev=self.hg.identify())
+
+            # Compute line hashes now before anything else changes the code.
+            for issue in analyzer_issues:
+                issue.build_lines_hash()
+
+            issues += analyzer_issues
 
         return issues
 
