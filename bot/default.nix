@@ -25,7 +25,7 @@ let
       secretsKey = "repo:github.com/mozilla-releng/services:branch:" + branch;
       hook = mkTaskclusterHook {
         name = "Static analysis automated tests";
-        owner = "jan@mozilla.com";
+        owner = "babadie@mozilla.com";
         taskImage = self.docker;
         workerType = if branch == "production" then "releng-svc-prod" else "releng-svc";
         scopes = [
