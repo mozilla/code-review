@@ -274,7 +274,7 @@ def mock_clang(mock_config, tmpdir, monkeypatch):
             res.stdout = res.stdout + b'\n42 warnings present.'
             return res
 
-        if command[:5] == ['gecko-env', './mach', '--log-no-times', 'clang-format']:
+        if command[:4] == ['gecko-env', './mach', '--log-no-times', 'clang-format']:
             # Mock ./mach clang-format behaviour by analysing repo bad file
             # with the embedded clang-format from Nix
             # and replace this file with the output

@@ -35,19 +35,39 @@ class ClangFormat(object):
     @stats.api.timed('runtime.clang-format')
     def run(self, revision):
         '''
-        Run ./mach clang-format on the current patch
+        Run ./mach clang-format on all of the C/C++ files from the patch
         '''
         assert isinstance(revision, Revision)
 
-        # Commit the current revision for `./mach clang-format` to reformat its changes
         cmd = [
             'gecko-env',
-            './mach', '--log-no-times', 'clang-format',
+            './mach', '--log-no-times', 'clang-format', '-p'
         ]
-        logger.info('Running ./mach clang-format', cmd=' '.join(cmd))
 
-        # Run command
-        clang_output = subprocess.check_output(cmd, cwd=settings.repo_dir).decode('utf-8')
+        # Returns a list of eligible files for format
+        def get_eligible_files():
+            files = []
+            # Append to the files list each C/C++ file for format
+            for file in revision.files:
+                # Verify if file is clang-format compliant, meaning that's a C/C++
+                _, ext = os.path.splitext(file)
+                if ext.lower() in settings.cpp_extensions:
+                    files.append(file)
+            return files
+
+        files_to_format = get_eligible_files()
+
+        if not files_to_format:
+            logger.info('No eligible files found to format.')
+            return []
+
+        # Append to the cmd the files that will be formatted
+        cmd += files_to_format
+
+        # Run command and commit the current revision for `./mach clang-format ...` to reformat its changes
+        logger.info('Running ./mach clang-format', cmd=' '.join(cmd))
+        clang_output = subprocess.check_output(
+            cmd, cwd=settings.repo_dir).decode('utf-8')
 
         # Dump raw clang-format output as a Taskcluster artifact (for debugging)
         clang_output_path = os.path.join(
