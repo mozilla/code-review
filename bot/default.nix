@@ -207,8 +207,9 @@ let
           -E openssl \
           -E pkgconfig \
           -E freetype.dev \
-          -e pytest-runner \
-          -e setuptools-scm \
+          -s flit \
+          -s pytest-runner \
+          -s setuptools-scm \
           -r requirements.txt \
           -r requirements-dev.txt
         popd
