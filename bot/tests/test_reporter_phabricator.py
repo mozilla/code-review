@@ -26,7 +26,7 @@ Code analysis found 1 defect in this patch:
  - 1 defect found by clang-format
 
 You can run this analysis locally with:
- - `./mach clang-format -p path/to/file.cpp` (C/C++)
+ - `./mach clang-format -s -p path/to/file.cpp` (C/C++)
 
 For your convenience, [here is a patch]({results}/clang-format-PHID-DIFF-abcdef.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply`).
 

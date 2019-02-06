@@ -21,7 +21,7 @@ COMMENT_PARTS = {
     },
     ClangFormatIssue: {
         'defect': ' - {nb} found by clang-format',
-        'analyzer': ' - `./mach clang-format -p path/to/file.cpp` (C/C++)',
+        'analyzer': ' - `./mach clang-format -s -p path/to/file.cpp` (C/C++)',
     },
     MozLintIssue: {
         'defect': ' - {nb} found by mozlint',
