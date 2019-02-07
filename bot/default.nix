@@ -207,6 +207,7 @@ let
           -E openssl \
           -E pkgconfig \
           -E freetype.dev \
+          -s intreehooks \
           -s flit \
           -s pytest-runner \
           -s setuptools-scm \
