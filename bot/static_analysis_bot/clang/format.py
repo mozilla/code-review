@@ -7,6 +7,7 @@ from parsepatch.patch import Patch
 
 from cli_common.log import get_logger
 from static_analysis_bot import CLANG_FORMAT
+from static_analysis_bot import DefaultAnalyzer
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
@@ -23,7 +24,7 @@ ISSUE_MARKDOWN = '''
 '''
 
 
-class ClangFormat(object):
+class ClangFormat(DefaultAnalyzer):
     '''
     Clang Format direct Runner
     List potential issues on modified files

@@ -1,0 +1,19 @@
+{
+  "type" : "Coverity issues",
+  "issues" : [
+    {
+      "checkerName" : "Dummy Checker Name",
+      "mainEventFilePathname" : "/path/to/test.cpp",
+      "strippedMainEventFilePathname" : "/to/test.cpp",
+      "mainEventLineNumber" : 123,
+      "events" : [
+        {
+          "eventDescription" : "Some dummy event"
+        }
+      ],
+      "checkerProperties" : {
+        "category" : "Dummy Category"
+      }
+    }
+  ]
+}

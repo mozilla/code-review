@@ -7,6 +7,7 @@ from cli_common.command import run
 from cli_common.log import get_logger
 from static_analysis_bot import MOZLINT
 from static_analysis_bot import AnalysisException
+from static_analysis_bot import DefaultAnalyzer
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
@@ -145,7 +146,7 @@ class MozLintIssue(Issue):
         }
 
 
-class MozLint(object):
+class MozLint(DefaultAnalyzer):
     '''
     Exposes mach lint capabilities
     '''

@@ -11,6 +11,7 @@ from cli_common.command import run_check
 from cli_common.log import get_logger
 from static_analysis_bot import INFER
 from static_analysis_bot import AnalysisException
+from static_analysis_bot import DefaultAnalyzer
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
@@ -41,7 +42,7 @@ INFER_SETUP_CMD = [
 ]
 
 
-class Infer(object):
+class Infer(DefaultAnalyzer):
     '''
     Infer runner
     '''

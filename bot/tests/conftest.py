@@ -411,3 +411,33 @@ def mock_infer_repeats(mock_config):
     path = os.path.join(MOCK_DIR, 'infer-repeats.txt')
     with open(path) as f:
         return f.read().replace('{REPO}', mock_config.repo_dir)
+
+
+@pytest.fixture
+def mock_coverity(tmpdir):
+    '''
+    Mocks the coverity environment
+    '''
+    from static_analysis_bot.config import settings
+    settings.cov_package_name = 'coverity'
+    settings.cov_package_ver = '1'
+
+    # Build the mock directory
+    os.environ['MOZBUILD_STATE_PATH'] = str(tmpdir.realpath())
+    tmpdir.mkdir('coverity').mkdir(settings.cov_package_name)
+
+
+@pytest.fixture
+def mock_coverity_empty_output():
+    '''
+    Mocks an empty result file for coverity
+    '''
+    return os.path.join(MOCK_DIR, 'coverity-empty.json')
+
+
+@pytest.fixture
+def mock_coverity_output():
+    '''
+    Load a real case clang output
+    '''
+    return os.path.join(MOCK_DIR, 'coverity.json')

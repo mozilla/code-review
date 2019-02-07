@@ -11,6 +11,7 @@ import subprocess
 from cli_common.log import get_logger
 from static_analysis_bot import CLANG_TIDY
 from static_analysis_bot import AnalysisException
+from static_analysis_bot import DefaultAnalyzer
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import CONFIG_URL
@@ -62,7 +63,7 @@ CLANG_SETUP_CMD = [
 ]
 
 
-class ClangTidy(object):
+class ClangTidy(DefaultAnalyzer):
     '''
     Clang Tidy Parallel runner
     Inspired by run-clang-tidy.py
