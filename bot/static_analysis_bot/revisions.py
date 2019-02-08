@@ -6,7 +6,6 @@
 import io
 import os
 import re
-from collections import OrderedDict
 from datetime import timedelta
 
 import hglib
@@ -21,17 +20,6 @@ from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 
 logger = log.get_logger(__name__)
-
-
-def revision_available(repo, revision):
-    '''
-    Check a revision is available on a Mercurial repo
-    '''
-    try:
-        repo.identify(revision)
-        return True
-    except hglib.error.CommandError:
-        return False
 
 
 class ImprovementPatch(object):
@@ -225,59 +213,17 @@ class PhabricatorRevision(Revision):
         * setup repo to base revision from Mozilla Central
         * Apply previous needed patches from Phabricator
         '''
-        assert isinstance(repo, hglib.client.hgclient)
-
-        # Diff PHIDs from our patch to its base
-        patches = OrderedDict()
-        patches[self.diff_phid] = self.diff_id
-
-        parents = self.api.load_parents(self.phid)
-        if parents:
-
-            # Load all parent diffs
-            for parent in parents:
-                logger.info('Loading parent diff', phid=parent)
-
-                # Sort parent diffs by their id to load the most recent patch
-                parent_diffs = sorted(
-                    self.api.search_diffs(revision_phid=parent),
-                    key=lambda x: x['id'],
-                )
-                last_diff = parent_diffs[-1]
-                patches[last_diff['phid']] = last_diff['id']
-
-                # Use base revision of last parent
-                hg_base = last_diff['baseRevision']
-
-        else:
-            # Use base revision from top diff
-            hg_base = self.diff['baseRevision']
-
-        # When base revision is missing, update to top of Central
-        if hg_base is None or not revision_available(repo, hg_base):
-            logger.warning('Missing base revision from Phabricator')
-            hg_base = 'central'
-
-        # Load all patches from their numerical ID
-        for diff_phid, diff_id in patches.items():
-            patches[diff_phid] = self.api.load_raw_diff(diff_id)
+        try:
+            _, patches = self.api.load_patches_stack(repo, self.diff)
+        except Exception as e:
+            raise AnalysisException('mercurial', str(e))
 
         # Expose current patch to workflow
-        self.patch = patches[self.diff_phid]
-
-        # Update the repo to base revision
-        try:
-            logger.info('Updating repo to revision', rev=hg_base)
-            repo.update(
-                rev=hg_base,
-                clean=True,
-            )
-        except hglib.error.CommandError:
-            raise AnalysisException('mercurial', 'Failed to update to revision {}'.format(hg_base))
+        self.patch = dict(patches)[self.diff_phid]
 
         # Apply all patches from base to top
         # except our current (top) patch
-        for diff_phid, patch in reversed(list(patches.items())[1:]):
+        for diff_phid, patch in patches[:-1]:
             logger.info('Applying parent diff', phid=diff_phid)
             try:
                 repo.import_(
