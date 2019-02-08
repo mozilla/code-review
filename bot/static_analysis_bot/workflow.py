@@ -279,28 +279,34 @@ class Workflow(object):
         for analyzer_class in analyzers:
             # Build analyzer
             analyzer = analyzer_class()
-
-            if is_before:
-                if analyzer.can_run_before_patch():
-                    # Run analyzer on revision and store generated issues
-                    logger.info('Run {} with no patch applied'.format(analyzer_class.__name__))
-                    analyzer_issues = analyzer.run(revision)
+            analyzer_issues = []
+            try:
+                if is_before:
+                    if analyzer.can_run_before_patch():
+                        # Run analyzer on revision and store generated issues
+                        logger.info('Run {} with no patch applied'.format(analyzer_class.__name__))
+                        analyzer_issues = analyzer.run(revision)
+                    else:
+                        logger.info('Skipped running {} with no patch applied'.format(analyzer_class.__name__))
+                        continue
                 else:
-                    logger.info('Skipped running {} with no patch applied'.format(analyzer_class.__name__))
-                    continue
-            else:
-                logger.info('Run {}'.format(analyzer_class.__name__))
-                analyzer_issues = analyzer.run(revision)
+                    logger.info('Run {}'.format(analyzer_class.__name__))
+                    analyzer_issues = analyzer.run(revision)
 
-            # Clean up any uncommitted changes left behind by this analyzer.
-            self.hg.revert(settings.repo_dir.encode('utf-8'), all=True)
-            logger.info('Reverted all uncommitted changes in repo', rev=self.hg.identify())
+            except AnalysisException as ex:
+                # Log the error to Sentry
+                logger.error('Analyzer thrown exceptions during runtime', analyzer=analyzer_class.__name__, exception=ex)
 
-            # Compute line hashes now before anything else changes the code.
-            for issue in analyzer_issues:
-                issue.build_lines_hash()
+            finally:
+                # Clean up any uncommitted changes left behind by this analyzer.
+                self.hg.revert(settings.repo_dir.encode('utf-8'), all=True)
+                logger.info('Reverted all uncommitted changes in repo', rev=self.hg.identify())
 
-            issues += analyzer_issues
+                # Compute line hashes now before anything else changes the code.
+                for issue in analyzer_issues:
+                    issue.build_lines_hash()
+
+                issues += analyzer_issues
 
         return issues
 
