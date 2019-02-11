@@ -184,8 +184,14 @@ class CoverityIssue(Issue):
     def __init__(self, issue, revision):
         assert not settings.repo_dir.endswith('/')
         self.revision = revision
-        # We look only for the last event
-        event_path = issue['events'][-1]
+        # We look only for main event
+        event_path = next((event for event in issue['events'] if event['main'] is True), None)
+
+        if event_path is None:
+            raise AnalysisException(
+                'coverity',
+                'Coverity Analysis did not find main event for mergeKey {}'.format(issue['mergeKey']))
+
         checker_properties = issue['checkerProperties']
         # Strip the leading slash
         self.path = issue['strippedMainEventFilePathname'].strip('/')

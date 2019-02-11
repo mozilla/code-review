@@ -8,7 +8,8 @@
       "mainEventLineNumber" : 123,
       "events" : [
         {
-          "eventDescription" : "Some dummy event"
+          "eventDescription" : "Some dummy event",
+          "main" : true
         }
       ],
       "checkerProperties" : {
