@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 
 
-def test_infer_parser(mock_config, mock_repository, mock_revision, mock_coverity, mock_coverity_empty_output, mock_coverity_output):
+def test_coverity(mock_config, mock_repository, mock_revision, mock_coverity, mock_coverity_empty_output, mock_coverity_output):
     '''
-    Test the infer (or mach static-analysis) parser
+    Test coverity
     '''
     from static_analysis_bot.coverity.coverity import Coverity
     cov = Coverity()
