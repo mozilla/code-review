@@ -55,6 +55,7 @@ class Settings(object):
         self.cov_package_ver = None
         self.cov_url = None
         self.cov_auth = None
+        self.cov_full_stack = False
 
     def setup(self,
               app_channel,
@@ -101,6 +102,7 @@ class Settings(object):
             self.cov_url = cov_config.get('server_url')
             self.cov_auth = cov_config.get('auth_key')
             self.cov_package_ver = cov_config.get('package_ver')
+            self.cov_full_stack = cov_config.get('full_stack', False)
 
     def __getattr__(self, key):
         if key not in self.config:

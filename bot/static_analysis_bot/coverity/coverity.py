@@ -35,6 +35,15 @@ ISSUE_MARKDOWN = '''
 ```
 '''
 
+ISSUE_ELEMENT_IN_STACK = '''
+- //{file_path}:{line_number}//:
+-- `{path_type}: {description}`.
+'''
+
+ISSUE_RELATION = '''
+The path that leads to this defect is:
+'''
+
 
 class Coverity(DefaultAnalyzer):
     '''
@@ -201,6 +210,16 @@ class CoverityIssue(Issue):
         self.message = event_path['eventDescription']
         self.body = None
         self.nb_lines = 1
+
+        if settings.cov_full_stack:
+            self.message += ISSUE_RELATION
+            # Embed all events into message
+            for event in issue['events']:
+                self.message += ISSUE_ELEMENT_IN_STACK.format(
+                    file_path=event['strippedFilePathname'],
+                    line_number=event['lineNumber'],
+                    path_type=event['eventTag'],
+                    description=event['eventDescription'])
 
     def __str__(self):
         return '[{}] {} {}'.format(self.kind, self.path, self.line)
