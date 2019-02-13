@@ -111,6 +111,10 @@ class Coverity(DefaultAnalyzer):
         assert commands_list is not [], 'Commands List is empty'
         logger.info('Built commands for {} files'.format(len(commands_list)))
 
+        if len(commands_list) == 0:
+            logger.info('Coverity didn\'t find any compilation units to use.')
+            return []
+
         cmd = ['gecko-env', self.cov_run_desktop, '--setup']
         logger.info('Running Coverity Setup', cmd=cmd)
         try:
