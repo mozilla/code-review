@@ -6,7 +6,8 @@
 import json
 import os
 import shutil
-import subprocess
+
+import click
 
 from cli_common.command import run_check
 from cli_common.log import get_logger
@@ -119,15 +120,15 @@ class Coverity(DefaultAnalyzer):
         logger.info('Running Coverity Setup', cmd=cmd)
         try:
             run_check(cmd, cwd=self.cov_path)
-        except subprocess.CalledProcessError as e:
-            raise AnalysisException('coverity', 'Coverity Setup failed: {}'.format(e.output))
+        except click.ClickException:
+            raise AnalysisException('coverity', 'Coverity Setup failed!')
 
         cmd = ['gecko-env', self.cov_configure, '--clang']
         logger.info('Running Coverity Configure', cmd=cmd)
         try:
             run_check(cmd, cwd=self.cov_path)
-        except subprocess.CalledProcessError as e:
-            raise AnalysisException('coverity', 'Coverity Configure failed: {}'.format(e.output))
+        except click.ClickException:
+            raise AnalysisException('coverity', 'Coverity Configure failed!')
 
         # For each element in commands_list run `cov-translate`
         for element in commands_list:
@@ -138,8 +139,8 @@ class Coverity(DefaultAnalyzer):
             logger.info('Running Coverity Tranlate', cmd=cmd)
             try:
                 run_check(cmd, cwd=element['directory'])
-            except subprocess.CalledProcessError as e:
-                raise AnalysisException('coverity', 'Coverity Translate failed: {}'.format(e.output))
+            except click.ClickException:
+                raise AnalysisException('coverity', 'Coverity Translate failed!')
 
         # Once the capture is performed we need to do the actual Coverity Desktop analysis
         cmd = [
@@ -150,8 +151,8 @@ class Coverity(DefaultAnalyzer):
         logger.info('Running Coverity Analysis', cmd=cmd)
         try:
             run_check(cmd, cwd=self.cov_state_path)
-        except subprocess.CalledProcessError as e:
-            raise AnalysisException('coverity', 'Coverity Analysis failed: {}'.format(e.output))
+        except click.ClickException:
+            raise AnalysisException('coverity', 'Coverity Analysis failed!')
 
         # Write the results.json to the artifact directory to have it later on for debug
         coverity_results_path = os.path.join(self.cov_state_path, 'cov-results.json')
