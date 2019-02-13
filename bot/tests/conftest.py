@@ -441,3 +441,16 @@ def mock_coverity_output():
     Load a real case clang output
     '''
     return os.path.join(MOCK_DIR, 'coverity.json')
+
+
+@responses.activate
+@pytest.fixture
+def mock_coverage():
+    path = os.path.join(MOCK_DIR, 'zero_coverage_report.json')
+    assert os.path.exists(path)
+    responses.add(
+        responses.GET,
+        'https://index.taskcluster.net/v1/task/project.releng.services.project.production.code_coverage_bot.latest/artifacts/public/zero_coverage_report.json',
+        body=open(path).read(),
+        content_type='application/json',
+    )

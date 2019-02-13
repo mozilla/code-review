@@ -6,12 +6,16 @@
 from cli_common import log
 from cli_common.phabricator import PhabricatorAPI
 from static_analysis_bot import CLANG_FORMAT
+from static_analysis_bot import COVERAGE
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.report.base import Reporter
 from static_analysis_bot.revisions import PhabricatorRevision
 
 BUG_REPORT_URL = 'https://github.com/mozilla/release-services/issues/new?title=Problem%20with%20an%20automated%20review:%20SUMMARY&labels=app:staticanalysis/bot&body=**Phabricator%20URL:**%20https://phabricator.services.mozilla.com/D%E2%80%A6%0A%0A**Problem:**%20%E2%80%A6'  # noqa
+
+# These analyzers generate issues for which we should not write inline comments.
+ANALYZERS_WITHOUT_INLINES = [CLANG_FORMAT, COVERAGE]
 
 logger = log.get_logger(__name__)
 
@@ -59,28 +63,42 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer in analyzers_available
         ]
 
-        if issues:
+        coverage_issues = [issue for issue in issues if issue.ANALYZER == COVERAGE]
 
+        if issues:
             # First publish inlines as drafts
             inlines = list(filter(None, [
                 self.comment_inline(revision, issue, existing_comments)
                 for issue in issues
-                if issue.ANALYZER != CLANG_FORMAT
+                if issue.ANALYZER not in ANALYZERS_WITHOUT_INLINES
             ]))
-            if not inlines and not patches:
+            if not inlines and not patches and not coverage_issues:
                 logger.info('No new comments found, skipping Phabricator publication')
                 return
             logger.info('Added inline comments', ids=[i['id'] for i in inlines])
 
             # Then publish top comment
-            self.api.comment(
-                revision.id,
-                self.build_comment(
-                    issues=issues,
-                    patches=patches,
-                    bug_report_url=BUG_REPORT_URL,
-                ),
-            )
+            non_coverage_issues = [issue for issue in issues if issue.ANALYZER != COVERAGE]
+            if len(non_coverage_issues):
+                self.api.comment(
+                    revision.id,
+                    self.build_comment(
+                        issues=non_coverage_issues,
+                        patches=patches,
+                        bug_report_url=BUG_REPORT_URL,
+                    ),
+                )
+
+            # Then publish top coverage comment
+            if len(coverage_issues):
+                self.api.comment(
+                    revision.id,
+                    self.build_coverage_comment(
+                        issues=coverage_issues,
+                        bug_report_url=BUG_REPORT_URL,
+                    ),
+                )
+
             stats.api.increment('report.phabricator.issues', len(inlines))
             stats.api.increment('report.phabricator')
             logger.info('Published phabricator comment')

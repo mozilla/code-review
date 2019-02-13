@@ -103,7 +103,7 @@ class Revision(object):
 
     def contains(self, issue):
         '''
-        Check if the issue is this patch
+        Check if the issue is in this patch
         '''
         assert isinstance(issue, Issue)
 
@@ -112,6 +112,10 @@ class Revision(object):
         if modified_lines is None:
             logger.warn('Issue path in not in revision', path=issue.path, revision=self)
             return False
+
+        # If nb_lines is -1, it means the issue applies to the entire file.
+        if issue.nb_lines == -1:
+            return True
 
         # Detect if this issue is in the patch
         lines = set(range(issue.line, issue.line + issue.nb_lines))

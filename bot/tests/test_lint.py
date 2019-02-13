@@ -17,7 +17,7 @@ def test_flake8_rules(tmpdir, mock_config, mock_revision):
         f.write('print("TEST")')
 
     path = os.path.join(mock_config.repo_dir, 'test/dummy/XXX.py')
-    os.makedirs(os.path.dirname(path))
+    os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, 'w') as f:
         f.write('print("TEST 2")')
 

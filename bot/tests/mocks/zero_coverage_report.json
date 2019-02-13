@@ -1,0 +1,41 @@
+{
+    "github_revision": "00c0d068ece99717bea7475f7dc07e61f7f35984",
+    "hg_revision": "2bf86657a4482f75eef4469686d2eb246ee55dd2",
+    "files": [
+    {
+        "size": 5518,
+        "first_push_date": "2017-06-01",
+        "last_push_date": "2018-08-29",
+        "commits": 2,
+        "name": "my/path/file1.cpp",
+        "funcs": 9,
+        "uncovered": true
+     },
+     {
+        "size": 2998,
+        "first_push_date": "2014-08-31",
+        "last_push_date": "2019-02-06",
+        "commits": 20,
+        "name": "my/path/file2.js",
+        "funcs": 7,
+        "uncovered": false
+    },
+    {
+        "size": 30786,
+        "first_push_date": "2008-03-20",
+        "last_push_date": "2018-12-14",
+        "commits": 113,
+        "name": "test/dummy/thirdparty.c",
+        "funcs": 32,
+        "uncovered": true
+    },
+    {
+        "size": 30786,
+        "first_push_date": "2008-03-20",
+        "last_push_date": "2018-12-14",
+        "commits": 113,
+        "name": "path/not/in/patch.java",
+        "funcs": 32,
+        "uncovered": true
+    }]
+}

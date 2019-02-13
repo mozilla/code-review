@@ -17,6 +17,7 @@ from cli_common.phabricator import PhabricatorAPI
 from cli_common.taskcluster import TASKCLUSTER_DATE_FORMAT
 from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import CLANG_TIDY
+from static_analysis_bot import COVERAGE
 from static_analysis_bot import COVERITY
 from static_analysis_bot import INFER
 from static_analysis_bot import MOZLINT
@@ -28,6 +29,7 @@ from static_analysis_bot.clang.tidy import ClangTidy
 from static_analysis_bot.config import REPO_UNIFIED
 from static_analysis_bot.config import Publication
 from static_analysis_bot.config import settings
+from static_analysis_bot.coverage import Coverage
 from static_analysis_bot.coverity import setup as setup_coverity
 from static_analysis_bot.coverity.coverity import Coverity
 from static_analysis_bot.infer import setup as setup_infer
@@ -190,6 +192,11 @@ class Workflow(object):
                 else:
                     logger.info('Skip Coverity')
 
+                if COVERAGE in self.analyzers:
+                    analyzers.append(Coverage)
+                else:
+                    logger.info('Skip coverage analysis')
+
             if revision.has_infer_files:
                 if INFER in self.analyzers:
                     analyzers.append(Infer)
@@ -223,7 +230,6 @@ class Workflow(object):
         with stats.api.timer('runtime.issues'):
             # Detect initial issues
             if settings.publication == Publication.BEFORE_AFTER:
-                # For Coverity we don't want to perform the analysis when no patch is applied
                 before_patch = self.detect_issues(analyzers, revision, True)
                 logger.info('Detected {} issue(s) before patch'.format(len(before_patch)))
                 stats.api.increment('analysis.issues.before', len(before_patch))
