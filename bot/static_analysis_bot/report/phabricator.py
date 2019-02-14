@@ -12,7 +12,7 @@ from static_analysis_bot import stats
 from static_analysis_bot.report.base import Reporter
 from static_analysis_bot.revisions import PhabricatorRevision
 
-BUG_REPORT_URL = 'https://github.com/mozilla/release-services/issues/new?title=Problem%20with%20an%20automated%20review:%20SUMMARY&labels=app:staticanalysis/bot&body=**Phabricator%20URL:**%20https://phabricator.services.mozilla.com/D%E2%80%A6%0A%0A**Problem:**%20%E2%80%A6'  # noqa
+BUG_REPORT_URL = 'https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator URL:** https://phabricator.services.mozilla.com/...&format=__default__'  # noqa
 
 # These analyzers generate issues for which we should not write inline comments.
 ANALYZERS_WITHOUT_INLINES = [CLANG_FORMAT, COVERAGE]
