@@ -196,7 +196,7 @@ def test_phabricator_coverage(mock_config, mock_repository, mock_phabricator):
         revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
         revision.lines = {
             # Add dummy lines diff
-            'test.txt': [41, 42, 43],
+            'test.txt': [0],
             'dom/test.cpp': [42, ],
         }
         reporter = PhabricatorReporter({'analyzers': ['coverage']}, api=api)
@@ -276,7 +276,7 @@ def test_phabricator_clang_tidy_and_coverage(mock_config, mock_repository, mock_
         revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
         revision.lines = {
             # Add dummy lines diff
-            'test.txt': [41, 42, 43],
+            'test.txt': [0],
             'test.cpp': [41, 42, 43],
         }
         reporter = PhabricatorReporter({'analyzers': ['coverage', 'clang-tidy']}, api=api)
@@ -316,6 +316,7 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
     from static_analysis_bot.infer.infer import InferIssue
     from static_analysis_bot.clang.tidy import ClangTidyIssue
     from static_analysis_bot.lint import MozLintIssue
+    from static_analysis_bot.coverage import CoverageIssue
 
     # needed by Mozlint issue
     with open(os.path.join(mock_config.repo_dir, 'test.cpp'), 'w') as f:
@@ -325,7 +326,7 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
         # Always use the same setup, only varies the analyzers
         revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
         revision.lines = {
-            'test.cpp': [41, 42, 43],
+            'test.cpp': [0, 41, 42, 43],
             'dom/test.cpp': [42, ],
         }
         reporter = PhabricatorReporter({'analyzers': analyzers}, api=api)
@@ -342,6 +343,7 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
                 'qualifier': 'dummy message.',
             }, revision),
             MozLintIssue('test.cpp', 1, 'danger', 42, 'flake8', 'Python error', 'EXXX', revision),
+            CoverageIssue('test.cpp', 0, 'This file is uncovered', revision),
         ]
 
         assert all(i.is_publishable() for i in issues)
@@ -392,6 +394,11 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
         assert len(patches) == 1
         assert [p.analyzer for p in patches] == ['mozlint']
 
+        # Only coverage
+        issues, patches = _test_reporter(api, ['coverage'])
+        assert len(issues) == 1
+        assert len(patches) == 0
+
         # clang-format + clang-tidy
         issues, patches = _test_reporter(api, ['clang-tidy', 'clang-format'])
         assert len(issues) == 2
@@ -399,7 +406,7 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
         assert [p.analyzer for p in patches] == ['clang-tidy', 'clang-format']
 
         # All of them
-        issues, patches = _test_reporter(api, ['clang-tidy', 'clang-format', 'infer', 'mozlint'])
-        assert len(issues) == 4
+        issues, patches = _test_reporter(api, ['clang-tidy', 'clang-format', 'infer', 'mozlint', 'coverage'])
+        assert len(issues) == 5
         assert len(patches) == 4
         assert [p.analyzer for p in patches] == ['clang-tidy', 'clang-format', 'infer', 'mozlint']

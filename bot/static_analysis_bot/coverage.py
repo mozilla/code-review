@@ -30,17 +30,21 @@ class CoverageIssue(Issue):
     ANALYZER = COVERAGE
 
     def __init__(self, path, lineno, message, revision):
-        self.nb_lines = -1
-        self.line = lineno and int(lineno) or 0
-        self.message = message
-        self.revision = revision
-
         # Ensure path is always relative to the repository
         self.path = path
         if self.path.startswith(settings.repo_dir):
             self.path = os.path.relpath(self.path, settings.repo_dir)
-        assert os.path.exists(os.path.join(settings.repo_dir, self.path)), \
+
+        full_path = os.path.join(settings.repo_dir, self.path)
+
+        assert os.path.exists(full_path), \
             'Missing {} in repo {}'.format(self.path, settings.repo_dir)
+
+        self.line = lineno and int(lineno) or 0
+        with open(full_path) as f:
+            self.nb_lines = sum(1 for line in f)
+        self.message = message
+        self.revision = revision
 
     def __str__(self):
         return self.path

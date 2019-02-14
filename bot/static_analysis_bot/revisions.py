@@ -113,10 +113,6 @@ class Revision(object):
             logger.warn('Issue path in not in revision', path=issue.path, revision=self)
             return False
 
-        # If nb_lines is -1, it means the issue applies to the entire file.
-        if issue.nb_lines == -1:
-            return True
-
         # Detect if this issue is in the patch
         lines = set(range(issue.line, issue.line + issue.nb_lines))
         return not lines.isdisjoint(modified_lines)
