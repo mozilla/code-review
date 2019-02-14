@@ -12,6 +12,9 @@
           "main" : true
         }
       ],
+      "stateOnServer" : {
+          "presentInReferenceSnapshot" : false
+      },
       "checkerProperties" : {
         "category" : "Dummy Category"
       }

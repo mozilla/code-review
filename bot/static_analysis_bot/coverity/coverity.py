@@ -180,7 +180,19 @@ class Coverity(DefaultAnalyzer):
                 logger.info('Coverity did not find any issues')
                 return []
 
-            return [CoverityIssue(issue, revision) for issue in result['issues']]
+            def _is_local_issue(issue):
+                '''
+                The given coverity issue should be only locally stored and not in the
+                remote snapshot
+                '''
+                stateOnServer = issue['stateOnServer']
+                # According to Coverity manual:
+                # presentInReferenceSnapshot - True if the issue is present in the reference
+                # snapshot specified in the cov-run-desktop command, false if not.
+                return stateOnServer is not None and 'presentInReferenceSnapshot' in stateOnServer \
+                    and stateOnServer['presentInReferenceSnapshot'] is False
+
+            return [CoverityIssue(issue, revision) for issue in result['issues'] if _is_local_issue(issue)]
 
     def can_run_before_patch(self):
         '''
