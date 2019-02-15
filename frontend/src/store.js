@@ -124,7 +124,7 @@ export default new Vuex.Store({
         return
       }
 
-      if (state.stats !== null) {
+      if (state.stats !== null && report.issues) {
         // Calc stats for this report
         state.stats.checks = report.issues.reduce((stats, issue) => {
           var analyzer = issue.analyzer + (issue.analyzer === 'mozlint' ? '.' + issue.linter : '')
@@ -137,6 +137,10 @@ export default new Vuex.Store({
             check = issue.bug_type
           } else if (issue.analyzer === 'mozlint') {
             check = issue.rule
+          } else if (issue.analyzer === 'Coverity') {
+            check = issue.kind
+          } else if (issue.analyzer === 'coverage') {
+            check = '0 coverage'
           } else {
             console.warn('Unsupported analyzer', issue.analyzer)
             return

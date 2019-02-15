@@ -52,7 +52,7 @@ export default {
             <td class="mono">{{ issue.path }}</td>
             <td>{{ issue.line }}</td>
             <td>
-              {{ issue.message }}
+              <pre>{{ issue.message }}</pre>
             </td>
           </tr>
         </tbody>

@@ -116,7 +116,9 @@ export default {
               <span v-if="issue.level == 'warning' || issue.type == 'warning' || issue.kind == 'WARNING'" class="tag is-warning">Warning</span>
             </td>
             <td>
-              {{ issue.message }}
+              <pre v-if="issue.analyzer == 'Coverity'">{{ issue.message }}</pre>
+              <p v-else>{{ issue.message }}</p>
+
               <pre v-if="issue.body">
                 {{ issue.body }}
               </pre>
