@@ -11,6 +11,7 @@ import cli_common.log
 import cli_common.utils
 from static_analysis_bot.config import settings
 from static_analysis_bot import AnalysisException
+from static_analysis_bot import stats
 
 
 logger = cli_common.log.get_logger(__name__)
@@ -36,6 +37,7 @@ COVERITY_CONFIG = '''
 '''
 
 
+@stats.api.timed('runtime.coverity.setup')
 def setup(index):
     '''
     Setup Taskcluster Coverity build for static-analysis

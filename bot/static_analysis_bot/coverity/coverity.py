@@ -162,7 +162,12 @@ class Coverity(DefaultAnalyzer):
 
         # Parsing the issues from coverity_results_path
         logger.info('Parsing Coverity issues')
-        return self.return_issues(coverity_results_path, revision)
+        issues = self.return_issues(coverity_results_path, revision)
+
+        # Report stats for these issues
+        stats.report_issues('coverity', issues)
+
+        return issues
 
     def return_issues(self, coverity_results_path, revision):
         '''
