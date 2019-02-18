@@ -6,6 +6,7 @@
 from __future__ import absolute_import
 
 import os
+import shutil
 from datetime import datetime
 from datetime import timedelta
 
@@ -148,26 +149,7 @@ class Workflow(object):
         with stats.api.timer('runtime.mach'):
             # Only run mach if revision has any C/C++ or Java files
             if revision.has_clang_files:
-
-                # Mach pre-setup with mozconfig
-                try:
-                    logger.info('Mach configure...')
-                    with stats.api.timer('runtime.mach.configure'):
-                        run_check(['gecko-env', './mach', 'configure'], cwd=settings.repo_dir)
-
-                    logger.info('Mach compile db...')
-                    with stats.api.timer('runtime.mach.build-backend'):
-                        run_check(['gecko-env', './mach', 'build-backend', '--backend=CompileDB'], cwd=settings.repo_dir)
-
-                    logger.info('Mach pre-export...')
-                    with stats.api.timer('runtime.mach.pre-export'):
-                        run_check(['gecko-env', './mach', 'build', 'pre-export'], cwd=settings.repo_dir)
-
-                    logger.info('Mach export...')
-                    with stats.api.timer('runtime.mach.export'):
-                        run_check(['gecko-env', './mach', 'build', 'export'], cwd=settings.repo_dir)
-                except Exception as e:
-                    raise AnalysisException('mach', str(e))
+                self.do_build_setup()
 
                 # Download clang build from Taskcluster
                 # Use new clang-tidy paths, https://bugzilla.mozilla.org/show_bug.cgi?id=1495641
@@ -238,6 +220,10 @@ class Workflow(object):
             # Apply patch
             revision.apply(self.hg)
 
+            if settings.publication == Publication.BEFORE_AFTER and revision.has_clang_files \
+                    and (revision.has_clang_header_files or revision.has_idl_files):
+                self.do_build_setup()
+
             # Detect new issues
             issues = self.detect_issues(analyzers, revision)
             logger.info('Detected {} issue(s) after patch'.format(len(issues)))
@@ -276,6 +262,33 @@ class Workflow(object):
                 reporter.publish(issues, revision)
 
         self.index(revision, state='done', issues=nb_issues, issues_publishable=nb_publishable)
+
+    @stats.api.timer('runtime.mach.setup')
+    def do_build_setup(self):
+        # Mach pre-setup with mozconfig
+        try:
+            logger.info('Mach delete any existing obj dir')
+            obj_dir = os.path.join(settings.repo_dir, 'obj-x86_64-pc-linux-gnu')
+            if (os.path.exists(obj_dir)):
+                shutil.rmtree(obj_dir)
+
+            logger.info('Mach configure...')
+            with stats.api.timer('runtime.mach.configure'):
+                run_check(['gecko-env', './mach', 'configure'], cwd=settings.repo_dir)
+
+            logger.info('Mach compile db...')
+            with stats.api.timer('runtime.mach.build-backend'):
+                run_check(['gecko-env', './mach', 'build-backend', '--backend=CompileDB'], cwd=settings.repo_dir)
+
+            logger.info('Mach pre-export...')
+            with stats.api.timer('runtime.mach.pre-export'):
+                run_check(['gecko-env', './mach', 'build', 'pre-export'], cwd=settings.repo_dir)
+
+            logger.info('Mach export...')
+            with stats.api.timer('runtime.mach.export'):
+                run_check(['gecko-env', './mach', 'build', 'export'], cwd=settings.repo_dir)
+        except Exception as e:
+            raise AnalysisException('mach', str(e))
 
     def detect_issues(self, analyzers, revision, is_before=False):
         '''

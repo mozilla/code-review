@@ -130,6 +130,29 @@ class Revision(object):
         return any(_is_clang(f) for f in self.files)
 
     @property
+    def has_clang_header_files(self):
+        '''
+        Check if this revision has any file that might
+        be a C/C++ header file
+        '''
+        def _is_clang_header(filename):
+            _, ext = os.path.splitext(filename)
+            return ext.lower() in settings.cpp_header_extensions
+
+        return any(_is_clang_header(f) for f in self.files)
+
+    @property
+    def has_idl_files(self):
+        '''
+        Check if this revision has any idl files
+        '''
+        def _is_idl(filename):
+            _, ext = os.path.splitext(filename)
+            return ext.lower() in settings.idl_extenssions
+
+        return any(_is_idl(f) for f in self.files)
+
+    @property
     def has_infer_files(self):
         '''
         Check if this revision has any file that might

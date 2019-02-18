@@ -77,7 +77,9 @@ def test_clang_files(mock_revision):
     assert mock_revision.has_clang_files
 
     mock_revision.files = ['test.h', 'test.js', 'xxx.txt']
-    assert mock_revision.has_clang_files
+    assert not mock_revision.has_clang_files
+
+    assert mock_revision.has_clang_header_files
 
 
 def test_analyze_patch():

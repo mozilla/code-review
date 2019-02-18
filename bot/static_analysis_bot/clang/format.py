@@ -52,7 +52,7 @@ class ClangFormat(DefaultAnalyzer):
             for file in revision.files:
                 # Verify if file is clang-format compliant, meaning that's a C/C++
                 _, ext = os.path.splitext(file)
-                if ext.lower() in settings.cpp_extensions:
+                if ext.lower() in frozenset.union(settings.cpp_extensions, settings.cpp_header_extensions):
                     files.append(file)
             return files
 

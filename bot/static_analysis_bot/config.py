@@ -65,8 +65,10 @@ class Settings(object):
               cov_config=None):
         self.app_channel = app_channel
         self.download({
-            'cpp_extensions': frozenset(['.c', '.h', '.cpp', '.cc', '.cxx', '.hh', '.hpp', '.hxx', '.m', '.mm']),
+            'cpp_extensions': frozenset(['.c', '.cpp', '.cc', '.cxx', '.m', '.mm']),
+            'cpp_header_extensions': frozenset(['.h', '.hh', '.hpp', '.hxx']),
             'java_extensions': frozenset(['.java']),
+            'idl_extenssions': frozenset(['.idl']),
         })
         assert 'clang_checkers' in self.config
         assert 'target' in self.config
