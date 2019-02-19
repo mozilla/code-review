@@ -428,23 +428,6 @@ def mock_coverity(tmpdir):
 
 
 @pytest.fixture
-def mock_coverity_empty_output():
-    '''
-    Mocks an empty result file for coverity
-    '''
-    return os.path.join(MOCK_DIR, 'coverity-empty.json')
-
-
-@pytest.fixture
-def mock_coverity_output():
-    '''
-    Load a real case clang output
-    '''
-    return os.path.join(MOCK_DIR, 'coverity.json')
-
-
-@responses.activate
-@pytest.fixture
 def mock_coverage():
     path = os.path.join(MOCK_DIR, 'zero_coverage_report.json')
     assert os.path.exists(path)
