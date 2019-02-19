@@ -87,6 +87,8 @@ class Issue(abc.ABC):
         Build a unique hash to identify lines related to this issue
         Skip leading spaces to have same hashes when only the indentation changes
         '''
+        assert settings.has_local_clone, 'Cannot build lines hash without a local clone'
+
         # Read issue related content here to build an hash
         full_path = os.path.join(settings.repo_dir, self.path)
         assert os.path.exists(full_path), \
@@ -164,7 +166,11 @@ class Issue(abc.ABC):
     def is_third_party(self):
         '''
         Is this issue in a third party path ?
+        Once we are using only try, we should not need this check anymore
         '''
+        if not settings.has_local_clone:
+            return False
+
         # List third party directories using mozilla-central file
         full_path = os.path.join(settings.repo_dir, settings.third_party)
         assert os.path.exists(full_path), \

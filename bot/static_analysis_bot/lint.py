@@ -2,6 +2,7 @@
 import itertools
 import json
 import os
+import re
 
 from cli_common.command import run
 from cli_common.log import get_logger
@@ -34,6 +35,7 @@ ISSUE_MARKDOWN = '''
 
 class MozLintIssue(Issue):
     ANALYZER = MOZLINT
+    TRY_PREFIX = 'source-test-mozlint'
 
     def __init__(self, path, column, level, lineno, linter, message, rule, revision, **kwargs):
         self.nb_lines = 1
@@ -47,10 +49,38 @@ class MozLintIssue(Issue):
 
         # Ensure path is always relative to the repository
         self.path = path
-        if self.path.startswith(settings.repo_dir):
-            self.path = os.path.relpath(self.path, settings.repo_dir)
-        assert os.path.exists(os.path.join(settings.repo_dir, self.path)), \
-            'Missing {} in repo {}'.format(self.path, settings.repo_dir)
+        if settings.has_local_clone:
+            if self.path.startswith(settings.repo_dir):
+                self.path = os.path.relpath(self.path, settings.repo_dir)
+            assert os.path.exists(os.path.join(settings.repo_dir, self.path)), \
+                'Missing {} in repo {}'.format(self.path, settings.repo_dir)
+
+    @staticmethod
+    def from_try(task_name, line, revision):
+        '''
+        Convert a detected issue on try into a MozLintIssue
+        '''
+        assert task_name.startswith(MozLintIssue.TRY_PREFIX)
+
+        linter = task_name[len(MozLintIssue.TRY_PREFIX) + 1:]
+        match = re.match(r'^(.+):(\d+):(\d+) \| (.+) \(([\w\s\-]+)\)$', line)
+        assert match is not None, 'Unsupported line format: {}'.format(line)
+        path, line, column, message, rule = match.groups()
+
+        # Remove Taskcluster clone prefix
+        if path.startswith('/builds/worker/checkouts/'):
+            path = path[25:]
+
+        return MozLintIssue(
+            path,
+            int(column),
+            'error',
+            int(line),
+            linter,
+            message,
+            rule,
+            revision,
+        )
 
     def __str__(self):
         return '{} issue {} {} line {}'.format(

@@ -7,15 +7,11 @@ from __future__ import absolute_import
 
 import os
 import shutil
-from datetime import datetime
-from datetime import timedelta
 
 import hglib
 
 from cli_common.command import run_check
 from cli_common.log import get_logger
-from cli_common.phabricator import PhabricatorAPI
-from cli_common.taskcluster import TASKCLUSTER_DATE_FORMAT
 from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import CLANG_TIDY
 from static_analysis_bot import COVERAGE
@@ -36,20 +32,16 @@ from static_analysis_bot.coverity.coverity import Coverity
 from static_analysis_bot.infer import setup as setup_infer
 from static_analysis_bot.infer.infer import Infer
 from static_analysis_bot.lint import MozLint
-from static_analysis_bot.report.debug import DebugReporter
-from static_analysis_bot.revisions import Revision
 
 logger = get_logger(__name__)
 
-TASKCLUSTER_NAMESPACE = 'project.releng.services.project.{channel}.static_analysis_bot.{name}'
-TASKCLUSTER_INDEX_TTL = 7  # in days
 
-
-class Workflow(object):
+class LocalWorkflow(object):
     '''
-    Static analysis workflow
+    Run analyers in current task
     '''
-    def __init__(self, reporters, analyzers, index_service, queue_service, phabricator_api):
+    def __init__(self, parent, analyzers, index_service):
+        self.parent = parent
         assert isinstance(analyzers, list)
         assert len(analyzers) > 0, \
             'No analyzers specified, will not run.'
@@ -57,21 +49,8 @@ class Workflow(object):
         assert 'MOZCONFIG' in os.environ, \
             'Missing MOZCONFIG in environment'
 
-        # Use share phabricator API client
-        assert isinstance(phabricator_api, PhabricatorAPI)
-        self.phabricator = phabricator_api
-
-        # Load reporters to use
-        self.reporters = reporters
-        if not self.reporters:
-            logger.warn('No reporters configured, this analysis will not be published')
-
-        # Always add debug reporter and Diff reporter
-        self.reporters['debug'] = DebugReporter(output_dir=settings.taskcluster.results_dir)
-
         # Use TC services client
         self.index_service = index_service
-        self.queue_service = queue_service
 
     @stats.api.timed('runtime.clone')
     def clone(self):
@@ -103,16 +82,12 @@ class Workflow(object):
 
     def run(self, revision):
         '''
-        Run the static analysis workflow:
+        Run the local static analysis workflow:
          * Pull revision from review
          * Checkout revision
-         * Run static analysis
-         * Publish results
+         * Run static analyzers
         '''
         analyzers = []
-
-        # Index ASAP Taskcluster task for this revision
-        self.index(revision, state='started')
 
         # Add log to find Taskcluster task in papertrail
         logger.info(
@@ -133,7 +108,7 @@ class Workflow(object):
             try:
                 # Start by cloning the mercurial repository
                 self.hg = self.clone()
-                self.index(revision, state='cloned')
+                self.parent.index(revision, state='cloned')
 
                 # Force cleanup to reset top of MU
                 # otherwise previous pull are there
@@ -208,7 +183,7 @@ class Workflow(object):
             logger.error('No analyzers to use on revision')
             return
 
-        self.index(revision, state='analyzing')
+        self.parent.index(revision, state='analyzing')
         with stats.api.timer('runtime.issues'):
             # Detect initial issues
             if settings.publication == Publication.BEFORE_AFTER:
@@ -235,33 +210,8 @@ class Workflow(object):
                     issue.is_new = issue not in before_patch
 
         # Avoid duplicates
-        issues = set(issues)
-
-        if not issues:
-            logger.info('No issues, stopping there.')
-            self.index(revision, state='done', issues=0)
-            return
-
-        # Publish patches on Taskcluster
-        # or write locally for local development
-        for patch in revision.improvement_patches:
-            if settings.taskcluster.local:
-                patch.write()
-            else:
-                patch.publish(self.queue_service)
-
-        # Report issues publication stats
-        nb_issues = len(issues)
-        nb_publishable = len([i for i in issues if i.is_publishable()])
-        self.index(revision, state='analyzed', issues=nb_issues, issues_publishable=nb_publishable)
-        stats.api.increment('analysis.issues.publishable', nb_publishable)
-
-        # Publish reports about these issues
-        with stats.api.timer('runtime.reports'):
-            for reporter in self.reporters.values():
-                reporter.publish(issues, revision)
-
-        self.index(revision, state='done', issues=nb_issues, issues_publishable=nb_publishable)
+        # but still output a list to be compatible with LocalWorkflow
+        return list(set(issues))
 
     @stats.api.timer('runtime.mach.setup')
     def do_build_setup(self):
@@ -328,34 +278,3 @@ class Workflow(object):
                 issues += analyzer_issues
 
         return issues
-
-    def index(self, revision, **kwargs):
-        '''
-        Index current task on Taskcluster index
-        '''
-        assert isinstance(revision, Revision)
-
-        if settings.taskcluster.local:
-            logger.info('Skipping taskcluster indexing', rev=str(revision), **kwargs)
-            return
-
-        # Build payload
-        payload = revision.as_dict()
-        payload.update(kwargs)
-
-        # Always add the indexing
-        now = datetime.utcnow()
-        payload['indexed'] = now.strftime(TASKCLUSTER_DATE_FORMAT)
-
-        # Index for all required namespaces
-        for name in revision.namespaces:
-            namespace = TASKCLUSTER_NAMESPACE.format(channel=settings.app_channel, name=name)
-            self.index_service.insertTask(
-                namespace,
-                {
-                    'taskId': settings.taskcluster.task_id,
-                    'rank': 0,
-                    'data': payload,
-                    'expires': (now + timedelta(days=TASKCLUSTER_INDEX_TTL)).strftime(TASKCLUSTER_DATE_FORMAT),
-                }
-            )

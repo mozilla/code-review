@@ -45,7 +45,7 @@ def mock_config():
 
     from static_analysis_bot.config import settings
     tempdir = tempfile.mkdtemp()
-    settings.setup('test', tempdir, 'IN_PATCH', ['dom/*', 'tests/*.py', 'test/*.c'])
+    settings.setup('test', tempdir, 'phabricator', 'IN_PATCH', ['dom/*', 'tests/*.py', 'test/*.c'], task_id='123abc')
 
     return settings
 
@@ -294,13 +294,13 @@ def mock_clang(mock_config, tmpdir, monkeypatch):
 
 @pytest.fixture
 @responses.activate
-def mock_workflow(tmpdir, mock_repository, mock_config, mock_phabricator):
+def mock_local_workflow(tmpdir, mock_repository, mock_config):
     '''
-    Mock the full workflow, without cloning
+    Mock the local workflow, without cloning
     '''
-    from static_analysis_bot.workflow import Workflow
+    from static_analysis_bot.workflows.local import LocalWorkflow
 
-    class MockWorkflow(Workflow):
+    class MockWorkflow(LocalWorkflow):
         def clone(self):
             return hglib.open(mock_config.repo_dir)
 
@@ -308,16 +308,34 @@ def mock_workflow(tmpdir, mock_repository, mock_config, mock_phabricator):
     if 'MOZCONFIG' not in os.environ:
         os.environ['MOZCONFIG'] = str(tmpdir.join('mozconfig').realpath())
 
+    workflow = MockWorkflow(
+        analyzers=['clang-tidy', 'clang-format', 'mozlint'],
+        index_service=None,
+    )
+    workflow.hg = workflow.clone()
+    return workflow
+
+
+@pytest.fixture
+@responses.activate
+def mock_workflow(tmpdir, mock_phabricator, mock_repository, mock_config):
+    '''
+    Mock the top level workflow
+    '''
+    from static_analysis_bot.workflows.base import Workflow
+
+    # Needed for Taskcluster build
+    if 'MOZCONFIG' not in os.environ:
+        os.environ['MOZCONFIG'] = str(tmpdir.join('mozconfig').realpath())
+
     with mock_phabricator as api:
-        workflow = MockWorkflow(
+        return Workflow(
             reporters={},
             analyzers=['clang-tidy', 'clang-format', 'mozlint'],
             index_service=None,
             queue_service=None,
             phabricator_api=api,
         )
-    workflow.hg = workflow.clone()
-    return workflow
 
 
 @pytest.fixture
