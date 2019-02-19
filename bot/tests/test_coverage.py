@@ -16,7 +16,9 @@ def test_coverage(mock_config, mock_repository, mock_revision, mock_coverage):
         # Covered file
         'my/path/file2.js',
         # Uncovered third-party file
-        'test/dummy/thirdparty.c'
+        'test/dummy/thirdparty.c',
+        # Uncovered header file
+        'my/path/header.h',
     ]
 
     # Build fake lines.
@@ -32,8 +34,8 @@ def test_coverage(mock_config, mock_repository, mock_revision, mock_coverage):
 
     issues = cov.run(mock_revision)
 
-    # The list must have two elements
-    assert len(issues) == 2
+    # The list must have three elements
+    assert len(issues) == 3
 
     # Verify that each element has a sane value
     issue = issues[0]
@@ -72,7 +74,6 @@ This file is uncovered
 ```
 '''
 
-    # Verify that each element has a sane value
     issue = issues[1]
     assert issue.path == 'test/dummy/thirdparty.c'
     assert issue.line == 0
@@ -103,6 +104,42 @@ This file is uncovered
 - **Path**: test/dummy/thirdparty.c
 - **Third Party**: yes
 - **Publishable**: yes
+
+```
+This file is uncovered
+```
+'''
+
+    issue = issues[2]
+    assert issue.path == 'my/path/header.h'
+    assert issue.line == 0
+    assert issue.message == 'This file is uncovered'
+    assert str(issue) == 'my/path/header.h'
+
+    assert issue.build_lines_hash() == '7d7681fc8eb9cc1fb0547f3f832195943ea1b36816110cb0016c47d53225d318'
+
+    assert not issue.is_third_party()
+    assert not issue.validates()
+
+    assert issue.as_dict() == {
+        'analyzer': 'coverage',
+        'path': 'my/path/header.h',
+        'line': 0,
+        'nb_lines': 4,
+        'message': 'This file is uncovered',
+        'is_third_party': False,
+        'in_patch': True,
+        'is_new': False,
+        'validates': False,
+        'publishable': False,
+    }
+    assert issue.as_text() == 'This file is uncovered'
+    assert issue.as_markdown() == '''
+## coverage problem
+
+- **Path**: my/path/header.h
+- **Third Party**: no
+- **Publishable**: no
 
 ```
 This file is uncovered

@@ -51,9 +51,10 @@ class CoverageIssue(Issue):
 
     def validates(self):
         '''
-        Coverage issues are always publishable
+        Coverage issues are always publishable, unless they are in header files
         '''
-        return True
+        _, ext = os.path.splitext(self.path)
+        return ext.lower() not in settings.cpp_header_extensions
 
     def as_text(self):
         '''

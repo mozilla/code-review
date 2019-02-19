@@ -37,5 +37,14 @@
         "name": "path/not/in/patch.java",
         "funcs": 32,
         "uncovered": true
-    }]
+    },
+    {
+        "size": 5518,
+        "first_push_date": "2017-06-01",
+        "last_push_date": "2018-08-29",
+        "commits": 2,
+        "name": "my/path/header.h",
+        "funcs": 9,
+        "uncovered": true
+     }]
 }
