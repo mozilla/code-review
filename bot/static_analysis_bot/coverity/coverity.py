@@ -249,6 +249,16 @@ class CoverityIssue(Issue):
             'line': self.line,
         }
 
+    def is_publishable(self):
+        '''
+        We don't use the default `is_publishable` implementation from `Issue`
+        because for CoverityIssue we don't apply the same logic to filter issues
+        as we do with the rest of our Analyzers, for IN_PATCH or BEFORE_AFTER methods,
+        since Coverity performs most of the checks on the servers and provides us a
+        snapshot with the checks that can be filtered only by the is_local function.
+        '''
+        return self.is_local()
+
     def is_local(self):
         '''
         The given coverity issue should be only locally stored and not in the
