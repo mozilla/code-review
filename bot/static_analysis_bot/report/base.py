@@ -29,7 +29,7 @@ COMMENT_PARTS = {
     },
     MozLintIssue: {
         'defect': ' - {nb} found by mozlint',
-        'analyzer': ' - `./mach lint path/to/file` (JS/Python/etc)',
+        'analyzer': ' - `./mach lint --warnings path/to/file` (JS/Python/etc)',
     },
 }
 COMMENT_FAILURE = '''

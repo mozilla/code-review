@@ -218,6 +218,7 @@ class MozLint(DefaultAnalyzer):
             'gecko-env',
             './mach', 'lint',
             '-f', 'json',
+            '--warnings',
             '--quiet',
             path
         ]
