@@ -83,3 +83,22 @@ def test_coverity_silent(mock_config, mock_repository, mock_revision, mock_cover
     # Assert it's not local, hence does NOT validate
     assert not issue.is_local()
     assert not issue.validates()
+
+
+def test_coverity_forward_issue(mock_config, mock_repository, mock_revision, mock_coverity):
+    '''
+    Test coverity issue forwarded by clang - build issue
+    '''
+    from static_analysis_bot.coverity.coverity import Coverity
+    cov = Coverity()
+
+    # Build issue forwarded by Clang
+    issues = cov.return_issues(os.path.join(MOCK_DIR, 'coverity-bug.json'), mock_revision)
+
+    # The list must have one element
+    assert len(issues) == 1
+
+    # Verify that the issue is forwarded by Clang as a clang diagnostic error
+    issue = issues[0]
+
+    assert issue.is_clang_error()
