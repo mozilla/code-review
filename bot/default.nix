@@ -28,6 +28,8 @@ let
         owner = "babadie@mozilla.com";
         taskImage = self.docker;
         workerType = if branch == "production" then "releng-svc-prod" else "releng-svc";
+        deadline = "2 hours";
+        maxRunTime = 2 * 60 * 60;
         scopes = [
           # Used by taskclusterProxy
           ("secrets:get:" + secretsKey)
