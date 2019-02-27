@@ -1,16 +1,44 @@
 <script>
 import Bool from './Bool.vue'
+import _ from 'lodash'
+import Choice from './Choice.vue'
+
 export default {
   name: 'Task',
   data () {
     return {
-      state: 'loading'
+      state: 'loading',
+      filters: {
+        publishable: null,
+        analyzer: null,
+        path: null
+      },
+      choices: {
+        publishable: [
+          {
+            name: 'Publishable',
+            func: i => i.publishable
+          },
+          {
+            name: 'Non publishable',
+            func: i => !i.publishable
+          }
+        ]
+      }
     }
   },
   components: {
-    Bool
+    Bool,
+    Choice
   },
   mounted () {
+    // Update filters from query string
+    let publishable = parseInt(this.$route.query.issue)
+    this.filters.publishable = isNaN(publishable) ? null : this.choices.publishable[publishable]
+    this.filters.path = this.$route.query.path || null
+    this.filters.analyzer = this.$route.query.analyzer || null
+
+    // Load report
     var report = this.$store.dispatch('load_report', this.$route.params.taskId)
     report.then(
       (response) => {
@@ -25,11 +53,46 @@ export default {
     report () {
       return this.$store.state.report
     },
+    paths () {
+      if (!this.report) {
+        return null
+      }
+      // List sorted unique paths as choices
+      return _.sortBy(_.uniq(_.map(this.report.issues, 'path')))
+    },
+    analyzers () {
+      if (!this.report) {
+        return null
+      }
+      // List sorted unique analyzers as choices
+      return _.sortBy(_.uniq(_.map(this.report.issues, 'analyzer')))
+    },
     nb_publishable () {
       if (!this.report || !this.report.issues) {
         return 0
       }
       return this.report.issues.filter(i => i.publishable).length
+    },
+    issues () {
+      let issues = this.report ? this.report.issues : []
+
+      // Filter by publishable
+      if (this.filters.publishable !== null) {
+        issues = _.filter(issues, this.filters.publishable.func)
+      }
+
+      // Filter by path
+      if (this.filters.path !== null) {
+        issues = _.filter(issues, i => i.path === this.filters.path)
+      }
+
+      // Filter by analyzer
+      if (this.filters.analyzer !== null) {
+        issues = _.filter(issues, i => i.analyzer === this.filters.analyzer)
+      }
+
+      // Always display publishable first
+      return _.sortBy(issues, i => !i.publishable)
     }
   },
   filters: {
@@ -76,13 +139,13 @@ export default {
         </div>
       </nav>
 
-      <table class="table is-fullwidth" v-if="report && report.issues">
+      <table class="table is-fullwidth" v-if="issues">
         <thead>
           <tr>
-            <td>Analyzer</td>
-            <td>Path</td>
+            <td><Choice :choices="analyzers" name="analyzer" v-on:new-choice="filters.analyzer = $event"/></td>
+            <td><Choice :choices="paths" name="path" v-on:new-choice="filters.path = $event"/></td>
             <td>Lines</td>
-            <td>Publication</td>
+            <td><Choice :choices="choices.publishable" name="issue" v-on:new-choice="filters.publishable = $event"/></td>
             <td>Check</td>
             <td>Level</td>
             <td>Message</td>
@@ -90,7 +153,7 @@ export default {
         </thead>
 
         <tbody>
-          <tr v-for="issue in report.issues" :class="{'publishable': issue.publishable}">
+          <tr v-for="issue in issues" :class="{'publishable': issue.publishable}">
             <td>
               <span v-if="issue.analyzer == 'mozlint'">{{ issue.linter }}<br />by Mozlint</span>
               <span v-else>{{ issue.analyzer }}</span>
@@ -109,11 +172,13 @@ export default {
             <td>
               <span v-if="issue.analyzer == 'mozlint'">{{ issue.rule }}</span>
               <span v-if="issue.analyzer == 'clang-tidy'">{{ issue.check }}</span>
+              <span v-if="issue.analyzer == 'clang-format'">Style issue</span>
               <span v-if="issue.analyzer == 'infer'">{{ issue.bug_type }}</span>
+              <span v-if="issue.analyzer == 'Coverity'">{{ issue.bug_type }}<br /><code>{{ issue.kind }}</code></span>
             </td>
             <td>
-              <span v-if="issue.level == 'error' || issue.type == 'error' || issue.kind == 'ERROR'" class="tag is-danger">Error</span>
-              <span v-if="issue.level == 'warning' || issue.type == 'warning' || issue.kind == 'WARNING'" class="tag is-warning">Warning</span>
+              <span v-if="issue.level == 'error' || issue.type == 'error' || issue.kind == 'ERROR' || issue.analyzer == 'Coverity'" class="tag is-danger">Error</span>
+              <span v-if="issue.level == 'warning' || issue.type == 'warning' || issue.kind == 'WARNING' || issue.analyzer == 'clang-format'" class="tag is-warning">Warning</span>
             </td>
             <td>
               <pre v-if="issue.analyzer == 'Coverity'">{{ issue.message }}</pre>
