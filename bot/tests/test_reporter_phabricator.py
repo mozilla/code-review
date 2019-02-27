@@ -36,7 +36,7 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_COVERAGE_MESSAGE = '''
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
-test.txt
+test.cpp
 
 Should they have tests, or are they dead code?
 You can file a bug blocking https://bugzilla.mozilla.org/show_bug.cgi?id=1415824 for untested files that should be tested.
@@ -197,11 +197,12 @@ def test_phabricator_coverage(mock_config, mock_repository, mock_phabricator):
         revision.lines = {
             # Add dummy lines diff
             'test.txt': [0],
+            'test.cpp': [0],
             'dom/test.cpp': [42, ],
         }
         reporter = PhabricatorReporter({'analyzers': ['coverage']}, api=api)
 
-    issue = CoverageIssue('test.txt', 0, 'This file is uncovered', revision)
+    issue = CoverageIssue('test.cpp', 0, 'This file is uncovered', revision)
     assert issue.is_publishable()
 
     issues, patches = reporter.publish([issue, ], revision)
@@ -277,15 +278,16 @@ def test_phabricator_clang_tidy_and_coverage(mock_config, mock_repository, mock_
         revision.lines = {
             # Add dummy lines diff
             'test.txt': [0],
-            'test.cpp': [41, 42, 43],
+            'test.cpp': [0],
+            'another_test.cpp': [41, 42, 43],
         }
         reporter = PhabricatorReporter({'analyzers': ['coverage', 'clang-tidy']}, api=api)
 
-    issue_parts = ('test.cpp', '42', '51', 'error', 'dummy message', 'modernize-use-nullptr')
+    issue_parts = ('another_test.cpp', '42', '51', 'error', 'dummy message', 'modernize-use-nullptr')
     issue_clang_tidy = ClangTidyIssue(issue_parts, revision)
     assert issue_clang_tidy.is_publishable()
 
-    issue_coverage = CoverageIssue('test.txt', 0, 'This file is uncovered', revision)
+    issue_coverage = CoverageIssue('test.cpp', 0, 'This file is uncovered', revision)
     assert issue_coverage.is_publishable()
 
     issues, patches = reporter.publish([issue_clang_tidy, issue_coverage, ], revision)

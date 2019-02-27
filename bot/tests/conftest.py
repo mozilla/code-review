@@ -65,9 +65,14 @@ def mock_repository(mock_config):
     path = os.path.join(mock_config.repo_dir, 'test.txt')
     with open(path, 'w') as f:
         f.write('Hello World\n')
+    client.add(path.encode('utf-8'))
+
+    path = os.path.join(mock_config.repo_dir, 'test.cpp')
+    with open(path, 'w') as f:
+        f.write('Hello World\n')
+    client.add(path.encode('utf-8'))
 
     # Initiall commit
-    client.add(path.encode('utf-8'))
     client.commit(b'Hello World', user=b'Tester')
 
     # Write dummy 3rd party file

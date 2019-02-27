@@ -54,7 +54,7 @@ class CoverageIssue(Issue):
         Coverage issues are always publishable, unless they are in header files
         '''
         _, ext = os.path.splitext(self.path)
-        return ext.lower() not in settings.cpp_header_extensions
+        return ext.lower() in settings.cpp_extensions.union(settings.js_extensions)
 
     def as_text(self):
         '''

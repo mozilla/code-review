@@ -76,6 +76,7 @@ class Settings(object):
             'cpp_header_extensions': frozenset(['.h', '.hh', '.hpp', '.hxx']),
             'java_extensions': frozenset(['.java']),
             'idl_extenssions': frozenset(['.idl']),
+            'js_extensions': frozenset(['.js', '.jsm']),
         })
         assert 'clang_checkers' in self.config
         assert 'target' in self.config

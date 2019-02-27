@@ -41,10 +41,16 @@ def test_phabricator(mock_phabricator, mock_repository, mock_config):
     mock_repository.update = __update
     assert r.patch is not None
     assert isinstance(r.patch, str)
-    assert len(r.patch.split('\n')) == 7
+    assert len(r.patch.split('\n')) == 14
     patch = Patch.parse_patch(r.patch)
     assert patch == {
         'test.txt': {
+            'touched': [],
+            'deleted': [],
+            'added': [2],
+            'new': False
+        },
+        'test.cpp': {
             'touched': [],
             'deleted': [],
             'added': [2],
