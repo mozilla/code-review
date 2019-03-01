@@ -190,7 +190,7 @@ export default new Vuex.Store({
 
     // Load Phabricator indexed tasks summary from Taskcluster
     load_index (state, payload) {
-      let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.static_analysis_bot.phabricator'
+      let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.static_analysis_bot.phabricator.diff'
       url += '?limit=200'
       if (payload && payload.continuationToken) {
         url += '&continuationToken=' + payload.continuationToken

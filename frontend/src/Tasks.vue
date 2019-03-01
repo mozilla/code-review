@@ -55,7 +55,7 @@ export default {
       // Filter by revision
       if (this.filters.revision !== null) {
         tasks = _.filter(tasks, t => {
-          let payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid
+          let payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid + t.data.id
           return payload.toLowerCase().indexOf(this.filters.revision.toLowerCase()) !== -1
         })
       }
@@ -110,13 +110,15 @@ export default {
             <a class="mono" :href="'https://tools.taskcluster.net/task-inspector/#' + task.taskId" target="_blank">{{ task.taskId }}</a>
           </td>
 
-          <td v-if="task.data.source == 'phabricator'">
+          <td>
             <p v-if="task.data.title">{{ task.data.title }}</p>
             <p class="has-text-danger" v-else>No title</p>
-            <small class="mono has-text-grey-light">{{ task.data.diff_phid}}</small>
-          </td>
-          <td v-else>
-            <p class="notification is-danger">Unknown data source: {{ task.data.source }}</p>
+            <p>
+              <small class="mono has-text-grey-light">{{ task.data.diff_phid}}</small>
+            </p>
+            <p>
+              <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - rev {{ task.data.id }}
+            </p>
           </td>
 
           <td>
