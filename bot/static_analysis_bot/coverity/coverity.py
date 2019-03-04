@@ -26,10 +26,10 @@ ISSUE_MARKDOWN = '''
 
 - **Message**: {message}
 - **Location**: {location}
-- **In patch**: {in_patch}
 - **Coverity check**: {check}
 - **Publishable **: {publishable}
-- **Is new**: {is_new}
+- **Is Clang Error**: {is_clang_error}
+- **Is Local**: {is_local}
 
 ```
 {body}
@@ -296,9 +296,9 @@ class CoverityIssue(Issue):
             message=self.message,
             location='{}:{}'.format(self.path, self.line),
             body=self.body,
-            in_patch='yes',
-            publishable='yes',
-            is_new='yes'
+            publishable=self.is_publishable() and 'yes' or 'no',
+            is_local=self.is_local() and 'yes' or 'no',
+            is_clang_error=self.is_clang_error() and 'yes' or 'no',
         )
 
     def as_dict(self):
@@ -318,5 +318,9 @@ class CoverityIssue(Issue):
             'is_new': self.is_new,
             'is_local': self.is_local(),
             'validates': self.validates(),
-            'publishable': True,
+            'validation': {
+                'is_local': self.is_local(),
+                'is_clang_error': self.is_clang_error(),
+            },
+            'publishable': self.is_publishable(),
         }

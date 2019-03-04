@@ -37,6 +37,7 @@ def test_coverity_publishable(mock_config, mock_repository, mock_revision, mock_
 
     # Assert it's local, hence publishable
     assert issue.is_local()
+    assert not issue.is_clang_error()
     assert issue.validates()
 
     # Testing it as_text
@@ -49,15 +50,36 @@ def test_coverity_publishable(mock_config, mock_repository, mock_revision, mock_
 
 - **Message**: Some dummy event
 - **Location**: to/test.cpp:123
-- **In patch**: yes
 - **Coverity check**: Dummy Checker Name
 - **Publishable **: yes
-- **Is new**: yes
+- **Is Clang Error**: no
+- **Is Local**: yes
 
 ```
 Dummy body
 ```
 '''
+
+    # Testing as_dict
+    assert issue.as_dict() == {
+        'analyzer': 'Coverity',
+        'body': 'Dummy body',
+        'bug_type': 'Dummy Category',
+        'in_patch': False,
+        'is_local': True,
+        'is_new': False,
+        'kind': 'Dummy Checker Name',
+        'line': 123,
+        'message': 'Some dummy event',
+        'nb_lines': 1,
+        'path': 'to/test.cpp',
+        'publishable': True,
+        'validates': True,
+        'validation': {
+            'is_clang_error': False,
+            'is_local': True,
+        }
+    }
 
 
 def test_coverity_silent(mock_config, mock_repository, mock_revision, mock_coverity):
@@ -82,7 +104,29 @@ def test_coverity_silent(mock_config, mock_repository, mock_revision, mock_cover
 
     # Assert it's not local, hence does NOT validate
     assert not issue.is_local()
+    assert not issue.is_clang_error()
     assert not issue.validates()
+
+    # Testing as_dict
+    assert issue.as_dict() == {
+        'analyzer': 'Coverity',
+        'body': None,
+        'bug_type': 'Dummy Category',
+        'in_patch': False,
+        'is_local': False,
+        'is_new': False,
+        'kind': 'Dummy Checker Name',
+        'line': 123,
+        'message': 'Some dummy event',
+        'nb_lines': 1,
+        'path': 'to/test.cpp',
+        'publishable': False,
+        'validates': False,
+        'validation': {
+            'is_clang_error': False,
+            'is_local': False,
+        }
+    }
 
 
 def test_coverity_forward_issue(mock_config, mock_repository, mock_revision, mock_coverity):
