@@ -47,7 +47,6 @@ class Settings(object):
 
         # Paths
         self.has_local_clone = True
-        self.cache_root = None
         self.repo_dir = None
         self.repo_shared_dir = None
         self.taskcluster = None
@@ -62,7 +61,7 @@ class Settings(object):
 
     def setup(self,
               app_channel,
-              cache_root,
+              work_dir,
               source,
               publication,
               allowed_paths,
@@ -87,11 +86,10 @@ class Settings(object):
         except KeyError:
             raise Exception('Publication mode should be {}'.format('|'.join(map(lambda p: p .name, Publication))))
 
-        if not os.path.isdir(cache_root):
-            os.makedirs(cache_root)
-        self.cache_root = cache_root
-        self.repo_dir = os.path.join(self.cache_root, 'sa-unified')
-        self.repo_shared_dir = os.path.join(self.cache_root, 'sa-unified-shared')
+        if not os.path.isdir(work_dir):
+            os.makedirs(work_dir)
+        self.repo_dir = os.path.join(work_dir, 'sa-unified')
+        self.repo_shared_dir = os.path.join(work_dir, 'sa-unified-shared')
 
         # Save Taskcluster ID for logging
         if 'TASK_ID' in os.environ and 'RUN_ID' in os.environ:

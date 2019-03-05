@@ -21,7 +21,6 @@ let
 
   mkBot = branch:
     let
-      cacheKey = "services-" + branch + "-static-analysis-bot";
       secretsKey = "repo:github.com/mozilla-releng/services:branch:" + branch;
       hook = mkTaskclusterHook {
         name = "Static analysis automated tests";
@@ -37,18 +36,12 @@ let
           # Send emails to relman
           "notify:email:*"
 
-          # Used by cache
-          ("docker-worker:cache:" + cacheKey)
-
           # Needed to index the task in the TaskCluster index
           ("index:insert-task:project.releng.services.project." + branch + ".static_analysis_bot.*")
 
           # Needed to download the Android sdks for Infer
           "queue:get-artifact:project/gecko/android-*"
         ];
-        cache = {
-          "${cacheKey}" = "/cache";
-        };
         taskEnv = mkTaskclusterMergeEnv {
           env = {
             "SSL_CERT_FILE" = "${cacert}/etc/ssl/certs/ca-bundle.crt";
@@ -67,8 +60,6 @@ let
           "/bin/static-analysis-bot"
           "--taskcluster-secret"
           secretsKey
-          "--cache-root"
-          "/cache"
         ];
         taskArtifacts = {
           "public/results" = {

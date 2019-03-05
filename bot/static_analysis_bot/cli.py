@@ -42,18 +42,18 @@ logger = get_logger(__name__)
     envvar='TASK_ID',
 )
 @click.option(
-    '--cache-root',
+    '--work-dir',
     default=os.path.join(
         tempfile.gettempdir(),
         'staticanalysis',
     ),
-    help='Cache root, used to pull changesets'
+    help='Work directory, used to pull changesets'
 )
 @stats.api.timer('runtime.analysis')
 def main(source,
          id,
          task_id,
-         cache_root,
+         work_dir,
          taskcluster_secret,
          taskcluster_client_id,
          taskcluster_access_token,
@@ -91,7 +91,7 @@ def main(source,
     # Setup settings before stats
     settings.setup(
         secrets['APP_CHANNEL'],
-        cache_root,
+        work_dir,
         source,
         secrets['PUBLICATION'],
         secrets['ALLOWED_PATHS'],
