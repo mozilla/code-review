@@ -86,6 +86,7 @@ def main(source,
                 PAPERTRAIL_PORT=secrets.get('PAPERTRAIL_PORT'),
                 SENTRY_DSN=secrets.get('SENTRY_DSN'),
                 MOZDEF=secrets.get('MOZDEF'),
+                timestamp=True,
                 )
 
     # Setup settings before stats

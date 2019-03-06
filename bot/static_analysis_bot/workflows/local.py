@@ -5,8 +5,10 @@
 
 from __future__ import absolute_import
 
+import fcntl
 import os
 import shutil
+import time
 
 import hglib
 
@@ -64,15 +66,45 @@ class LocalWorkflow(object):
                                     purge=True,
                                     sharebase=settings.repo_shared_dir,
                                     branch=b'central')
-
         cmd.insert(0, hglib.HGPATH)
+
+        def _log_process(output, name):
+            # Read and display every line
+            out = output.read()
+            if out is None:
+                return
+            text = filter(None, out.decode('utf-8').splitlines())
+            for line in text:
+                logger.info('{}: {}'.format(name, line))
+
+        # Start process
+        start = time.time()
         proc = hglib.util.popen(cmd)
+
+        # Set process outputs as non blocking
+        for output in (proc.stdout, proc.stderr):
+            fcntl.fcntl(
+                output.fileno(),
+                fcntl.F_SETFL,
+                fcntl.fcntl(output, fcntl.F_GETFL) | os.O_NONBLOCK,
+            )
+
+        while proc.poll() is None:
+            _log_process(proc.stdout, 'clone')
+            _log_process(proc.stderr, 'clone (err)')
+            time.sleep(1)
+
         out, err = proc.communicate()
-        if proc.returncode:
-            raise hglib.error.CommandError(cmd, proc.returncode, out, err)
+        if proc.returncode != 0:
+            raise Exception('Mercurial clone failed with exit code {}'.format(proc.returncode))
+        logger.info('Clone finished', time=(time.time() - start), out=out, err=err)
 
         # Open new hg client
         client = hglib.open(settings.repo_dir)
+
+        # Attach logger
+        client.setcbout(lambda msg: logger.info('Mercurial out={}'.format(msg.decode('utf-8'))))
+        client.setcberr(lambda msg: logger.info('Mercurial err={}'.format(msg.decode('utf-8'))))
 
         # Store MC top revision after robustcheckout
         self.top_revision = client.log('reverse(public())', limit=1)[0].node
