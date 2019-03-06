@@ -33,7 +33,7 @@ export default {
   },
   mounted: function () {
     let initial = this.$route.query[this.name]
-    if (initial) {
+    if (initial && this.choices) {
       this.current = isNaN(parseInt(initial)) ? initial : this.choices[initial]
     }
   },

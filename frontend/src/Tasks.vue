@@ -78,7 +78,7 @@ export default {
     <div class="states" >
       <div class="state columns" v-for="state in states">
         <div class="column is-one-third">
-          <progress class="progress" :class="{'is-danger': state.key.startsWith('error'), 'is-success': state.key == 'done', 'is-info': state.key != 'done' && !state.key.startsWith('error')}" :value="state.percent" max="100">{{ state.percent }}%</progress>
+          <progress class="progress" :class="{'is-danger': state.key.startsWith('error') || state.key === 'killed', 'is-success': state.key == 'done', 'is-info': state.key != 'done' && !state.key.startsWith('error')}" :value="state.percent" max="100">{{ state.percent }}%</progress>
         </div>
         <div class="column is-one-third">
           <strong>{{ state.name }}</strong> - <span class="has-text-grey-light">{{ state.nb }}/{{ tasks_total }} tasks or {{ state.percent }}%</span>
@@ -126,6 +126,9 @@ export default {
             <span class="tag is-info" v-else-if="task.data.state == 'cloned'">Cloned</span>
             <span class="tag is-info" v-else-if="task.data.state == 'analyzing'">Analyzing</span>
             <span class="tag is-primary" v-else-if="task.data.state == 'analyzed'">Analyzed</span>
+            <span class="tag is-danger" v-else-if="task.data.state == 'killed'">
+              Killed for timeout
+            </span>
             <span class="tag is-danger" v-else-if="task.data.state == 'error'" :title="task.data.error_message">
               Error: {{ task.data.error_code || 'unknown' }}
             </span>
