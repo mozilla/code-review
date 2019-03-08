@@ -5,7 +5,28 @@ import Choice from './Choice.vue'
 
 export default {
   mounted () {
-    this.$store.dispatch('load_index')
+    // Load new tasks at startup
+    this.load_tasks()
+  },
+  watch: {
+    '$route' (to, from, next) {
+      // Load new tasks when route change
+      this.load_tasks()
+    }
+  },
+  methods: {
+    load_tasks () {
+      var payload = {}
+
+      // Reset state
+      this.$store.commit('reset')
+
+      // Load a specific revision only
+      if (this.$route.params.revision) {
+        payload['revision'] = this.$route.params.revision
+      }
+      this.$store.dispatch('load_index', payload)
+    }
   },
   components: {
     Choice: Choice
@@ -117,7 +138,7 @@ export default {
               <small class="mono has-text-grey-light">{{ task.data.diff_phid}}</small> - diff {{ task.data.diff_id || 'unknown'     }}
             </p>
             <p>
-              <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - rev {{ task.data.id }}
+              <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - <router-link :to="{ name: 'revision', params: { revision: task.data.id }}">rev {{ task.data.id }}</router-link>
             </p>
           </td>
 

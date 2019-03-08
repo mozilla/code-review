@@ -18,10 +18,23 @@ def test_taskcluster_index(mock_workflow, mock_config, mock_revision):
     mock_revision.as_dict = lambda: {'id': '1234', 'source': 'mock'}
     mock_workflow.index(mock_revision, test='dummy')
 
-    args = mock_workflow.index_service.insertTask.call_args[0]
-    assert args[0] == 'project.releng.services.project.test.static_analysis_bot.mock.1234'
-    assert args[1]['taskId'] == '12345deadbeef'
-    assert args[1]['data']['test'] == 'dummy'
-    assert args[1]['data']['id'] == '1234'
-    assert args[1]['data']['source'] == 'mock'
-    assert 'indexed' in args[1]['data']
+    assert mock_workflow.index_service.insertTask.call_count == 2
+    calls = mock_workflow.index_service.insertTask.call_args_list
+
+    # First call with namespace
+    namespace, args = calls[0][0]
+    assert namespace == 'project.releng.services.project.test.static_analysis_bot.mock.1234'
+    assert args['taskId'] == '12345deadbeef'
+    assert args['data']['test'] == 'dummy'
+    assert args['data']['id'] == '1234'
+    assert args['data']['source'] == 'mock'
+    assert 'indexed' in args['data']
+
+    # Second call with sub namespace
+    namespace, args = calls[1][0]
+    assert namespace == 'project.releng.services.project.test.static_analysis_bot.mock.1234.12345deadbeef'
+    assert args['taskId'] == '12345deadbeef'
+    assert args['data']['test'] == 'dummy'
+    assert args['data']['id'] == '1234'
+    assert args['data']['source'] == 'mock'
+    assert 'indexed' in args['data']

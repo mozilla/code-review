@@ -48,8 +48,10 @@ export default new Vuex.Store({
     },
     use_channel (state, channel) {
       state.channel = channel
-
-      // Reset state
+      this.commit('reset')
+      this.commit('save_preferences')
+    },
+    reset (state) {
       state.tasks = []
       state.indexes = []
       state.stats = {
@@ -59,7 +61,6 @@ export default new Vuex.Store({
         checks: {},
         start_date: new Date()
       }
-      this.commit('save_preferences')
     },
     use_tasks (state, payload) {
       var now = new Date()
@@ -204,7 +205,14 @@ export default new Vuex.Store({
 
     // Load Phabricator indexed tasks summary from Taskcluster
     load_index (state, payload) {
-      let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.static_analysis_bot.phabricator.diff'
+      let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.static_analysis_bot.phabricator.'
+      if (payload && payload.revision) {
+        // Remove potential leading 'D' from phabricator revision
+        url += !Number.isInteger(payload.revision) && payload.revision.startsWith('D') ? payload.revision.substring(1) : payload.revision
+      } else {
+        url += 'diff'
+      }
+
       url += '?limit=200'
       if (payload && payload.continuationToken) {
         url += '&continuationToken=' + payload.continuationToken

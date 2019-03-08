@@ -128,8 +128,15 @@ class Workflow(object):
         now = datetime.utcnow()
         payload['indexed'] = now.strftime(TASKCLUSTER_DATE_FORMAT)
 
+        # Add a sub namespace with the task id to be able to list
+        # tasks from the parent namespace
+        namespaces = revision.namespaces + [
+            '{}.{}'.format(namespace, settings.taskcluster.task_id)
+            for namespace in revision.namespaces
+        ]
+
         # Index for all required namespaces
-        for name in revision.namespaces:
+        for name in namespaces:
             namespace = TASKCLUSTER_NAMESPACE.format(channel=settings.app_channel, name=name)
             self.index_service.insertTask(
                 namespace,
