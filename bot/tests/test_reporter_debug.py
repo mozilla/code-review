@@ -37,6 +37,7 @@ def test_publication(tmpdir, mock_issues, mock_phabricator):
     assert report['revision'] == {
         'source': 'phabricator',
         'id': 51,
+        'diff_id': 42,
         'url': 'https://phabricator.test/D51',
         'bugzilla_id': '',
         'diff_phid': 'PHID-DIFF-abcdef',

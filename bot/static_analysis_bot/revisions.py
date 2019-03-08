@@ -282,6 +282,7 @@ class PhabricatorRevision(Revision):
             'source': 'phabricator',
             'diff_phid': self.diff_phid,
             'phid': self.phid,
+            'diff_id': self.diff_id,
             'id': self.id,
             'url': self.url,
             'has_clang_files': self.has_clang_files,
