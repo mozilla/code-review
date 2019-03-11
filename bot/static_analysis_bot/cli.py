@@ -17,8 +17,6 @@ from cli_common.taskcluster import get_service
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import config
 from static_analysis_bot import stats
-from static_analysis_bot.config import SOURCE_PHABRICATOR
-from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
 from static_analysis_bot.report import get_reporters
 from static_analysis_bot.revisions import PhabricatorRevision
@@ -29,10 +27,6 @@ logger = get_logger(__name__)
 
 @click.command()
 @taskcluster_options
-@click.option(
-    '--source',
-    envvar='ANALYSIS_SOURCE',
-)
 @click.option(
     '--id',
     envvar='ANALYSIS_ID',
@@ -50,16 +44,13 @@ logger = get_logger(__name__)
     help='Work directory, used to pull changesets'
 )
 @stats.api.timer('runtime.analysis')
-def main(source,
-         id,
+def main(id,
          task_id,
          work_dir,
          taskcluster_secret,
          taskcluster_client_id,
          taskcluster_access_token,
          ):
-    assert source in (SOURCE_TRY, SOURCE_PHABRICATOR), \
-        'Unsupported analysis source: {}'.format(source)
 
     secrets = get_secrets(taskcluster_secret,
                           config.PROJECT_NAME,
@@ -93,11 +84,9 @@ def main(source,
     settings.setup(
         secrets['APP_CHANNEL'],
         work_dir,
-        source,
         secrets['PUBLICATION'],
         secrets['ALLOWED_PATHS'],
         secrets.get('COVERITY_CONFIG'),
-        task_id,
     )
     # Setup statistics
     datadog_api_key = secrets.get('DATADOG_API_KEY')
@@ -117,9 +106,6 @@ def main(source,
         taskcluster_client_id,
         taskcluster_access_token,
     )
-
-    # Local clone available when not running on try
-    settings.has_local_clone = source != 'try'
 
     # Load queue service
     queue_service = get_service(

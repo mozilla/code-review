@@ -89,7 +89,7 @@ Dummy body
 '''
 
 
-def test_repeats(mock_infer, mock_infer_repeats, mock_revision, mock_config):
+def test_repeats(mock_infer, mock_infer_repeats, mock_revision, mock_config, mock_repository):
     '''
     Test repeated issues are removed through set usage
     '''

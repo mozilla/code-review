@@ -5,7 +5,7 @@
 import os
 
 
-def test_flake8_rules(tmpdir, mock_config, mock_revision):
+def test_flake8_rules(mock_config, mock_repository, mock_revision):
     '''
     Check flake8 rule detection
     '''
@@ -54,11 +54,16 @@ def test_issue_path(mock_repository, mock_config, mock_revision):
     assert issue.path == 'test.txt'
 
 
-def test_as_text(mock_revision):
+def test_as_text(mock_config, mock_revision, mock_repository):
     '''
     Test text export for ClangTidyIssue
     '''
     from static_analysis_bot.lint import MozLintIssue
+
+    path = os.path.join(mock_config.repo_dir, 'test.py')
+    with open(path, 'w') as f:
+        f.write('print("TEST")')
+
     issue = MozLintIssue('test.py', 1, 'error', 1, 'flake8', 'dummy test withUppercaseChars', 'dummy rule', mock_revision)
 
     assert issue.as_text() == 'Error: Dummy test withUppercaseChars [flake8: dummy rule]'

@@ -167,7 +167,7 @@ def test_lines_hash(mock_config, test_cpp):
         assert_hash(TestIssue(line=line, path='another.h'), 'another line\n', 'b1401bec')
 
 
-def test_allowed_paths(mock_config):
+def test_allowed_paths(mock_config, mock_repository):
     '''
     Test allowed paths for ClangFormatIssue
     The test config has these 2 rules: dom/* and tests/*.py

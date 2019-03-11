@@ -29,12 +29,8 @@ int main(void){
 '''
 
 
-@pytest.fixture(scope='session')
 @responses.activate
-def mock_config():
-    '''
-    Mock configuration for bot
-    '''
+def build_config():
     path = os.path.join(MOCK_DIR, 'config.yaml')
     responses.add(
         responses.GET,
@@ -44,13 +40,31 @@ def mock_config():
     )
 
     from static_analysis_bot.config import settings
-    tempdir = tempfile.mkdtemp()
-    settings.setup('test', tempdir, 'phabricator', 'IN_PATCH', ['dom/*', 'tests/*.py', 'test/*.c'], task_id='123abc')
-
+    settings.config = None
+    settings.setup('test', tempfile.mkdtemp(), 'IN_PATCH', ['dom/*', 'tests/*.py', 'test/*.c'])
     return settings
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='class')
+def mock_config():
+    '''
+    Mock configuration for bot
+    '''
+    return build_config()
+
+
+@pytest.fixture(scope='function')
+def mock_try_config():
+    '''
+    Mock configuration for bot
+    Using try source
+    '''
+    os.environ['TRY_TASK_ID'] = 'remoteTryTask'
+    os.environ['TRY_TASK_GROUP_ID'] = 'remoteTryGroup'
+    return build_config()
+
+
+@pytest.fixture(scope='class')
 def mock_repository(mock_config):
     '''
     Create a dummy mercurial repository
@@ -82,6 +96,9 @@ def mock_repository(mock_config):
 
     # Remove pull capabilities
     client.pull = Mock(return_value=True)
+
+    # Mark clone is available
+    mock_config.has_local_clone = True
 
     return client
 
@@ -190,7 +207,7 @@ def mock_phabricator():
     )
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='class')
 def mock_stats(mock_config):
     '''
     Mock Datadog authentication and stats management
@@ -373,8 +390,8 @@ def mock_clang_issues():
         return f.read()
 
 
-@pytest.fixture
-def mock_clang_repeats(mock_config):
+@pytest.fixture(scope='class')
+def mock_clang_repeats(mock_config, mock_repository):
     '''
     Load parsed issues with repeated issues
     '''

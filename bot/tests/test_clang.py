@@ -293,7 +293,7 @@ Dummy body
 '''
 
 
-def test_repeats(mock_clang_repeats, mock_revision, mock_config):
+def test_repeats(mock_clang_repeats, mock_clang, mock_revision, mock_config, mock_repository):
     '''
     Test repeated issues are removed through set usage
     '''
@@ -317,7 +317,7 @@ def test_repeats(mock_clang_repeats, mock_revision, mock_config):
     assert count['modernize-loop-convert'] == 1
 
 
-def test_clang_format_3rd_party(mock_repository, mock_revision):
+def test_clang_format_3rd_party(mock_config, mock_repository, mock_revision):
     '''
     Test a clang format issue in 3rd party is not publishable
     '''

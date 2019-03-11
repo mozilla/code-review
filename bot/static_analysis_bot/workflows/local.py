@@ -110,6 +110,9 @@ class LocalWorkflow(object):
         self.top_revision = client.log('reverse(public())', limit=1)[0].node
         logger.info('Mozilla unified top revision', revision=self.top_revision)
 
+        # Mark local clone is present
+        settings.has_local_clone = True
+
         return client
 
     def run(self, revision):

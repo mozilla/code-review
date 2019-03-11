@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from cli_common.log import get_logger
+from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
 from static_analysis_bot.lint import MozLintIssue
 
@@ -76,10 +77,13 @@ class RemoteWorkflow(object):
         self.queue_service = queue_service
 
     def run(self, revision):
-        assert settings.taskcluster.task_id is not None, 'Missing Taskcluster task id'
+        assert settings.source == SOURCE_TRY, \
+            'Cannot run without Try source'
+        assert settings.try_task_id is not None, \
+            'Cannot run without Try task id'
 
         # Load task description
-        task = self.queue_service.task(settings.taskcluster.task_id)
+        task = self.queue_service.task(settings.try_task_id)
         assert len(task['dependencies']) > 0, 'No task dependencies to analyze'
 
         # Find issues in dependencies
