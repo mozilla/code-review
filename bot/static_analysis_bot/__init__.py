@@ -3,14 +3,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from static_analysis_bot.config import settings
-from static_analysis_bot.config import Publication
-from static_analysis_bot.stats import Datadog
-import itertools
+import abc
 import hashlib
+import itertools
 import json
 import os
-import abc
+
+from static_analysis_bot.config import Publication
+from static_analysis_bot.config import settings
+from static_analysis_bot.stats import Datadog
 
 CLANG_TIDY = 'clang-tidy'
 CLANG_FORMAT = 'clang-format'

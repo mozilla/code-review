@@ -5,18 +5,17 @@
 
 import io
 import os
-import requests
 import shutil
 import subprocess
 import tarfile
 
+import requests
 import taskcluster.exceptions
 
 import cli_common.log
 import cli_common.utils
-from static_analysis_bot.config import settings
 from static_analysis_bot import AnalysisException
-
+from static_analysis_bot.config import settings
 
 logger = cli_common.log.get_logger(__name__)
 

@@ -258,15 +258,15 @@ def mock_stats(mock_config):
     yield stats.api.reporter
 
 
-@pytest.fixture
-def mock_revision():
+@pytest.fixture(scope='function')
+@responses.activate
+def mock_revision(mock_phabricator):
     '''
     Mock a mercurial revision
     '''
-    from static_analysis_bot.revisions import Revision
-    rev = Revision()
-    rev.mercurial = 'a6ce14f59749c3388ffae2459327a323b6179ef0'
-    return rev
+    from static_analysis_bot.revisions import PhabricatorRevision
+    with mock_phabricator as api:
+        return PhabricatorRevision('PHID-DIFF-XXX', api)
 
 
 @pytest.fixture

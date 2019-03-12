@@ -18,34 +18,37 @@ class AnalysisTask(object):
     '''
     An analysis CI task running on Taskcluster
     '''
-    def __init__(self, task_id):
+    def __init__(self, task_id, task_status):
+        assert 'task' in task_status, 'No task data for {}'.format(self.task_id)
+        assert 'status' in task_status, 'No status data for {}'.format(self.task_id)
         self.task_id = task_id
-        self.run_id = None
-        self.task = None
+        self.task = task_status['task']
+        self.status = task_status['status']
+
+    @property
+    def run_id(self):
+        return self.status['runs'][-1]['runId']
+
+    @property
+    def name(self):
+        return self.task['metadata'].get('name', 'unknown')
+
+    @property
+    def state(self):
+        return self.status['state']
 
     def load_logs(self, queue_service):
 
-        # Load base task
-        self.task = queue_service.task(self.task_id)
-        self.name = self.task['metadata'].get('name', 'unknown')
-        logger.info('Lookup task dependency', id=self.task_id, name=self.name)
-
-        # Load task status
-        status = queue_service.status(self.task_id)
-        assert 'status' in status, 'No status data for {}'.format(self.task_id)
-        state = status['status']['state']
-
         # Process only the failed tasks
         # A completed task here means the analyzer did not find any issues
-        if state == 'completed':
+        if self.state == 'completed':
             logger.info('No issues detected by completed task', id=self.task_id)
             return
-        elif state != 'failed':
-            logger.warn('Unsupported task state', state=state, id=self.task_id)
+        elif self.state != 'failed':
+            logger.warn('Unsupported task state', state=self.state, id=self.task_id)
             return
 
         # Load artifact logs from the last run
-        self.run_id = status['status']['runs'][-1]['runId']
         artifacts = queue_service.listArtifacts(self.task_id, self.run_id)
         assert 'artifacts' in artifacts, 'Missing artifacts'
         logs = [
@@ -81,16 +84,38 @@ class RemoteWorkflow(object):
             'Cannot run without Try source'
         assert settings.try_task_id is not None, \
             'Cannot run without Try task id'
+        assert settings.try_group_id is not None, \
+            'Cannot run without Try task id'
+
+        # Load all tasks in task group
+        tasks = self.queue_service.listTaskGroup(settings.try_group_id)
+        assert 'tasks' in tasks
+        tasks = {
+            task['status']['taskId']: task
+            for task in tasks['tasks']
+        }
+        assert len(tasks) > 0
+        logger.info('Loaded Taskcluster group', id=settings.try_group_id, tasks=len(tasks))
+
+        # Update the local revision with tasks
+        revision.setup_try(tasks)
 
         # Load task description
-        task = self.queue_service.task(settings.try_task_id)
-        assert len(task['dependencies']) > 0, 'No task dependencies to analyze'
+        task = tasks.get(settings.try_task_id)
+        assert task is not None, 'Missing task {}'.format(settings.try_task_id)
+        dependencies = task['task']['dependencies']
+        assert len(dependencies) > 0, 'No task dependencies to analyze'
 
         # Find issues in dependencies
         issues = []
-        for dep_id in task['dependencies']:
+        for dep_id in dependencies:
+            if dep_id not in tasks:
+                # Used for docker images produced in tree
+                # and other artifacts
+                logger.info('Skip dependency not in group', task_id=dep_id)
+                continue
             try:
-                task = AnalysisTask(dep_id)
+                task = AnalysisTask(dep_id, tasks[dep_id])
                 logs = task.load_logs(self.queue_service)
                 if logs is None:
                     continue

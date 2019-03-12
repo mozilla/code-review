@@ -17,6 +17,7 @@ from cli_common.taskcluster import create_blob_artifact
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
+from static_analysis_bot.config import REPO_TRY
 from static_analysis_bot.config import settings
 
 logger = log.get_logger(__name__)
@@ -193,6 +194,7 @@ class PhabricatorRevision(Revision):
         super().__init__()
         assert isinstance(api, PhabricatorAPI)
         self.api = api
+        self.mercurial_revision = None
 
         # Parse Diff description
         match = self.regex.match(description)
@@ -230,11 +232,33 @@ class PhabricatorRevision(Revision):
     def url(self):
         return 'https://{}/D{}'.format(self.api.hostname, self.id)
 
+    def setup_try(self, tasks):
+        '''
+        Find the mercurial revision from the Try decision task env
+        '''
+        # Find the decision task
+        def is_decision_task(task):
+            image = task['task']['payload'].get('image')
+            if image is not None and isinstance(image, str):
+                return image.startswith('taskcluster/decision')
+        decision_task = next(filter(is_decision_task, tasks.values()), None)
+        assert decision_task is not None, 'Missing decision task'
+
+        # Use mercurial infos for local revision
+        decision_env = decision_task['task']['payload']['env']
+        assert decision_env.get('GECKO_HEAD_REPOSITORY') == REPO_TRY.decode('utf-8'), \
+            'Not the try repo in GECKO_HEAD_REPOSITORY'
+
+        # Save mercurial revision
+        self.mercurial_revision = decision_env.get('GECKO_HEAD_REV')
+        assert self.mercurial_revision is not None, 'Missing try revision'
+        logger.info('Using Try mercurial revision', rev=self.mercurial_revision)
+
     def load(self, repo):
         '''
-        Load full stack of patches from Phabricator:
-        * setup repo to base revision from Mozilla Central
-        * Apply previous needed patches from Phabricator
+        Load full raw patch from Phabricator API then load and apply
+        the dependant stack of patches from Phabricator
+        when the patch is not already in the repository
         '''
         try:
             _, patches = self.api.load_patches_stack(repo, self.diff)
@@ -243,6 +267,10 @@ class PhabricatorRevision(Revision):
 
         # Expose current patch to workflow
         self.patch = dict(patches)[self.diff_phid]
+
+        # Skip patch application when repo already has the patch
+        if self.mercurial_revision is not None:
+            return
 
         # Apply all patches from base to top
         # except our current (top) patch
@@ -263,16 +291,23 @@ class PhabricatorRevision(Revision):
         '''
         assert isinstance(repo, hglib.client.hgclient)
 
-        # Apply the patch on top of repository
-        try:
-            repo.import_(
-                patches=io.BytesIO(self.patch.encode('utf-8')),
-                message='SA Analyzed patch',
-                user='reviewbot',
+        if self.mercurial_revision:
+            # Apply the existing commit when available
+            repo.update(
+                rev=self.mercurial_revision,
+                clean=True,
             )
-            logger.info('Applied target patch', phid=self.diff_phid)
-        except hglib.error.CommandError:
-            raise AnalysisException('mercurial', 'Failed to import target patch')
+        else:
+            # Apply the patch on top of repository
+            try:
+                repo.import_(
+                    patches=io.BytesIO(self.patch.encode('utf-8')),
+                    message='SA Analyzed patch',
+                    user='reviewbot',
+                )
+                logger.info('Applied target patch', phid=self.diff_phid)
+            except hglib.error.CommandError:
+                raise AnalysisException('mercurial', 'Failed to import target patch')
 
     def as_dict(self):
         '''

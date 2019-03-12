@@ -25,7 +25,9 @@ from static_analysis_bot import stats
 from static_analysis_bot.clang import setup as setup_clang
 from static_analysis_bot.clang.format import ClangFormat
 from static_analysis_bot.clang.tidy import ClangTidy
+from static_analysis_bot.config import REPO_TRY
 from static_analysis_bot.config import REPO_UNIFIED
+from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import Publication
 from static_analysis_bot.config import settings
 from static_analysis_bot.coverage import Coverage
@@ -55,17 +57,31 @@ class LocalWorkflow(object):
         self.index_service = index_service
 
     @stats.api.timed('runtime.clone')
-    def clone(self):
+    def clone(self, revision):
         '''
         Clone mozilla-unified
         '''
         logger.info('Clone mozilla unified', dir=settings.repo_dir)
-        cmd = hglib.util.cmdbuilder('robustcheckout',
-                                    REPO_UNIFIED,
-                                    settings.repo_dir,
-                                    purge=True,
-                                    sharebase=settings.repo_shared_dir,
-                                    branch=b'central')
+
+        if settings.source == SOURCE_TRY:
+            # Clone Try using the target revision
+            assert revision.mercurial_revision is not None, 'Missing try mercurial revision'
+            cmd = hglib.util.cmdbuilder('robustcheckout',
+                                        REPO_TRY,
+                                        settings.repo_dir,
+                                        revision=revision.mercurial_revision,
+                                        upstream=REPO_UNIFIED,
+                                        purge=True,
+                                        sharebase=settings.repo_shared_dir)
+
+        else:
+            # Clone Mozilla unified up to central bookmark
+            cmd = hglib.util.cmdbuilder('robustcheckout',
+                                        REPO_UNIFIED,
+                                        settings.repo_dir,
+                                        purge=True,
+                                        sharebase=settings.repo_shared_dir,
+                                        branch=b'central')
         cmd.insert(0, hglib.HGPATH)
 
         def _log_process(output, name):
@@ -96,6 +112,7 @@ class LocalWorkflow(object):
 
         out, err = proc.communicate()
         if proc.returncode != 0:
+            logger.error('Mercurial clone failure', out=out, err=err)
             raise Exception('Mercurial clone failed with exit code {}'.format(proc.returncode))
         logger.info('Clone finished', time=(time.time() - start), out=out, err=err)
 
@@ -142,7 +159,7 @@ class LocalWorkflow(object):
         with stats.api.timer('runtime.mercurial'):
             try:
                 # Start by cloning the mercurial repository
-                self.hg = self.clone()
+                self.hg = self.clone(revision)
                 self.parent.index(revision, state='cloned')
 
                 # Force cleanup to reset top of MU

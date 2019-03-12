@@ -71,7 +71,7 @@ def test_expanded_macros(mock_stats, test_cpp, mock_revision):
     assert issue.is_expanded_macro() is False
 
 
-def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock_revision, mock_workflow):
+def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock_revision):
     '''
     Test clang-format runner
     '''

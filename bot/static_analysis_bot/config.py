@@ -20,6 +20,7 @@ PROJECT_NAME = 'static-analysis-bot'
 CONFIG_URL = 'https://hg.mozilla.org/mozilla-central/raw-file/tip/tools/clang-tidy/config.yaml'
 REPO_CENTRAL = b'https://hg.mozilla.org/mozilla-central'
 REPO_UNIFIED = b'https://hg.mozilla.org/mozilla-unified'
+REPO_TRY = b'https://hg.mozilla.org/try'
 SOURCE_PHABRICATOR = 'phabricator'
 SOURCE_TRY = 'try'
 
@@ -53,6 +54,7 @@ class Settings(object):
 
         # For remote analysis
         self.try_task_id = None
+        self.try_group_id = None
 
         # For Coverity Analysis package info
         self.cov_analysis_url = None
@@ -73,6 +75,7 @@ class Settings(object):
         if 'TRY_TASK_ID' in os.environ and 'TRY_TASK_GROUP_ID' in os.environ:
             self.source = SOURCE_TRY
             self.try_task_id = os.environ['TRY_TASK_ID']
+            self.try_group_id = os.environ['TRY_TASK_GROUP_ID']
         else:
             self.source = SOURCE_PHABRICATOR
 
