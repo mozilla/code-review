@@ -61,8 +61,7 @@ class LocalWorkflow(object):
         '''
         Clone mozilla-unified
         '''
-        logger.info('Clone mozilla unified', dir=settings.repo_dir)
-
+        logger.info('Clone mozilla unified', dir=settings.repo_dir, shared=settings.repo_shared_dir)
         if settings.source == SOURCE_TRY:
             # Clone Try using the target revision
             assert revision.mercurial_revision is not None, 'Missing try mercurial revision'
@@ -108,7 +107,7 @@ class LocalWorkflow(object):
         while proc.poll() is None:
             _log_process(proc.stdout, 'clone')
             _log_process(proc.stderr, 'clone (err)')
-            time.sleep(1)
+            time.sleep(2)
 
         out, err = proc.communicate()
         if proc.returncode != 0:

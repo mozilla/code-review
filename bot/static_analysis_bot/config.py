@@ -23,6 +23,7 @@ REPO_UNIFIED = b'https://hg.mozilla.org/mozilla-unified'
 REPO_TRY = b'https://hg.mozilla.org/try'
 SOURCE_PHABRICATOR = 'phabricator'
 SOURCE_TRY = 'try'
+TASKCLUSTER_CACHE = '/cache'
 
 logger = get_logger(__name__)
 
@@ -96,10 +97,10 @@ class Settings(object):
         except KeyError:
             raise Exception('Publication mode should be {}'.format('|'.join(map(lambda p: p .name, Publication))))
 
+        # Repository is always on local instance
         if not os.path.isdir(work_dir):
             os.makedirs(work_dir)
         self.repo_dir = os.path.join(work_dir, 'sa-unified')
-        self.repo_shared_dir = os.path.join(work_dir, 'sa-unified-shared')
 
         # Save Taskcluster ID for logging
         if 'TASK_ID' in os.environ and 'RUN_ID' in os.environ:
@@ -108,6 +109,14 @@ class Settings(object):
             self.taskcluster = TaskCluster(tempfile.mkdtemp(), 'local instance', 0, True)
         if not os.path.isdir(self.taskcluster.results_dir):
             os.makedirs(self.taskcluster.results_dir)
+
+        # Repository sharebase (for robustcheckout) is either
+        # * on the available Taskcluster cache, when running online
+        # * on the local instance, for developers
+        if not self.taskcluster.local and os.path.isdir(TASKCLUSTER_CACHE):
+            self.repo_shared_dir = os.path.join(TASKCLUSTER_CACHE, 'sa-unified-shared')
+        else:
+            self.repo_shared_dir = os.path.join(work_dir, 'sa-unified-shared')
 
         # Save allowed paths
         assert isinstance(allowed_paths, list)
