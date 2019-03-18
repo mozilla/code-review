@@ -6,6 +6,7 @@
 from __future__ import absolute_import
 
 import fcntl
+import multiprocessing
 import os
 import shutil
 import time
@@ -115,6 +116,12 @@ class LocalWorkflow(object):
             raise Exception('Mercurial clone failed with exit code {}'.format(proc.returncode))
         logger.info('Clone finished', time=(time.time() - start), out=out, err=err)
 
+    def open_repository(self):
+        '''
+        As clone is run in a separate process, the bot needs to load a mercurial
+        client in the main process
+        '''
+
         # Open new hg client
         client = hglib.open(settings.repo_dir)
 
@@ -157,8 +164,24 @@ class LocalWorkflow(object):
 
         with stats.api.timer('runtime.mercurial'):
             try:
+                # Clone in a controllable process
+                # and kill this new process if it exceeds the maximum allowed runtime
+                clone = multiprocessing.Process(target=self.clone, args=(revision, ))
+                clone.start()
+                clone.join(settings.max_clone_runtime)
+                if clone.is_alive():
+                    logger.error('Clone watchdog expired, stopping immediately')
+
+                    # Kill the clone process
+                    clone.terminate()
+
+                    # Stop workflow
+                    raise AnalysisException('watchdog', 'Clone watchdog expired')
+
+                # Open a mercurial client in main process
+                self.hg = self.open_repository()
+
                 # Start by cloning the mercurial repository
-                self.hg = self.clone(revision)
                 self.parent.index(revision, state='cloned')
 
                 # Force cleanup to reset top of MU

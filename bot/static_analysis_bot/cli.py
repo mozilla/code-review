@@ -60,6 +60,7 @@ def main(id,
                               'ANALYZERS',
                               'PHABRICATOR',
                               'ALLOWED_PATHS',
+                              'MAX_CLONE_RUNTIME',
                           ),
                           existing={
                               'APP_CHANNEL': 'development',
@@ -67,6 +68,7 @@ def main(id,
                               'ANALYZERS': ['clang-tidy', ],
                               'PUBLICATION': 'IN_PATCH',
                               'ALLOWED_PATHS': ['*', ],
+                              'MAX_CLONE_RUNTIME': 15 * 60,
                           },
                           taskcluster_client_id=taskcluster_client_id,
                           taskcluster_access_token=taskcluster_access_token,
@@ -87,6 +89,7 @@ def main(id,
         secrets['PUBLICATION'],
         secrets['ALLOWED_PATHS'],
         secrets.get('COVERITY_CONFIG'),
+        secrets['MAX_CLONE_RUNTIME'],
     )
     # Setup statistics
     datadog_api_key = secrets.get('DATADOG_API_KEY')
