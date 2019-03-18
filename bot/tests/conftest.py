@@ -53,7 +53,7 @@ def mock_config():
     return build_config()
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope='class')
 def mock_try_config():
     '''
     Mock configuration for bot

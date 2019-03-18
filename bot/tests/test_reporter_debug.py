@@ -35,7 +35,6 @@ def test_publication(tmpdir, mock_issues, mock_phabricator):
 
     assert 'revision' in report
     assert report['revision'] == {
-        'source': 'phabricator',
         'id': 51,
         'diff_id': 42,
         'url': 'https://phabricator.test/D51',

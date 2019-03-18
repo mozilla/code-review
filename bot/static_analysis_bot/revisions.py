@@ -314,7 +314,6 @@ class PhabricatorRevision(Revision):
         Outputs a serializable representation of this revision
         '''
         return {
-            'source': 'phabricator',
             'diff_phid': self.diff_phid,
             'phid': self.phid,
             'diff_id': self.diff_id,
