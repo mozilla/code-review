@@ -17,6 +17,8 @@ from cli_common.taskcluster import get_service
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import config
 from static_analysis_bot import stats
+from static_analysis_bot.config import SOURCE_PHABRICATOR
+from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
 from static_analysis_bot.report import get_reporters
 from static_analysis_bot.revisions import PhabricatorRevision
@@ -32,10 +34,6 @@ logger = get_logger(__name__)
     envvar='ANALYSIS_ID',
 )
 @click.option(
-    '--task-id',
-    envvar='TASK_ID',
-)
-@click.option(
     '--work-dir',
     default=os.path.join(
         tempfile.gettempdir(),
@@ -45,7 +43,6 @@ logger = get_logger(__name__)
 )
 @stats.api.timer('runtime.analysis')
 def main(id,
-         task_id,
          work_dir,
          taskcluster_secret,
          taskcluster_client_id,
@@ -123,7 +120,12 @@ def main(id,
         reporters['phabricator'].setup_api(phabricator_api)
 
     # Load unique revision
-    revision = PhabricatorRevision(id, phabricator_api)
+    if settings.source == SOURCE_PHABRICATOR:
+        revision = PhabricatorRevision(phabricator_api, diff_phid=id)
+    elif settings.source == SOURCE_TRY:
+        revision = PhabricatorRevision(phabricator_api, try_task=queue_service.task(settings.try_task_id))
+    else:
+        raise Exception('Unsupported source {}'.format(settings.source))
 
     # Run workflow according to source
     w = Workflow(reporters, secrets['ANALYZERS'], index_service, queue_service, phabricator_api)

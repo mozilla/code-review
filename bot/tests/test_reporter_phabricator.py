@@ -82,7 +82,7 @@ def test_phabricator_clang_tidy(mock_repository, mock_phabricator):
     )
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
+        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
         revision.lines = {
             # Add dummy lines diff
             'test.cpp': [41, 42, 43],
@@ -135,7 +135,7 @@ def test_phabricator_clang_format(mock_config, mock_repository, mock_phabricator
     )
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
+        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
         revision.lines = {
             # Add dummy lines diff
             'test.cpp': [41, 42, 43],
@@ -193,7 +193,7 @@ def test_phabricator_coverage(mock_config, mock_repository, mock_phabricator):
     )
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
+        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
         revision.lines = {
             # Add dummy lines diff
             'test.txt': [0],
@@ -274,7 +274,7 @@ def test_phabricator_clang_tidy_and_coverage(mock_config, mock_repository, mock_
     )
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
+        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
         revision.lines = {
             # Add dummy lines diff
             'test.txt': [0],
@@ -326,7 +326,7 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
 
     def _test_reporter(api, analyzers):
         # Always use the same setup, only varies the analyzers
-        revision = PhabricatorRevision('PHID-DIFF-abcdef', api)
+        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
         revision.lines = {
             'test.cpp': [0, 41, 42, 43],
             'dom/test.cpp': [42, ],

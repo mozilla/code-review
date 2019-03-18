@@ -266,7 +266,7 @@ def mock_revision(mock_phabricator):
     '''
     from static_analysis_bot.revisions import PhabricatorRevision
     with mock_phabricator as api:
-        return PhabricatorRevision('PHID-DIFF-XXX', api)
+        return PhabricatorRevision(api, diff_phid='PHID-DIFF-XXX')
 
 
 @pytest.fixture

@@ -105,7 +105,7 @@ def test_mail(mock_config, mock_issues, mock_phabricator):
     r = MailReporter(conf, 'test_tc', 'token_tc')
 
     with mock_phabricator as api:
-        prev = PhabricatorRevision('PHID-DIFF-test', api)
+        prev = PhabricatorRevision(api, 'PHID-DIFF-test')
         prev.improvement_patches = [
             ImprovementPatch('clang-tidy', repr(prev), 'Some code fixes'),
             ImprovementPatch('clang-format', repr(prev), 'Some lint fixes'),

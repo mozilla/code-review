@@ -21,7 +21,7 @@ def test_publication(tmpdir, mock_issues, mock_phabricator):
     assert not os.path.exists(report_path)
 
     with mock_phabricator as api:
-        prev = PhabricatorRevision('PHID-DIFF-abcdef', api)
+        prev = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
 
     r = DebugReporter(report_dir)
     r.publish(mock_issues, prev)

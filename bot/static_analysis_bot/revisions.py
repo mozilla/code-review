@@ -5,7 +5,6 @@
 
 import io
 import os
-import re
 from datetime import timedelta
 
 import hglib
@@ -188,20 +187,30 @@ class PhabricatorRevision(Revision):
     '''
     A phabricator revision to process
     '''
-    regex = re.compile(r'^(PHID-DIFF-(?:\w+))$')
+    diff_phid = None
 
-    def __init__(self, description, api):
+    def __init__(self, api, diff_phid=None, try_task=None):
         super().__init__()
         assert isinstance(api, PhabricatorAPI)
+        assert (diff_phid is not None) ^ (try_task is not None)
         self.api = api
         self.mercurial_revision = None
 
-        # Parse Diff description
-        match = self.regex.match(description)
-        if match is None:
-            raise Exception('Invalid Phabricator description')
-        groups = match.groups()
-        self.diff_phid = groups[0]
+        if diff_phid is not None:
+            # Load directly from the diff phid
+            self.load_phabricator(diff_phid)
+        elif try_task is not None:
+            # Load diff phid from the task env
+            self.load_phabricator(try_task['extra']['code-review']['phabricator-diff'])
+        else:
+            raise Exception('Invalid revision configuration')
+
+    def load_phabricator(self, diff_phid):
+        '''
+        Load identifiers from Phabricator
+        '''
+        assert diff_phid.startswith('PHID-DIFF-')
+        self.diff_phid = diff_phid
 
         # Load diff details to get the diff revision
         diffs = self.api.search_diffs(diff_phid=self.diff_phid)
