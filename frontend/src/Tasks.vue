@@ -11,7 +11,9 @@ export default {
   watch: {
     '$route' (to, from, next) {
       // Load new tasks when route change
-      this.load_tasks()
+      if (to.path !== from.path) {
+        this.load_tasks()
+      }
     }
   },
   methods: {
@@ -36,7 +38,8 @@ export default {
       filters: {
         state: null,
         issues: null,
-        revision: null
+        revision: null,
+        source: null
       },
       choices: {
         issues: [
@@ -51,6 +54,16 @@ export default {
           {
             name: 'Publishable issues',
             func: t => t.data.issues_publishable && t.data.issues_publishable > 0
+          }
+        ],
+        sources: [
+          {
+            name: 'Try',
+            func: t => t.data.source === 'try'
+          },
+          {
+            name: 'Phabricator',
+            func: t => t.data.source === 'phabricator'
           }
         ]
       }
@@ -71,6 +84,11 @@ export default {
       // Filter by issues
       if (this.filters.issues !== null) {
         tasks = _.filter(tasks, this.filters.issues.func)
+      }
+
+      // Filter by source
+      if (this.filters.source !== null) {
+        tasks = _.filter(tasks, this.filters.source.func)
       }
 
       // Filter by revision
@@ -115,6 +133,9 @@ export default {
             <input class="input" type="text" v-model="filters.revision" placeholder="Filter using phabricator, bugzilla Id or word, ..."/>
           </td>
           <td>
+            <Choice :choices="choices.sources" name="source" v-on:new-choice="filters.source = $event"/>
+          </td>
+          <td>
             <Choice :choices="states" name="state" v-on:new-choice="filters.state = $event"/>
           </td>
           <td>
@@ -140,6 +161,12 @@ export default {
             <p>
               <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - <router-link :to="{ name: 'revision', params: { revision: task.data.id }}">rev {{ task.data.id }}</router-link>
             </p>
+          </td>
+
+          <td>
+            <span class="tag is-light" v-if="task.data.source == 'phabricator'">Phabricator</span>
+            <span class="tag is-primary" v-else-if="task.data.source == 'try'">Try</span>
+            <span class="tag is-danger" v-else>Unknown</span>
           </td>
 
           <td>
@@ -171,6 +198,7 @@ export default {
           <td>
             <a class="button is-link" :href="task.data.url" target="_blank">Phabricator</a>
             <a v-if="task.data.bugzilla_id" class="button is-dark" :href="'https://bugzil.la/' + task.data.bugzilla_id" target="_blank">Bugzilla</a>
+            <a v-if="task.data.source == 'try'" class="button is-primary" :href="'https://tools.taskcluster.net/tasks/' + task.data.try_group_id" target="_blank">Try Tasks</a>
             <router-link v-if="task.data.issues > 0" :to="{ name: 'task', params: { taskId : task.taskId }}" class="button is-primary">Issues</router-link>
           </td>
         </tr>
