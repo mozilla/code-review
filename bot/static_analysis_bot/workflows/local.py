@@ -218,8 +218,11 @@ class LocalWorkflow(object):
                 # Run Coverity Scan
                 if COVERITY in self.analyzers:
                     logger.info('Setup Taskcluster coverity build...')
-                    setup_coverity(self.index_service)
-                    analyzers.append(Coverity)
+                    try:
+                        setup_coverity(self.index_service)
+                        analyzers.append(Coverity)
+                    except Exception as e:
+                        logger.error('Coverity setup failed, skipping analyzer.', error=str(e))
                 else:
                     logger.info('Skip Coverity')
 
