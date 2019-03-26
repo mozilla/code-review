@@ -11,12 +11,14 @@ import hglib
 from parsepatch.patch import Patch
 
 from cli_common import log
+from cli_common.phabricator import BuildState
 from cli_common.phabricator import PhabricatorAPI
 from cli_common.taskcluster import create_blob_artifact
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import REPO_TRY
+from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
 
 logger = log.get_logger(__name__)
@@ -110,7 +112,7 @@ class Revision(object):
         # Get modified lines for this issue
         modified_lines = self.lines.get(issue.path)
         if modified_lines is None:
-            logger.warn('Issue path in not in revision', path=issue.path, revision=self)
+            logger.warn('Issue path is not in revision', path=issue.path, revision=self)
             return False
 
         # Detect if this issue is in the patch
@@ -188,6 +190,7 @@ class PhabricatorRevision(Revision):
     A phabricator revision to process
     '''
     diff_phid = None
+    build_target_phid = None
 
     def __init__(self, api, diff_phid=None, try_task=None):
         super().__init__()
@@ -222,6 +225,23 @@ class PhabricatorRevision(Revision):
         self.revision = self.api.load_revision(self.phid)
         self.id = self.revision['id']
 
+        # Load build for status updates
+        if settings.build_plan:
+            build, targets = self.api.find_diff_build(self.diff_phid, settings.build_plan)
+            self.build_phid = build['phid']
+            nb = len(targets)
+            assert nb > 0, 'No build target found'
+            if nb > 1:
+                logger.warn('More than 1 build target found !', nb=nb, build_phid=self.build_phid)
+            target = targets[0]
+            self.build_target_phid = target['phid']
+        else:
+            logger.info('No build plan specified, no HarborMaster update')
+
+        # Load target patch from Phabricator for Try mode
+        if settings.source == SOURCE_TRY:
+            self.patch = self.api.load_raw_diff(self.diff_id)
+
     @property
     def namespaces(self):
         return [
@@ -240,6 +260,23 @@ class PhabricatorRevision(Revision):
     @property
     def url(self):
         return 'https://{}/D{}'.format(self.api.hostname, self.id)
+
+    def update_status(self, state, lint_issues=[]):
+        '''
+        Update build status on HarborMaster
+        '''
+        assert isinstance(state, BuildState)
+        assert isinstance(lint_issues, list)
+        if not self.build_target_phid:
+            logger.info('No build target found, skipping HarborMaster update', state=state.value)
+            return
+
+        self.api.update_build_target(
+            self.build_target_phid,
+            state,
+            lint=lint_issues,
+        )
+        logger.info('Updated HarborMaster status', state=state)
 
     def setup_try(self, tasks):
         '''

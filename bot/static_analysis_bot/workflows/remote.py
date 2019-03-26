@@ -29,6 +29,9 @@ class RemoteWorkflow(object):
         assert settings.try_group_id is not None, \
             'Cannot run without Try task id'
 
+        # Analyze revision patch to get files/lines data
+        revision.analyze_patch()
+
         # Load all tasks in task group
         tasks = self.queue_service.listTaskGroup(settings.try_group_id)
         assert 'tasks' in tasks

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -9,6 +10,7 @@ import re
 import subprocess
 
 from cli_common.log import get_logger
+from cli_common.phabricator import LintResult
 from static_analysis_bot import CLANG_TIDY
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import DefaultAnalyzer
@@ -385,6 +387,23 @@ class ClangTidyIssue(Issue):
             'publishable': self.is_publishable(),
         }
 
+    def as_phabricator_lint(self):
+        '''
+        Outputs a Phabricator lint result
+        '''
+        description = self.message
+        if self.body:
+            description += '\n\n > {}'.format(self.body)
+        return LintResult(
+            name='Clang-Tidy - {}'.format(self.check),
+            description=description,
+            code='clang-tidy.{}'.format(self.check),
+            severity='warning',
+            path=self.path,
+            line=self.line,
+            char=self.char,
+        )
+
 
 class ClangTidyTask(AnalysisTask):
     '''
@@ -398,7 +417,7 @@ class ClangTidyTask(AnalysisTask):
         return [
             ClangTidyIssue(
                 revision,
-                path=path,
+                path=self.clean_path(path),
                 line=warning['line'],
                 char=warning['column'],
                 check=warning['flag'],

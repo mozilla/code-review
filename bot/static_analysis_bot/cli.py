@@ -11,6 +11,7 @@ import click
 from cli_common.cli import taskcluster_options
 from cli_common.log import get_logger
 from cli_common.log import init_logger
+from cli_common.phabricator import BuildState
 from cli_common.phabricator import PhabricatorAPI
 from cli_common.taskcluster import get_secrets
 from cli_common.taskcluster import get_service
@@ -80,6 +81,7 @@ def main(id,
                 )
 
     # Setup settings before stats
+    phabricator = secrets['PHABRICATOR']
     settings.setup(
         secrets['APP_CHANNEL'],
         work_dir,
@@ -87,6 +89,7 @@ def main(id,
         secrets['ALLOWED_PATHS'],
         secrets.get('COVERITY_CONFIG'),
         secrets['MAX_CLONE_RUNTIME'],
+        phabricator.get('build_plan'),
     )
     # Setup statistics
     datadog_api_key = secrets.get('DATADOG_API_KEY')
@@ -115,7 +118,7 @@ def main(id,
     )
 
     # Load Phabricator API
-    phabricator_api = PhabricatorAPI(**secrets['PHABRICATOR'])
+    phabricator_api = PhabricatorAPI(phabricator['api_key'], phabricator['url'])
     if 'phabricator' in reporters:
         reporters['phabricator'].setup_api(phabricator_api)
 
@@ -145,6 +148,9 @@ def main(id,
             extras['error_code'] = e.code
             extras['error_message'] = str(e)
         w.index(revision, state='error', **extras)
+
+        # Update Harbormaster status
+        revision.update_status(state=BuildState.Fail)
 
         # Then raise to mark task as erroneous
         raise

@@ -7,6 +7,8 @@ from cli_common.log import get_logger
 
 logger = get_logger(__name__)
 
+WORKER_CHECKOUT = '/builds/worker/checkouts/gecko'
+
 
 class AnalysisTask(object):
     '''
@@ -54,3 +56,13 @@ class AnalysisTask(object):
                 continue
 
         return out
+
+    def clean_path(self, path):
+        '''
+        Helper to clean issues path from remote tasks
+        '''
+        if path.startswith(WORKER_CHECKOUT):
+            path = path[len(WORKER_CHECKOUT):]
+        if path.startswith('/'):
+            path = path[1:]
+        return path

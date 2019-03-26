@@ -110,6 +110,9 @@ def test_analyze_patch():
         def validates():
             return True
 
+        def as_phabricator_lint():
+            return {}
+
     issue_in_new_file = MyIssue('new.txt', 1)
     issue_in_existing_file_touched_line = MyIssue('modified.txt', 3)
     issue_in_existing_file_not_changed_line = MyIssue('modified.txt', 1)

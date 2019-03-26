@@ -50,6 +50,9 @@ def mock_config():
     '''
     Mock configuration for bot
     '''
+    for key in ('TRY_TASK_ID', 'TRY_TASK_GROUP_ID'):
+        if key in os.environ:
+            del os.environ[key]
     return build_config()
 
 
@@ -341,6 +344,28 @@ def mock_local_workflow(tmpdir, mock_repository, mock_config):
 @pytest.fixture
 @responses.activate
 def mock_workflow(tmpdir, mock_phabricator, mock_repository, mock_config):
+    '''
+    Mock the top level workflow
+    '''
+    from static_analysis_bot.workflows.base import Workflow
+
+    # Needed for Taskcluster build
+    if 'MOZCONFIG' not in os.environ:
+        os.environ['MOZCONFIG'] = str(tmpdir.join('mozconfig').realpath())
+
+    with mock_phabricator as api:
+        return Workflow(
+            reporters={},
+            analyzers=['clang-tidy', 'clang-format', 'mozlint'],
+            index_service=None,
+            queue_service=None,
+            phabricator_api=api,
+        )
+
+
+@pytest.fixture
+@responses.activate
+def mock_try_workflow(tmpdir, mock_phabricator, mock_try_config):
     '''
     Mock the top level workflow
     '''

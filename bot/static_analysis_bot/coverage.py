@@ -91,6 +91,18 @@ class CoverageIssue(Issue):
             'publishable': self.is_publishable(),
         }
 
+    def as_phabricator_lint(self):
+        '''
+        Outputs a Phabricator lint result
+        '''
+        return {
+            'name': self.message,
+            'code': 'coverage',
+            'severity': 'warning',
+            'path': self.path,
+            'line': self.line,
+        }
+
 
 class Coverage(DefaultAnalyzer):
     def can_run_before_patch(self):

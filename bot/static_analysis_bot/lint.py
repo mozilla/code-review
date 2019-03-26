@@ -5,6 +5,7 @@ import os
 
 from cli_common.command import run
 from cli_common.log import get_logger
+from cli_common.phabricator import LintResult
 from static_analysis_bot import MOZLINT
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import DefaultAnalyzer
@@ -151,6 +152,25 @@ class MozLintIssue(Issue):
             'publishable': self.is_publishable(),
         }
 
+    def as_phabricator_lint(self):
+        '''
+        Outputs a Phabricator lint result
+        '''
+        code = self.linter
+        name = 'MozLint {}'.format(self.linter.capitalize())
+        if self.rule:
+            code += '.{}'.format(self.rule)
+            name += ' - {}'.format(self.rule)
+        return LintResult(
+            name=name,
+            description=self.message,
+            code=code,
+            severity=self.level,
+            path=self.path,
+            line=self.line,
+            char=self.column,
+        )
+
 
 class MozLint(DefaultAnalyzer):
     '''
@@ -253,7 +273,16 @@ class MozLintTask(AnalysisTask):
         '''
         assert isinstance(artifacts, dict)
         return [
-            MozLintIssue(revision=revision, **issue)
+            MozLintIssue(
+                revision=revision,
+                path=self.clean_path(path),
+                column=issue['column'],
+                level=issue['level'],
+                lineno=issue['lineno'],
+                linter=issue['linter'],
+                message=issue['message'],
+                rule=issue['rule'],
+            )
             for artifact in artifacts.values()
             for path, path_issues in artifact.items()
             for issue in path_issues

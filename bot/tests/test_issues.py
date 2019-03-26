@@ -22,6 +22,9 @@ class DummyIssue(Issue):
     def as_dict(self):
         return {}
 
+    def as_phabricator_lint(self):
+        return {}
+
     def validates(self):
         return False
 

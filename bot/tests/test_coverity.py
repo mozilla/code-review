@@ -81,6 +81,15 @@ Dummy body
         }
     }
 
+    assert issue.as_phabricator_lint() == {
+        'code': 'coverity.Dummy Checker Name',
+        'description': 'Dummy body',
+        'line': 123,
+        'name': 'Some dummy event',
+        'path': 'to/test.cpp',
+        'severity': 'error',
+    }
+
 
 def test_coverity_silent(mock_config, mock_repository, mock_revision, mock_coverity):
     '''

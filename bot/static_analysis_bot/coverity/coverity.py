@@ -11,6 +11,7 @@ import click
 
 from cli_common.command import run_check
 from cli_common.log import get_logger
+from cli_common.phabricator import LintResult
 from static_analysis_bot import COVERITY
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import DefaultAnalyzer
@@ -324,3 +325,16 @@ class CoverityIssue(Issue):
             },
             'publishable': self.is_publishable(),
         }
+
+    def as_phabricator_lint(self):
+        '''
+        Outputs a Phabricator lint result
+        '''
+        return LintResult(
+            name=self.message,
+            code='coverity.{}'.format(self.kind),
+            severity='error',
+            path=self.path,
+            line=self.line,
+            description=self.body,
+        )

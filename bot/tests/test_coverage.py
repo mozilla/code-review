@@ -61,6 +61,13 @@ def test_coverage(mock_config, mock_repository, mock_revision, mock_coverage):
         'validates': True,
         'publishable': True,
     }
+    assert issue.as_phabricator_lint() == {
+        'code': 'coverage',
+        'line': 0,
+        'name': 'This file is uncovered',
+        'path': 'my/path/file1.cpp',
+        'severity': 'warning',
+    }
     assert issue.as_text() == 'This file is uncovered'
     assert issue.as_markdown() == '''
 ## coverage problem
@@ -97,6 +104,13 @@ This file is uncovered
         'validates': True,
         'publishable': True,
     }
+    assert issue.as_phabricator_lint() == {
+        'code': 'coverage',
+        'line': 0,
+        'name': 'This file is uncovered',
+        'path': 'test/dummy/thirdparty.c',
+        'severity': 'warning',
+    }
     assert issue.as_text() == 'This file is uncovered'
     assert issue.as_markdown() == '''
 ## coverage problem
@@ -132,6 +146,13 @@ This file is uncovered
         'is_new': False,
         'validates': False,
         'publishable': False,
+    }
+    assert issue.as_phabricator_lint() == {
+        'code': 'coverage',
+        'line': 0,
+        'name': 'This file is uncovered',
+        'path': 'my/path/header.h',
+        'severity': 'warning',
     }
     assert issue.as_text() == 'This file is uncovered'
     assert issue.as_markdown() == '''

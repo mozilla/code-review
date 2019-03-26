@@ -9,6 +9,7 @@ import subprocess
 
 from cli_common.command import run_check
 from cli_common.log import get_logger
+from cli_common.phabricator import LintResult
 from static_analysis_bot import INFER
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import DefaultAnalyzer
@@ -201,3 +202,17 @@ class InferIssue(Issue):
             'validates': self.validates(),
             'publishable': self.is_publishable(),
         }
+
+    def as_phabricator_lint(self):
+        '''
+        Outputs a Phabricator lint result
+        '''
+        return LintResult(
+            name=self.message,
+            code='infer.{}'.format(self.bug_type),
+            severity=self.kind,
+            path=self.path,
+            line=self.line,
+            char=self.column,
+            description=self.body,
+        )

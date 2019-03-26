@@ -286,6 +286,15 @@ Dummy body
 
 
 '''
+    assert issue.as_phabricator_lint() == {
+        'char': 51,
+        'code': 'clang-tidy.dummy-check',
+        'line': 42,
+        'name': 'Clang-Tidy - dummy-check',
+        'description': 'dummy message\n\n > Dummy body',
+        'path': 'test.cpp',
+        'severity': 'warning',
+    }
 
 
 def test_repeats(mock_clang_repeats, mock_clang, mock_revision, mock_config, mock_repository):
@@ -324,6 +333,13 @@ def test_clang_format_3rd_party(mock_config, mock_repository, mock_revision):
     }
     issue = ClangFormatIssue('test/not_3rd.c', 10, 1, mock_revision)
     assert issue.is_publishable()
+    assert issue.as_phabricator_lint() == {
+        'code': 'clang-format',
+        'line': 10,
+        'name': 'C/C++ style issue',
+        'path': 'test/not_3rd.c',
+        'severity': 'warning',
+    }
 
     # test/dummy is a third party directory
     issue = ClangFormatIssue('test/dummy/third_party.c', 10, 1, mock_revision)

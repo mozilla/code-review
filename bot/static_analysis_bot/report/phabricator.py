@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from cli_common import log
+from cli_common.phabricator import BuildState
 from cli_common.phabricator import PhabricatorAPI
 from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import COVERAGE
@@ -12,6 +13,8 @@ from static_analysis_bot import stats
 from static_analysis_bot.report.base import Reporter
 from static_analysis_bot.revisions import PhabricatorRevision
 
+MODE_COMMENT = 'comment'
+MODE_HARBORMASTER = 'harbormaster'
 BUG_REPORT_URL = 'https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__'  # noqa
 
 # These analyzers generate issues for which we should not write inline comments.
@@ -32,6 +35,10 @@ class PhabricatorReporter(Reporter):
         assert self.analyzers is not None, \
             'No analyzers setup on Phabricator reporter'
 
+        self.mode = configuration.get('mode', MODE_COMMENT)
+        assert self.mode in (MODE_COMMENT, MODE_HARBORMASTER), 'Invalid mode'
+        logger.info('Will publish using', mode=self.mode)
+
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
         self.api = api
@@ -44,10 +51,6 @@ class PhabricatorReporter(Reporter):
         if not isinstance(revision, PhabricatorRevision):
             logger.info('Phabricator reporter only publishes Phabricator revisions. Skipping.')
             return None, None
-
-        # Load existing comments for this revision
-        existing_comments = self.api.list_comments(revision.phid)
-        logger.info('Found {} existing comments on review'.format(len(existing_comments)))
 
         # Use only publishable issues and patches
         # and avoid publishing a non related patch from an anlyzer partly activated (allowed paths)
@@ -63,51 +66,76 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer in analyzers_available
         ]
 
-        coverage_issues = [issue for issue in issues if issue.ANALYZER == COVERAGE]
-
         if issues:
-            # First publish inlines as drafts
-            inlines = list(filter(None, [
-                self.comment_inline(revision, issue, existing_comments)
-                for issue in issues
-                if issue.ANALYZER not in ANALYZERS_WITHOUT_INLINES
-            ]))
-            if not inlines and not patches and not coverage_issues:
-                logger.info('No new comments found, skipping Phabricator publication')
-                return
-            logger.info('Added inline comments', ids=[i['id'] for i in inlines])
-
-            # Then publish top comment
-            non_coverage_issues = [issue for issue in issues if issue.ANALYZER != COVERAGE]
-            if len(non_coverage_issues):
-                self.api.comment(
-                    revision.id,
-                    self.build_comment(
-                        issues=non_coverage_issues,
-                        patches=patches,
-                        bug_report_url=BUG_REPORT_URL,
-                    ),
-                )
-
-            # Then publish top coverage comment
-            if len(coverage_issues):
-                self.api.comment(
-                    revision.id,
-                    self.build_coverage_comment(
-                        issues=coverage_issues,
-                        bug_report_url=BUG_REPORT_URL,
-                    ),
-                )
-
-            stats.api.increment('report.phabricator.issues', len(inlines))
-            stats.api.increment('report.phabricator')
-            logger.info('Published phabricator comment')
-
+            if self.mode == MODE_COMMENT:
+                self.publish_comment(revision, issues, patches)
+            elif self.mode == MODE_HARBORMASTER:
+                self.publish_harbormaster(revision, issues)
+            else:
+                raise Exception('Unsupported mode {}'.format(self.mode))
         else:
-            # TODO: Publish a validated comment ?
             logger.info('No issues to publish on phabricator')
 
         return issues, patches
+
+    def publish_comment(self, revision, issues, patches):
+        '''
+        Publish issues through Phabricator comment
+        '''
+        # Load existing comments for this revision
+        existing_comments = self.api.list_comments(revision.phid)
+        logger.info('Found {} existing comments on review'.format(len(existing_comments)))
+
+        coverage_issues = [issue for issue in issues if issue.ANALYZER == COVERAGE]
+
+        # First publish inlines as drafts
+        inlines = list(filter(None, [
+            self.comment_inline(revision, issue, existing_comments)
+            for issue in issues
+            if issue.ANALYZER not in ANALYZERS_WITHOUT_INLINES
+        ]))
+        if not inlines and not patches and not coverage_issues:
+            logger.info('No new comments found, skipping Phabricator publication')
+            return
+        logger.info('Added inline comments', ids=[i['id'] for i in inlines])
+
+        # Then publish top comment
+        non_coverage_issues = [issue for issue in issues if issue.ANALYZER != COVERAGE]
+        if len(non_coverage_issues):
+            self.api.comment(
+                revision.id,
+                self.build_comment(
+                    issues=non_coverage_issues,
+                    patches=patches,
+                    bug_report_url=BUG_REPORT_URL,
+                ),
+            )
+
+        # Then publish top coverage comment
+        if len(coverage_issues):
+            self.api.comment(
+                revision.id,
+                self.build_coverage_comment(
+                    issues=coverage_issues,
+                    bug_report_url=BUG_REPORT_URL,
+                ),
+            )
+
+        stats.api.increment('report.phabricator.issues', len(inlines))
+        stats.api.increment('report.phabricator')
+        logger.info('Published phabricator comment')
+
+    def publish_harbormaster(self, revision, issues):
+        '''
+        Publish issues through HarborMaster
+        '''
+        revision.update_status(
+            state=BuildState.Work,
+            lint_issues=[
+                issue.as_phabricator_lint()
+                for issue in issues
+            ]
+        )
 
     def comment_inline(self, revision, issue, existing_comments=[]):
         '''

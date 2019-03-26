@@ -67,3 +67,13 @@ def test_as_text(mock_config, mock_revision, mock_repository):
     issue = MozLintIssue('test.py', 1, 'error', 1, 'flake8', 'dummy test withUppercaseChars', 'dummy rule', mock_revision)
 
     assert issue.as_text() == 'Error: Dummy test withUppercaseChars [flake8: dummy rule]'
+
+    assert issue.as_phabricator_lint() == {
+        'char': 1,
+        'code': 'flake8.dummy rule',
+        'line': 1,
+        'name': 'MozLint Flake8 - dummy rule',
+        'description': 'dummy test withUppercaseChars',
+        'path': 'test.py',
+        'severity': 'error',
+    }

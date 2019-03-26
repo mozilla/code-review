@@ -164,6 +164,14 @@ class Issue(abc.ABC):
         '''
         raise NotImplementedError
 
+    @abc.abstractmethod
+    def as_phabricator_lint(self):
+        '''
+        Build the Phabricator LintResult instance
+        Used by the HarborMaster reporter
+        '''
+        raise NotImplementedError
+
     def is_third_party(self):
         '''
         Is this issue in a third party path ?
