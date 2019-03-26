@@ -89,8 +89,7 @@ def test_phabricator_clang_tidy(mock_repository, mock_phabricator):
         }
         reporter = PhabricatorReporter({'analyzers': ['clang-tidy']}, api=api)
 
-    issue_parts = ('test.cpp', '42', '51', 'error', 'dummy message', 'modernize-use-nullptr')
-    issue = ClangTidyIssue(issue_parts, revision)
+    issue = ClangTidyIssue(revision, 'test.cpp', '42', '51', 'modernize-use-nullptr', 'dummy message', 'error')
     assert issue.is_publishable()
 
     issues, patches = reporter.publish([issue, ], revision)
@@ -283,8 +282,7 @@ def test_phabricator_clang_tidy_and_coverage(mock_config, mock_repository, mock_
         }
         reporter = PhabricatorReporter({'analyzers': ['coverage', 'clang-tidy']}, api=api)
 
-    issue_parts = ('another_test.cpp', '42', '51', 'error', 'dummy message', 'modernize-use-nullptr')
-    issue_clang_tidy = ClangTidyIssue(issue_parts, revision)
+    issue_clang_tidy = ClangTidyIssue(revision, 'another_test.cpp', '42', '51', 'modernize-use-nullptr', 'dummy message', 'error')
     assert issue_clang_tidy.is_publishable()
 
     issue_coverage = CoverageIssue('test.cpp', 0, 'This file is uncovered', revision)
@@ -335,7 +333,7 @@ def test_phabricator_analyzers(mock_config, mock_repository, mock_phabricator):
 
         issues = [
             ClangFormatIssue('dom/test.cpp', 42, 1, revision),
-            ClangTidyIssue(('test.cpp', '42', '51', 'error', 'dummy message', 'modernize-use-nullptr'), revision),
+            ClangTidyIssue(revision, 'test.cpp', '42', '51', 'modernize-use-nullptr', 'dummy message', 'error'),
             InferIssue({
                 'file': 'test.cpp',
                 'line': 42,

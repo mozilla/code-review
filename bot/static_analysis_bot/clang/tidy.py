@@ -17,6 +17,7 @@ from static_analysis_bot import stats
 from static_analysis_bot.config import CONFIG_URL
 from static_analysis_bot.config import settings
 from static_analysis_bot.revisions import Revision
+from static_analysis_bot.task import AnalysisTask
 
 logger = get_logger(__name__)
 
@@ -170,7 +171,16 @@ class ClangTidy(DefaultAnalyzer):
 
         issues = []
         for i, header in enumerate(headers):
-            issue = ClangTidyIssue(header.groups(), revision)
+            path, line, char, level, message, check = header.groups()
+            issue = ClangTidyIssue(
+                revision,
+                path=path,
+                line=line,
+                char=char,
+                level=level,
+                message=message,
+                check=check,
+            )
 
             # Get next header
             if i+1 < len(headers):
@@ -234,19 +244,22 @@ class ClangTidyIssue(Issue):
     '''
     ANALYZER = CLANG_TIDY
 
-    def __init__(self, header_data, revision):
-        assert isinstance(header_data, tuple)
-        assert len(header_data) == 6
+    def __init__(self, revision, path, line, char, check, message, level='warning'):
         assert not settings.repo_dir.endswith('/')
         self.revision = revision
-        self.path, self.line, self.char, self.type, self.message, self.check = header_data  # noqa
+        self.path = path
         if self.path.startswith(settings.repo_dir):
             self.path = self.path[len(settings.repo_dir)+1:]  # skip heading /
-        self.line = int(self.line)
+        self.line = int(line)
         self.nb_lines = 1  # Only 1 line affected on clang-tidy
-        self.char = int(self.char)
+        self.char = int(char)
+        self.check = check
+        self.message = message
         self.body = None
         self.notes = []
+
+        # TODO: rename all type occurences to level
+        self.type = level
 
         self.reason = None
         check = settings.get_clang_check(self.check)
@@ -371,3 +384,27 @@ class ClangTidyIssue(Issue):
             'validates': self.validates(),
             'publishable': self.is_publishable(),
         }
+
+
+class ClangTidyTask(AnalysisTask):
+    '''
+    Support issues from source-test clang-tidy tasks
+    '''
+    artifacts = [
+        'public/code-review/clang-tidy.json',
+    ]
+
+    def parse_issues(self, artifacts, revision):
+        return [
+            ClangTidyIssue(
+                revision,
+                path=path,
+                line=warning['line'],
+                char=warning['column'],
+                check=warning['flag'],
+                message=warning['message'],
+            )
+            for artifact in artifacts.values()
+            for path, items in artifact['files'].items()
+            for warning in items['warnings']
+        ]

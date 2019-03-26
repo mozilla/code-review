@@ -67,22 +67,3 @@ def test_as_text(mock_config, mock_revision, mock_repository):
     issue = MozLintIssue('test.py', 1, 'error', 1, 'flake8', 'dummy test withUppercaseChars', 'dummy rule', mock_revision)
 
     assert issue.as_text() == 'Error: Dummy test withUppercaseChars [flake8: dummy rule]'
-
-
-def test_from_try(mock_revision, mock_config):
-    '''
-    Test issue building from try lines
-    '''
-    mock_config.has_local_clone = False
-
-    from static_analysis_bot.lint import MozLintIssue
-
-    line = """/builds/worker/checkouts/gecko/tools/tryselect/cli.py:14:1 | block comment should start with '# ' (E265)"""  # noqa
-
-    issue = MozLintIssue.from_try('source-test-mozlint-py-flake8', line, mock_revision)
-    assert issue.path == 'gecko/tools/tryselect/cli.py'
-    assert issue.line == 14
-    assert issue.column == 1
-    assert issue.message == "block comment should start with '# '"
-    assert issue.linter == 'py-flake8'
-    assert issue.rule == 'E265'

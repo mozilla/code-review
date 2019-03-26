@@ -48,8 +48,7 @@ def test_expanded_macros(mock_stats, test_cpp, mock_revision):
     Test expanded macros are detected by clang issue
     '''
     from static_analysis_bot.clang.tidy import ClangTidyIssue
-    parts = ('test.cpp', '42', '51', 'error', 'dummy message', 'dummy-check')
-    issue = ClangTidyIssue(parts, mock_revision)
+    issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy message', 'dummy-check', 'error')
     assert issue.is_problem()
     assert issue.line == 42
     assert issue.char == 51
@@ -57,13 +56,11 @@ def test_expanded_macros(mock_stats, test_cpp, mock_revision):
     assert issue.is_expanded_macro() is False
 
     # Add a note starting with "expanded from macro..."
-    parts = ('test.cpp', '42', '51', 'note', 'expanded from macro Blah dummy.cpp', 'dummy-check-note')
-    issue.notes.append(ClangTidyIssue(parts, mock_revision))
+    issue.notes.append(ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check-note', 'expanded from macro Blah dummy.cpp', 'note'))
     assert issue.is_expanded_macro() is True
 
     # Add another note does not change it
-    parts = ('test.cpp', '42', '51', 'note', 'This is not an expanded macro', 'dummy-check-note')
-    issue.notes.append(ClangTidyIssue(parts, mock_revision))
+    issue.notes.append(ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check-note', 'This is not an expanded macro', 'note'))
     assert issue.is_expanded_macro() is True
 
     # But if we swap them, it does not work anymore
@@ -256,8 +253,7 @@ def test_as_text(mock_revision):
     Test text export for ClangTidyIssue
     '''
     from static_analysis_bot.clang.tidy import ClangTidyIssue
-    parts = ('test.cpp', '42', '51', 'error', 'dummy message withUppercaseChars', 'dummy-check')
-    issue = ClangTidyIssue(parts, mock_revision)
+    issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message withUppercaseChars', 'error')
     issue.body = 'Dummy body withUppercaseChars'
 
     assert issue.as_text() == 'Error: Dummy message withUppercaseChars [clang-tidy: dummy-check]\n```\nDummy body withUppercaseChars\n```'
@@ -268,8 +264,7 @@ def test_as_markdown(mock_revision):
     Test markdown generation for ClangTidyIssue
     '''
     from static_analysis_bot.clang.tidy import ClangTidyIssue
-    parts = ('test.cpp', '42', '51', 'error', 'dummy message', 'dummy-check')
-    issue = ClangTidyIssue(parts, mock_revision)
+    issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message', 'error')
     issue.body = 'Dummy body'
 
     assert issue.as_markdown() == '''

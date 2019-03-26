@@ -12,6 +12,7 @@ from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 from static_analysis_bot.revisions import Revision
+from static_analysis_bot.task import AnalysisTask
 
 logger = get_logger(__name__)
 
@@ -122,8 +123,8 @@ class ClangFormat(DefaultAnalyzer):
             groups.append(group)
 
             issues += [
-                ClangFormatIssue(filename, group[0], len(group), revision)
-                for group in groups
+                ClangFormatIssue(filename, g[0], len(g), revision)
+                for g in groups
             ]
 
         stats.report_issues('clang-format', issues)
@@ -136,12 +137,14 @@ class ClangFormatIssue(Issue):
     '''
     ANALYZER = CLANG_FORMAT
 
-    def __init__(self, path, line, nb_lines, revision):
+    def __init__(self, path, line, nb_lines, revision, column=None, patch=None):
         self.path = path
         self.line = line
         self.nb_lines = nb_lines
         self.revision = revision
         self.is_new = True
+        self.patch = patch
+        self.column = column
 
     def build_extra_identifiers(self):
         '''
@@ -198,4 +201,31 @@ class ClangFormatIssue(Issue):
             'is_new': self.is_new,
             'validates': self.validates(),
             'publishable': self.is_publishable(),
+            'patch': self.patch,
+            'column': self.column,
         }
+
+
+class ClangFormatTask(AnalysisTask):
+    '''
+    Support issues from source-test clang-format tasks by reading the
+    clang-format json output
+    '''
+    artifacts = [
+        'public/code-review/clang-format.json',
+    ]
+
+    def parse_issues(self, artifacts, revision):
+        return [
+            ClangFormatIssue(
+                path=path,
+                line=issue['line'],
+                nb_lines=issue['lines_modified'],
+                column=issue['line_offset'],
+                patch=issue['replacement'],
+                revision=revision,
+            )
+            for artifact in artifacts.values()
+            for path, issues in artifact.items()
+            for issue in issues
+        ]
