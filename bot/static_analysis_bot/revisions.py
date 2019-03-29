@@ -103,9 +103,16 @@ class Revision(object):
         stats.api.increment('analysis.files', len(self.files))
         stats.api.increment('analysis.lines', sum(len(line) for line in self.lines.values()))
 
+    def has_file(self, path):
+        '''
+        Check if the path is in this patch
+        '''
+        assert isinstance(path, str)
+        return path in self.files
+
     def contains(self, issue):
         '''
-        Check if the issue is in this patch
+        Check if the issue (path+lines) is in this patch
         '''
         assert isinstance(issue, Issue)
 

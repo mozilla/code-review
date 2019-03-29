@@ -162,6 +162,11 @@ index 83db48f8..84275f99 100644
     assert 'modified.txt' in rev.files
     assert 'added.txt' in rev.files
 
+    assert rev.has_file('new.txt')
+    assert rev.has_file('modified.txt')
+    assert rev.has_file('added.txt')
+    assert not rev.has_file('notexisting.txt')
+
     assert rev.contains(issue_in_new_file)
     assert rev.contains(issue_in_existing_file_touched_line)
     assert not rev.contains(issue_in_existing_file_not_changed_line)
