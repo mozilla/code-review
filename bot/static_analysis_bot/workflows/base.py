@@ -141,6 +141,10 @@ class Workflow(object):
         payload['try_task_id'] = settings.try_task_id
         payload['try_group_id'] = settings.try_group_id
 
+        # Add restartable flag for monitoring
+        payload['monitoring_restart'] = payload['state'] == 'error' and \
+            payload.get('error_code') in ('watchdog', 'mercurial')
+
         # Add a sub namespace with the task id to be able to list
         # tasks from the parent namespace
         namespaces = revision.namespaces + [
@@ -148,9 +152,15 @@ class Workflow(object):
             for namespace in revision.namespaces
         ]
 
+        # Build complete namespaces list, with monitoring update
+        full_namespaces = [
+            TASKCLUSTER_NAMESPACE.format(channel=settings.app_channel, name=name)
+            for name in namespaces
+        ]
+        full_namespaces.append('project.releng.services.tasks.{}'.format(settings.taskcluster.task_id))
+
         # Index for all required namespaces
-        for name in namespaces:
-            namespace = TASKCLUSTER_NAMESPACE.format(channel=settings.app_channel, name=name)
+        for namespace in full_namespaces:
             self.index_service.insertTask(
                 namespace,
                 {

@@ -17,10 +17,10 @@ def test_taskcluster_index(mock_try_config, mock_try_workflow):
     mock_try_workflow.index_service = mock.Mock()
     rev = Revision()
     rev.namespaces = ['mock.1234']
-    rev.as_dict = lambda: {'id': '1234', 'someData': 'mock'}
+    rev.as_dict = lambda: {'id': '1234', 'someData': 'mock', 'state': 'done', }
     mock_try_workflow.index(rev, test='dummy')
 
-    assert mock_try_workflow.index_service.insertTask.call_count == 2
+    assert mock_try_workflow.index_service.insertTask.call_count == 3
     calls = mock_try_workflow.index_service.insertTask.call_args_list
 
     # First call with namespace
@@ -46,3 +46,54 @@ def test_taskcluster_index(mock_try_config, mock_try_workflow):
     assert args['data']['try_group_id'] == 'remoteTryGroup'
     assert args['data']['someData'] == 'mock'
     assert 'indexed' in args['data']
+
+    # Third call for monitoring
+    namespace, args = calls[2][0]
+    assert namespace == 'project.releng.services.tasks.12345deadbeef'
+    assert args['taskId'] == '12345deadbeef'
+    assert args['data']['test'] == 'dummy'
+    assert args['data']['id'] == '1234'
+    assert args['data']['source'] == 'try'
+    assert args['data']['try_task_id'] == 'remoteTryTask'
+    assert args['data']['try_group_id'] == 'remoteTryGroup'
+    assert args['data']['monitoring_restart'] is False
+
+
+def test_monitoring_restart(mock_try_config, mock_try_workflow):
+    '''
+    Test the Taskcluster indexing API and restart capabilities
+    '''
+    from static_analysis_bot.config import TaskCluster
+    from static_analysis_bot.revisions import Revision
+    mock_try_config.taskcluster = TaskCluster('/tmp/dummy', 'someTaskId', 0, False)
+    mock_try_workflow.index_service = mock.Mock()
+    rev = Revision()
+    rev.as_dict = dict
+    rev.namespaces = []
+
+    # Unsupported error code
+    mock_try_workflow.index(rev, test='dummy', error_code='nope', state='error')
+    assert mock_try_workflow.index_service.insertTask.call_count == 1
+    calls = mock_try_workflow.index_service.insertTask.call_args_list
+    namespace, args = calls[0][0]
+    assert namespace == 'project.releng.services.tasks.someTaskId'
+    assert args['taskId'] == 'someTaskId'
+    assert args['data']['monitoring_restart'] is False
+
+    # watchdog should be restated
+    mock_try_workflow.index(rev, test='dummy', error_code='watchdog', state='error')
+    assert mock_try_workflow.index_service.insertTask.call_count == 2
+    calls = mock_try_workflow.index_service.insertTask.call_args_list
+    namespace, args = calls[1][0]
+    assert namespace == 'project.releng.services.tasks.someTaskId'
+    assert args['taskId'] == 'someTaskId'
+    assert args['data']['monitoring_restart'] is True
+
+    # Invalid state
+    mock_try_workflow.index(rev, test='dummy', state='running')
+    assert mock_try_workflow.index_service.insertTask.call_count == 3
+    calls = mock_try_workflow.index_service.insertTask.call_args_list
+    namespace, args = calls[2][0]
+    assert namespace == 'project.releng.services.tasks.someTaskId'
+    assert args['taskId'] == 'someTaskId'
+    assert args['data']['monitoring_restart'] is False
