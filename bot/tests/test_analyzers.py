@@ -15,4 +15,4 @@ def test_shellcheck():
     assert path.startswith('/nix/store')
 
     output = subprocess.check_output(['shellcheck', '--version'])
-    assert b'version: 0.5.0' in output
+    assert b'version: 0.6.0' in output
