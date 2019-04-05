@@ -233,13 +233,15 @@ class PhabricatorRevision(Revision):
         self.id = self.revision['id']
 
         # Load build for status updates
-        if settings.build_plan:
+        if 'HARBORMASTER_TARGET' in os.environ:
+            self.build_target_phid = os.environ['HARBORMASTER_TARGET']
+        elif settings.build_plan:
             build, targets = self.api.find_diff_build(self.diff_phid, settings.build_plan)
-            self.build_phid = build['phid']
+            build_phid = build['phid']
             nb = len(targets)
             assert nb > 0, 'No build target found'
             if nb > 1:
-                logger.warn('More than 1 build target found !', nb=nb, build_phid=self.build_phid)
+                logger.warn('More than 1 build target found !', nb=nb, build_phid=build_phid)
             target = targets[0]
             self.build_target_phid = target['phid']
         else:
