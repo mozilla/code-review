@@ -29,7 +29,7 @@ REGEX_HAS_WARNINGS = re.compile(r'^(\d+) warnings|errors present.$', re.MULTILIN
 
 
 ISSUE_MARKDOWN = '''
-## clang-tidy {type}
+## clang-tidy {level}
 
 - **Message**: {message}
 - **Location**: {location}
@@ -259,30 +259,27 @@ class ClangTidyIssue(Issue):
         self.message = message
         self.body = None
         self.notes = []
-
-        # TODO: rename all type occurences to level
-        self.type = level
-
+        self.level = level
         self.reason = None
         check = settings.get_clang_check(self.check)
         if check is not None:
             self.reason = check.get('reason')
 
     def __str__(self):
-        return '[{}] {} {} {}:{}'.format(self.type, self.check, self.path, self.line, self.char)
+        return '[{}] {} {} {}:{}'.format(self.level, self.check, self.path, self.line, self.char)
 
     def build_extra_identifiers(self):
         '''
         Used to compare with same-class issues
         '''
         return {
-            'type': self.type,
+            'level': self.level,
             'check': self.check,
             'char': self.char,
         }
 
     def is_problem(self):
-        return self.type in ('warning', 'error')
+        return self.level in ('warning', 'error')
 
     def validates(self):
         '''
@@ -324,7 +321,7 @@ class ClangTidyIssue(Issue):
         if len(message) > 0:
             message = message[0].capitalize() + message[1:]
         body = '{}: {} [clang-tidy: {}]'.format(
-            self.type.capitalize(),
+            self.level.capitalize(),
             message,
             self.check,
         )
@@ -339,7 +336,7 @@ class ClangTidyIssue(Issue):
 
     def as_markdown(self):
         return ISSUE_MARKDOWN.format(
-            type=self.type,
+            level=self.level,
             message=self.message,
             location='{}:{}:{}'.format(self.path, self.line, self.char),
             body=self.body,
@@ -371,7 +368,7 @@ class ClangTidyIssue(Issue):
             'nb_lines': self.nb_lines,
             'char': self.char,
             'check': self.check,
-            'type': self.type,
+            'level': self.level,
             'message': self.message,
             'body': self.body,
             'reason': self.reason,

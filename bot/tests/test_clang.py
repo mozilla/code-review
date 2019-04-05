@@ -259,6 +259,38 @@ def test_as_text(mock_revision):
     assert issue.as_text() == 'Error: Dummy message withUppercaseChars [clang-tidy: dummy-check]\n```\nDummy body withUppercaseChars\n```'
 
 
+def test_as_dict(mock_revision):
+    '''
+    Test text export for ClangTidyIssue
+    '''
+    from static_analysis_bot.clang.tidy import ClangTidyIssue
+    issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message withUppercaseChars', 'error')
+    issue.body = 'Dummy body withUppercaseChars'
+
+    assert issue.as_dict() == {
+            'analyzer': 'clang-tidy',
+            'path': 'test.cpp',
+            'line': 42,
+            'nb_lines': 1,
+            'char': 51,
+            'check': 'dummy-check',
+            'level': 'error',
+            'message': 'dummy message withUppercaseChars',
+            'body': 'Dummy body withUppercaseChars',
+            'reason': None,
+            'notes': [],
+            'validation': {
+                'publishable_check': False,
+                'third_party': False,
+                'is_expanded_macro': False
+                },
+            'in_patch': False,
+            'is_new': False,
+            'validates': False,
+            'publishable': False
+            }
+
+
 def test_as_markdown(mock_revision):
     '''
     Test markdown generation for ClangTidyIssue
