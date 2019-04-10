@@ -35,6 +35,7 @@ export default {
           <tr>
             <th>Task</th>
             <th>Review</th>
+            <th>Bug</th>
             <th>Path</th>
             <th>Line</th>
             <th>Message</th>
@@ -46,7 +47,10 @@ export default {
               <a class="mono" :href="'https://tools.taskcluster.net/task-inspector/#' + issue.taskId" target="_blank">{{ issue.taskId }}</a>
             </td>
             <td>
-              <a :href="issue.revision.url" target="_blank" v-if="issue.revision.source == 'phabricator'">Phabricator {{ issue.revision.id }}</a>
+              <a :href="issue.revision.url" target="_blank">D{{ issue.revision.id }}</a>
+            </td>
+            <td>
+              <span v-if="issue.revision.bugzilla_id"><a :href="'https://bugzil.la/' + issue.revision.bugzilla_id" target="_blank">Bug {{ issue.revision.bugzilla_id }}</a></span>
               <span v-else>Unknown</span>
             </td>
             <td class="mono">{{ issue.path }}</td>
