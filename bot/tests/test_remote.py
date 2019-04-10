@@ -533,3 +533,70 @@ def test_clang_format_task(mock_try_config, mock_revision):
         'validates': False,
         'validation': {}
     }
+
+
+def test_coverity_task(mock_try_config, mock_revision):
+    '''
+    Test a remote workflow with a clang-tidy analyzer
+    '''
+    from static_analysis_bot.workflows.remote import RemoteWorkflow
+    from static_analysis_bot.coverity.coverity import CoverityIssue
+
+    tasks = {
+        'decision': {
+            'image': 'taskcluster/decision:XXX',
+            'env': {
+                'GECKO_HEAD_REPOSITORY': 'https://hg.mozilla.org/try',
+                'GECKO_HEAD_REV': 'deadbeef1234',
+            }
+        },
+        'remoteTryTask': {
+            'dependencies': ['coverity']
+        },
+        'coverity': {
+            'name': 'source-test-coverity-coverity',
+            'state': 'completed',
+            'artifacts': {
+                'public/code-review/coverity.json': {
+                    'files': {
+                        'test.cpp': {
+                            'warnings': [
+                                {
+                                    'line': 66,
+                                    'flag': 'UNINIT',
+                                    'message': 'Using uninitialized value \"a\".',
+                                    'extra': {
+                                        'category': 'Memory - corruptions',
+                                        'stateOnServer': {
+                                            'presentInReferenceSnapshot': False
+                                        },
+                                        'stack': [
+                                            {
+                                                'line_number': 61,
+                                                'description': 'Condition \"!target.oper…", taking false branch.',
+                                                'file_path': 'dom/animation/Animation.cpp',
+                                                'path_type': 'path'
+                                            }
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                },
+            }
+        }
+    }
+    workflow = RemoteWorkflow(MockQueue(tasks))
+    issues = workflow.run(mock_revision)
+    assert len(issues) == 1
+    issue = issues[0]
+    assert isinstance(issue, CoverityIssue)
+    assert issue.path == 'test.cpp'
+    assert issue.line == 66
+    assert issue.kind == 'UNINIT'
+    assert issue.bug_type == 'Memory - corruptions'
+    assert issue.message == 'Using uninitialized value \"a\".'
+    assert issue.is_local()
+    assert not issue.is_clang_error()
+    assert issue.validates()

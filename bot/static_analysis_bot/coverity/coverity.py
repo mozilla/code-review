@@ -19,6 +19,7 @@ from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 from static_analysis_bot.revisions import Revision
+from static_analysis_bot.task import AnalysisTask
 
 logger = get_logger(__name__)
 
@@ -187,7 +188,7 @@ class Coverity(DefaultAnalyzer):
                 return []
 
             return [
-                CoverityIssue(issue, revision)
+                CoverityIssue(revision, issue)
                 for issue in result['issues']
             ]
 
@@ -204,38 +205,58 @@ class CoverityIssue(Issue):
     '''
     ANALYZER = COVERITY
 
-    def __init__(self, issue, revision):
+    def __init__(self, revision, issue, file_path=None):
         assert not settings.repo_dir.endswith('/')
         self.revision = revision
 
-        # We look only for main event
-        event_path = next((event for event in issue['events'] if event['main'] is True), None)
+        if file_path is None:
+            # We look only for main event
+            event_path = next((event for event in issue['events'] if event['main'] is True), None)
 
-        if event_path is None:
-            raise AnalysisException(
-                'coverity',
-                'Coverity Analysis did not find main event for mergeKey {}'.format(issue['mergeKey']))
+            if event_path is None:
+                raise AnalysisException(
+                    'coverity',
+                    'Coverity Analysis did not find main event for mergeKey {}'.format(issue['mergeKey']))
 
-        checker_properties = issue['checkerProperties']
-        # Strip the leading slash
-        self.path = issue['strippedMainEventFilePathname'].strip('/')
-        self.line = issue['mainEventLineNumber']
-        self.bug_type = checker_properties['category']
-        self.kind = issue['checkerName']
-        self.message = event_path['eventDescription']
+            checker_properties = issue['checkerProperties']
+            # Strip the leading slash
+            self.path = issue['strippedMainEventFilePathname'].strip('/')
+            self.line = issue['mainEventLineNumber']
+            self.bug_type = checker_properties['category']
+            self.kind = issue['checkerName']
+            self.message = event_path['eventDescription']
+            self.state_on_server = issue['stateOnServer']
+
+            if settings.cov_full_stack:
+                self.message += ISSUE_RELATION
+                # Embed all events into message
+                for event in issue['events']:
+                    self.message += ISSUE_ELEMENT_IN_STACK.format(
+                        file_path=event['strippedFilePathname'],
+                        line_number=event['lineNumber'],
+                        path_type=event['eventTag'],
+                        description=event['eventDescription'])
+        else:
+            # This issue came from try worker
+            self.path = file_path
+            self.line = issue['line']
+            self.bug_type = issue['extra']['category']
+            self.kind = issue['flag']
+            self.message = issue['message']
+
+            self.state_on_server = issue['extra']['stateOnServer']
+            if settings.cov_full_stack:
+                self.message += ISSUE_RELATION
+                # Embed all events into message
+                for event in issue['extra']:
+                    self.message += ISSUE_ELEMENT_IN_STACK.format(
+                        file_path=event['file_path'],
+                        line_number=event['line_number'],
+                        path_type=event['path_type'],
+                        description=event['description'])
+
         self.body = None
         self.nb_lines = 1
-        self.state_on_server = issue['stateOnServer']
-
-        if settings.cov_full_stack:
-            self.message += ISSUE_RELATION
-            # Embed all events into message
-            for event in issue['events']:
-                self.message += ISSUE_ELEMENT_IN_STACK.format(
-                    file_path=event['strippedFilePathname'],
-                    line_number=event['lineNumber'],
-                    path_type=event['eventTag'],
-                    description=event['eventDescription'])
 
     def __str__(self):
         return '[{}] {} {}'.format(self.kind, self.path, self.line)
@@ -338,3 +359,28 @@ class CoverityIssue(Issue):
             line=self.line,
             description=self.body,
         )
+
+
+class CoverityTask(AnalysisTask):
+    '''
+    Support remote Coverity analyzer
+    '''
+    artifacts = [
+        'public/code-review/coverity.json',
+    ]
+
+    def parse_issues(self, artifacts, revision):
+        '''
+        Parse issues from a pre-translated Coverity report
+        '''
+        assert isinstance(artifacts, dict)
+        return [
+            CoverityIssue(
+                revision,
+                issue=warning,
+                file_path=path
+            )
+            for artifact in artifacts.values()
+            for path, items in artifact['files'].items()
+            for warning in items['warnings']
+        ]
