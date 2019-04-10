@@ -9,6 +9,7 @@ from static_analysis_bot.clang.tidy import ClangTidyTask
 from static_analysis_bot.coverity.coverity import CoverityTask
 from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
+from static_analysis_bot.infer.infer import InferTask
 from static_analysis_bot.lint import MozLintTask
 
 logger = get_logger(__name__)
@@ -90,5 +91,7 @@ class RemoteWorkflow(object):
             return ClangFormatTask(task_id, task_status)
         elif name == 'source-test-coverity-coverity':
             return CoverityTask(task_id, task_status)
+        elif name == 'source-test-infer-infer':
+            return InferTask(task_id, task_status)
         else:
             raise Exception('Unsupported task {}'.format(name))

@@ -18,6 +18,7 @@ from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 from static_analysis_bot.infer import AndroidConfig
 from static_analysis_bot.revisions import Revision
+from static_analysis_bot.task import AnalysisTask
 
 logger = get_logger(__name__)
 
@@ -216,3 +217,23 @@ class InferIssue(Issue):
             char=self.column,
             description=self.body,
         )
+
+
+class InferTask(AnalysisTask):
+    '''
+    Support remote Infer analyzer
+    '''
+    artifacts = [
+        'public/code-review/infer.json',
+    ]
+
+    def parse_issues(self, artifacts, revision):
+        '''
+        Parse issues from a direct Infer JSON report
+        '''
+        assert isinstance(artifacts, dict)
+        return [
+            InferIssue(issue, revision)
+            for issues in artifacts.values()
+            for issue in issues
+        ]
