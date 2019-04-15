@@ -233,8 +233,9 @@ class PhabricatorRevision(Revision):
         self.id = self.revision['id']
 
         # Load build for status updates
-        if 'HARBORMASTER_TARGET' in os.environ:
-            self.build_target_phid = os.environ['HARBORMASTER_TARGET']
+        hm_target = os.environ.get('HARBORMASTER_TARGET')
+        if hm_target and isinstance(hm_target, str) and hm_target.startswith('PHID-'):
+            self.build_target_phid = hm_target
         elif settings.build_plan:
             build, targets = self.api.find_diff_build(self.diff_phid, settings.build_plan)
             build_phid = build['phid']
