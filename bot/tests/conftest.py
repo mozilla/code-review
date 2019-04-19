@@ -115,6 +115,7 @@ def mock_issues():
     class MockIssue(object):
         def __init__(self, nb):
             self.nb = nb
+            self.path = '/path/to/file'
 
         def as_markdown(self):
             return 'This is the mock issue n°{}'.format(self.nb)

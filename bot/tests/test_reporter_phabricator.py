@@ -16,7 +16,7 @@ Code analysis found 1 defect in this patch:
  - 1 defect found by clang-tidy
 
 You can run this analysis locally with:
- - `./mach static-analysis check path/to/file.cpp` (C/C++)
+ - `./mach static-analysis check another_test.cpp` (C/C++)
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 '''  # noqa
@@ -26,7 +26,7 @@ Code analysis found 1 defect in this patch:
  - 1 defect found by clang-format
 
 You can run this analysis locally with:
- - `./mach clang-format -s -p path/to/file.cpp` (C/C++)
+ - `./mach clang-format -s -p dom/test.cpp` (C/C++)
 
 For your convenience, [here is a patch]({results}/clang-format-PHID-DIFF-abcdef.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply`).
 
@@ -85,11 +85,11 @@ def test_phabricator_clang_tidy(mock_repository, mock_phabricator):
         revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
         revision.lines = {
             # Add dummy lines diff
-            'test.cpp': [41, 42, 43],
+            'another_test.cpp': [41, 42, 43],
         }
         reporter = PhabricatorReporter({'analyzers': ['clang-tidy'], 'modes': ('comment')}, api=api)
 
-    issue = ClangTidyIssue(revision, 'test.cpp', '42', '51', 'modernize-use-nullptr', 'dummy message', 'error')
+    issue = ClangTidyIssue(revision, 'another_test.cpp', '42', '51', 'modernize-use-nullptr', 'dummy message', 'error')
     assert issue.is_publishable()
 
     issues, patches = reporter.publish([issue, ], revision)

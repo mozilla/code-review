@@ -14,7 +14,7 @@ from static_analysis_bot.lint import MozLintIssue
 COMMENT_PARTS = {
     ClangTidyIssue: {
         'defect': ' - {nb} found by clang-tidy',
-        'analyzer': ' - `./mach static-analysis check path/to/file.cpp` (C/C++)',
+        'analyzer': ' - `./mach static-analysis check {files}` (C/C++)',
     },
     InferIssue: {
         'defect': ' - {nb} found by infer',
@@ -25,7 +25,7 @@ COMMENT_PARTS = {
     },
     ClangFormatIssue: {
         'defect': ' - {nb} found by clang-format',
-        'analyzer': ' - `./mach clang-format -s -p path/to/file.cpp` (C/C++)',
+        'analyzer': ' - `./mach clang-format -s -p {files}` (C/C++)',
     },
     MozLintIssue: {
         'defect': ' - {nb} found by mozlint',
@@ -103,7 +103,8 @@ class Reporter(object):
             _items = list(items)
             return {
                 'total': len(_items),
-                'publishable': sum([i.is_publishable() for i in _items])
+                'publishable': sum([i.is_publishable() for i in _items]),
+                'publishable_paths': list({i.path for i in _items if i.is_publishable()})
             }
 
         from collections import OrderedDict
@@ -134,7 +135,7 @@ class Reporter(object):
                 nb=pluralize('defect', cls_stats['publishable'])
             ))
             if 'analyzer' in part:
-                analyzers.append(part['analyzer'])
+                analyzers.append(part['analyzer'].format(files=' '.join(cls_stats['publishable_paths'])))
 
         # Build top comment
         nb = len(issues)

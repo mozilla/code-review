@@ -119,5 +119,6 @@ def test_mail(mock_config, mock_issues, mock_phabricator):
         mock_cls: {
             'total': 5,
             'publishable': 3,
+            'publishable_paths': ['/path/to/file']
         }
     }
