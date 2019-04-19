@@ -263,8 +263,9 @@ def test_as_dict(mock_revision):
     '''
     Test text export for ClangTidyIssue
     '''
+    from static_analysis_bot import Reliability
     from static_analysis_bot.clang.tidy import ClangTidyIssue
-    issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message withUppercaseChars', 'error')
+    issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message withUppercaseChars', 'error', Reliability.Low)
     issue.body = 'Dummy body withUppercaseChars'
 
     assert issue.as_dict() == {
@@ -287,7 +288,8 @@ def test_as_dict(mock_revision):
             'in_patch': False,
             'is_new': False,
             'validates': False,
-            'publishable': False
+            'publishable': False,
+            'reliability': 'low'
             }
 
 
@@ -295,8 +297,9 @@ def test_as_markdown(mock_revision):
     '''
     Test markdown generation for ClangTidyIssue
     '''
+    from static_analysis_bot import Reliability
     from static_analysis_bot.clang.tidy import ClangTidyIssue
-    issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message', 'error')
+    issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message', 'error', Reliability.High)
     issue.body = 'Dummy body'
 
     assert issue.as_markdown() == '''
@@ -311,6 +314,7 @@ def test_as_markdown(mock_revision):
 - **Expanded Macro**: no
 - **Publishable **: no
 - **Is new**: no
+- **Checker reliability (false positive risk)**: high
 
 ```
 Dummy body
@@ -323,7 +327,7 @@ Dummy body
         'code': 'clang-tidy.dummy-check',
         'line': 42,
         'name': 'Clang-Tidy - dummy-check',
-        'description': 'dummy message\n\n > Dummy body',
+        'description': 'dummy message\nChecker reliability (false positive risk) is high.\n\n > Dummy body',
         'path': 'test.cpp',
         'severity': 'warning',
     }

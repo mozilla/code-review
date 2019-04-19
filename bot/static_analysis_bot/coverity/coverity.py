@@ -16,6 +16,7 @@ from static_analysis_bot import COVERITY
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import DefaultAnalyzer
 from static_analysis_bot import Issue
+from static_analysis_bot import Reliability
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 from static_analysis_bot.revisions import Revision
@@ -32,6 +33,7 @@ ISSUE_MARKDOWN = '''
 - **Publishable **: {publishable}
 - **Is Clang Error**: {is_clang_error}
 - **Is Local**: {is_local}
+- **Reliability**: {reliability}
 
 ```
 {body}
@@ -208,6 +210,7 @@ class CoverityIssue(Issue):
     def __init__(self, revision, issue, file_path=None):
         assert not settings.repo_dir.endswith('/')
         self.revision = revision
+        self.reliability = Reliability.Unknown
 
         if file_path is None:
             # We look only for main event
@@ -239,6 +242,7 @@ class CoverityIssue(Issue):
         else:
             # This issue came from try worker
             self.path = file_path
+            self.reliability = Reliability(issue['reliability'])
             self.line = issue['line']
             self.bug_type = issue['extra']['category']
             self.kind = issue['flag']
@@ -320,6 +324,7 @@ class CoverityIssue(Issue):
             body=self.body,
             publishable=self.is_publishable() and 'yes' or 'no',
             is_local=self.is_local() and 'yes' or 'no',
+            reliability=self.reliability.value,
             is_clang_error=self.is_clang_error() and 'yes' or 'no',
         )
 
@@ -334,6 +339,7 @@ class CoverityIssue(Issue):
             'nb_lines': self.nb_lines,
             'bug_type': self.bug_type,
             'kind': self.kind,
+            'reliabiloty': self.reliability.value,
             'message': self.message,
             'body': self.body,
             'in_patch': self.revision.contains(self),
@@ -351,8 +357,15 @@ class CoverityIssue(Issue):
         '''
         Outputs a Phabricator lint result
         '''
+        # If there is the reliability index use it
+        message = 'Checker reliability (false positive risk) is {}.'. \
+            format(self.reliability.value) + \
+            self.reliability \
+            if self.reliability != Reliability.Unknown \
+            else self.message
+
         return LintResult(
-            name=self.message,
+            name=message,
             code='coverity.{}'.format(self.kind),
             severity='error',
             path=self.path,

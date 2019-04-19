@@ -15,6 +15,7 @@ from static_analysis_bot import CLANG_TIDY
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import DefaultAnalyzer
 from static_analysis_bot import Issue
+from static_analysis_bot import Reliability
 from static_analysis_bot import stats
 from static_analysis_bot.config import CONFIG_URL
 from static_analysis_bot.config import settings
@@ -40,6 +41,7 @@ ISSUE_MARKDOWN = '''
 - **Expanded Macro**: {expanded_macro}
 - **Publishable **: {publishable}
 - **Is new**: {is_new}
+- **Checker reliability (false positive risk)**: {reliability}
 
 ```
 {body}
@@ -246,8 +248,10 @@ class ClangTidyIssue(Issue):
     '''
     ANALYZER = CLANG_TIDY
 
-    def __init__(self, revision, path, line, char, check, message, level='warning'):
+    def __init__(self, revision, path, line, char, check, message, level='warning', reliability=Reliability.Unknown):
         assert not settings.repo_dir.endswith('/')
+        assert isinstance(reliability, Reliability)
+
         self.revision = revision
         self.path = path
         if self.path.startswith(settings.repo_dir):
@@ -261,6 +265,7 @@ class ClangTidyIssue(Issue):
         self.notes = []
         self.level = level
         self.reason = None
+        self.reliability = reliability
         check = settings.get_clang_check(self.check)
         if check is not None:
             self.reason = check.get('reason')
@@ -331,7 +336,9 @@ class ClangTidyIssue(Issue):
             body += '\n```\n{}\n```'.format(self.body)
         if self.reason:
             body += '\n{}'.format(self.reason)
-
+        # Also add the reliability of the checker
+        if self.reliability != Reliability.Unknown:
+            body += '\nChecker reliability (false positive risk) is {}.'.format(self.reliability.value)
         return body
 
     def as_markdown(self):
@@ -348,6 +355,7 @@ class ClangTidyIssue(Issue):
             publishable='yes' if self.is_publishable() else 'no',
             expanded_macro='yes' if self.is_expanded_macro() else 'no',
             is_new='yes' if self.is_new else 'no',
+            reliability=self.reliability.value,
             notes='\n'.join([
                 ISSUE_NOTE_MARKDOWN.format(
                     message=n.message,
@@ -382,6 +390,7 @@ class ClangTidyIssue(Issue):
             'is_new': self.is_new,
             'validates': self.validates(),
             'publishable': self.is_publishable(),
+            'reliability': self.reliability.value
         }
 
     def as_phabricator_lint(self):
@@ -389,6 +398,11 @@ class ClangTidyIssue(Issue):
         Outputs a Phabricator lint result
         '''
         description = self.message
+
+        # Append to description the reliability index if any
+        if self.reliability != Reliability.Unknown:
+            description += '\nChecker reliability (false positive risk) is {}.'.format(self.reliability.value)
+
         if self.body:
             description += '\n\n > {}'.format(self.body)
         return LintResult(
@@ -419,6 +433,7 @@ class ClangTidyTask(AnalysisTask):
                 char=warning['column'],
                 check=warning['flag'],
                 message=warning['message'],
+                reliability=Reliability(warning['reliability'])
             )
             for artifact in artifacts.values()
             for path, items in artifact['files'].items()

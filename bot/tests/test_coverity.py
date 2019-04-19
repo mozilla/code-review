@@ -54,6 +54,7 @@ def test_coverity_publishable(mock_config, mock_repository, mock_revision, mock_
 - **Publishable **: yes
 - **Is Clang Error**: no
 - **Is Local**: yes
+- **Reliability**: unknown
 
 ```
 Dummy body
@@ -69,6 +70,7 @@ Dummy body
         'is_local': True,
         'is_new': False,
         'kind': 'Dummy Checker Name',
+        'reliabiloty': 'unknown',
         'line': 123,
         'message': 'Some dummy event',
         'nb_lines': 1,
@@ -125,6 +127,7 @@ def test_coverity_silent(mock_config, mock_repository, mock_revision, mock_cover
         'is_local': False,
         'is_new': False,
         'kind': 'Dummy Checker Name',
+        'reliabiloty': 'unknown',
         'line': 123,
         'message': 'Some dummy event',
         'nb_lines': 1,
