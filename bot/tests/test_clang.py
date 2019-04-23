@@ -102,7 +102,7 @@ def test_clang_format(mock_config, mock_repository, mock_stats, mock_clang, mock
 
     assert issue.path == 'dom/bad.cpp'
     assert issue.line == 2
-    assert issue.nb_lines == 2
+    assert issue.nb_lines == 3
 
     # At the end of the process, original file is patched
     assert open(bad_file).read() == BAD_CPP_VALID
