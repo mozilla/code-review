@@ -455,6 +455,14 @@ def test_clang_tidy_task(mock_try_config, mock_revision):
                                     'reliability': 'high',
                                     'message': 'some hard issue with c++',
                                     'filename': 'test.cpp',
+                                },
+                                {
+                                    'column': 51,
+                                    'line': 987,
+                                    'flag': 'checker.YYY',
+                                    # No reliability !
+                                    'message': 'some harder issue with c++',
+                                    'filename': 'test.cpp',
                                 }
                             ]
                         }
@@ -465,7 +473,7 @@ def test_clang_tidy_task(mock_try_config, mock_revision):
     }
     workflow = RemoteWorkflow(MockQueue(tasks))
     issues = workflow.run(mock_revision)
-    assert len(issues) == 1
+    assert len(issues) == 2
     issue = issues[0]
     assert isinstance(issue, ClangTidyIssue)
     assert issue.path == 'test.cpp'
@@ -474,6 +482,15 @@ def test_clang_tidy_task(mock_try_config, mock_revision):
     assert issue.check == 'checker.XXX'
     assert issue.reliability == Reliability.High
     assert issue.message == 'some hard issue with c++'
+
+    issue = issues[1]
+    assert isinstance(issue, ClangTidyIssue)
+    assert issue.path == 'test.cpp'
+    assert issue.line == 987
+    assert issue.char == 51
+    assert issue.check == 'checker.YYY'
+    assert issue.reliability == Reliability.Unknown
+    assert issue.message == 'some harder issue with c++'
 
 
 def test_clang_format_task(mock_try_config, mock_revision):

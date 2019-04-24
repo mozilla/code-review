@@ -210,12 +210,15 @@ class PhabricatorRevision(Revision):
             # Load directly from the diff phid
             self.load_phabricator(diff_phid)
         elif try_task is not None:
-            # Load diff phid from the task env
-            self.load_phabricator(try_task['extra']['code-review']['phabricator-diff'])
+            # Load build target phid from the task env
+            # And get the diff from the phabricator api
+            build_target = try_task['extra']['code-review']['phabricator-diff']
+            buildable = self.api.find_target_buildable(build_target)
+            self.load_phabricator(buildable['fields']['objectPHID'], build_target)
         else:
             raise Exception('Invalid revision configuration')
 
-    def load_phabricator(self, diff_phid):
+    def load_phabricator(self, diff_phid, build_target=None):
         '''
         Load identifiers from Phabricator
         '''
@@ -234,7 +237,9 @@ class PhabricatorRevision(Revision):
 
         # Load build for status updates
         hm_target = os.environ.get('HARBORMASTER_TARGET')
-        if hm_target and isinstance(hm_target, str) and hm_target.startswith('PHID-'):
+        if build_target is not None:
+            self.build_target_phid = build_target
+        elif hm_target and isinstance(hm_target, str) and hm_target.startswith('PHID-'):
             self.build_target_phid = hm_target
         elif settings.build_plan:
             build, targets = self.api.find_diff_build(self.diff_phid, settings.build_plan)

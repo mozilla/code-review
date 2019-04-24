@@ -203,5 +203,6 @@ class Reliability(enum.Enum):
     Medium = 'medium'
     Low = 'low'
 
+
 # Create common stats instance
 stats = Datadog()

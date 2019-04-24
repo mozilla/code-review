@@ -34,8 +34,6 @@ class Workflow(object):
     '''
     def __init__(self, reporters, analyzers, index_service, queue_service, phabricator_api):
         assert isinstance(analyzers, list)
-        assert len(analyzers) > 0, \
-            'No analyzers specified, will not run.'
         self.analyzers = analyzers
         assert 'MOZCONFIG' in os.environ, \
             'Missing MOZCONFIG in environment'
@@ -76,10 +74,10 @@ class Workflow(object):
             remote = RemoteWorkflow(self.queue_service)
             issues += remote.run(revision)
 
-        # Always use local workflow
-        # until we have all analyzers in-tree
-        local = LocalWorkflow(self, self.analyzers, self.index_service)
-        issues += local.run(revision)
+        # Use local when some analyzers are set
+        if len(self.analyzers) > 0:
+            local = LocalWorkflow(self, self.analyzers, self.index_service)
+            issues += local.run(revision)
 
         if not issues:
             logger.info('No issues, stopping there.')

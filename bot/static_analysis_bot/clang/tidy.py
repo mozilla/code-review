@@ -433,7 +433,7 @@ class ClangTidyTask(AnalysisTask):
                 char=warning['column'],
                 check=warning['flag'],
                 message=warning['message'],
-                reliability=Reliability(warning['reliability'])
+                reliability=Reliability(warning['reliability']) if 'reliability' in warning else Reliability.Unknown
             )
             for artifact in artifacts.values()
             for path, items in artifact['files'].items()

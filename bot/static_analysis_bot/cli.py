@@ -63,7 +63,7 @@ def main(id,
                           existing={
                               'APP_CHANNEL': 'development',
                               'REPORTERS': [],
-                              'ANALYZERS': ['clang-tidy', ],
+                              'ANALYZERS': [],
                               'PUBLICATION': 'IN_PATCH',
                               'ALLOWED_PATHS': ['*', ],
                               'MAX_CLONE_RUNTIME': 15 * 60,

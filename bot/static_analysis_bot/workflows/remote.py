@@ -6,9 +6,9 @@
 from cli_common.log import get_logger
 from static_analysis_bot.clang.format import ClangFormatTask
 from static_analysis_bot.clang.tidy import ClangTidyTask
-from static_analysis_bot.coverity.coverity import CoverityTask
 from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
+from static_analysis_bot.coverity.coverity import CoverityTask
 from static_analysis_bot.infer.infer import InferTask
 from static_analysis_bot.lint import MozLintTask
 
