@@ -199,12 +199,13 @@ class PhabricatorRevision(Revision):
     diff_phid = None
     build_target_phid = None
 
-    def __init__(self, api, diff_phid=None, try_task=None):
+    def __init__(self, api, diff_phid=None, try_task=None, update_build=True):
         super().__init__()
         assert isinstance(api, PhabricatorAPI)
         assert (diff_phid is not None) ^ (try_task is not None)
         self.api = api
         self.mercurial_revision = None
+        self.update_build = update_build
 
         if diff_phid is not None:
             # Load directly from the diff phid
@@ -284,6 +285,10 @@ class PhabricatorRevision(Revision):
         assert isinstance(lint_issues, list)
         if not self.build_target_phid:
             logger.info('No build target found, skipping HarborMaster update', state=state.value)
+            return
+
+        if not self.update_build:
+            logger.info('Update build disabled, skipping HarborMaster update', state=state.value)
             return
 
         self.api.update_build_target(
