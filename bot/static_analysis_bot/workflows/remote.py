@@ -78,7 +78,7 @@ class RemoteWorkflow(object):
                 logger.warn('Only dependency is a Decision Task, skipping analysis')
                 return []
 
-        # Find issues in dependencies
+        # Find issues and patches in dependencies
         issues = []
         for dep_id in dependencies:
             try:
@@ -88,6 +88,9 @@ class RemoteWorkflow(object):
                     task_issues = task.parse_issues(artifacts, revision)
                     logger.info('Found {} issues'.format(len(task_issues)), task=task.name, id=task.id)
                     issues += task_issues
+
+                    for name, patch in task.build_patches(artifacts):
+                        revision.add_improvement_patch(name, patch)
             except Exception as e:
                 logger.warn('Failure during task analysis', task=settings.taskcluster.task_id, error=e)
                 raise

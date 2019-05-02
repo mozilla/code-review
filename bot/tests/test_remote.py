@@ -530,6 +530,7 @@ def test_clang_format_task(mock_try_config, mock_revision):
             }
         }
     }
+    assert len(mock_revision.improvement_patches) == 0
     workflow = RemoteWorkflow(MockQueue(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 1
@@ -553,6 +554,17 @@ def test_clang_format_task(mock_try_config, mock_revision):
         'validates': False,
         'validation': {}
     }
+    assert len(mock_revision.improvement_patches) == 0
+
+    # Check diffs are reported as improvement patches
+    tasks['clang-format']['artifacts']['public/code-review/clang-format.diff'] = 'A nice diff in here...'
+    workflow = RemoteWorkflow(MockQueue(tasks))
+    issues = workflow.run(mock_revision)
+    assert len(issues) == 1
+    assert len(mock_revision.improvement_patches) == 1
+    patch = mock_revision.improvement_patches[0]
+    assert patch.analyzer == 'clang-format'
+    assert patch.content == 'A nice diff in here...'
 
 
 def test_coverity_task(mock_try_config, mock_revision):

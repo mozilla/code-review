@@ -232,9 +232,15 @@ class ClangFormatTask(AnalysisTask):
     '''
     artifacts = [
         'public/code-review/clang-format.json',
+        'public/code-review/clang-format.diff',
     ]
 
     def parse_issues(self, artifacts, revision):
+        artifact = artifacts.get('public/code-review/clang-format.json')
+        if artifact is None:
+            logger.warn('Missing clang-format.json')
+            return []
+
         return [
             ClangFormatIssue(
                 path=self.clean_path(path),
@@ -244,7 +250,22 @@ class ClangFormatTask(AnalysisTask):
                 patch=issue['replacement'],
                 revision=revision,
             )
-            for artifact in artifacts.values()
             for path, issues in artifact.items()
             for issue in issues
+        ]
+
+    def build_patches(self, artifacts):
+        artifact = artifacts.get('public/code-review/clang-format.diff')
+        if artifact is None:
+            logger.warn('Missing clang-format.diff')
+            return []
+
+        assert isinstance(artifact, bytes), 'clang-format.diff should be bytes'
+        patch = artifact.decode('utf-8')
+        if patch == '':
+            logger.info('Empty patch in clang-format.diff')
+            return []
+
+        return [
+            ('clang-format', patch)
         ]

@@ -66,3 +66,11 @@ class AnalysisTask(object):
         if path.startswith('/'):
             path = path[1:]
         return path
+
+    def build_patches(self, artifacts):
+        '''
+        Some analyzers can provide a patch appliable by developers
+        These patches are stored as Taskcluster artifacts and reported to developpers
+        Output is a list of tuple (patch name as str, patch content as str)
+        '''
+        return []
