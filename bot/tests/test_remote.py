@@ -709,3 +709,28 @@ def test_infer_task(mock_try_config, mock_revision):
         'publishable': False,
         'validates': True,
     }
+
+
+def test_no_tasks(mock_try_config, mock_revision):
+    '''
+    Test a remote workflow with only a Gecko decision task as dep
+    https://github.com/mozilla/release-services/issues/2055
+    '''
+    from static_analysis_bot.workflows.remote import RemoteWorkflow
+
+    tasks = {
+        'decision': {
+            'image': 'taskcluster/decision:XXX',
+            'env': {
+                'GECKO_HEAD_REPOSITORY': 'https://hg.mozilla.org/try',
+                'GECKO_HEAD_REV': 'deadbeef1234',
+            },
+            'name': 'Gecko Decision Task',
+        },
+        'remoteTryTask': {
+            'dependencies': ['decision', 'someOtherDockerbuild']
+        },
+    }
+    workflow = RemoteWorkflow(MockQueue(tasks))
+    issues = workflow.run(mock_revision)
+    assert len(issues) == 0

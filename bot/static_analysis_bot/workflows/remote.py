@@ -53,14 +53,34 @@ class RemoteWorkflow(object):
         dependencies = task['task']['dependencies']
         assert len(dependencies) > 0, 'No task dependencies to analyze'
 
-        # Find issues in dependencies
-        issues = []
-        for dep_id in dependencies:
+        # Skip dependencies not in group
+        # But log all skipped tasks
+        def _in_group(dep_id):
             if dep_id not in tasks:
                 # Used for docker images produced in tree
                 # and other artifacts
                 logger.info('Skip dependency not in group', task_id=dep_id)
-                continue
+                return False
+            return True
+        dependencies = [
+            dep_id
+            for dep_id in dependencies
+            if _in_group(dep_id)
+        ]
+
+        # Do not run parsers when we only have a gecko decision task
+        # That means no analyzer were triggered by the taskgraph decision task
+        # This can happen if the patch only touches file types for which we have no analyzer defined
+        # See issue https://github.com/mozilla/release-services/issues/2055
+        if len(dependencies) == 1:
+            task = tasks[dependencies[0]]
+            if task['task']['metadata']['name'] == 'Gecko Decision Task':
+                logger.warn('Only dependency is a Decision Task, skipping analysis')
+                return []
+
+        # Find issues in dependencies
+        issues = []
+        for dep_id in dependencies:
             try:
                 task = self.build_task(dep_id, tasks[dep_id])
                 artifacts = task.load_artifacts(self.queue_service)
