@@ -615,6 +615,22 @@ def test_coverity_task(mock_try_config, mock_revision):
                                     }
                                 }
                             ]
+                        },
+                        '/builds/worker/checkouts/gecko/dom/something.cpp': {
+                            'warnings': [
+                                {
+                                    'line': 123,
+                                    'flag': 'UNINIT',
+                                    'reliability': 'high',
+                                    'message': 'Some error here',
+                                    'extra': {
+                                        'category': 'Nice bug',
+                                        'stateOnServer': {
+                                            'presentInReferenceSnapshot': False
+                                        },
+                                    }
+                                }
+                            ]
                         }
                     }
                 },
@@ -623,7 +639,7 @@ def test_coverity_task(mock_try_config, mock_revision):
     }
     workflow = RemoteWorkflow(MockQueue(tasks))
     issues = workflow.run(mock_revision)
-    assert len(issues) == 1
+    assert len(issues) == 2
     issue = issues[0]
     assert isinstance(issue, CoverityIssue)
     assert issue.path == 'test.cpp'
@@ -632,6 +648,18 @@ def test_coverity_task(mock_try_config, mock_revision):
     assert issue.reliability == Reliability.High
     assert issue.bug_type == 'Memory - corruptions'
     assert issue.message == 'Using uninitialized value \"a\".'
+    assert issue.is_local()
+    assert not issue.is_clang_error()
+    assert issue.validates()
+
+    issue = issues[1]
+    assert isinstance(issue, CoverityIssue)
+    assert issue.path == 'dom/something.cpp'
+    assert issue.line == 123
+    assert issue.kind == 'UNINIT'
+    assert issue.reliability == Reliability.High
+    assert issue.bug_type == 'Nice bug'
+    assert issue.message == 'Some error here'
     assert issue.is_local()
     assert not issue.is_clang_error()
     assert issue.validates()

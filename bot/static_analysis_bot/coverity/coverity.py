@@ -391,7 +391,7 @@ class CoverityTask(AnalysisTask):
             CoverityIssue(
                 revision,
                 issue=warning,
-                file_path=path
+                file_path=self.clean_path(path)
             )
             for artifact in artifacts.values()
             for path, items in artifact['files'].items()

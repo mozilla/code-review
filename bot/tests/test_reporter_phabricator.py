@@ -87,6 +87,7 @@ def test_phabricator_clang_tidy(mock_repository, mock_phabricator):
             # Add dummy lines diff
             'another_test.cpp': [41, 42, 43],
         }
+        revision.files = ['another_test.cpp']
         reporter = PhabricatorReporter({'analyzers': ['clang-tidy'], 'modes': ('comment')}, api=api)
 
     issue = ClangTidyIssue(revision, 'another_test.cpp', '42', '51', 'modernize-use-nullptr', 'dummy message', 'error')
@@ -280,6 +281,7 @@ def test_phabricator_clang_tidy_and_coverage(mock_config, mock_repository, mock_
             'test.cpp': [0],
             'another_test.cpp': [41, 42, 43],
         }
+        revision.files = ['test.txt', 'test.cpp', 'another_test.cpp']
         reporter = PhabricatorReporter({'analyzers': ['coverage', 'clang-tidy']}, api=api)
 
     issue_clang_tidy = ClangTidyIssue(revision, 'another_test.cpp', '42', '51', 'modernize-use-nullptr', 'dummy message', 'error')

@@ -144,6 +144,11 @@ class PhabricatorReporter(Reporter):
         assert isinstance(revision, PhabricatorRevision)
         assert isinstance(issue, Issue)
 
+        # Enforce path validation or Phabricator will crash here
+        if not revision.has_file(issue.path):
+            logger.warn('Will not publish inline comment on invalid path {}: {}'.format(issue.path, issue))
+            return
+
         # Check if comment is already posted
         comment = {
             'diffID': revision.diff_id,
