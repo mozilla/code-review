@@ -257,7 +257,7 @@ class ClangFormatTask(AnalysisTask):
     def build_patches(self, artifacts):
         artifact = artifacts.get('public/code-review/clang-format.diff')
         if artifact is None:
-            logger.warn('Missing clang-format.diff')
+            logger.warn('Missing or empty clang-format.diff')
             return []
 
         assert isinstance(artifact, bytes), 'clang-format.diff should be bytes'
