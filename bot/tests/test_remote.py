@@ -97,6 +97,19 @@ class MockQueue(object):
         }
 
 
+class MockIndex(object):
+    def __init__(self, tasks):
+        self.tasks = tasks
+
+    def findTask(self, route):
+        task_id = next(iter([task_id for task_id, task in self.tasks.items() if task.get('route') == route]), None)
+        if task_id is None:
+            raise Exception('Task {} not found'.format(route))
+        return {
+            'taskId': task_id
+        }
+
+
 def test_no_deps(mock_try_config, mock_revision):
     '''
     Test an error occurs when no dependencies are found on root task
@@ -114,7 +127,7 @@ def test_no_deps(mock_try_config, mock_revision):
         'remoteTryTask': {},
         'extra-task': {},
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     with pytest.raises(AssertionError) as e:
         workflow.run(mock_revision)
     assert str(e.value) == 'No task dependencies to analyze'
@@ -129,6 +142,7 @@ def test_baseline(mock_try_config, mock_revision):
     '''
     from static_analysis_bot.workflows.remote import RemoteWorkflow
     from static_analysis_bot.lint import MozLintIssue
+    from static_analysis_bot.coverage import CoverageIssue
 
     # We run on a mock TC, with a try source
     assert mock_try_config.taskcluster.task_id == 'local instance'
@@ -170,11 +184,24 @@ def test_baseline(mock_try_config, mock_revision):
         },
         'analyzer-B': {},
         'extra-task': {},
+        'zero-cov': {
+            'route': 'project.releng.services.project.production.code_coverage_bot.latest',
+            'artifacts': {
+                'public/zero_coverage_report.json': {
+                    'files': [
+                        {
+                            'uncovered': True,
+                            'name': 'test.cpp',
+                        }
+                    ],
+                },
+            }
+        },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
 
-    assert len(issues) == 1
+    assert len(issues) == 2
     issue = issues[0]
     assert isinstance(issue, MozLintIssue)
     assert issue.path == 'test.cpp'
@@ -183,6 +210,13 @@ def test_baseline(mock_try_config, mock_revision):
     assert issue.message == 'strange issue'
     assert issue.rule == 'checker XXX'
     assert issue.revision is mock_revision
+    assert issue.validates()
+
+    issue = issues[1]
+    assert isinstance(issue, CoverageIssue)
+    assert issue.path == 'test.cpp'
+    assert issue.message == 'This file is uncovered'
+    assert issue.line == 0
     assert issue.validates()
 
 
@@ -207,7 +241,7 @@ def test_no_failed(mock_try_config, mock_revision):
         'analyzer-B': {},
         'extra-task': {},
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 0
 
@@ -241,7 +275,7 @@ def test_no_issues(mock_try_config, mock_revision):
         },
         'extra-task': {},
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 0
 
@@ -273,7 +307,7 @@ def test_unsupported_analyzer(mock_try_config, mock_revision):
         },
         'extra-task': {},
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     with pytest.raises(Exception) as e:
         workflow.run(mock_revision)
     assert str(e.value) == 'Unsupported task custom-analyzer-from-vendor'
@@ -291,7 +325,7 @@ def test_decision_task(mock_try_config, mock_revision):
         'remoteTryTask': {
         },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     with pytest.raises(AssertionError) as e:
         workflow.run(mock_revision)
     assert str(e.value) == 'Missing decision task'
@@ -303,7 +337,7 @@ def test_decision_task(mock_try_config, mock_revision):
         'remoteTryTask': {
         },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     with pytest.raises(AssertionError) as e:
         workflow.run(mock_revision)
     assert str(e.value) == 'Missing decision task'
@@ -318,7 +352,7 @@ def test_decision_task(mock_try_config, mock_revision):
         'remoteTryTask': {
         },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     with pytest.raises(AssertionError) as e:
         workflow.run(mock_revision)
     assert str(e.value) == 'Missing decision task'
@@ -330,7 +364,7 @@ def test_decision_task(mock_try_config, mock_revision):
         'remoteTryTask': {
         },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     with pytest.raises(AssertionError) as e:
         workflow.run(mock_revision)
     assert str(e.value) == 'Not the try repo in GECKO_HEAD_REPOSITORY'
@@ -345,7 +379,7 @@ def test_decision_task(mock_try_config, mock_revision):
         'remoteTryTask': {
         },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     with pytest.raises(AssertionError) as e:
         workflow.run(mock_revision)
     assert str(e.value) == 'Missing try revision'
@@ -362,7 +396,7 @@ def test_decision_task(mock_try_config, mock_revision):
         'remoteTryTask': {
         },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     with pytest.raises(AssertionError) as e:
         workflow.run(mock_revision)
     assert str(e.value) == 'No task dependencies to analyze'
@@ -406,9 +440,9 @@ def test_mozlint_task(mock_try_config, mock_revision):
                     ]
                 },
             }
-        }
+        },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 1
     issue = issues[0]
@@ -469,9 +503,9 @@ def test_clang_tidy_task(mock_try_config, mock_revision):
                     }
                 },
             }
-        }
+        },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 2
     issue = issues[0]
@@ -528,10 +562,10 @@ def test_clang_format_task(mock_try_config, mock_revision):
                     ]
                 }
             }
-        }
+        },
     }
     assert len(mock_revision.improvement_patches) == 0
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 1
     issue = issues[0]
@@ -558,7 +592,7 @@ def test_clang_format_task(mock_try_config, mock_revision):
 
     # Check diffs are reported as improvement patches
     tasks['clang-format']['artifacts']['public/code-review/clang-format.diff'] = 'A nice diff in here...'
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 1
     assert len(mock_revision.improvement_patches) == 1
@@ -635,9 +669,9 @@ def test_coverity_task(mock_try_config, mock_revision):
                     }
                 },
             }
-        }
+        },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 2
     issue = issues[0]
@@ -719,9 +753,9 @@ def test_infer_task(mock_try_config, mock_revision):
                      }
                 ]
             }
-        }
+        },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 1
     issue = issues[0]
@@ -771,6 +805,6 @@ def test_no_tasks(mock_try_config, mock_revision):
             'dependencies': ['decision', 'someOtherDockerbuild']
         },
     }
-    workflow = RemoteWorkflow(MockQueue(tasks))
+    workflow = RemoteWorkflow(MockQueue(tasks), MockIndex(tasks))
     issues = workflow.run(mock_revision)
     assert len(issues) == 0

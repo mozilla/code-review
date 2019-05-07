@@ -15,6 +15,7 @@ class AnalysisTask(object):
     An analysis CI task running on Taskcluster
     '''
     artifacts = []
+    route = None
     valid_states = ('completed', 'failed')
 
     def __init__(self, task_id, task_status):
@@ -35,6 +36,29 @@ class AnalysisTask(object):
     @property
     def state(self):
         return self.status['state']
+
+    @classmethod
+    def build_from_route(cls, index_service, queue_service):
+        '''
+        Build the task instance from a configured Taskcluster route
+        '''
+        assert cls.route is not None, 'Missing route on {}'.format(cls)
+
+        # Load its task id
+        try:
+            index = index_service.findTask(cls.route)
+            task_id = index['taskId']
+            logger.info('Loaded task from route', cls=cls, task_id=task_id)
+        except Exception as e:
+            logger.warn('Failed loading task from route', route=cls.route, error=str(e))
+            return
+
+        # Load the task & status description
+        task_status = queue_service.status(task_id)
+        task_status['task'] = queue_service.task(task_id)
+
+        # Build the instance
+        return cls(task_id, task_status)
 
     def load_artifacts(self, queue_service):
 

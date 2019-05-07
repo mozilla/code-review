@@ -71,7 +71,7 @@ class Workflow(object):
 
         # Use remote when we are on try
         if settings.source == SOURCE_TRY:
-            remote = RemoteWorkflow(self.queue_service)
+            remote = RemoteWorkflow(self.queue_service, self.index_service)
             issues += remote.run(revision)
 
         # Use local when some analyzers are set

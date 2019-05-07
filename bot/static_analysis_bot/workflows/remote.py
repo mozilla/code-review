@@ -8,9 +8,11 @@ from static_analysis_bot.clang.format import ClangFormatTask
 from static_analysis_bot.clang.tidy import ClangTidyTask
 from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
+from static_analysis_bot.coverage import ZeroCoverageTask
 from static_analysis_bot.coverity.coverity import CoverityTask
 from static_analysis_bot.infer.infer import InferTask
 from static_analysis_bot.lint import MozLintTask
+from static_analysis_bot.task import AnalysisTask
 
 logger = get_logger(__name__)
 
@@ -19,9 +21,10 @@ class RemoteWorkflow(object):
     '''
     Secondary workflow to analyze the output from a try task group
     '''
-    def __init__(self, queue_service):
+    def __init__(self, queue_service, index_service):
         # Use TC services client
         self.queue_service = queue_service
+        self.index_service = index_service
 
     def run(self, revision):
         assert settings.source == SOURCE_TRY, \
@@ -78,11 +81,21 @@ class RemoteWorkflow(object):
                 logger.warn('Only dependency is a Decision Task, skipping analysis')
                 return []
 
+        # Add zero-coverage task
+        dependencies.append(ZeroCoverageTask)
+
         # Find issues and patches in dependencies
         issues = []
-        for dep_id in dependencies:
+        for dep in dependencies:
             try:
-                task = self.build_task(dep_id, tasks[dep_id])
+                if isinstance(dep, type) and issubclass(dep, AnalysisTask):
+                    # Build a class instance from its definition and route
+                    task = dep.build_from_route(self.index_service, self.queue_service)
+                    if task is None:
+                        continue
+                else:
+                    # Use a task from its id & description
+                    task = self.build_task(dep, tasks[dep])
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
                     task_issues = task.parse_issues(artifacts, revision)

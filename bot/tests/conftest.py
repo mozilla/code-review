@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import itertools
+import json
 import os.path
 import subprocess
 import tempfile
@@ -491,6 +492,14 @@ def mock_coverity(tmpdir):
     # Build the mock directory
     os.environ['MOZBUILD_STATE_PATH'] = str(tmpdir.realpath())
     tmpdir.mkdir('coverity').mkdir(settings.cov_package_name)
+
+
+@pytest.fixture
+def mock_coverage_artifact():
+    path = os.path.join(MOCK_DIR, 'zero_coverage_report.json')
+    return {
+        'public/zero_coverage_report.json': json.load(open(path)),
+    }
 
 
 @pytest.fixture
