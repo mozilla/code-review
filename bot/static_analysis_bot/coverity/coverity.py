@@ -252,12 +252,14 @@ class CoverityIssue(Issue):
             if settings.cov_full_stack:
                 self.message += ISSUE_RELATION
                 # Embed all events into message
-                for event in issue['extra']:
-                    self.message += ISSUE_ELEMENT_IN_STACK.format(
-                        file_path=event['file_path'],
-                        line_number=event['line_number'],
-                        path_type=event['path_type'],
-                        description=event['description'])
+                if 'stack' in issue['extra']:
+                    stack = issue['extra']['stack']
+                    for event in stack:
+                        self.message += ISSUE_ELEMENT_IN_STACK.format(
+                            file_path=event['file_path'],
+                            line_number=event['line_number'],
+                            path_type=event['path_type'],
+                            description=event['description'])
 
         self.body = None
         self.nb_lines = 1
