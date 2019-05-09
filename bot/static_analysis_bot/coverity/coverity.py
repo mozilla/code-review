@@ -341,7 +341,7 @@ class CoverityIssue(Issue):
             'nb_lines': self.nb_lines,
             'bug_type': self.bug_type,
             'kind': self.kind,
-            'reliabiloty': self.reliability.value,
+            'reliability': self.reliability.value,
             'message': self.message,
             'body': self.body,
             'in_patch': self.revision.contains(self),
@@ -360,9 +360,7 @@ class CoverityIssue(Issue):
         Outputs a Phabricator lint result
         '''
         # If there is the reliability index use it
-        message = 'Checker reliability (false positive risk) is {}.'. \
-            format(self.reliability.value) + \
-            self.reliability \
+        message = f'Checker reliability (false positive risk) is {self.reliability.value}.\n{self.message}' \
             if self.reliability != Reliability.Unknown \
             else self.message
 
