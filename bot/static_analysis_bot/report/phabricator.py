@@ -11,7 +11,7 @@ from static_analysis_bot import COVERAGE
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.report.base import Reporter
-from static_analysis_bot.revisions import PhabricatorRevision
+from static_analysis_bot.revisions import Revision
 
 MODE_COMMENT = 'comment'
 MODE_HARBORMASTER = 'harbormaster'
@@ -48,7 +48,7 @@ class PhabricatorReporter(Reporter):
         '''
         Publish inline comments for each issues
         '''
-        if not isinstance(revision, PhabricatorRevision):
+        if not isinstance(revision, Revision):
             logger.info('Phabricator reporter only publishes Phabricator revisions. Skipping.')
             return None, None
 
@@ -141,7 +141,7 @@ class PhabricatorReporter(Reporter):
         '''
         Post an inline comment on a diff
         '''
-        assert isinstance(revision, PhabricatorRevision)
+        assert isinstance(revision, Revision)
         assert isinstance(issue, Issue)
 
         # Enforce path validation or Phabricator will crash here

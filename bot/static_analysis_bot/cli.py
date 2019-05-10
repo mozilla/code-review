@@ -17,7 +17,7 @@ from static_analysis_bot import config
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 from static_analysis_bot.report import get_reporters
-from static_analysis_bot.revisions import PhabricatorRevision
+from static_analysis_bot.revisions import Revision
 from static_analysis_bot.workflow import Workflow
 
 logger = get_logger(__name__)
@@ -98,7 +98,7 @@ def main(taskcluster_secret,
         reporters['phabricator'].setup_api(phabricator_api)
 
     # Load unique revision
-    revision = PhabricatorRevision(
+    revision = Revision(
         phabricator_api,
         try_task=queue_service.task(settings.try_task_id),
 

@@ -7,26 +7,22 @@ from parsepatch.patch import Patch
 
 
 @responses.activate
-def test_phabricator(mock_phabricator, mock_config):
+def test_phabricator(mock_config, mock_revision):
     '''
     Test a phabricator revision
     '''
-    from static_analysis_bot.revisions import PhabricatorRevision
-
-    with mock_phabricator as api:
-        r = PhabricatorRevision(api, 'PHID-DIFF-testABcd12')
-    assert not hasattr(r, 'mercurial')
-    assert r.diff_id == 42
-    assert r.diff_phid == 'PHID-DIFF-testABcd12'
-    assert r.url == 'https://phabricator.test/D51'
-    assert repr(r) == 'PHID-DIFF-testABcd12'
-    assert r.id == 51  # revision
+    assert not hasattr(mock_revision, 'mercurial')
+    assert mock_revision.diff_id == 42
+    assert mock_revision.diff_phid == 'PHID-DIFF-test'
+    assert mock_revision.url == 'https://phabricator.test/D51'
+    assert repr(mock_revision) == 'PHID-DIFF-test'
+    assert mock_revision.id == 51  # revision
 
     # Patch is automatically loaded from Phabricator
-    assert r.patch is not None
-    assert isinstance(r.patch, str)
-    assert len(r.patch.split('\n')) == 14
-    patch = Patch.parse_patch(r.patch)
+    assert mock_revision.patch is not None
+    assert isinstance(mock_revision.patch, str)
+    assert len(mock_revision.patch.split('\n')) == 14
+    patch = Patch.parse_patch(mock_revision.patch)
     assert patch == {
         'test.txt': {
             'touched': [],
@@ -65,8 +61,7 @@ def test_clang_files(mock_revision):
     assert mock_revision.has_clang_header_files
 
 
-def test_analyze_patch():
-    from static_analysis_bot.revisions import Revision
+def test_analyze_patch(mock_revision):
     from static_analysis_bot import Issue
 
     class MyIssue(Issue):
@@ -96,8 +91,7 @@ def test_analyze_patch():
     issue_in_existing_file_added_line = MyIssue('added.txt', 4)
     issue_in_not_changed_file = MyIssue('notexisting.txt', 1)
 
-    rev = Revision()
-    rev.patch = '''
+    mock_revision.patch = '''
 diff --git a/new.txt b/new.txt
 new file mode 100644
 index 00000000..83db48f8
@@ -128,24 +122,24 @@ index 83db48f8..84275f99 100644
 +line4
 '''
 
-    rev.analyze_patch()
-    assert 'new.txt' in rev.lines
-    assert rev.lines['new.txt'] == [1, 2, 3]
-    assert 'modified.txt' in rev.lines
-    assert rev.lines['modified.txt'] == [3]
-    assert 'added.txt' in rev.lines
-    assert rev.lines['added.txt'] == [4]
-    assert 'new.txt' in rev.files
-    assert 'modified.txt' in rev.files
-    assert 'added.txt' in rev.files
+    mock_revision.analyze_patch()
+    assert 'new.txt' in mock_revision.lines
+    assert mock_revision.lines['new.txt'] == [1, 2, 3]
+    assert 'modified.txt' in mock_revision.lines
+    assert mock_revision.lines['modified.txt'] == [3]
+    assert 'added.txt' in mock_revision.lines
+    assert mock_revision.lines['added.txt'] == [4]
+    assert 'new.txt' in mock_revision.files
+    assert 'modified.txt' in mock_revision.files
+    assert 'added.txt' in mock_revision.files
 
-    assert rev.has_file('new.txt')
-    assert rev.has_file('modified.txt')
-    assert rev.has_file('added.txt')
-    assert not rev.has_file('notexisting.txt')
+    assert mock_revision.has_file('new.txt')
+    assert mock_revision.has_file('modified.txt')
+    assert mock_revision.has_file('added.txt')
+    assert not mock_revision.has_file('notexisting.txt')
 
-    assert rev.contains(issue_in_new_file)
-    assert rev.contains(issue_in_existing_file_touched_line)
-    assert not rev.contains(issue_in_existing_file_not_changed_line)
-    assert rev.contains(issue_in_existing_file_added_line)
-    assert not rev.contains(issue_in_not_changed_file)
+    assert mock_revision.contains(issue_in_new_file)
+    assert mock_revision.contains(issue_in_existing_file_touched_line)
+    assert not mock_revision.contains(issue_in_existing_file_not_changed_line)
+    assert mock_revision.contains(issue_in_existing_file_added_line)
+    assert not mock_revision.contains(issue_in_not_changed_file)

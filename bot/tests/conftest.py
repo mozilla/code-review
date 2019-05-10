@@ -152,6 +152,34 @@ def mock_phabricator(mock_config):
         content_type='application/json',
     )
 
+    responses.add(
+        responses.POST,
+        'http://phabricator.test/api/harbormaster.target.search',
+        body=_response('target_search'),
+        content_type='application/json',
+    )
+
+    responses.add(
+        responses.POST,
+        'http://phabricator.test/api/harbormaster.build.search',
+        body=_response('build_search'),
+        content_type='application/json',
+    )
+
+    responses.add(
+        responses.POST,
+        'http://phabricator.test/api/harbormaster.buildable.search',
+        body=_response('buildable_search'),
+        content_type='application/json',
+    )
+
+    responses.add(
+        responses.POST,
+        'http://phabricator.test/api/harbormaster.sendmessage',
+        body=_response('send_message'),
+        content_type='application/json',
+    )
+
     yield PhabricatorAPI(
         url='http://phabricator.test/api/',
         api_key='deadbeef',
@@ -210,14 +238,29 @@ def mock_stats(mock_config):
 
 
 @pytest.fixture
+def mock_try_task():
+    '''
+    Mock a remote Try task definition
+    '''
+    return {
+        'extra': {
+            'code-review': {
+                'phabricator-diff': 'PHID-HMBT-test',
+            }
+        }
+
+    }
+
+
+@pytest.fixture
 @responses.activate
-def mock_revision(mock_phabricator, mock_config):
+def mock_revision(mock_phabricator, mock_try_task, mock_config):
     '''
     Mock a mercurial revision
     '''
-    from static_analysis_bot.revisions import PhabricatorRevision
+    from static_analysis_bot.revisions import Revision
     with mock_phabricator as api:
-        return PhabricatorRevision(api, diff_phid='PHID-DIFF-XXX')
+        return Revision(api, mock_try_task, update_build=False)
 
 
 @pytest.fixture

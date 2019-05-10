@@ -1,0 +1,23 @@
+{
+    "result": {
+        "data": [
+            {
+              "fields": {
+                "buildablePHID": "PHID-HMXX-test"
+              }
+            }
+        ],
+        "maps": {},
+        "query": {
+            "queryKey": null
+        },
+        "cursor": {
+            "limit": 100,
+            "after": null,
+            "before": null,
+            "order": null
+        }
+    },
+    "error_code": null,
+    "error_info": null
+}

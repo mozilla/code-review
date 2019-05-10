@@ -5,19 +5,37 @@
 
 from unittest import mock
 
+from static_analysis_bot.revisions import Revision
 
-def test_taskcluster_index(mock_config, mock_workflow):
+
+class MockRevision(Revision):
+    '''
+    Fake revision to easily set properties
+    '''
+    def __init__(self, namespaces, details):
+        self._namespaces = namespaces
+        self._details = details
+
+    @property
+    def namespaces(self):
+        return self._namespaces
+
+    def as_dict(self):
+        return self._details
+
+
+def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     '''
     Test the Taskcluster indexing API
     by mocking an online taskcluster state
     '''
     from static_analysis_bot.config import TaskCluster
-    from static_analysis_bot.revisions import Revision
     mock_config.taskcluster = TaskCluster('/tmp/dummy', '12345deadbeef', 0, False)
     mock_workflow.index_service = mock.Mock()
-    rev = Revision()
-    rev.namespaces = ['mock.1234']
-    rev.as_dict = lambda: {'id': '1234', 'someData': 'mock', 'state': 'done', }
+    rev = MockRevision(
+        namespaces=['mock.1234'],
+        details={'id': '1234', 'someData': 'mock', 'state': 'done', },
+    )
     mock_workflow.index(rev, test='dummy')
 
     assert mock_workflow.index_service.insertTask.call_count == 3
@@ -64,12 +82,9 @@ def test_monitoring_restart(mock_config, mock_workflow):
     Test the Taskcluster indexing API and restart capabilities
     '''
     from static_analysis_bot.config import TaskCluster
-    from static_analysis_bot.revisions import Revision
     mock_config.taskcluster = TaskCluster('/tmp/dummy', 'someTaskId', 0, False)
     mock_workflow.index_service = mock.Mock()
-    rev = Revision()
-    rev.as_dict = dict
-    rev.namespaces = []
+    rev = MockRevision([], {})
 
     # Unsupported error code
     mock_workflow.index(rev, test='dummy', error_code='nope', state='error')

@@ -70,12 +70,12 @@ def test_conf(mock_config):
 
 
 @responses.activate
-def test_mail(mock_config, mock_issues, mock_phabricator):
+def test_mail(mock_config, mock_issues, mock_revision):
     '''
     Test mail sending through Taskcluster
     '''
     from static_analysis_bot.report.mail import MailReporter
-    from static_analysis_bot.revisions import PhabricatorRevision, ImprovementPatch
+    from static_analysis_bot.revisions import ImprovementPatch
 
     def _check_email(request):
         payload = json.loads(request.body)
@@ -104,14 +104,12 @@ def test_mail(mock_config, mock_issues, mock_phabricator):
     }
     r = MailReporter(conf, 'test_tc', 'token_tc')
 
-    with mock_phabricator as api:
-        prev = PhabricatorRevision(api, 'PHID-DIFF-test')
-        prev.improvement_patches = [
-            ImprovementPatch('clang-tidy', repr(prev), 'Some code fixes'),
-            ImprovementPatch('clang-format', repr(prev), 'Some lint fixes'),
-        ]
-        list(map(lambda p: p.write(), prev.improvement_patches))  # trigger local write
-        r.publish(mock_issues, prev)
+    mock_revision.improvement_patches = [
+        ImprovementPatch('clang-tidy', repr(mock_revision), 'Some code fixes'),
+        ImprovementPatch('clang-format', repr(mock_revision), 'Some lint fixes'),
+    ]
+    list(map(lambda p: p.write(), mock_revision.improvement_patches))  # trigger local write
+    r.publish(mock_issues, mock_revision)
 
     # Check stats
     mock_cls = mock_issues[0].__class__

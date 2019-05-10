@@ -9,22 +9,18 @@ import responses
 
 
 @responses.activate
-def test_publication(tmpdir, mock_issues, mock_phabricator):
+def test_publication(tmpdir, mock_issues, mock_revision):
     '''
     Test debug publication and report analysis
     '''
     from static_analysis_bot.report.debug import DebugReporter
-    from static_analysis_bot.revisions import PhabricatorRevision
 
     report_dir = str(tmpdir.mkdir('public').realpath())
     report_path = os.path.join(report_dir, 'report.json')
     assert not os.path.exists(report_path)
 
-    with mock_phabricator as api:
-        prev = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
-
     r = DebugReporter(report_dir)
-    r.publish(mock_issues, prev)
+    r.publish(mock_issues, mock_revision)
 
     assert os.path.exists(report_path)
     with open(report_path) as f:
@@ -39,7 +35,7 @@ def test_publication(tmpdir, mock_issues, mock_phabricator):
         'diff_id': 42,
         'url': 'https://phabricator.test/D51',
         'bugzilla_id': '',
-        'diff_phid': 'PHID-DIFF-abcdef',
+        'diff_phid': 'PHID-DIFF-test',
         'phid': 'PHID-DREV-zzzzz',
         'title': 'Static Analysis tests',
         'has_clang_files': False,

@@ -27,7 +27,7 @@ Code analysis found 1 defect in this patch:
 You can run this analysis locally with:
  - `./mach clang-format -s -p dom/test.cpp` (C/C++)
 
-For your convenience, [here is a patch]({results}/clang-format-PHID-DIFF-abcdef.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply`).
+For your convenience, [here is a patch]({results}/clang-format-PHID-DIFF-test.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply`).
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 '''  # noqa
@@ -46,12 +46,12 @@ If you see a problem in this automated review, [please report it here](https://b
 
 
 @responses.activate
-def test_phabricator_clang_tidy(mock_phabricator):
+def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     '''
     Test Phabricator reporter publication on a mock clang-tidy issue
     '''
     from static_analysis_bot.report.phabricator import PhabricatorReporter
-    from static_analysis_bot.revisions import PhabricatorRevision
+    from static_analysis_bot.revisions import Revision
     from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
 
     def _check_comment(request):
@@ -81,7 +81,7 @@ def test_phabricator_clang_tidy(mock_phabricator):
     )
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
+        revision = Revision(api, mock_try_task)
         revision.lines = {
             # Add dummy lines diff
             'another_test.cpp': [41, 42, 43],
@@ -104,12 +104,12 @@ def test_phabricator_clang_tidy(mock_phabricator):
 
 
 @responses.activate
-def test_phabricator_clang_format(mock_config, mock_phabricator):
+def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     '''
     Test Phabricator reporter publication on a mock clang-format issue
     '''
     from static_analysis_bot.report.phabricator import PhabricatorReporter
-    from static_analysis_bot.revisions import PhabricatorRevision, ImprovementPatch
+    from static_analysis_bot.revisions import Revision, ImprovementPatch
     from static_analysis_bot.tasks.clang_format import ClangFormatIssue
 
     def _check_comment(request):
@@ -134,7 +134,7 @@ def test_phabricator_clang_format(mock_config, mock_phabricator):
     )
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
+        revision = Revision(api, mock_try_task)
         revision.lines = {
             # Add dummy lines diff
             'test.cpp': [41, 42, 43],
@@ -162,12 +162,12 @@ def test_phabricator_clang_format(mock_config, mock_phabricator):
 
 
 @responses.activate
-def test_phabricator_coverage(mock_config, mock_phabricator):
+def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
     '''
     Test Phabricator reporter publication on a mock coverage issue
     '''
     from static_analysis_bot.report.phabricator import PhabricatorReporter
-    from static_analysis_bot.revisions import PhabricatorRevision
+    from static_analysis_bot.revisions import Revision
     from static_analysis_bot.tasks.coverage import CoverageIssue
 
     def _check_comment(request):
@@ -192,7 +192,7 @@ def test_phabricator_coverage(mock_config, mock_phabricator):
     )
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
+        revision = Revision(api, mock_try_task)
         revision.lines = {
             # Add dummy lines diff
             'test.txt': [0],
@@ -216,12 +216,12 @@ def test_phabricator_coverage(mock_config, mock_phabricator):
 
 
 @responses.activate
-def test_phabricator_clang_tidy_and_coverage(mock_config, mock_phabricator):
+def test_phabricator_clang_tidy_and_coverage(mock_config, mock_phabricator, mock_try_task):
     '''
     Test Phabricator reporter publication on a mock coverage issue
     '''
     from static_analysis_bot.report.phabricator import PhabricatorReporter
-    from static_analysis_bot.revisions import PhabricatorRevision
+    from static_analysis_bot.revisions import Revision
     from static_analysis_bot.tasks.coverage import CoverageIssue
     from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
 
@@ -273,7 +273,7 @@ def test_phabricator_clang_tidy_and_coverage(mock_config, mock_phabricator):
     )
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
+        revision = Revision(api, mock_try_task)
         revision.lines = {
             # Add dummy lines diff
             'test.txt': [0],
@@ -307,12 +307,12 @@ def test_phabricator_clang_tidy_and_coverage(mock_config, mock_phabricator):
 
 
 @responses.activate
-def test_phabricator_analyzers(mock_config, mock_phabricator):
+def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
     '''
     Test analyzers filtering on phabricator reporter
     '''
     from static_analysis_bot.report.phabricator import PhabricatorReporter
-    from static_analysis_bot.revisions import PhabricatorRevision, ImprovementPatch
+    from static_analysis_bot.revisions import Revision, ImprovementPatch
     from static_analysis_bot.tasks.clang_format import ClangFormatIssue
     from static_analysis_bot.tasks.infer import InferIssue
     from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
@@ -321,7 +321,7 @@ def test_phabricator_analyzers(mock_config, mock_phabricator):
 
     def _test_reporter(api, analyzers):
         # Always use the same setup, only varies the analyzers
-        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
+        revision = Revision(api, mock_try_task)
         revision.lines = {
             'test.cpp': [0, 41, 42, 43],
             'dom/test.cpp': [42, ],
@@ -410,13 +410,13 @@ def test_phabricator_analyzers(mock_config, mock_phabricator):
 
 
 @responses.activate
-def test_phabricator_harbormaster(mock_phabricator):
+def test_phabricator_harbormaster(mock_phabricator, mock_try_task):
     '''
     Test Phabricator reporter publication on a mock clang-tidy issue
     using harbormaster
     '''
     from static_analysis_bot.report.phabricator import PhabricatorReporter
-    from static_analysis_bot.revisions import PhabricatorRevision
+    from static_analysis_bot.revisions import Revision
     from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
 
     def _check_message(request):
@@ -457,7 +457,7 @@ def test_phabricator_harbormaster(mock_phabricator):
     )
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision(api, 'PHID-DIFF-abcdef')
+        revision = Revision(api, mock_try_task)
         revision.lines = {
             # Add dummy lines diff
             'test.cpp': [41, 42, 43],
