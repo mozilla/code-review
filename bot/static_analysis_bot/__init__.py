@@ -5,10 +5,6 @@
 
 import abc
 import enum
-import hashlib
-import itertools
-import json
-import os
 
 from static_analysis_bot.config import Publication
 from static_analysis_bot.config import settings
@@ -31,81 +27,18 @@ class AnalysisException(Exception):
         super().__init__(message)
 
 
-class DefaultAnalyzer(abc.ABC):
-    '''
-    Default base analzer that must be implemented by each analyzer in particular
-    '''
-    @abc.abstractmethod
-    def run(self, revision):
-        '''
-        The run procedure that each analyzer must implement, this is the entry
-        point where the execution of the checker starts
-        '''
-        raise NotImplementedError
-
-    def can_run_before_patch(self):
-        '''
-        By default an analyzer can be ran two times, before the patch is applied
-        and after. By there are special cases where this behaviour is not wanted,
-        hence it must be reflected in the re-implementation of this method.
-        '''
-        return True
-
-
 class Issue(abc.ABC):
     '''
     Common reported issue interface
 
     Several properties are also needed:
-    - repo_dir: Mercurial repository directory
-    - path: Source file path relative to repo_dir
+    - path: Source file path relative to repo
     - line: Line where the issue begins
     - nb_lines: Number of lines affected by the issue
     '''
     lines_hash = None
     is_new = False
     revision = None
-
-    def __eq__(self, other):
-        return self.__hash__() == other.__hash__()
-
-    def __hash__(self):
-        '''
-        Unique issue identifier, used to compare issues
-        '''
-        if self.lines_hash is None:
-            self.build_lines_hash()
-
-        payload = {
-            'class': self.__class__.__name__,
-            'path': self.path,
-            'lines_hash': self.lines_hash,
-        }
-        payload.update(self.build_extra_identifiers())
-        return hash(json.dumps(payload, sort_keys=True))
-
-    def build_lines_hash(self):
-        '''
-        Build a unique hash to identify lines related to this issue
-        Skip leading spaces to have same hashes when only the indentation changes
-        '''
-        assert settings.has_local_clone, 'Cannot build lines hash without a local clone'
-
-        # Read issue related content here to build an hash
-        full_path = os.path.join(settings.repo_dir, self.path)
-        assert os.path.exists(full_path), \
-            'Missing file {}'.format(full_path)
-
-        # Only read necessary lines
-        with open(full_path) as source:
-            start = max(self.line - 1, 0)
-            end = start + self.nb_lines
-            lines = itertools.islice(source, start, end)
-            content = ''.join(l.lstrip() for l in lines)
-
-        # Build the content hash
-        self.lines_hash = hashlib.sha256(content.encode('utf-8')).hexdigest()
-        return self.lines_hash
 
     def build_extra_identifiers(self):
         '''
@@ -178,23 +111,8 @@ class Issue(abc.ABC):
     def is_third_party(self):
         '''
         Is this issue in a third party path ?
-        Once we are using only try, we should not need this check anymore
         '''
-        if not settings.has_local_clone:
-            return False
-
-        # List third party directories using mozilla-central file
-        full_path = os.path.join(settings.repo_dir, settings.third_party)
-        assert os.path.exists(full_path), \
-            'Missing third party file {}'.format(full_path)
-        with open(full_path) as f:
-            # Remove new lines
-            third_parties = list(map(lambda l: l.rstrip(), f.readlines()))
-
-        for path in third_parties:
-            if self.path.startswith(path):
-                return True
-        return False
+        return settings.is_third_party(self.path)
 
 
 class Reliability(enum.Enum):

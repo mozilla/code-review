@@ -1,10 +1,8 @@
 # -*- coding: utf-8 -*-
-import os
-
-from static_analysis_bot.coverage import ZeroCoverageTask
+from static_analysis_bot.tasks.coverage import ZeroCoverageTask
 
 
-def test_coverage(mock_config, mock_repository, mock_revision, mock_coverage_artifact):
+def test_coverage(mock_config, mock_revision, mock_coverage_artifact):
     task_status = {
         'task': {},
         'status': {},
@@ -26,13 +24,6 @@ def test_coverage(mock_config, mock_repository, mock_revision, mock_coverage_art
     for path in mock_revision.files:
         mock_revision.lines[path] = [0]
 
-    # Build fake files.
-    for i, path in enumerate(mock_revision.files):
-        full_path = os.path.join(mock_config.repo_dir, path)
-        os.makedirs(os.path.dirname(full_path), exist_ok=True)
-        with open(full_path, 'w') as f:
-            f.write('line\n' * (i + 1))
-
     issues = cov.parse_issues(mock_coverage_artifact, mock_revision)
 
     # The list must have three elements
@@ -45,9 +36,6 @@ def test_coverage(mock_config, mock_repository, mock_revision, mock_coverage_art
     assert issue.message == 'This file is uncovered'
     assert str(issue) == 'my/path/file1.cpp'
 
-    assert issue.build_lines_hash() == 'c73b73af8851e9e91bc6b4dc12e7dace0a2bfb931c1d0b8b36ef367319f58cd1'
-
-    assert not issue.is_third_party()
     assert issue.validates()
 
     assert issue.as_dict() == {
@@ -55,9 +43,9 @@ def test_coverage(mock_config, mock_repository, mock_revision, mock_coverage_art
         'path': 'my/path/file1.cpp',
         'line': 0,
         'message': 'This file is uncovered',
-        'is_third_party': False,
         'in_patch': True,
         'is_new': False,
+        'is_third_party': False,
         'validates': True,
         'publishable': True,
     }
@@ -87,9 +75,6 @@ This file is uncovered
     assert issue.message == 'This file is uncovered'
     assert str(issue) == 'test/dummy/thirdparty.c'
 
-    assert issue.build_lines_hash() == 'c73b73af8851e9e91bc6b4dc12e7dace0a2bfb931c1d0b8b36ef367319f58cd1'
-
-    assert issue.is_third_party()
     assert issue.validates()
 
     assert issue.as_dict() == {
@@ -97,9 +82,9 @@ This file is uncovered
         'path': 'test/dummy/thirdparty.c',
         'line': 0,
         'message': 'This file is uncovered',
-        'is_third_party': True,
         'in_patch': True,
         'is_new': False,
+        'is_third_party': True,
         'validates': True,
         'publishable': True,
     }
@@ -129,9 +114,6 @@ This file is uncovered
     assert issue.message == 'This file is uncovered'
     assert str(issue) == 'my/path/header.h'
 
-    assert issue.build_lines_hash() == 'c73b73af8851e9e91bc6b4dc12e7dace0a2bfb931c1d0b8b36ef367319f58cd1'
-
-    assert not issue.is_third_party()
     assert not issue.validates()
 
     assert issue.as_dict() == {
@@ -139,9 +121,9 @@ This file is uncovered
         'path': 'my/path/header.h',
         'line': 0,
         'message': 'This file is uncovered',
-        'is_third_party': False,
         'in_patch': True,
         'is_new': False,
+        'is_third_party': False,
         'validates': False,
         'publishable': False,
     }

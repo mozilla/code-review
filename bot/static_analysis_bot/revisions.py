@@ -3,22 +3,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import io
 import os
 from datetime import timedelta
 
-import hglib
 from parsepatch.patch import Patch
 
 from cli_common import log
 from cli_common.phabricator import BuildState
 from cli_common.phabricator import PhabricatorAPI
 from cli_common.taskcluster import create_blob_artifact
-from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import REPO_TRY
-from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
 
 logger = log.get_logger(__name__)
@@ -242,21 +238,11 @@ class PhabricatorRevision(Revision):
             self.build_target_phid = build_target
         elif hm_target and isinstance(hm_target, str) and hm_target.startswith('PHID-'):
             self.build_target_phid = hm_target
-        elif settings.build_plan:
-            build, targets = self.api.find_diff_build(self.diff_phid, settings.build_plan)
-            build_phid = build['phid']
-            nb = len(targets)
-            assert nb > 0, 'No build target found'
-            if nb > 1:
-                logger.warn('More than 1 build target found !', nb=nb, build_phid=build_phid)
-            target = targets[0]
-            self.build_target_phid = target['phid']
         else:
             logger.info('No build plan specified, no HarborMaster update')
 
         # Load target patch from Phabricator for Try mode
-        if settings.source == SOURCE_TRY:
-            self.patch = self.api.load_raw_diff(self.diff_id)
+        self.patch = self.api.load_raw_diff(self.diff_id)
 
     @property
     def namespaces(self):
@@ -319,61 +305,6 @@ class PhabricatorRevision(Revision):
         self.mercurial_revision = decision_env.get('GECKO_HEAD_REV')
         assert self.mercurial_revision is not None, 'Missing try revision'
         logger.info('Using Try mercurial revision', rev=self.mercurial_revision)
-
-    def load(self, repo):
-        '''
-        Load full raw patch from Phabricator API then load and apply
-        the dependant stack of patches from Phabricator
-        when the patch is not already in the repository
-        '''
-        try:
-            _, patches = self.api.load_patches_stack(repo, self.diff)
-        except Exception as e:
-            raise AnalysisException('mercurial', str(e))
-
-        # Expose current patch to workflow
-        self.patch = dict(patches)[self.diff_phid]
-
-        # Skip patch application when repo already has the patch
-        if self.mercurial_revision is not None:
-            return
-
-        # Apply all patches from base to top
-        # except our current (top) patch
-        for diff_phid, patch in patches[:-1]:
-            logger.info('Applying parent diff', phid=diff_phid)
-            try:
-                repo.import_(
-                    patches=io.BytesIO(patch.encode('utf-8')),
-                    message='SA Imported patch {}'.format(diff_phid),
-                    user='reviewbot',
-                )
-            except hglib.error.CommandError:
-                raise AnalysisException('mercurial', 'Failed to import parent patch {}'.format(diff_phid))
-
-    def apply(self, repo):
-        '''
-        Apply patch from Phabricator to Mercurial local repository
-        '''
-        assert isinstance(repo, hglib.client.hgclient)
-
-        if self.mercurial_revision:
-            # Apply the existing commit when available
-            repo.update(
-                rev=self.mercurial_revision,
-                clean=True,
-            )
-        else:
-            # Apply the patch on top of repository
-            try:
-                repo.import_(
-                    patches=io.BytesIO(self.patch.encode('utf-8')),
-                    message='SA Analyzed patch',
-                    user='reviewbot',
-                )
-                logger.info('Applied target patch', phid=self.diff_phid)
-            except hglib.error.CommandError:
-                raise AnalysisException('mercurial', 'Failed to import target patch')
 
     def as_dict(self):
         '''

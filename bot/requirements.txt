@@ -1,12 +1,4 @@
 -e ./../../../lib/cli_common[log,pulse,taskcluster,mercurial] #egg=mozilla-cli-common
 
-RBTools
-PyYAML
 parsepatch
-codespell
-yamllint
 datadog
-
-# Fixed versions
-six==1.10.0
-pyasn1==0.3.4

@@ -4,15 +4,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from cli_common.log import get_logger
-from static_analysis_bot.clang.format import ClangFormatTask
-from static_analysis_bot.clang.tidy import ClangTidyTask
-from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
-from static_analysis_bot.coverage import ZeroCoverageTask
-from static_analysis_bot.coverity.coverity import CoverityTask
-from static_analysis_bot.infer.infer import InferTask
-from static_analysis_bot.lint import MozLintTask
-from static_analysis_bot.task import AnalysisTask
+from static_analysis_bot.tasks.base import AnalysisTask
+from static_analysis_bot.tasks.clang_format import ClangFormatTask
+from static_analysis_bot.tasks.clang_tidy import ClangTidyTask
+from static_analysis_bot.tasks.coverage import ZeroCoverageTask
+from static_analysis_bot.tasks.coverity import CoverityTask
+from static_analysis_bot.tasks.infer import InferTask
+from static_analysis_bot.tasks.lint import MozLintTask
 
 logger = get_logger(__name__)
 
@@ -27,8 +26,6 @@ class RemoteWorkflow(object):
         self.index_service = index_service
 
     def run(self, revision):
-        assert settings.source == SOURCE_TRY, \
-            'Cannot run without Try source'
         assert settings.try_task_id is not None, \
             'Cannot run without Try task id'
         assert settings.try_group_id is not None, \

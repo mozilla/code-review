@@ -3,7 +3,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
 from datetime import datetime
 from datetime import timedelta
 
@@ -12,11 +11,9 @@ from cli_common.phabricator import BuildState
 from cli_common.phabricator import PhabricatorAPI
 from cli_common.taskcluster import TASKCLUSTER_DATE_FORMAT
 from static_analysis_bot import stats
-from static_analysis_bot.config import SOURCE_TRY
 from static_analysis_bot.config import settings
 from static_analysis_bot.report.debug import DebugReporter
 from static_analysis_bot.revisions import Revision
-from static_analysis_bot.workflows.local import LocalWorkflow
 from static_analysis_bot.workflows.remote import RemoteWorkflow
 
 logger = get_logger(__name__)
@@ -28,15 +25,11 @@ TASKCLUSTER_INDEX_TTL = 7  # in days
 class Workflow(object):
     '''
     Full static analysis workflow
-    - setup local and remote analysis workflows
-    - runs them to build issues
+    - setup remote analysis workflow
+    - runs workflow to build issues
     - publish issues
     '''
-    def __init__(self, reporters, analyzers, index_service, queue_service, phabricator_api):
-        assert isinstance(analyzers, list)
-        self.analyzers = analyzers
-        assert 'MOZCONFIG' in os.environ, \
-            'Missing MOZCONFIG in environment'
+    def __init__(self, reporters, index_service, queue_service, phabricator_api):
 
         # Use share phabricator API client
         assert isinstance(phabricator_api, PhabricatorAPI)
@@ -54,30 +47,19 @@ class Workflow(object):
         self.index_service = index_service
         self.queue_service = queue_service
 
-        # Build analysis workflows to run
-        self.workflows = []
-
     def run(self, revision):
         '''
         Build analysis workflows and directly run them
         '''
-        issues = []
-
         # Index ASAP Taskcluster task for this revision
         self.index(revision, state='started')
 
         # Set the Phabricator build as running
         revision.update_status(state=BuildState.Work)
 
-        # Use remote when we are on try
-        if settings.source == SOURCE_TRY:
-            remote = RemoteWorkflow(self.queue_service, self.index_service)
-            issues += remote.run(revision)
-
-        # Use local when some analyzers are set
-        if len(self.analyzers) > 0:
-            local = LocalWorkflow(self, self.analyzers, self.index_service)
-            issues += local.run(revision)
+        # Always use remote workflow !
+        remote = RemoteWorkflow(self.queue_service, self.index_service)
+        issues = remote.run(revision)
 
         if not issues:
             logger.info('No issues, stopping there.')
@@ -135,7 +117,7 @@ class Workflow(object):
         payload['indexed'] = now.strftime(TASKCLUSTER_DATE_FORMAT)
 
         # Always add the source and try config
-        payload['source'] = settings.source
+        payload['source'] = 'try'
         payload['try_task_id'] = settings.try_task_id
         payload['try_group_id'] = settings.try_group_id
 
