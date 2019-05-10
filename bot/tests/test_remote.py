@@ -567,6 +567,16 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow):
     assert issue.validates()
     assert issue.as_text() == f'Checker reliability (false positive risk) is high.\nSome error here'
 
+    # Testing will coverity full stack support
+    mock_config.cov_full_stack = True
+    issues = mock_workflow.run(mock_revision)
+    issue = issues[0]
+    assert issue.message == '''Using uninitialized value "a".
+The path that leads to this defect is:
+
+- //dom/animation/Animation.cpp:61//:
+-- `path: Condition \"!target.oper…", taking false branch.`.\n'''
+
 
 def test_infer_task(mock_config, mock_revision, mock_workflow):
     '''
