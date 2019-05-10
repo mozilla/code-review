@@ -154,7 +154,10 @@ class CoverityIssue(Issue):
         '''
         Build the text body published on reporters
         '''
-        return self.message
+        # If there is the reliability index use it
+        return f'Checker reliability (false positive risk) is {self.reliability.value}.\n{self.message}' \
+            if self.reliability != Reliability.Unknown \
+            else self.message
 
     def as_markdown(self):
         return ISSUE_MARKDOWN.format(

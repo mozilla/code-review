@@ -565,6 +565,7 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow):
     assert issue.is_local()
     assert not issue.is_clang_error()
     assert issue.validates()
+    assert issue.as_text() == f'Checker reliability (false positive risk) is high.\nSome error here'
 
 
 def test_infer_task(mock_config, mock_revision, mock_workflow):
