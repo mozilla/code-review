@@ -18,7 +18,7 @@ from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 from static_analysis_bot.report import get_reporters
 from static_analysis_bot.revisions import PhabricatorRevision
-from static_analysis_bot.workflows import Workflow
+from static_analysis_bot.workflow import Workflow
 
 logger = get_logger(__name__)
 

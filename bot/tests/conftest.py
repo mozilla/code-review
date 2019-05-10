@@ -13,6 +13,8 @@ import pytest
 import responses
 
 from cli_common.phabricator import PhabricatorAPI
+from mock_taskcluster import MockIndex
+from mock_taskcluster import MockQueue
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), 'mocks')
 
@@ -219,20 +221,28 @@ def mock_revision(mock_phabricator, mock_config):
 
 
 @pytest.fixture
-@responses.activate
-def mock_workflow(tmpdir, mock_phabricator, mock_config):
+def mock_workflow(mock_phabricator):
     '''
-    Mock the top level workflow
+    Mock the workflow along with Taskcluster mocks
+    No phabricator output here
     '''
-    from static_analysis_bot.workflows.base import Workflow
+    from static_analysis_bot.workflow import Workflow
 
-    with mock_phabricator as api:
-        return Workflow(
-            reporters={},
-            index_service=None,
-            queue_service=None,
-            phabricator_api=api,
-        )
+    class MockWorkflow(Workflow):
+        def __init__(self):
+            self.reporters = {}
+            self.phabricator_api = None
+            self.index_service = MockIndex()
+            self.queue_service = MockQueue()
+
+        def setup_mock_tasks(self, tasks):
+            '''
+            Add mock tasks in queue & index mock services
+            '''
+            self.index_service.configure(tasks)
+            self.queue_service.configure(tasks)
+
+    return MockWorkflow()
 
 
 @pytest.fixture
