@@ -6,7 +6,6 @@
 from cli_common.log import get_logger
 from cli_common.phabricator import LintResult
 from static_analysis_bot import COVERITY
-from static_analysis_bot import AnalysisException
 from static_analysis_bot import Issue
 from static_analysis_bot import Reliability
 from static_analysis_bot.config import settings
@@ -46,58 +45,27 @@ class CoverityIssue(Issue):
     '''
     ANALYZER = COVERITY
 
-    def __init__(self, revision, issue, file_path=None):
+    def __init__(self, revision, issue, file_path):
         self.revision = revision
-        self.reliability = Reliability.Unknown
+        self.path = file_path
+        self.reliability = Reliability(issue['reliability'])
+        self.line = issue['line']
+        self.bug_type = issue['extra']['category']
+        self.kind = issue['flag']
+        self.message = issue['message']
 
-        if file_path is None:
-            # We look only for main event
-            event_path = next((event for event in issue['events'] if event['main'] is True), None)
-
-            if event_path is None:
-                raise AnalysisException(
-                    'coverity',
-                    'Coverity Analysis did not find main event for mergeKey {}'.format(issue['mergeKey']))
-
-            checker_properties = issue['checkerProperties']
-            # Strip the leading slash
-            self.path = issue['strippedMainEventFilePathname'].strip('/')
-            self.line = issue['mainEventLineNumber']
-            self.bug_type = checker_properties['category']
-            self.kind = issue['checkerName']
-            self.message = event_path['eventDescription']
-            self.state_on_server = issue['stateOnServer']
-
-            if settings.cov_full_stack:
-                self.message += ISSUE_RELATION
-                # Embed all events into message
-                for event in issue['events']:
+        self.state_on_server = issue['extra']['stateOnServer']
+        if settings.cov_full_stack:
+            self.message += ISSUE_RELATION
+            # Embed all events into message
+            if 'stack' in issue['extra']:
+                stack = issue['extra']['stack']
+                for event in stack:
                     self.message += ISSUE_ELEMENT_IN_STACK.format(
-                        file_path=event['strippedFilePathname'],
-                        line_number=event['lineNumber'],
-                        path_type=event['eventTag'],
-                        description=event['eventDescription'])
-        else:
-            # This issue came from try worker
-            self.path = file_path
-            self.reliability = Reliability(issue['reliability'])
-            self.line = issue['line']
-            self.bug_type = issue['extra']['category']
-            self.kind = issue['flag']
-            self.message = issue['message']
-
-            self.state_on_server = issue['extra']['stateOnServer']
-            if settings.cov_full_stack:
-                self.message += ISSUE_RELATION
-                # Embed all events into message
-                if 'stack' in issue['extra']:
-                    stack = issue['extra']['stack']
-                    for event in stack:
-                        self.message += ISSUE_ELEMENT_IN_STACK.format(
-                            file_path=event['file_path'],
-                            line_number=event['line_number'],
-                            path_type=event['path_type'],
-                            description=event['description'])
+                        file_path=event['file_path'],
+                        line_number=event['line_number'],
+                        path_type=event['path_type'],
+                        description=event['description'])
 
         self.body = None
         self.nb_lines = 1

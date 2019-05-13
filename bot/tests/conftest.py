@@ -19,7 +19,7 @@ from mock_taskcluster import MockQueue
 MOCK_DIR = os.path.join(os.path.dirname(__file__), 'mocks')
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture(scope='function')
 @responses.activate
 def mock_config():
     '''
