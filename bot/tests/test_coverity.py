@@ -86,7 +86,7 @@ The path that leads to this defect is:
     assert issue.nb_lines == 1
 
     assert issue.validates()
-    assert issue.is_publishable()
+    assert not issue.is_publishable()
 
     assert issue.as_text() == '''Checker reliability (false positive risk) is medium.
 Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
@@ -124,7 +124,7 @@ The path that leads to this defect is:
 ''',
         'nb_lines': 1,
         'path': 'js/src/jit/BaselineCompiler.cpp',
-        'publishable': True,
+        'publishable': False,
         'reliability': 'medium',
         'validates': True,
         'validation': {

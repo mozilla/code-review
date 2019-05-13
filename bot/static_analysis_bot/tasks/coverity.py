@@ -83,18 +83,6 @@ class CoverityIssue(Issue):
             'line': self.line,
         }
 
-    def is_publishable(self):
-        '''
-        We don't use the default `is_publishable` implementation from `Issue`
-        because for CoverityIssue we don't apply the same logic to filter issues
-        as we do with the rest of our Analyzers, for IN_PATCH or BEFORE_AFTER methods,
-        since Coverity performs most of the checks on the servers and provides us a
-        snapshot with the checks that can be filtered only by the is_local function.
-        Coverity also has the ability to forward clang errors but we don't want to forward
-        these errors to the review.
-        '''
-        return not self.is_clang_error() and self.is_local()
-
     def is_clang_error(self):
         '''
         Determine if the current issue is a translation unit error forwarded by Clang
@@ -116,7 +104,7 @@ class CoverityIssue(Issue):
         '''
         Publish only local Coverity issues
         '''
-        return self.is_local()
+        return self.is_local() and not self.is_clang_error()
 
     def as_text(self):
         '''
