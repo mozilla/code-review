@@ -92,7 +92,7 @@ def test_as_markdown(mock_revision):
 - **Expanded Macro**: no
 - **Publishable **: no
 - **Is new**: no
-- **Checker reliability (false positive risk)**: high
+- **Checker reliability **: high (false positive risk)
 
 ```
 Dummy body
@@ -105,7 +105,7 @@ Dummy body
         'code': 'clang-tidy.dummy-check',
         'line': 42,
         'name': 'Clang-Tidy - dummy-check',
-        'description': 'dummy message\nChecker reliability (false positive risk) is high.\n\n > Dummy body',
+        'description': 'dummy message\nChecker reliability is high (false positive risk).\n\n > Dummy body',
         'path': 'test.cpp',
         'severity': 'warning',
     }

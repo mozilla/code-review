@@ -29,7 +29,7 @@ ISSUE_MARKDOWN = '''
 - **Expanded Macro**: {expanded_macro}
 - **Publishable **: {publishable}
 - **Is new**: {is_new}
-- **Checker reliability (false positive risk)**: {reliability}
+- **Checker reliability **: {reliability} (false positive risk)
 
 ```
 {body}
@@ -143,7 +143,7 @@ class ClangTidyIssue(Issue):
             body += '\n{}'.format(self.reason)
         # Also add the reliability of the checker
         if self.reliability != Reliability.Unknown:
-            body += '\nChecker reliability (false positive risk) is {}.'.format(self.reliability.value)
+            body += '\nChecker reliability is {} (false positive risk).'.format(self.reliability.value)
         return body
 
     def as_markdown(self):
@@ -206,7 +206,7 @@ class ClangTidyIssue(Issue):
 
         # Append to description the reliability index if any
         if self.reliability != Reliability.Unknown:
-            description += '\nChecker reliability (false positive risk) is {}.'.format(self.reliability.value)
+            description += '\nChecker reliability is {} (false positive risk).'.format(self.reliability.value)
 
         if self.body:
             description += '\n\n > {}'.format(self.body)

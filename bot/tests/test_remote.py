@@ -565,7 +565,7 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow):
     assert issue.is_local()
     assert not issue.is_clang_error()
     assert issue.validates()
-    assert issue.as_text() == f'Checker reliability (false positive risk) is high.\nSome error here'
+    assert issue.as_text() == f'Checker reliability is high (false positive risk).\nSome error here'
 
     # Testing will coverity full stack support
     mock_config.cov_full_stack = True

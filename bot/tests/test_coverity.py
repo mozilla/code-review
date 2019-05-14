@@ -88,7 +88,7 @@ The path that leads to this defect is:
     assert issue.validates()
     assert not issue.is_publishable()
 
-    assert issue.as_text() == '''Checker reliability (false positive risk) is medium.
+    assert issue.as_text() == '''Checker reliability is medium (false positive risk).
 Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
 The path that leads to this defect is:
 
