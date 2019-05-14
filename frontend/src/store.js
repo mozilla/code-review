@@ -147,7 +147,7 @@ export default new Vuex.Store({
           if (issue.analyzer === 'clang-tidy') {
             check = issue.check
           } else if (issue.analyzer === 'clang-format') {
-            check = 'lint' // No check informations on clang-format
+            check = 'lint' // No check information on clang-format
           } else if (issue.analyzer === 'infer') {
             check = issue.bug_type
           } else if (issue.analyzer === 'mozlint') {
@@ -155,7 +155,7 @@ export default new Vuex.Store({
           } else if (issue.analyzer === 'Coverity') {
             check = issue.kind
           } else if (issue.analyzer === 'coverage') {
-            check = '0 coverage'
+            check = 'zero coverage'
           } else {
             console.warn('Unsupported analyzer', issue.analyzer)
             return
@@ -267,7 +267,7 @@ export default new Vuex.Store({
         return
       }
 
-      // Slice full loading in smaller batches to avoid using too many ressources
+      // Slice full loading in smaller batches to avoid using too many resources
       var slice = state.state.stats.ids.slice(step * TASKS_SLICE, (step + 1) * TASKS_SLICE)
       var batch = Promise.all(
         slice.map(taskId => state.dispatch('load_report', taskId))
