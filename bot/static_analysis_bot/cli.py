@@ -63,7 +63,6 @@ def main(taskcluster_secret,
         secrets['APP_CHANNEL'],
         secrets['PUBLICATION'],
         secrets['ALLOWED_PATHS'],
-        secrets.get('COVERITY_CONFIG'),
     )
     # Setup statistics
     datadog_api_key = secrets.get('DATADOG_API_KEY')

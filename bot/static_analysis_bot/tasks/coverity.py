@@ -8,7 +8,6 @@ from cli_common.phabricator import LintResult
 from static_analysis_bot import COVERITY
 from static_analysis_bot import Issue
 from static_analysis_bot import Reliability
-from static_analysis_bot.config import settings
 from static_analysis_bot.tasks.base import AnalysisTask
 
 logger = get_logger(__name__)
@@ -55,17 +54,16 @@ class CoverityIssue(Issue):
         self.message = issue['message']
 
         self.state_on_server = issue['extra']['stateOnServer']
-        if settings.cov_full_stack:
+        # If we have `stack` in the `try` result then embed it in the message.
+        if 'stack' in issue['extra']:
             self.message += ISSUE_RELATION
-            # Embed all events into message
-            if 'stack' in issue['extra']:
-                stack = issue['extra']['stack']
-                for event in stack:
-                    self.message += ISSUE_ELEMENT_IN_STACK.format(
-                        file_path=event['file_path'],
-                        line_number=event['line_number'],
-                        path_type=event['path_type'],
-                        description=event['description'])
+            stack = issue['extra']['stack']
+            for event in stack:
+                self.message += ISSUE_ELEMENT_IN_STACK.format(
+                    file_path=event['file_path'],
+                    line_number=event['line_number'],
+                    path_type=event['path_type'],
+                    description=event['description'])
 
         self.body = None
         self.nb_lines = 1

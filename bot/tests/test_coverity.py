@@ -31,16 +31,11 @@ def test_simple(mock_revision, mock_config):
     '''
     Test parsing a simple Coverity artifact
     '''
-    assert mock_config.cov_full_stack is False
-    mock_config.cov_full_stack = True
 
     task = MockCoverityTask()
     issues = task.parse_issues(mock_coverity('simple'), mock_revision)
     assert len(issues) == 1
     assert all(map(lambda i: isinstance(i, CoverityIssue), issues))
-
-    # Revert value to avoid side effects on other tests
-    mock_config.cov_full_stack = False
 
     issue = issues[0]
 

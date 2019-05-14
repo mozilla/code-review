@@ -44,19 +44,10 @@ class Settings(object):
         self.try_task_id = None
         self.try_group_id = None
 
-        # For Coverity Analysis package info
-        self.cov_analysis_url = None
-        self.cov_package_name = None
-        self.cov_package_ver = None
-        self.cov_url = None
-        self.cov_auth = None
-        self.cov_full_stack = False
-
     def setup(self,
               app_channel,
               publication,
               allowed_paths,
-              cov_config=None,
               ):
         # Detect source from env
         if 'TRY_TASK_ID' in os.environ and 'TRY_TASK_GROUP_ID' in os.environ:
@@ -94,15 +85,6 @@ class Settings(object):
         assert isinstance(allowed_paths, list)
         assert all(map(lambda p: isinstance(p, str), allowed_paths))
         self.allowed_paths = allowed_paths
-
-        # Set different info for Coverity
-        if cov_config is not None:
-            self.cov_analysis_url = cov_config.get('package_url')
-            self.cov_package_name = cov_config.get('package_name')
-            self.cov_url = cov_config.get('server_url')
-            self.cov_auth = cov_config.get('auth_key')
-            self.cov_package_ver = cov_config.get('package_ver')
-            self.cov_full_stack = cov_config.get('full_stack', False)
 
     def __getattr__(self, key):
         if key not in self.config:
