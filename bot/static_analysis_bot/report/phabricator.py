@@ -105,6 +105,7 @@ class PhabricatorReporter(Reporter):
             self.api.comment(
                 revision.id,
                 self.build_comment(
+                    revision=revision,
                     issues=non_coverage_issues,
                     patches=patches,
                     bug_report_url=BUG_REPORT_URL,
