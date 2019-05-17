@@ -11,7 +11,7 @@ import pytest
 import responses
 
 VALID_CLANG_TIDY_MESSAGE = '''
-Code analysis found 1 defect in this diff n°42:
+Code analysis found 1 defect in the diff 42:
  - 1 defect found by clang-tidy
 
 You can run this analysis locally with:
@@ -21,7 +21,7 @@ If you see a problem in this automated review, [please report it here](https://b
 '''  # noqa
 
 VALID_CLANG_FORMAT_MESSAGE = '''
-Code analysis found 1 defect in this diff n°42:
+Code analysis found 1 defect in the diff 42:
  - 1 defect found by clang-format
 
 You can run this analysis locally with:
