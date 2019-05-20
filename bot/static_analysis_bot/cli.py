@@ -43,6 +43,7 @@ def main(taskcluster_secret,
                               'APP_CHANNEL': 'development',
                               'REPORTERS': [],
                               'PUBLICATION': 'IN_PATCH',
+                              'ZERO_COVERAGE_ENABLED': True,
                               'ALLOWED_PATHS': ['*', ],
                           },
                           taskcluster_client_id=taskcluster_client_id,
@@ -106,7 +107,7 @@ def main(taskcluster_secret,
     )
 
     # Run workflow according to source
-    w = Workflow(reporters, index_service, queue_service, phabricator_api)
+    w = Workflow(reporters, index_service, queue_service, phabricator_api, secrets['ZERO_COVERAGE_ENABLED'])
     try:
         w.run(revision)
     except Exception as e:

@@ -677,3 +677,45 @@ def test_no_tasks(mock_config, mock_revision, mock_workflow):
     })
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 0
+
+
+def test_zero_coverage_option(mock_config, mock_revision, mock_workflow):
+    '''
+    Test the zero coverage trigger on the workflow
+    '''
+    from static_analysis_bot.tasks.coverage import CoverageIssue
+
+    mock_workflow.setup_mock_tasks({
+        'decision': {
+            'image': 'taskcluster/decision:XXX',
+            'env': {
+                'GECKO_HEAD_REPOSITORY': 'https://hg.mozilla.org/try',
+                'GECKO_HEAD_REV': 'deadbeef1234',
+            }
+        },
+        'remoteTryTask': {
+            'dependencies': ['xxx']
+        },
+        'zero-cov': {
+            'route': 'project.releng.services.project.production.code_coverage_bot.latest',
+            'artifacts': {
+                'public/zero_coverage_report.json': {
+                    'files': [
+                        {
+                            'uncovered': True,
+                            'name': 'test.cpp',
+                        }
+                    ],
+                },
+            }
+        },
+    })
+
+    mock_workflow.zero_coverage_enabled = False
+    issues = mock_workflow.run(mock_revision)
+    assert len(issues) == 0
+
+    mock_workflow.zero_coverage_enabled = True
+    issues = mock_workflow.run(mock_revision)
+    assert len(issues) == 1
+    assert isinstance(issues[0], CoverageIssue)

@@ -277,6 +277,7 @@ def mock_workflow(mock_phabricator):
             self.phabricator_api = None
             self.index_service = MockIndex()
             self.queue_service = MockQueue()
+            self.zero_coverage_enabled = True
 
         def setup_mock_tasks(self, tasks):
             '''
