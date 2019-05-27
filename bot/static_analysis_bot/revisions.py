@@ -6,11 +6,11 @@
 import os
 from datetime import timedelta
 
+from libmozdata.phabricator import BuildState
+from libmozdata.phabricator import PhabricatorAPI
 from parsepatch.patch import Patch
 
 from cli_common import log
-from cli_common.phabricator import BuildState
-from cli_common.phabricator import PhabricatorAPI
 from cli_common.taskcluster import create_blob_artifact
 from static_analysis_bot import Issue
 from static_analysis_bot import stats

@@ -3,9 +3,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from libmozdata.phabricator import BuildState
+from libmozdata.phabricator import PhabricatorAPI
+
 from cli_common import log
-from cli_common.phabricator import BuildState
-from cli_common.phabricator import PhabricatorAPI
 from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import COVERAGE
 from static_analysis_bot import Issue

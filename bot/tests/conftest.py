@@ -11,8 +11,8 @@ from contextlib import contextmanager
 
 import pytest
 import responses
+from libmozdata.phabricator import PhabricatorAPI
 
-from cli_common.phabricator import PhabricatorAPI
 from mock_taskcluster import MockIndex
 from mock_taskcluster import MockQueue
 

@@ -4,12 +4,12 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import click
+from libmozdata.phabricator import BuildState
+from libmozdata.phabricator import PhabricatorAPI
 
 from cli_common.cli import taskcluster_options
 from cli_common.log import get_logger
 from cli_common.log import init_logger
-from cli_common.phabricator import BuildState
-from cli_common.phabricator import PhabricatorAPI
 from cli_common.taskcluster import get_secrets
 from cli_common.taskcluster import get_service
 from static_analysis_bot import AnalysisException
