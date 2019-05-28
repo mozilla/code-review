@@ -83,7 +83,7 @@ The path that leads to this defect is:
     assert issue.validates()
     assert not issue.is_publishable()
 
-    assert issue.as_text() == '''Checker reliability is medium (false positive risk).
+    checker_desc = '''Checker reliability is medium, meaning that the false positive ratio is medium.
 Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
 The path that leads to this defect is:
 
@@ -96,6 +96,15 @@ The path that leads to this defect is:
 - ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3703//:
 -- `dereference: Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".`.
 '''
+    assert issue.as_phabricator_lint() == {
+        'code': 'coverity.NULL_RETURNS',
+        'line': 3703,
+        'name': checker_desc,
+        'path': 'js/src/jit/BaselineCompiler.cpp',
+        'severity': 'error',
+    }
+
+    assert issue.as_text() == checker_desc
     assert issue.as_dict() == {
         'analyzer': 'Coverity',
         'body': None,

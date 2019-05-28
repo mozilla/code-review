@@ -569,7 +569,7 @@ The path that leads to this defect is:
     assert issue.is_local()
     assert not issue.is_clang_error()
     assert issue.validates()
-    assert issue.as_text() == f'Checker reliability is high (false positive risk).\nSome error here'
+    assert issue.as_text() == f'Checker reliability is high, meaning that the false positive ratio is low.\nSome error here'
 
 
 def test_infer_task(mock_config, mock_revision, mock_workflow):

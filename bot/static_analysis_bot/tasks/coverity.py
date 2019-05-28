@@ -110,7 +110,7 @@ class CoverityIssue(Issue):
         Build the text body published on reporters
         '''
         # If there is the reliability index use it
-        return f'Checker reliability is {self.reliability.value} (false positive risk).\n{self.message}' \
+        return f'Checker reliability is {self.reliability.value}, meaning that the false positive ratio is {self.reliability.invert}.\n{self.message}' \
             if self.reliability != Reliability.Unknown \
             else self.message
 
@@ -156,7 +156,7 @@ class CoverityIssue(Issue):
         Outputs a Phabricator lint result
         '''
         # If there is the reliability index use it
-        message = f'Checker reliability is {self.reliability.value} (false positive risk).\n{self.message}' \
+        message = f'Checker reliability is {self.reliability.value}, meaning that the false positive ratio is {self.reliability.invert}.\n{self.message}'\
             if self.reliability != Reliability.Unknown \
             else self.message
 
