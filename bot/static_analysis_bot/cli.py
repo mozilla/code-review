@@ -3,11 +3,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import click
+import argparse
+import os
+
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
-from cli_common.cli import taskcluster_options
 from cli_common.log import get_logger
 from cli_common.log import init_logger
 from cli_common.taskcluster import get_secrets
@@ -23,15 +24,32 @@ from static_analysis_bot.workflow import Workflow
 logger = get_logger(__name__)
 
 
-@click.command()
-@taskcluster_options
-@stats.api.timer('runtime.analysis')
-def main(taskcluster_secret,
-         taskcluster_client_id,
-         taskcluster_access_token,
-         ):
+def parse_cli():
+    '''
+    Setup CLI options parser
+    '''
+    parser = argparse.ArgumentParser(description='Mozilla Code Review Bot')
+    parser.add_argument(
+        '--taskcluster-secret',
+        help='Taskcluster Secret path',
+        default=os.environ.get('TASKCLUSTER_SECRET')
+    )
+    parser.add_argument(
+        '--taskcluster-client-id',
+        help='Taskcluster Client ID',
+    )
+    parser.add_argument(
+        '--taskcluster-access-token',
+        help='Taskcluster Access token',
+    )
+    return parser.parse_args()
 
-    secrets = get_secrets(taskcluster_secret,
+
+@stats.api.timer('runtime.analysis')
+def main():
+
+    args = parse_cli()
+    secrets = get_secrets(args.taskcluster_secret,
                           config.PROJECT_NAME,
                           required=(
                               'APP_CHANNEL',
@@ -46,8 +64,8 @@ def main(taskcluster_secret,
                               'ZERO_COVERAGE_ENABLED': True,
                               'ALLOWED_PATHS': ['*', ],
                           },
-                          taskcluster_client_id=taskcluster_client_id,
-                          taskcluster_access_token=taskcluster_access_token,
+                          taskcluster_client_id=args.taskcluster_client_id,
+                          taskcluster_access_token=args.taskcluster_access_token,
                           )
 
     init_logger(config.PROJECT_NAME,
@@ -73,22 +91,22 @@ def main(taskcluster_secret,
     # Load reporters
     reporters = get_reporters(
         secrets['REPORTERS'],
-        taskcluster_client_id,
-        taskcluster_access_token,
+        args.taskcluster_client_id,
+        args.taskcluster_access_token,
     )
 
     # Load index service
     index_service = get_service(
         'index',
-        taskcluster_client_id,
-        taskcluster_access_token,
+        args.taskcluster_client_id,
+        args.taskcluster_access_token,
     )
 
     # Load queue service
     queue_service = get_service(
         'queue',
-        taskcluster_client_id,
-        taskcluster_access_token,
+        args.taskcluster_client_id,
+        args.taskcluster_access_token,
     )
 
     # Load Phabricator API
