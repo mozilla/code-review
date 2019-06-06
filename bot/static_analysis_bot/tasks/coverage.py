@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
 
-from cli_common.log import get_logger
+import structlog
+
 from static_analysis_bot import COVERAGE
 from static_analysis_bot import Issue
 from static_analysis_bot.config import settings
 from static_analysis_bot.tasks.base import AnalysisTask
 
-logger = get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 ISSUE_MARKDOWN = '''
 ## coverage problem

@@ -3,12 +3,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from cli_common import log
+import structlog
+
 from static_analysis_bot import taskcluster
 from static_analysis_bot.config import settings
 from static_analysis_bot.report.base import Reporter
 
-logger = log.get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 EMAIL_STATS_LINE = '* **{source}**: {publishable} publishable ({total} total)'

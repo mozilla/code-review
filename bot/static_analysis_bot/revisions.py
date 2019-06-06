@@ -6,18 +6,18 @@
 import os
 from datetime import timedelta
 
+import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 from parsepatch.patch import Patch
 
-from cli_common import log
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import REPO_TRY
 from static_analysis_bot.config import settings
 from static_analysis_bot.tools.taskcluster import create_blob_artifact
 
-logger = log.get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class ImprovementPatch(object):

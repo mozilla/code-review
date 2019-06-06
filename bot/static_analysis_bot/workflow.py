@@ -6,10 +6,10 @@
 from datetime import datetime
 from datetime import timedelta
 
+import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
-from cli_common.log import get_logger
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 from static_analysis_bot.report.debug import DebugReporter
@@ -23,7 +23,7 @@ from static_analysis_bot.tasks.infer import InferTask
 from static_analysis_bot.tasks.lint import MozLintTask
 from static_analysis_bot.tools.taskcluster import TASKCLUSTER_DATE_FORMAT
 
-logger = get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 TASKCLUSTER_NAMESPACE = 'project.releng.services.project.{channel}.static_analysis_bot.{name}'
 TASKCLUSTER_INDEX_TTL = 7  # in days

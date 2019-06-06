@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
+import structlog
 from libmozdata.phabricator import LintResult
 
-from cli_common.log import get_logger
 from static_analysis_bot import MOZLINT
 from static_analysis_bot import Issue
 from static_analysis_bot.tasks.base import AnalysisTask
 
-logger = get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 ISSUE_MARKDOWN = '''
 ## mozlint - {linter}

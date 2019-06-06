@@ -7,10 +7,11 @@ import json
 import os.path
 import time
 
-from cli_common import log
+import structlog
+
 from static_analysis_bot.report.base import Reporter
 
-logger = log.get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class DebugReporter(Reporter):

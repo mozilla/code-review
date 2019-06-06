@@ -3,10 +3,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
-from cli_common import log
 from static_analysis_bot import CLANG_FORMAT
 from static_analysis_bot import COVERAGE
 from static_analysis_bot import Issue
@@ -21,7 +21,7 @@ BUG_REPORT_URL = 'https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Bui
 # These analyzers generate issues for which we should not write inline comments.
 ANALYZERS_WITHOUT_INLINES = [CLANG_FORMAT, COVERAGE]
 
-logger = log.get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 class PhabricatorReporter(Reporter):

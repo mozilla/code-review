@@ -6,11 +6,10 @@
 import argparse
 import os
 
+import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
-from cli_common.log import get_logger
-from cli_common.log import init_logger
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import config
 from static_analysis_bot import stats
@@ -18,9 +17,10 @@ from static_analysis_bot import taskcluster
 from static_analysis_bot.config import settings
 from static_analysis_bot.report import get_reporters
 from static_analysis_bot.revisions import Revision
+from static_analysis_bot.tools.log import init_logger
 from static_analysis_bot.workflow import Workflow
 
-logger = get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 
 def parse_cli():
@@ -71,8 +71,6 @@ def main():
                 PAPERTRAIL_HOST=taskcluster.secrets.get('PAPERTRAIL_HOST'),
                 PAPERTRAIL_PORT=taskcluster.secrets.get('PAPERTRAIL_PORT'),
                 SENTRY_DSN=taskcluster.secrets.get('SENTRY_DSN'),
-                MOZDEF=taskcluster.secrets.get('MOZDEF'),
-                timestamp=True,
                 )
 
     # Setup settings before stats

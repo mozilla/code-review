@@ -12,15 +12,14 @@ import os
 import tempfile
 
 import requests
+import structlog
 import yaml
-
-from cli_common.log import get_logger
 
 PROJECT_NAME = 'static-analysis-bot'
 REPO_TRY = b'https://hg.mozilla.org/try'
 RAW_FILE_URL = 'https://hg.mozilla.org/mozilla-central/raw-file/tip/{}'
 
-logger = get_logger(__name__)
+logger = structlog.get_logger(__name__)
 
 TaskCluster = collections.namedtuple('TaskCluster', 'results_dir, task_id, run_id, local')
 

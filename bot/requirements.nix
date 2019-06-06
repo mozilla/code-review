@@ -917,32 +917,6 @@ let
       };
     };
 
-    "mozilla-cli-common" = python.mkDerivation {
-      name = "mozilla-cli-common-1.0.0";
-      src = pkgs.lib.cleanSource ./../../../lib/cli_common;
-      doCheck = commonDoCheck;
-      checkPhase = "";
-      installCheckPhase = "";
-      buildInputs = commonBuildInputs ++ [ ];
-      propagatedBuildInputs = [
-        self."Click"
-        self."Logbook"
-        self."aioamqp"
-        self."mozdef-client"
-        self."python-dateutil"
-        self."python-hglib"
-        self."raven"
-        self."requests"
-        self."structlog"
-        self."taskcluster"
-      ];
-      meta = with pkgs.stdenv.lib; {
-        homepage = "https://github.com/mozilla/release-services";
-        license = licenses.mpl20;
-        description = "Services behind https://mozilla-releng.net";
-      };
-    };
-
     "multidict" = python.mkDerivation {
       name = "multidict-4.5.2";
       src = pkgs.fetchurl {
