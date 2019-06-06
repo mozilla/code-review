@@ -11,11 +11,11 @@ from libmozdata.phabricator import PhabricatorAPI
 from parsepatch.patch import Patch
 
 from cli_common import log
-from cli_common.taskcluster import create_blob_artifact
 from static_analysis_bot import Issue
 from static_analysis_bot import stats
 from static_analysis_bot.config import REPO_TRY
 from static_analysis_bot.config import settings
+from static_analysis_bot.tools.taskcluster import create_blob_artifact
 
 logger = log.get_logger(__name__)
 

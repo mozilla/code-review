@@ -1,5 +1,7 @@
--e ./../../../lib/cli_common[log,pulse,taskcluster,mercurial] #egg=mozilla-cli-common
+-e ./../../../lib/cli_common[log,pulse,mercurial] #egg=mozilla-cli-common
 
 parsepatch
 datadog
 libmozdata>=0.1.55
+toml
+taskcluster

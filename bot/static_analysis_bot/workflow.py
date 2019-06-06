@@ -10,7 +10,6 @@ from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
 from cli_common.log import get_logger
-from cli_common.taskcluster import TASKCLUSTER_DATE_FORMAT
 from static_analysis_bot import stats
 from static_analysis_bot.config import settings
 from static_analysis_bot.report.debug import DebugReporter
@@ -22,6 +21,7 @@ from static_analysis_bot.tasks.coverage import ZeroCoverageTask
 from static_analysis_bot.tasks.coverity import CoverityTask
 from static_analysis_bot.tasks.infer import InferTask
 from static_analysis_bot.tasks.lint import MozLintTask
+from static_analysis_bot.tools.taskcluster import TASKCLUSTER_DATE_FORMAT
 
 logger = get_logger(__name__)
 

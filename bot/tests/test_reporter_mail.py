@@ -32,7 +32,7 @@ This is the mock issue n°4'''
 
 
 @responses.activate
-def test_conf(mock_config):
+def test_conf(mock_config, mock_taskcluster_config):
     '''
     Test mail reporter configuration
     '''
@@ -40,14 +40,14 @@ def test_conf(mock_config):
 
     # Missing emails conf
     with pytest.raises(AssertionError):
-        MailReporter({}, 'test_tc', 'token_tc')
+        MailReporter({})
 
     # Missing emails
     conf = {
         'emails': [],
     }
     with pytest.raises(AssertionError):
-        MailReporter(conf, 'test_tc', 'token_tc')
+        MailReporter(conf)
 
     # Valid emails
     conf = {
@@ -55,7 +55,7 @@ def test_conf(mock_config):
             'test@mozilla.com',
         ],
     }
-    r = MailReporter(conf, 'test_tc', 'token_tc')
+    r = MailReporter(conf)
     assert r.emails == ['test@mozilla.com', ]
 
     conf = {
@@ -65,12 +65,12 @@ def test_conf(mock_config):
             'test3@mozilla.com',
         ],
     }
-    r = MailReporter(conf, 'test_tc', 'token_tc')
+    r = MailReporter(conf)
     assert r.emails == ['test@mozilla.com', 'test2@mozilla.com', 'test3@mozilla.com']
 
 
 @responses.activate
-def test_mail(mock_config, mock_issues, mock_revision):
+def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
     '''
     Test mail sending through Taskcluster
     '''
@@ -92,7 +92,7 @@ def test_mail(mock_config, mock_issues, mock_revision):
     # Add mock taskcluster email to check output
     responses.add_callback(
         responses.POST,
-        'https://notify.taskcluster.net/v1/email',
+        'http://taskcluster.test/notify/v1/email',
         callback=_check_email,
     )
 
@@ -102,7 +102,7 @@ def test_mail(mock_config, mock_issues, mock_revision):
             'test@mozilla.com',
         ],
     }
-    r = MailReporter(conf, 'test_tc', 'token_tc')
+    r = MailReporter(conf)
 
     mock_revision.improvement_patches = [
         ImprovementPatch('clang-tidy', repr(mock_revision), 'Some code fixes'),

@@ -1518,6 +1518,24 @@ let
       };
     };
 
+    "toml" = python.mkDerivation {
+      name = "toml-0.10.0";
+      src = pkgs.fetchurl {
+        url = "https://files.pythonhosted.org/packages/b9/19/5cbd78eac8b1783671c40e34bb0fa83133a06d340a38b55c645076d40094/toml-0.10.0.tar.gz";
+        sha256 = "0p1xww2mzkhqvxkfvmfzm58bbfj812zhdz4rwdjiv94ifz2q37r2";
+      };
+      doCheck = commonDoCheck;
+      checkPhase = "";
+      installCheckPhase = "";
+      buildInputs = commonBuildInputs ++ [ ];
+      propagatedBuildInputs = [ ];
+      meta = with pkgs.stdenv.lib; {
+        homepage = "https://github.com/uiri/toml";
+        license = licenses.mit;
+        description = "Python lib for TOML";
+      };
+    };
+
     "tqdm" = python.mkDerivation {
       name = "tqdm-4.31.1";
       src = pkgs.fetchurl {

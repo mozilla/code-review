@@ -4,7 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from cli_common import log
-from cli_common.taskcluster import get_service
+from static_analysis_bot import taskcluster
 from static_analysis_bot.config import settings
 from static_analysis_bot.report.base import Reporter
 
@@ -28,16 +28,12 @@ class MailReporter(Reporter):
     '''
     Send an email to admins through Taskcluster service
     '''
-    def __init__(self, configuration, client_id, access_token):
+    def __init__(self, configuration):
         self.emails, = self.requires(configuration, 'emails')
         assert len(self.emails) > 0, 'Missing emails data'
 
         # Load TC services & secrets
-        self.notify = get_service(
-            'notify',
-            client_id=client_id,
-            access_token=access_token,
-        )
+        self.notify = taskcluster.get_service('notify')
 
         logger.info('Mail report enabled', emails=self.emails)
 

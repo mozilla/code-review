@@ -295,3 +295,14 @@ def mock_coverage_artifact():
     return {
         'public/zero_coverage_report.json': json.load(open(path)),
     }
+
+
+@pytest.fixture
+def mock_taskcluster_config():
+    '''
+    Mock a taskcluster proxy usage
+    '''
+    from static_analysis_bot import taskcluster
+    taskcluster.options = {
+        'rootUrl': 'http://taskcluster.test',
+    }

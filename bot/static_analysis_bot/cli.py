@@ -11,11 +11,10 @@ from libmozdata.phabricator import PhabricatorAPI
 
 from cli_common.log import get_logger
 from cli_common.log import init_logger
-from cli_common.taskcluster import get_secrets
-from cli_common.taskcluster import get_service
 from static_analysis_bot import AnalysisException
 from static_analysis_bot import config
 from static_analysis_bot import stats
+from static_analysis_bot import taskcluster
 from static_analysis_bot.config import settings
 from static_analysis_bot.report import get_reporters
 from static_analysis_bot.revisions import Revision
@@ -49,67 +48,55 @@ def parse_cli():
 def main():
 
     args = parse_cli()
-    secrets = get_secrets(args.taskcluster_secret,
-                          config.PROJECT_NAME,
-                          required=(
-                              'APP_CHANNEL',
-                              'REPORTERS',
-                              'PHABRICATOR',
-                              'ALLOWED_PATHS',
-                          ),
-                          existing={
-                              'APP_CHANNEL': 'development',
-                              'REPORTERS': [],
-                              'PUBLICATION': 'IN_PATCH',
-                              'ZERO_COVERAGE_ENABLED': True,
-                              'ALLOWED_PATHS': ['*', ],
-                          },
-                          taskcluster_client_id=args.taskcluster_client_id,
-                          taskcluster_access_token=args.taskcluster_access_token,
-                          )
+    taskcluster.auth(args.taskcluster_client_id, args.taskcluster_access_token)
+    taskcluster.load_secrets(
+        name=args.taskcluster_secret,
+        project_name=config.PROJECT_NAME,
+        required=(
+            'APP_CHANNEL',
+            'REPORTERS',
+            'PHABRICATOR',
+            'ALLOWED_PATHS',
+        ),
+        existing={
+            'APP_CHANNEL': 'development',
+            'REPORTERS': [],
+            'PUBLICATION': 'IN_PATCH',
+            'ZERO_COVERAGE_ENABLED': True,
+            'ALLOWED_PATHS': ['*', ],
+        },
+    )
 
     init_logger(config.PROJECT_NAME,
-                PAPERTRAIL_HOST=secrets.get('PAPERTRAIL_HOST'),
-                PAPERTRAIL_PORT=secrets.get('PAPERTRAIL_PORT'),
-                SENTRY_DSN=secrets.get('SENTRY_DSN'),
-                MOZDEF=secrets.get('MOZDEF'),
+                PAPERTRAIL_HOST=taskcluster.secrets.get('PAPERTRAIL_HOST'),
+                PAPERTRAIL_PORT=taskcluster.secrets.get('PAPERTRAIL_PORT'),
+                SENTRY_DSN=taskcluster.secrets.get('SENTRY_DSN'),
+                MOZDEF=taskcluster.secrets.get('MOZDEF'),
                 timestamp=True,
                 )
 
     # Setup settings before stats
-    phabricator = secrets['PHABRICATOR']
     settings.setup(
-        secrets['APP_CHANNEL'],
-        secrets['PUBLICATION'],
-        secrets['ALLOWED_PATHS'],
+        taskcluster.secrets['APP_CHANNEL'],
+        taskcluster.secrets['PUBLICATION'],
+        taskcluster.secrets['ALLOWED_PATHS'],
     )
     # Setup statistics
-    datadog_api_key = secrets.get('DATADOG_API_KEY')
+    datadog_api_key = taskcluster.secrets.get('DATADOG_API_KEY')
     if datadog_api_key:
         stats.auth(datadog_api_key)
 
     # Load reporters
-    reporters = get_reporters(
-        secrets['REPORTERS'],
-        args.taskcluster_client_id,
-        args.taskcluster_access_token,
-    )
+    reporters = get_reporters(taskcluster.secrets['REPORTERS'])
 
     # Load index service
-    index_service = get_service(
-        'index',
-        args.taskcluster_client_id,
-        args.taskcluster_access_token,
-    )
+    index_service = taskcluster.get_service('index')
 
     # Load queue service
-    queue_service = get_service(
-        'queue',
-        args.taskcluster_client_id,
-        args.taskcluster_access_token,
-    )
+    queue_service = taskcluster.get_service('queue')
 
     # Load Phabricator API
+    phabricator = taskcluster.secrets['PHABRICATOR']
     phabricator_reporting_enabled = 'phabricator' in reporters
     phabricator_api = PhabricatorAPI(phabricator['api_key'], phabricator['url'])
     if phabricator_reporting_enabled:
@@ -125,7 +112,7 @@ def main():
     )
 
     # Run workflow according to source
-    w = Workflow(reporters, index_service, queue_service, phabricator_api, secrets['ZERO_COVERAGE_ENABLED'])
+    w = Workflow(reporters, index_service, queue_service, phabricator_api, taskcluster.secrets['ZERO_COVERAGE_ENABLED'])
     try:
         w.run(revision)
     except Exception as e:

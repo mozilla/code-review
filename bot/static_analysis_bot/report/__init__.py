@@ -10,7 +10,7 @@ from static_analysis_bot.report.phabricator import PhabricatorReporter
 logger = get_logger(__name__)
 
 
-def get_reporters(configuration, client_id=None, access_token=None):
+def get_reporters(configuration):
     '''
     Load reporters using Taskcluster configuration
     '''
@@ -28,7 +28,7 @@ def get_reporters(configuration, client_id=None, access_token=None):
             cls = reporters.get(name)
             if cls is None:
                 raise Exception('Missing reporter class {}'.format(conf['reporter']))
-            out[name] = cls(conf, client_id, access_token)
+            out[name] = cls(conf)
         except Exception as e:
             logger.warning('Failed to create reporter: {}'.format(e))
 

@@ -5,7 +5,7 @@
 
 import requests
 
-import cli_common.taskcluster
+from static_analysis_bot import taskcluster
 
 TC_INDEX_URL = 'https://index.taskcluster.net/v1/tasks/project.releng.services.project.{}.static_analysis_bot.phabricator'
 
@@ -26,7 +26,8 @@ def is_not_error(issue):
 
 
 def main(env):
-    hooks = cli_common.taskcluster.get_service('hooks')
+    taskcluster.auth()
+    hooks = taskcluster.get_service('hooks')
 
     # List all tasks on the env
     all_tasks = list_tasks(env)

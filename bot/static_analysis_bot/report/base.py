@@ -61,7 +61,7 @@ class Reporter(object):
     Common interface to post reports on a website
     Will configure & build reports
     '''
-    def __init__(self, configuration, client_id, access_token):
+    def __init__(self, configuration):
         '''
         Configure reporter using Taskcluster credentials and configuration
         '''
