@@ -5,7 +5,7 @@
 
 import requests
 
-from static_analysis_bot import taskcluster
+from code_review_bot import taskcluster
 
 TC_INDEX_URL = 'https://index.taskcluster.net/v1/tasks/project.releng.services.project.{}.static_analysis_bot.phabricator'
 

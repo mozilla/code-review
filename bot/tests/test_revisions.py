@@ -62,7 +62,7 @@ def test_clang_files(mock_revision):
 
 
 def test_analyze_patch(mock_revision):
-    from static_analysis_bot import Issue
+    from code_review_bot import Issue
 
     class MyIssue(Issue):
         def __init__(self, path, line):

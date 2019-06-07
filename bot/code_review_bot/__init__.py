@@ -6,10 +6,10 @@
 import abc
 import enum
 
-from static_analysis_bot.config import Publication
-from static_analysis_bot.config import settings
-from static_analysis_bot.stats import Datadog
-from static_analysis_bot.tools.taskcluster import TaskclusterConfig
+from code_review_bot.config import Publication
+from code_review_bot.config import settings
+from code_review_bot.stats import Datadog
+from code_review_bot.tools.taskcluster import TaskclusterConfig
 
 CLANG_TIDY = 'clang-tidy'
 CLANG_FORMAT = 'clang-format'

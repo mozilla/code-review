@@ -36,7 +36,7 @@ def test_conf(mock_config, mock_taskcluster_config):
     '''
     Test mail reporter configuration
     '''
-    from static_analysis_bot.report.mail import MailReporter
+    from code_review_bot.report.mail import MailReporter
 
     # Missing emails conf
     with pytest.raises(AssertionError):
@@ -74,8 +74,8 @@ def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
     '''
     Test mail sending through Taskcluster
     '''
-    from static_analysis_bot.report.mail import MailReporter
-    from static_analysis_bot.revisions import ImprovementPatch
+    from code_review_bot.report.mail import MailReporter
+    from code_review_bot.revisions import ImprovementPatch
 
     def _check_email(request):
         payload = json.loads(request.body)

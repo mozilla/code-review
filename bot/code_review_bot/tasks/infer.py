@@ -6,9 +6,9 @@
 import structlog
 from libmozdata.phabricator import LintResult
 
-from static_analysis_bot import INFER
-from static_analysis_bot import Issue
-from static_analysis_bot.tasks.base import AnalysisTask
+from code_review_bot import INFER
+from code_review_bot import Issue
+from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
 

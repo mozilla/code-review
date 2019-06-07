@@ -10,18 +10,18 @@ import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
-from static_analysis_bot import stats
-from static_analysis_bot.config import settings
-from static_analysis_bot.report.debug import DebugReporter
-from static_analysis_bot.revisions import Revision
-from static_analysis_bot.tasks.base import AnalysisTask
-from static_analysis_bot.tasks.clang_format import ClangFormatTask
-from static_analysis_bot.tasks.clang_tidy import ClangTidyTask
-from static_analysis_bot.tasks.coverage import ZeroCoverageTask
-from static_analysis_bot.tasks.coverity import CoverityTask
-from static_analysis_bot.tasks.infer import InferTask
-from static_analysis_bot.tasks.lint import MozLintTask
-from static_analysis_bot.tools.taskcluster import TASKCLUSTER_DATE_FORMAT
+from code_review_bot import stats
+from code_review_bot.config import settings
+from code_review_bot.report.debug import DebugReporter
+from code_review_bot.revisions import Revision
+from code_review_bot.tasks.base import AnalysisTask
+from code_review_bot.tasks.clang_format import ClangFormatTask
+from code_review_bot.tasks.clang_tidy import ClangTidyTask
+from code_review_bot.tasks.coverage import ZeroCoverageTask
+from code_review_bot.tasks.coverity import CoverityTask
+from code_review_bot.tasks.infer import InferTask
+from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tools.taskcluster import TASKCLUSTER_DATE_FORMAT
 
 logger = structlog.get_logger(__name__)
 

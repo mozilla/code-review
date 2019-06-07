@@ -5,7 +5,7 @@
 
 import datadog
 
-from static_analysis_bot.config import settings
+from code_review_bot.config import settings
 
 
 class Datadog(object):

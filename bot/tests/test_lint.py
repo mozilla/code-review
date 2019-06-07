@@ -8,7 +8,7 @@ def test_flake8_rules(mock_config, mock_revision):
     '''
     Check flake8 rule detection
     '''
-    from static_analysis_bot.tasks.lint import MozLintIssue
+    from code_review_bot.tasks.lint import MozLintIssue
 
     # Valid issue
     issue = MozLintIssue('test.py', 1, 'error', 1, 'flake8', 'Dummy test', 'dummy rule', mock_revision)
@@ -31,7 +31,7 @@ def test_as_text(mock_config, mock_revision):
     '''
     Test text export for ClangTidyIssue
     '''
-    from static_analysis_bot.tasks.lint import MozLintIssue
+    from code_review_bot.tasks.lint import MozLintIssue
 
     issue = MozLintIssue('test.py', 1, 'error', 1, 'flake8', 'dummy test withUppercaseChars', 'dummy rule', mock_revision)
 

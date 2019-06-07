@@ -47,7 +47,7 @@ def mock_config():
         content_type='text/plain',
     )
 
-    from static_analysis_bot.config import settings
+    from code_review_bot.config import settings
     settings.config = None
     settings.setup('test', 'IN_PATCH', ['dom/*', 'tests/*.py', 'test/*.c'])
     return settings
@@ -191,7 +191,7 @@ def mock_stats(mock_config):
     '''
     Mock Datadog authentication and stats management
     '''
-    from static_analysis_bot import stats
+    from code_review_bot import stats
 
     # Configure Datadog with a dummy token
     # and an ultra fast flushing cycle
@@ -258,7 +258,7 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
     '''
     Mock a mercurial revision
     '''
-    from static_analysis_bot.revisions import Revision
+    from code_review_bot.revisions import Revision
     with mock_phabricator as api:
         return Revision(api, mock_try_task, update_build=False)
 
@@ -269,7 +269,7 @@ def mock_workflow(mock_phabricator):
     Mock the workflow along with Taskcluster mocks
     No phabricator output here
     '''
-    from static_analysis_bot.workflow import Workflow
+    from code_review_bot.workflow import Workflow
 
     class MockWorkflow(Workflow):
         def __init__(self):
@@ -302,7 +302,7 @@ def mock_taskcluster_config():
     '''
     Mock a taskcluster proxy usage
     '''
-    from static_analysis_bot import taskcluster
+    from code_review_bot import taskcluster
     taskcluster.options = {
         'rootUrl': 'http://taskcluster.test',
     }

@@ -9,7 +9,7 @@ def test_allowed_paths(mock_config):
     Test allowed paths for ClangFormatIssue
     The test config has these 2 rules: dom/* and tests/*.py
     '''
-    from static_analysis_bot.tasks.clang_format import ClangFormatIssue
+    from code_review_bot.tasks.clang_format import ClangFormatIssue
 
     def _allowed(path):
         # Build an issue and check its validation

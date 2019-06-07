@@ -5,7 +5,7 @@ def test_expanded_macros(mock_stats, mock_revision):
     '''
     Test expanded macros are detected by clang issue
     '''
-    from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
+    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
     issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy message', 'dummy-check', 'error')
     assert issue.is_problem()
     assert issue.line == 42
@@ -30,7 +30,7 @@ def test_as_text(mock_revision):
     '''
     Test text export for ClangTidyIssue
     '''
-    from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
+    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
     issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message withUppercaseChars', 'error')
     issue.body = 'Dummy body withUppercaseChars'
 
@@ -41,8 +41,8 @@ def test_as_dict(mock_revision):
     '''
     Test text export for ClangTidyIssue
     '''
-    from static_analysis_bot import Reliability
-    from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
+    from code_review_bot import Reliability
+    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
     issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message withUppercaseChars', 'error', Reliability.Low)
     issue.body = 'Dummy body withUppercaseChars'
 
@@ -75,8 +75,8 @@ def test_as_markdown(mock_revision):
     '''
     Test markdown generation for ClangTidyIssue
     '''
-    from static_analysis_bot import Reliability
-    from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
+    from code_review_bot import Reliability
+    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
     issue = ClangTidyIssue(mock_revision, 'test.cpp', '42', '51', 'dummy-check', 'dummy message', 'error', Reliability.High)
     issue.body = 'Dummy body'
 
@@ -115,7 +115,7 @@ def test_clang_format_3rd_party(mock_config, mock_revision):
     '''
     Test a clang format issue in 3rd party is not publishable
     '''
-    from static_analysis_bot.tasks.clang_format import ClangFormatIssue
+    from code_review_bot.tasks.clang_format import ClangFormatIssue
 
     mock_revision.lines = {
         'test/not_3rd.c': [10, ],

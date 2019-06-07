@@ -5,9 +5,9 @@
 
 import structlog
 
-from static_analysis_bot import taskcluster
-from static_analysis_bot.config import settings
-from static_analysis_bot.report.base import Reporter
+from code_review_bot import taskcluster
+from code_review_bot.config import settings
+from code_review_bot.report.base import Reporter
 
 logger = structlog.get_logger(__name__)
 

@@ -5,11 +5,11 @@
 
 import itertools
 
-from static_analysis_bot.tasks.clang_format import ClangFormatIssue
-from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
-from static_analysis_bot.tasks.coverity import CoverityIssue
-from static_analysis_bot.tasks.infer import InferIssue
-from static_analysis_bot.tasks.lint import MozLintIssue
+from code_review_bot.tasks.clang_format import ClangFormatIssue
+from code_review_bot.tasks.clang_tidy import ClangTidyIssue
+from code_review_bot.tasks.coverity import CoverityIssue
+from code_review_bot.tasks.infer import InferIssue
+from code_review_bot.tasks.lint import MozLintIssue
 
 COMMENT_PARTS = {
     ClangTidyIssue: {

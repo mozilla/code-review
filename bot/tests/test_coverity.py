@@ -2,10 +2,10 @@
 import json
 import os
 
+from code_review_bot.tasks.coverity import CoverityIssue
+from code_review_bot.tasks.coverity import CoverityTask
+from code_review_bot.tasks.coverity import Reliability
 from conftest import MOCK_DIR
-from static_analysis_bot.tasks.coverity import CoverityIssue
-from static_analysis_bot.tasks.coverity import CoverityTask
-from static_analysis_bot.tasks.coverity import Reliability
 
 
 class MockCoverityTask(CoverityTask):

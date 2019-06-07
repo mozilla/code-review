@@ -7,12 +7,12 @@ import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
-from static_analysis_bot import CLANG_FORMAT
-from static_analysis_bot import COVERAGE
-from static_analysis_bot import Issue
-from static_analysis_bot import stats
-from static_analysis_bot.report.base import Reporter
-from static_analysis_bot.revisions import Revision
+from code_review_bot import CLANG_FORMAT
+from code_review_bot import COVERAGE
+from code_review_bot import Issue
+from code_review_bot import stats
+from code_review_bot.report.base import Reporter
+from code_review_bot.revisions import Revision
 
 MODE_COMMENT = 'comment'
 MODE_HARBORMASTER = 'harbormaster'

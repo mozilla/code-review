@@ -5,7 +5,7 @@ def test_as_text(mock_revision):
     '''
     Test text export for InferIssue
     '''
-    from static_analysis_bot.tasks.infer import InferIssue
+    from code_review_bot.tasks.infer import InferIssue
     parts = {
         'file': 'path/to/file.java',
         'line': 3,
@@ -25,7 +25,7 @@ def test_as_markdown(mock_revision):
     '''
     Test markdown generation for InferIssue
     '''
-    from static_analysis_bot.tasks.infer import InferIssue
+    from code_review_bot.tasks.infer import InferIssue
     parts = {
         'file': 'path/to/file.java',
         'line': 3,

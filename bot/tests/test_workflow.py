@@ -5,7 +5,7 @@
 
 from unittest import mock
 
-from static_analysis_bot.revisions import Revision
+from code_review_bot.revisions import Revision
 
 
 class MockRevision(Revision):
@@ -29,7 +29,7 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     Test the Taskcluster indexing API
     by mocking an online taskcluster state
     '''
-    from static_analysis_bot.config import TaskCluster
+    from code_review_bot.config import TaskCluster
     mock_config.taskcluster = TaskCluster('/tmp/dummy', '12345deadbeef', 0, False)
     mock_workflow.index_service = mock.Mock()
     rev = MockRevision(
@@ -81,7 +81,7 @@ def test_monitoring_restart(mock_config, mock_workflow):
     '''
     Test the Taskcluster indexing API and restart capabilities
     '''
-    from static_analysis_bot.config import TaskCluster
+    from code_review_bot.config import TaskCluster
     mock_config.taskcluster = TaskCluster('/tmp/dummy', 'someTaskId', 0, False)
     mock_workflow.index_service = mock.Mock()
     rev = MockRevision([], {})

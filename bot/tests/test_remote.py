@@ -34,8 +34,8 @@ def test_baseline(mock_config, mock_revision, mock_workflow):
     - an analyzer in failed status
     - with some issues in its log
     '''
-    from static_analysis_bot.tasks.lint import MozLintIssue
-    from static_analysis_bot.tasks.coverage import CoverageIssue
+    from code_review_bot.tasks.lint import MozLintIssue
+    from code_review_bot.tasks.coverage import CoverageIssue
 
     # We run on a mock TC, with a try source
     assert mock_config.taskcluster.task_id == 'local instance'
@@ -283,7 +283,7 @@ def test_mozlint_task(mock_config, mock_revision, mock_workflow):
     '''
     Test a remote workflow with a mozlint analyzer
     '''
-    from static_analysis_bot.tasks.lint import MozLintIssue
+    from code_review_bot.tasks.lint import MozLintIssue
 
     mock_workflow.setup_mock_tasks({
         'decision': {
@@ -331,8 +331,8 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
     '''
     Test a remote workflow with a clang-tidy analyzer
     '''
-    from static_analysis_bot import Reliability
-    from static_analysis_bot.tasks.clang_tidy import ClangTidyIssue
+    from code_review_bot import Reliability
+    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 
     mock_workflow.setup_mock_tasks({
         'decision': {
@@ -402,7 +402,7 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow):
     '''
     Test a remote workflow with a clang-format analyzer
     '''
-    from static_analysis_bot.tasks.clang_format import ClangFormatIssue
+    from code_review_bot.tasks.clang_format import ClangFormatIssue
 
     tasks = {
         'decision': {
@@ -475,8 +475,8 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow):
     '''
     Test a remote workflow with a clang-tidy analyzer
     '''
-    from static_analysis_bot import Reliability
-    from static_analysis_bot.tasks.coverity import CoverityIssue
+    from code_review_bot import Reliability
+    from code_review_bot.tasks.coverity import CoverityIssue
 
     mock_workflow.setup_mock_tasks({
         'decision': {
@@ -576,7 +576,7 @@ def test_infer_task(mock_config, mock_revision, mock_workflow):
     '''
     Test a remote workflow with an infer analyzer
     '''
-    from static_analysis_bot.tasks.infer import InferIssue
+    from code_review_bot.tasks.infer import InferIssue
 
     mock_workflow.setup_mock_tasks({
         'decision': {
@@ -683,7 +683,7 @@ def test_zero_coverage_option(mock_config, mock_revision, mock_workflow):
     '''
     Test the zero coverage trigger on the workflow
     '''
-    from static_analysis_bot.tasks.coverage import CoverageIssue
+    from code_review_bot.tasks.coverage import CoverageIssue
 
     mock_workflow.setup_mock_tasks({
         'decision': {

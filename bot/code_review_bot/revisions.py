@@ -11,11 +11,11 @@ from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 from parsepatch.patch import Patch
 
-from static_analysis_bot import Issue
-from static_analysis_bot import stats
-from static_analysis_bot.config import REPO_TRY
-from static_analysis_bot.config import settings
-from static_analysis_bot.tools.taskcluster import create_blob_artifact
+from code_review_bot import Issue
+from code_review_bot import stats
+from code_review_bot.config import REPO_TRY
+from code_review_bot.config import settings
+from code_review_bot.tools.taskcluster import create_blob_artifact
 
 logger = structlog.get_logger(__name__)
 

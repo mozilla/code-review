@@ -15,7 +15,7 @@ import requests
 import structlog
 import yaml
 
-PROJECT_NAME = 'static-analysis-bot'
+PROJECT_NAME = 'code-review-bot'
 REPO_TRY = b'https://hg.mozilla.org/try'
 RAW_FILE_URL = 'https://hg.mozilla.org/mozilla-central/raw-file/tip/{}'
 

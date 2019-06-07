@@ -13,7 +13,7 @@ def test_publication(tmpdir, mock_issues, mock_revision):
     '''
     Test debug publication and report analysis
     '''
-    from static_analysis_bot.report.debug import DebugReporter
+    from code_review_bot.report.debug import DebugReporter
 
     report_dir = str(tmpdir.mkdir('public').realpath())
     report_path = os.path.join(report_dir, 'report.json')

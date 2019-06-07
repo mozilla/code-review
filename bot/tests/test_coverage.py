@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from static_analysis_bot.tasks.coverage import ZeroCoverageTask
+from code_review_bot.tasks.coverage import ZeroCoverageTask
 
 
 def test_coverage(mock_config, mock_revision, mock_coverage_artifact):

@@ -28,10 +28,10 @@ with open('VERSION') as f:
 
 
 setuptools.setup(
-    name='static_analysis_bot',
+    name='code_review_bot',
     version=VERSION,
     description='Listens to bugzilla entries, executes'
-    'some static analysis and reports results.',
+    'some code review and reports results.',
     author='Mozilla Release Management',
     author_email='release-mgmt-analysis@mozilla.com',
     url='https://shipit.mozilla-releng.net',
@@ -43,7 +43,7 @@ setuptools.setup(
     license='MPL2',
     entry_points={
         'console_scripts': [
-            'static-analysis-bot = static_analysis_bot.cli:main',
+            'code-review-bot = code_review_bot.cli:main',
         ]
     },
 )

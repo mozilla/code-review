@@ -10,15 +10,15 @@ import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
-from static_analysis_bot import AnalysisException
-from static_analysis_bot import config
-from static_analysis_bot import stats
-from static_analysis_bot import taskcluster
-from static_analysis_bot.config import settings
-from static_analysis_bot.report import get_reporters
-from static_analysis_bot.revisions import Revision
-from static_analysis_bot.tools.log import init_logger
-from static_analysis_bot.workflow import Workflow
+from code_review_bot import AnalysisException
+from code_review_bot import config
+from code_review_bot import stats
+from code_review_bot import taskcluster
+from code_review_bot.config import settings
+from code_review_bot.report import get_reporters
+from code_review_bot.revisions import Revision
+from code_review_bot.tools.log import init_logger
+from code_review_bot.workflow import Workflow
 
 logger = structlog.get_logger(__name__)
 

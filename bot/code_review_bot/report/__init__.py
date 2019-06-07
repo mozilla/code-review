@@ -5,8 +5,8 @@
 
 import structlog
 
-from static_analysis_bot.report.mail import MailReporter
-from static_analysis_bot.report.phabricator import PhabricatorReporter
+from code_review_bot.report.mail import MailReporter
+from code_review_bot.report.phabricator import PhabricatorReporter
 
 logger = structlog.get_logger(__name__)
 

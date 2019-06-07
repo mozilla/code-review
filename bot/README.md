@@ -4,19 +4,19 @@ Static Analysis Bot
 Configuration
 -------------
 
-As every other services in `mozilla-releng/services`, the static analysis bot is configured through the [Taskcluster secrets service](https://tools.taskcluster.net/secrets)
+As every other services in `mozilla-releng/services`, the code review bot is configured through the [Taskcluster secrets service](https://tools.taskcluster.net/secrets)
 
 The following configuration variables are currently supported:
 
 * `APP_CHANNEL` **[required]** is provided by the common configuration (staging or production)
-* `REPORTERS` **[required]** lists all the reporting tools to use when a static analysis is completed (details below)
+* `REPORTERS` **[required]** lists all the reporting tools to use when a code review is completed (details below)
 * `ANALYZERS` **[required]** lists all the analysis tool to run on specified revisions. These tools will produce the reported issues.
 * `PAPERTRAIL_HOST` is the optional Papertrail host configuration, used for logging.
 * `PAPERTRAIL_PORT` is the optional Papertrail port configuration, used for logging.
 * `SENTRY_DSN` is the optional Sentry full url to report runtime errors.
 * `MOZDEF` is the optional MozDef log destination.
 
-The `REPORTERS` configuration is a list of dictionaries describing which reporting tool to use at the end of the patches static analysis.
+The `REPORTERS` configuration is a list of dictionaries describing which reporting tool to use at the end of the patches code review.
 Supported reporting tools are emails (for admins) and Phabricator.
 
 Each reporter configuration must contain a `reporter` key with a unique name per tool. Each tool has its own configuration requirement.
@@ -49,7 +49,7 @@ Analyzer: Clang Tidy
 
 Key is `clang-tidy`
 
-Detect static analysis issues on C/C++ code
+Detect code review issues on C/C++ code
 
 Analyzer: Clang Format
 --------------------
@@ -75,7 +75,7 @@ Example configuration
     "PAPERTRAIL_HOST": "XXXX.papertrail.net",
     "PAPERTRAIL_PORT": 12345
   },
-  "static-analysis-bot": {
+  "code-review-bot": {
     "REPORTERS": [
       {
         "reporter": "mail",

@@ -3,10 +3,10 @@ import os
 
 import structlog
 
-from static_analysis_bot import COVERAGE
-from static_analysis_bot import Issue
-from static_analysis_bot.config import settings
-from static_analysis_bot.tasks.base import AnalysisTask
+from code_review_bot import COVERAGE
+from code_review_bot import Issue
+from code_review_bot.config import settings
+from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
 
