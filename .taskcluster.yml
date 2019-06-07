@@ -51,3 +51,35 @@ tasks:
         description: Check python code (unit tests & linting)
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
+
+    - taskId: {$eval: as_slugid("frontend_build")}
+      provisionerId: aws-provisioner-v1
+      workerType: github-worker
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      extra:
+        github:
+          events:
+            - pull_request.opened
+            - pull_request.reopened
+            - pull_request.synchronize
+            - push
+      payload:
+        maxRunTime: 3600
+        image: node:11-alpine
+        command:
+          - sh
+          - -lxce
+          - "apk add git lcms2-dev bash libpng-dev autoconf build-base --quiet &&
+            git clone --quiet ${repository} /src && cd /src/frontend && git checkout ${head_rev} -b build &&
+            npm install && npm run build"
+          artifacts:
+            public/frontend:
+              expires: {$fromNow: '2 weeks'}
+              path: /src/frontend/build
+              type: directory
+      metadata:
+        name: Code Review Frontend build
+        description: Build web single page application
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
