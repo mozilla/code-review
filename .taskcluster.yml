@@ -39,9 +39,6 @@ tasks:
       payload:
         maxRunTime: 3600
         image: python:3-alpine
-        env:
-          GIT_REPOSITORY: ${repository}
-          GIT_REVISION: ${head_rev}
         command:
           - sh
           - -lxce
