@@ -1,1 +1,4 @@
--r ./../../../lib/cli_common/requirements-dev.txt
+flake8
+flake8-isort
+pytest
+responses
