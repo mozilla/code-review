@@ -65,8 +65,10 @@ git commit -a -m 'Fix imports'
 sed -i -e 's,http://taskcluster.test/notify,http://taskcluster.test/api/notify,g' bot/tests/test_reporter_mail.py
 git commit -a -m 'Fix unit test'
 
-# Import code from setup
-git cherry-pick $(git log build --format=format:%H -- bot/code_review_bot)
+# Import code from build
+files=".taskcluster.yml bot frontend"
+git diff $(git rev-list build | tail -n 1)..build -- $files > build.diff
+patch -p1 -i build.diff
 
 # Services is not needed anymore
 git remote rm services
