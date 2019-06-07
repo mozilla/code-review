@@ -92,7 +92,7 @@ def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
     # Add mock taskcluster email to check output
     responses.add_callback(
         responses.POST,
-        'http://taskcluster.test/notify/v1/email',
+        'http://taskcluster.test/api/notify/v1/email',
         callback=_check_email,
     )
 
