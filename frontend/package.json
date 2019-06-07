@@ -1,9 +1,9 @@
 {
-  "name": "static-analysis-frontend",
+  "name": "code-review-frontend",
   "version": "1.0.0",
-  "repository": "https://github.com/mozilla/release-services",
+  "repository": "https://github.com/mozilla/code-review",
   "author": "",
-  "description": "Mozilla static analysis frontend",
+  "description": "Mozilla Code Review frontend",
   "main": "index.js",
   "dependencies": {
     "axios": "^0.18.0",
