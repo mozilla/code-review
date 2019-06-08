@@ -94,10 +94,32 @@ class MockQueue(object):
             'response': MockArtifactResponse(artifact['content'].encode('utf-8')),
         }
 
+    def createArtifact(self, task_id, run_id, name, payload):
+        if task_id not in self._artifacts:
+            self._artifacts[task_id] = {
+                'artifacts': []
+            }
+        payload['name'] = name
+        payload['requests'] = [{
+            'method': 'PUT',
+            'url': 'http://storage.test/{}'.format(name),
+            'headers': {}
+        }]
+        self._artifacts[task_id]['artifacts'].append(payload)
+        return payload
+
+    def completeArtifact(self, task_id, run_id, name, payload):
+        assert task_id in self._artifacts
+        assert 'etags' in payload
+        assert 'test123' in payload['etags']
+
 
 class MockIndex(object):
     def configure(self, tasks):
         self.tasks = tasks
+
+    def insertTask(self, route, payload):
+        self.tasks[route] = payload
 
     def findTask(self, route):
         task_id = next(iter([task_id for task_id, task in self.tasks.items() if task.get('route') == route]), None)
