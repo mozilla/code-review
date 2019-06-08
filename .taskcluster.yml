@@ -73,11 +73,11 @@ tasks:
           - "apk add git lcms2-dev bash libpng-dev autoconf build-base --quiet &&
             git clone --quiet ${repository} /src && cd /src/frontend && git checkout ${head_rev} -b build &&
             npm install && npm run build"
-          artifacts:
-            public/frontend:
-              expires: {$fromNow: '2 weeks'}
-              path: /src/frontend/build
-              type: directory
+        artifacts:
+          public/frontend:
+            expires: {$fromNow: '2 weeks'}
+            path: /src/frontend/build
+            type: directory
       metadata:
         name: Code Review Frontend build
         description: Build web single page application
