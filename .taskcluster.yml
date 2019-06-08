@@ -83,3 +83,36 @@ tasks:
         description: Build web single page application
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
+
+    - taskId: {$eval: as_slugid("bot_build")}
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      provisionerId: aws-provisioner-v1
+      workerType: releng-svc
+      dependencies:
+        - {$eval: as_slugid("bot_checks")}
+      payload:
+        capabilities:
+          privileged: true
+        maxRunTime: 3600
+        image: mozilla/taskboot:0.1.6
+        env:
+          GIT_REPOSITORY: ${repository}
+          GIT_REVISION: ${head_rev}
+        command:
+          - taskboot
+          - build
+          - --write
+          - /images/code-review-bot.tar
+        artifacts:
+          public/bugbug:
+            expires: {$fromNow: '2 weeks'}
+            path: /images
+            type: directory
+      scopes:
+        - docker-worker:capability:privileged
+      metadata:
+        name: Code Review Bot docker build
+        description: Build docker image of code review bot
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
