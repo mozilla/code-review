@@ -103,13 +103,13 @@ tasks:
           - taskboot
           - build
           - --write
-          - /images/code-review-bot.tar
+          - /bot.tar
           - bot/Dockerfile
         artifacts:
-          public/bugbug:
+          public/code-review-bot.tar:
             expires: {$fromNow: '2 weeks'}
-            path: /images
-            type: directory
+            path: /bot.tar
+            type: file
       scopes:
         - docker-worker:capability:privileged
       metadata:
