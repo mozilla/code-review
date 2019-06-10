@@ -104,6 +104,7 @@ tasks:
           - build
           - --write
           - /images/code-review-bot.tar
+          - bot/Dockerfile
         artifacts:
           public/bugbug:
             expires: {$fromNow: '2 weeks'}
