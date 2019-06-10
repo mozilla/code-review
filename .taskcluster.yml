@@ -116,3 +116,39 @@ tasks:
         description: Build docker image of code review bot
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
+
+    - $if: 'tasks_for == "github-push" && (head_branch in ["refs/heads/testing", "refs/heads/staging", "refs/heads/production"])'
+      then:
+        taskId: {$eval: as_slugid("frontend_deploy")}
+        created: {$fromNow: ''}
+        deadline: {$fromNow: '1 hour'}
+        provisionerId: aws-provisioner-v1
+        workerType: github-worker
+        dependencies:
+          - {$eval: as_slugid("frontend_build")}
+        payload:
+          maxRunTime: 3600
+          image: mozilla/taskboot:0.1.6
+          env:
+            # TODO: use variable for channel
+            TASKCLUSTER_SECRET: project/relman/code-review/deploy-testing
+          command:
+            - taskboot
+            - deploy-s3
+            - --artifact-folder
+            - public/frontend
+            - --bucket
+            # TODO: use variable for channel
+            - release-services-staticanalysis-frontend-testing
+          artifacts:
+            public/bugbug:
+              expires: {$fromNow: '2 weeks'}
+              path: /images
+              type: directory
+        scopes:
+          - docker-worker:capability:privileged
+        metadata:
+          name: Code Review Frontend deploy
+          description: Deploy frontend build on environment
+          owner: bastien@mozilla.com
+          source: https://github.com/mozilla/code-review
