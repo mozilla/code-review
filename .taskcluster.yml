@@ -200,6 +200,7 @@ tasks:
         #dependencies:
         #  - {$eval: as_slugid("bot_deploy")}
         scopes:
+          - "assume:hook-id:project-relman/code-review-${channel}"
           - "hooks:modify-hook:project-relman/code-review-${channel}"
         created: {$fromNow: ''}
         deadline: {$fromNow: '5 hours'}
@@ -221,6 +222,6 @@ tasks:
                taskboot --target . build-hook bot/taskcluster-hook.json project-relman code-review-${channel}"
         metadata:
           name: "Code Review Bot hook update (${channel})"
-          description: Update Taskcluster hook for
+          description: Update Taskcluster hook triggering the code-review tasks
           owner: bastien@mozilla.com
           source: https://github.com/mozilla/code-review
