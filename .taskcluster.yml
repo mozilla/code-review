@@ -29,8 +29,10 @@ tasks:
       then:
         $if: 'event.ref in ["refs/heads/testing", "refs/heads/staging", "refs/heads/production"]'
         then: ${event.ref[11:]}
-        else: null
-      else: null
+        else: 'dev'
+      else: 'dev'
+
+    taskboot_image: "mozilla/taskboot:0.1.6"
   in:
     - taskId: {$eval: as_slugid("bot_checks")}
       provisionerId: aws-provisioner-v1
@@ -103,13 +105,17 @@ tasks:
         capabilities:
           privileged: true
         maxRunTime: 3600
-        image: mozilla/taskboot:0.1.6
+        image: "${taskboot_image}"
         env:
           GIT_REPOSITORY: ${repository}
           GIT_REVISION: ${head_rev}
         command:
           - taskboot
           - build
+          - --tag
+          - "mozilla/code-review:${channel}"
+          - --tag
+          - "mozilla/code-review:${head_rev}"
           - --write
           - /bot.tar
           - bot/Dockerfile
@@ -137,7 +143,7 @@ tasks:
           - {$eval: as_slugid("frontend_build")}
         payload:
           maxRunTime: 3600
-          image: mozilla/taskboot:0.1.6
+          image: "${taskboot_image}"
           env:
             TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
           command:
@@ -148,10 +154,34 @@ tasks:
             - --bucket
             - "release-services-staticanalysis-frontend-${channel}"
         scopes:
-          - docker-worker:capability:privileged
           - "secrets:get:project/relman/code-review/deploy-${channel}"
         metadata:
           name: Code Review Frontend deploy
           description: Deploy frontend build on environment
+          owner: bastien@mozilla.com
+          source: https://github.com/mozilla/code-review
+
+    - $if: 'channel in ["testing", "staging", "production"]'
+      then:
+        taskId: {$eval: as_slugid("bot_deploy")}
+        created: {$fromNow: ''}
+        deadline: {$fromNow: '1 hour'}
+        provisionerId: aws-provisioner-v1
+        workerType: github-worker
+        dependencies:
+          - {$eval: as_slugid("bot_build")}
+        payload:
+          maxRunTime: 3600
+          image: "${taskboot_image}"
+          env:
+            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
+          command:
+            - taskboot
+            - push-artifact
+        scopes:
+          - "secrets:get:project/relman/code-review/deploy-${channel}"
+        metadata:
+          name: Code Review Bot push
+          description: Push bot's docker image on repository
           owner: bastien@mozilla.com
           source: https://github.com/mozilla/code-review
