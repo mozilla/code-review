@@ -149,6 +149,7 @@ tasks:
             - "release-services-staticanalysis-frontend-${channel}"
         scopes:
           - docker-worker:capability:privileged
+          - "secrets:get:project/relman/code-review/deploy-${channel}"
         metadata:
           name: Code Review Frontend deploy
           description: Deploy frontend build on environment
