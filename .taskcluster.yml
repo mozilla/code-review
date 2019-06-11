@@ -32,7 +32,7 @@ tasks:
         else: 'dev'
       else: 'dev'
 
-    taskboot_image: "mozilla/taskboot@sha256:34cf551e94e53f8695187dcb2a0c602e1c605750bda433c1968c89089ed408ad"
+    taskboot_image: "mozilla/taskboot@sha256:0.1.7"
   in:
     - taskId: {$eval: as_slugid("bot_check_lint")}
       provisionerId: aws-provisioner-v1
