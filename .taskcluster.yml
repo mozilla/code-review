@@ -197,8 +197,8 @@ tasks:
     - $if: 'channel in ["testing", "staging", "production"]'
       then:
         taskId: {$eval: as_slugid("bot_hook")}
-        #dependencies:
-        #  - {$eval: as_slugid("bot_deploy")}
+        dependencies:
+          - {$eval: as_slugid("bot_deploy")}
         scopes:
           - "assume:hook-id:project-relman/code-review-${channel}"
           - "hooks:modify-hook:project-relman/code-review-${channel}"

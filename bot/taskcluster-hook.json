@@ -6,12 +6,18 @@
     }
   ],
   "metadata": {
-    "description": "Publish issues detected in remote tasks",
+    "description": "Automatically create code review publication tasjs",
     "emailOnError": true,
-    "name": "Code review publication (CHANNEL)",
+    "name": "Code review hook (CHANNEL)",
     "owner": "babadie@mozilla.com"
   },
   "task": {
+		"metadata": {
+			"description": "Publish issues detected in remote tasks",
+			"emailOnError": true,
+			"name": "Code review publication (CHANNEL)",
+			"owner": "babadie@mozilla.com"
+		},
     "created": {
       "$fromNow": "0 seconds"
     },
