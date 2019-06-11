@@ -41,7 +41,7 @@
             "command": [
                 "code-review-bot",
                 "--taskcluster-secret",
-                "project/relman/code-review/runtime-testing"
+                "project/relman/code-review/runtime-CHANNEL"
             ],
             "env": {
                 "$merge": [
@@ -79,11 +79,12 @@
         "provisionerId": "aws-provisioner-v1",
         "retries": 3,
         "routes": [
-            "index.project.releng.services.project.testing.static_analysis_bot.latest"
+            "index.project.releng.services.project.CHANNEL.static_analysis_bot.latest"
         ],
         "schedulerId": "-",
         "scopes": [
-            "secrets:get:project/relman/code-review/runtime-testing",
+            "secrets:get:project/relman/code-review/runtime-CHANNEL",
+            "index:insert-task:project.releng.services.project.CHANNEL.static_analysis_bot.*",
             "notify:email:*"
         ],
         "tags": {},
