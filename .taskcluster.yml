@@ -144,6 +144,9 @@ tasks:
         dependencies:
           - {$eval: as_slugid("frontend_build")}
         payload:
+          features:
+            # Needed for access to secret
+            taskclusterProxy: true
           maxRunTime: 3600
           image: "${taskboot_image}"
           env:
@@ -173,6 +176,9 @@ tasks:
         dependencies:
           - {$eval: as_slugid("bot_build")}
         payload:
+          features:
+            # Needed for access to secret
+            taskclusterProxy: true
           maxRunTime: 3600
           image: "${taskboot_image}"
           env:
