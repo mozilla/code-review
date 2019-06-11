@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import pytest
+import responses
 
 
 def test_no_deps(mock_config, mock_revision, mock_workflow):
@@ -38,8 +39,9 @@ def test_baseline(mock_config, mock_revision, mock_workflow):
     from code_review_bot.tasks.coverage import CoverageIssue
 
     # We run on a mock TC, with a try source
-    assert mock_config.taskcluster.task_id == 'local instance'
-    assert mock_config.try_task_id == 'remoteTryTask'
+    if mock_config.taskcluster.local:
+        assert mock_config.taskcluster.task_id == 'local instance'
+        assert mock_config.try_task_id == 'remoteTryTask'
 
     mock_workflow.setup_mock_tasks({
         'decision': {
@@ -398,11 +400,22 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
     assert issue.message == 'some harder issue with c++'
 
 
+@responses.activate
 def test_clang_format_task(mock_config, mock_revision, mock_workflow):
     '''
     Test a remote workflow with a clang-format analyzer
     '''
     from code_review_bot.tasks.clang_format import ClangFormatIssue
+
+    # Mock for artifact upload
+    responses.add(
+        responses.PUT,
+        'http://storage.test/public/patch/clang-format-PHID-DIFF-test.diff',
+        json={},
+        headers={
+            'ETag': 'test123',
+        }
+    )
 
     tasks = {
         'decision': {

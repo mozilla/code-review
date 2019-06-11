@@ -108,7 +108,7 @@ class Settings(object):
             'Config already set.'
 
         self.config = defaults
-        self.config.update(yaml.load(_fetch('tools/clang-tidy/config.yaml')))
+        self.config.update(yaml.safe_load(_fetch('tools/clang-tidy/config.yaml')))
         logger.info('Loaded configuration from mozilla-central')
 
         # Also downloads the 3rd party file
