@@ -27,7 +27,7 @@ tasks:
     channel:
       $if: 'tasks_for == "github-push"'
       then:
-        $if: 'event.ref in ["refs/heads/testing", "refs/heads/staging", "refs/heads/production"]'
+        $if: 'event.ref in ["refs/heads/testing", "refs/heads/production"]'
         then: ${event.ref[11:]}
         else: 'dev'
       else: 'dev'
@@ -163,7 +163,7 @@ tasks:
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
-    - $if: 'channel in ["testing", "staging", "production"]'
+    - $if: 'channel in ["testing", "production"]'
       then:
         taskId: {$eval: as_slugid("frontend_deploy")}
         created: {$fromNow: ''}
@@ -195,7 +195,7 @@ tasks:
           owner: bastien@mozilla.com
           source: https://github.com/mozilla/code-review
 
-    - $if: 'channel in ["testing", "staging", "production"]'
+    - $if: 'channel in ["testing", "production"]'
       then:
         taskId: {$eval: as_slugid("bot_deploy")}
         created: {$fromNow: ''}
@@ -223,7 +223,7 @@ tasks:
           owner: bastien@mozilla.com
           source: https://github.com/mozilla/code-review
 
-    - $if: 'channel in ["testing", "staging", "production"]'
+    - $if: 'channel in ["testing", "production"]'
       then:
         taskId: {$eval: as_slugid("bot_hook")}
         dependencies:
