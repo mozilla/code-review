@@ -112,10 +112,12 @@ tasks:
         command:
           - taskboot
           - build
+          - --image
+          - mozilla/code-review
           - --tag
-          - "mozilla/code-review:${channel}"
+          - "${channel}"
           - --tag
-          - "mozilla/code-review:${head_rev}"
+          - "${head_rev}"
           - --write
           - /bot.tar
           - bot/Dockerfile
