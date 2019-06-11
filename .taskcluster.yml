@@ -23,6 +23,11 @@ tasks:
       $if: 'tasks_for == "github-pull-request"'
       then: ${event.pull_request.head.repo.html_url}
       else: ${event.repository.html_url}
+
+    channel:
+      $if: 'tasks_for == "github-push" && (event.ref in ["refs/heads/testing", "refs/heads/staging", "refs/heads/production"])'
+      then: ${event.ref[11:]}
+      else: null
   in:
     - taskId: {$eval: as_slugid("bot_checks")}
       provisionerId: aws-provisioner-v1
@@ -118,7 +123,7 @@ tasks:
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
-    - $if: 'tasks_for == "github-push" && (head_branch in ["refs/heads/testing", "refs/heads/staging", "refs/heads/production"])'
+    - $if: 'channel in ["testing", "staging", "production"]'
       then:
         taskId: {$eval: as_slugid("frontend_deploy")}
         created: {$fromNow: ''}
@@ -131,21 +136,14 @@ tasks:
           maxRunTime: 3600
           image: mozilla/taskboot:0.1.6
           env:
-            # TODO: use variable for channel
-            TASKCLUSTER_SECRET: project/relman/code-review/deploy-testing
+            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
           command:
             - taskboot
             - deploy-s3
             - --artifact-folder
             - public/frontend
             - --bucket
-            # TODO: use variable for channel
-            - release-services-staticanalysis-frontend-testing
-          artifacts:
-            public/bugbug:
-              expires: {$fromNow: '2 weeks'}
-              path: /images
-              type: directory
+            - "release-services-staticanalysis-frontend-${channel}"
         scopes:
           - docker-worker:capability:privileged
         metadata:
