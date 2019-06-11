@@ -1,96 +1,96 @@
 {
-  "bindings": [
-    {
-      "exchange": "exchange/taskcluster-queue/v1/task-completed",
-      "routingKeyPattern": "route.project.relman.codereview.v1.try_ending"
-    }
-  ],
-  "metadata": {
-    "description": "Automatically create code review publication tasjs",
-    "emailOnError": true,
-    "name": "Code review hook (CHANNEL)",
-    "owner": "babadie@mozilla.com"
-  },
-  "task": {
-		"metadata": {
-			"description": "Publish issues detected in remote tasks",
-			"emailOnError": true,
-			"name": "Code review publication (CHANNEL)",
-			"owner": "babadie@mozilla.com"
-		},
-    "created": {
-      "$fromNow": "0 seconds"
-    },
-    "deadline": {
-      "$fromNow": "2 hours"
-    },
-    "expires": {
-      "$fromNow": "1 month"
-    },
-    "extra": {},
-    "payload": {
-      "artifacts": {
-        "public/results": {
-          "path": "/tmp/results",
-          "type": "directory"
+    "bindings": [
+        {
+            "exchange": "exchange/taskcluster-queue/v1/task-completed",
+            "routingKeyPattern": "route.project.relman.codereview.v1.try_ending"
         }
-      },
-      "cache": {},
-      "capabilities": {},
-      "command": [
-        "code-review-bot",
-        "--taskcluster-secret",
-        "project/relman/code-review/runtime-testing"
-      ],
-      "env": {
-        "$merge": [
-          {
-            "$if": "firedBy == 'triggerHook'",
-            "else": {},
-            "then": {
-              "$eval": "payload"
-            }
-          },
-          {
-            "$if": "firedBy == 'pulseMessage'",
-            "else": {},
-            "then": {
-              "TRY_RUN_ID": {
-                "$eval": "payload.runId"
-              },
-              "TRY_TASK_GROUP_ID": {
-                "$eval": "payload.status.taskGroupId"
-              },
-              "TRY_TASK_ID": {
-                "$eval": "payload.status.taskId"
-              }
-            }
-          }
-        ]
-      },
-      "features": {
-        "taskclusterProxy": true
-      },
-      "image": "mozilla/code-review:REVISION",
-      "maxRunTime": 7200
+    ],
+    "metadata": {
+        "description": "Automatically create code review publication tasjs",
+        "emailOnError": true,
+        "name": "Code review hook (CHANNEL)",
+        "owner": "babadie@mozilla.com"
     },
-    "priority": "normal",
-    "provisionerId": "aws-provisioner-v1",
-    "retries": 3,
-    "routes": [
-      "index.project.releng.services.project.testing.static_analysis_bot.latest"
-    ],
-    "schedulerId": "-",
-    "scopes": [
-      "secrets:get:project/relman/code-review/runtime-testing",
-      "notify:email:*"
-    ],
-    "tags": {},
-    "workerType": "releng-svc"
-  },
-  "schedule": [],
-  "triggerSchema": {
-    "additionalProperties": true,
-    "type": "object"
-  }
+    "schedule": [],
+    "task": {
+        "created": {
+            "$fromNow": "0 seconds"
+        },
+        "deadline": {
+            "$fromNow": "2 hours"
+        },
+        "expires": {
+            "$fromNow": "1 month"
+        },
+        "extra": {},
+        "metadata": {
+            "description": "Publish issues detected in remote tasks",
+            "name": "Code review publication (CHANNEL)",
+            "owner": "babadie@mozilla.com",
+            "source": "https://github.com/mozilla/code-review"
+        },
+        "payload": {
+            "artifacts": {
+                "public/results": {
+                    "path": "/tmp/results",
+                    "type": "directory"
+                }
+            },
+            "cache": {},
+            "capabilities": {},
+            "command": [
+                "code-review-bot",
+                "--taskcluster-secret",
+                "project/relman/code-review/runtime-testing"
+            ],
+            "env": {
+                "$merge": [
+                    {
+                        "$if": "firedBy == 'triggerHook'",
+                        "else": {},
+                        "then": {
+                            "$eval": "payload"
+                        }
+                    },
+                    {
+                        "$if": "firedBy == 'pulseMessage'",
+                        "else": {},
+                        "then": {
+                            "TRY_RUN_ID": {
+                                "$eval": "payload.runId"
+                            },
+                            "TRY_TASK_GROUP_ID": {
+                                "$eval": "payload.status.taskGroupId"
+                            },
+                            "TRY_TASK_ID": {
+                                "$eval": "payload.status.taskId"
+                            }
+                        }
+                    }
+                ]
+            },
+            "features": {
+                "taskclusterProxy": true
+            },
+            "image": "mozilla/code-review:REVISION",
+            "maxRunTime": 7200
+        },
+        "priority": "normal",
+        "provisionerId": "aws-provisioner-v1",
+        "retries": 3,
+        "routes": [
+            "index.project.releng.services.project.testing.static_analysis_bot.latest"
+        ],
+        "schedulerId": "-",
+        "scopes": [
+            "secrets:get:project/relman/code-review/runtime-testing",
+            "notify:email:*"
+        ],
+        "tags": {},
+        "workerType": "releng-svc"
+    },
+    "triggerSchema": {
+        "additionalProperties": true,
+        "type": "object"
+    }
 }
