@@ -246,7 +246,7 @@ tasks:
             - "-lcxe"
             - "git clone --quiet ${repository} &&
                cd code-review &&
-               git -c advice.detachedHead=false checkout ${head_rev} &&
+               git checkout ${head_rev} &&
                sed -i -e 's/CHANNEL/${channel}/g' -e 's/REVISION/${head_rev}/g' bot/taskcluster-hook.json &&
                taskboot --target . build-hook bot/taskcluster-hook.json project-relman code-review-${channel}"
         metadata:
