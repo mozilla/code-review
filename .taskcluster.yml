@@ -39,13 +39,6 @@ tasks:
       workerType: github-worker
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
-      extra:
-        github:
-          events:
-            - pull_request.opened
-            - pull_request.reopened
-            - pull_request.synchronize
-            - push
       payload:
         maxRunTime: 3600
         image: python:3-alpine
@@ -67,13 +60,6 @@ tasks:
       workerType: github-worker
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
-      extra:
-        github:
-          events:
-            - pull_request.opened
-            - pull_request.reopened
-            - pull_request.synchronize
-            - push
       payload:
         maxRunTime: 3600
         image: python:3-alpine
@@ -95,13 +81,6 @@ tasks:
       workerType: github-worker
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
-      extra:
-        github:
-          events:
-            - pull_request.opened
-            - pull_request.reopened
-            - pull_request.synchronize
-            - push
       payload:
         maxRunTime: 3600
         image: node:11-alpine
