@@ -25,8 +25,11 @@ tasks:
       else: ${event.repository.html_url}
 
     channel:
-      $if: 'tasks_for == "github-push" && (event.ref in ["refs/heads/testing", "refs/heads/staging", "refs/heads/production"])'
-      then: ${event.ref[11:]}
+      $if: 'tasks_for == "github-push"'
+      then:
+        $if: 'event.ref in ["refs/heads/testing", "refs/heads/staging", "refs/heads/production"]'
+        then: ${event.ref[11:]}
+        else: null
       else: null
   in:
     - taskId: {$eval: as_slugid("bot_checks")}
