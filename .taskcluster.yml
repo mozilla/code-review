@@ -34,7 +34,7 @@ tasks:
 
     taskboot_image: "mozilla/taskboot:0.1.6"
   in:
-    - taskId: {$eval: as_slugid("bot_checks")}
+    - taskId: {$eval: as_slugid("bot_check_lint")}
       provisionerId: aws-provisioner-v1
       workerType: github-worker
       created: {$fromNow: ''}
@@ -55,10 +55,38 @@ tasks:
           - "apk add git --quiet &&
             git clone --quiet ${repository} /src && cd /src/bot && git checkout ${head_rev} -b checks &&
             pip install . && pip install -r requirements-dev.txt &&
-            flake8 && pytest -v"
+            flake8"
       metadata:
-        name: Code Review Bot checks
-        description: Check python code (unit tests & linting)
+        name: Code Review Bot checks: linting
+        description: Check python code style with flake8
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
+
+    - taskId: {$eval: as_slugid("bot_check_tests")}
+      provisionerId: aws-provisioner-v1
+      workerType: github-worker
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      extra:
+        github:
+          events:
+            - pull_request.opened
+            - pull_request.reopened
+            - pull_request.synchronize
+            - push
+      payload:
+        maxRunTime: 3600
+        image: python:3-alpine
+        command:
+          - sh
+          - -lxce
+          - "apk add git --quiet &&
+            git clone --quiet ${repository} /src && cd /src/bot && git checkout ${head_rev} -b checks &&
+            pip install . && pip install -r requirements-dev.txt &&
+            pytest -v"
+      metadata:
+        name: Code Review Bot checks: unit tests
+        description: Check python code with pytest
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
@@ -100,7 +128,8 @@ tasks:
       provisionerId: aws-provisioner-v1
       workerType: releng-svc
       dependencies:
-        - {$eval: as_slugid("bot_checks")}
+        - {$eval: as_slugid("bot_check_lint")}
+        - {$eval: as_slugid("bot_check_tests")}
       payload:
         capabilities:
           privileged: true
