@@ -1,0 +1,26 @@
+--- path/to/xx.rs	2019-01-01 00:00:00
++++ path/to/xx.rs	2019-01-01 00:00:00
+@@ -33,7 +33,6 @@
+ include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
+
+-impl CraneliftFuncCompileInput
+-{
++impl CraneliftFuncCompileInput {
+     pub fn bytecode(&self) -> &[u8] {
+         use std::slice;
+         unsafe { slice::from_raw_parts(self.bytecode, self.bytecodeSize) }
+@@ -100,2 +100,2 @@
+ multi
++lines
+-words
+--- test.rs	2019-01-01 00:00:00
++++ test.rs	2019-01-01 00:00:00
+@@ -202,7 +202,7 @@
+                     "Failed to generate bindings, flags: {:?}",
+                     command_line_opts
+                 );
+-            },
++            }
+         };
+
+         for fixup in fixups.iter() {
