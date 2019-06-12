@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import itertools
+from datetime import datetime
+
 import structlog
 from libmozdata.phabricator import LintResult
 
@@ -28,8 +31,7 @@ ISSUE_MARKDOWN = '''
 class MozLintIssue(Issue):
     ANALYZER = MOZLINT
 
-    def __init__(self, path, column, level, lineno, linter, message, rule, revision, **kwargs):
-        self.nb_lines = 1
+    def __init__(self, path, column, level, lineno, linter, message, rule, revision, diff=None):
         self.column = column
         self.level = level
         self.line = lineno and int(lineno) or 0  # mozlint sometimes produce strings here
@@ -38,13 +40,22 @@ class MozLintIssue(Issue):
         self.rule = rule
         self.revision = revision
         self.path = path
+        self.diff = diff
+
+        # Calc number of lines from patch when available
+        if isinstance(self.diff, str):
+            lines = self.diff.splitlines()
+            self.nb_lines = len(lines)
+        else:
+            self.nb_lines = 1
 
     def __str__(self):
         return '{} issue {} {} line {}'.format(
             self.linter,
             self.level,
             self.path,
-            self.line,
+            # Display line range when multiple lines are in patch
+            '{}-{}'.format(self.line, self.line + self.nb_lines) if self.nb_lines > 1 else self.line,
         )
 
     def build_extra_identifiers(self):
@@ -75,8 +86,9 @@ class MozLintIssue(Issue):
         A mozlint issues is publishable when:
         * file is not 3rd party
         * rule is not disabled
+        * issues without diff (those are published through a patch)
         '''
-        return not self.is_third_party() and not self.is_disabled_rule()
+        return not self.is_third_party() and not self.is_disabled_rule() and self.diff is None
 
     def as_text(self):
         '''
@@ -178,8 +190,50 @@ class MozLintTask(AnalysisTask):
                 linter=issue['linter'],
                 message=issue['message'],
                 rule=issue['rule'],
+                diff=issue.get('diff'),
             )
             for artifact in artifacts.values()
             for path, path_issues in artifact.items()
             for issue in path_issues
+        ]
+
+    def build_patches(self, artifacts, issues):
+        '''
+        Build an improvement patch from issues with diff
+        Any issue on a file in patch will be posted
+        '''
+        diff_issues = [
+            i
+            for i in issues
+            if i.revision.has_file(i.path) and i.diff is not None
+        ]
+        if not diff_issues:
+            return []
+
+        header_fmt = '--- {path}\t{date}\n+++ {path}\t{date}\n'
+
+        # Group issues by path
+        patch = ''
+        for path, path_issues in itertools.groupby(diff_issues, lambda i: i.path):
+
+            if patch:
+                patch += '\n'
+
+            # Add header for path
+            patch += header_fmt.format(
+                date=datetime.utcnow(),
+                path=path,
+            )
+
+            # Add each diff block, avoiding duplicates
+            # sorted by top line
+            chunks = []
+            for issue in path_issues:
+                chunk = (issue.line, issue.as_diff())
+                if chunk not in chunks:
+                    chunks.append(chunk)
+            patch += '\n'.join(c[1] for c in sorted(chunks, key=lambda c: c[0]))
+
+        return [
+            ('mozlint', patch),
         ]

@@ -108,10 +108,11 @@ class AnalysisTask(object):
             path = path[1:]
         return path
 
-    def build_patches(self, artifacts):
+    def build_patches(self, artifacts, issues):
         '''
         Some analyzers can provide a patch appliable by developers
         These patches are stored as Taskcluster artifacts and reported to developpers
+        They can also be built from issues produced earlier by the bot
         Output is a list of tuple (patch name as str, patch content as str)
         '''
         return []

@@ -239,7 +239,7 @@ class Workflow(object):
                     logger.info('Found {} issues'.format(len(task_issues)), task=task.name, id=task.id)
                     issues += task_issues
 
-                    for name, patch in task.build_patches(artifacts):
+                    for name, patch in task.build_patches(artifacts, task_issues):
                         revision.add_improvement_patch(name, patch)
             except Exception as e:
                 logger.warn('Failure during task analysis', task=settings.taskcluster.task_id, error=e)

@@ -13,6 +13,7 @@ from code_review_bot import Issue
 from code_review_bot import stats
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import Revision
+from code_review_bot.tasks.lint import MozLintIssue
 
 MODE_COMMENT = 'comment'
 MODE_HARBORMASTER = 'harbormaster'
@@ -149,6 +150,12 @@ class PhabricatorReporter(Reporter):
         # Enforce path validation or Phabricator will crash here
         if not revision.has_file(issue.path):
             logger.warn('Will not publish inline comment on invalid path {}: {}'.format(issue.path, issue))
+            return
+
+        # Skip mozlint publication when a diff is available
+        # These issues are listed in an improvement patch
+        if isinstance(issue, MozLintIssue) and issue.diff is not None:
+            logger.info('Will not publish inline comment on formatting change: {}'.format(issue))
             return
 
         # Check if comment is already posted

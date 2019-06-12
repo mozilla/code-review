@@ -139,7 +139,7 @@ class ClangFormatTask(AnalysisTask):
             for issue in issues
         ]
 
-    def build_patches(self, artifacts):
+    def build_patches(self, artifacts, issues):
         artifact = artifacts.get('public/code-review/clang-format.diff')
         if artifact is None:
             logger.warn('Missing or empty clang-format.diff')
