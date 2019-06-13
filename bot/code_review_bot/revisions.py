@@ -13,7 +13,8 @@ from parsepatch.patch import Patch
 
 from code_review_bot import Issue
 from code_review_bot import stats
-from code_review_bot.config import REPO_TRY
+from code_review_bot.config import REPO_GECKO_TRY
+from code_review_bot.config import REPO_NSS_TRY
 from code_review_bot.config import settings
 from code_review_bot.tools.taskcluster import create_blob_artifact
 
@@ -271,17 +272,25 @@ class Revision(object):
         def is_decision_task(task):
             image = task['task']['payload'].get('image')
             if image is not None and isinstance(image, str):
-                return image.startswith('taskcluster/decision')
+                return image.startswith('taskcluster/decision') or \
+                       image.startswith('djmitche/nss-decision')
         decision_task = next(filter(is_decision_task, tasks.values()), None)
         assert decision_task is not None, 'Missing decision task'
 
         # Use mercurial infos for local revision
         decision_env = decision_task['task']['payload']['env']
-        assert decision_env.get('GECKO_HEAD_REPOSITORY') == REPO_TRY.decode('utf-8'), \
-            'Not the try repo in GECKO_HEAD_REPOSITORY'
+        if decision_env.get('GECKO_HEAD_REPOSITORY') == REPO_GECKO_TRY:
+            # Mozilla-Central Try
+            self.mercurial_revision = decision_env.get('GECKO_HEAD_REV')
+
+        elif decision_env.get('NSS_HEAD_REPOSITORY') == REPO_NSS_TRY:
+            # NSS Try
+            self.mercurial_revision = decision_env.get('NSS_HEAD_REVISION')
+
+        else:
+            raise Exception('Unsupported decision task')
 
         # Save mercurial revision
-        self.mercurial_revision = decision_env.get('GECKO_HEAD_REV')
         assert self.mercurial_revision is not None, 'Missing try revision'
         logger.info('Using Try mercurial revision', rev=self.mercurial_revision)
 
