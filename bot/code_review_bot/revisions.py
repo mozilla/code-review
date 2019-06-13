@@ -104,7 +104,9 @@ class Revision(object):
         Load identifiers from Phabricator, using the remote task description
         '''
         # Load build target phid from the task env
-        self.build_target_phid = try_task['extra']['code-review']['phabricator-diff']
+        code_review = try_task['extra']['code-review']
+        self.build_target_phid = code_review.get('phabricator-diff') or code_review.get('phabricator-build-target')
+        assert self.build_target_phid is not None, 'Missing phabricator-build-target or phabricator-diff declaration'
         assert self.build_target_phid.startswith('PHID-HMBT-')
 
         # And get the diff from the phabricator api
