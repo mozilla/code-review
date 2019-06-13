@@ -10,6 +10,7 @@ logger = structlog.get_logger(__name__)
 WORKER_CHECKOUTS = (
     '/builds/worker/checkouts/gecko',
     '/home/worker/nss',
+    '/home/worker/nspr',
 )
 
 
