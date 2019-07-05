@@ -54,8 +54,12 @@ class AnalysisTask(object):
             return
 
         # Load the task & status description
-        task_status = queue_service.status(task_id)
-        task_status['task'] = queue_service.task(task_id)
+        try:
+            task_status = queue_service.status(task_id)
+            task_status['task'] = queue_service.task(task_id)
+        except Exception as e:
+            logger.warn('Task not found', task=task_id, error=str(e))
+            return
 
         # Build the instance
         return cls(task_id, task_status)
