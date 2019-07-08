@@ -48,7 +48,7 @@ class CoverityIssue(Issue):
     def __init__(self, revision, issue, file_path):
         self.revision = revision
         self.path = file_path
-        self.reliability = Reliability(issue['reliability'])
+        self.reliability = Reliability(issue['reliability']) if 'reliability' in issue else Reliability.Unknown
         self.line = issue['line']
         self.bug_type = issue['extra']['category']
         self.kind = issue['flag']

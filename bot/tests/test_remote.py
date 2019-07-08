@@ -244,9 +244,9 @@ def test_decision_task(mock_config, mock_revision, mock_workflow):
         'remoteTryTask': {
         },
     })
-    with pytest.raises(AssertionError) as e:
+    with pytest.raises(Exception) as e:
         mock_workflow.run(mock_revision)
-    assert str(e.value) == 'Not the try repo in GECKO_HEAD_REPOSITORY'
+    assert str(e.value) == 'Unsupported decision task'
 
     mock_workflow.setup_mock_tasks({
         'decision': {

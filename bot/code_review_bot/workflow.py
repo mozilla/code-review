@@ -259,7 +259,7 @@ class Workflow(object):
             return ClangTidyTask(task_id, task_status)
         elif name == 'source-test-clang-format':
             return ClangFormatTask(task_id, task_status)
-        elif name == 'source-test-coverity-coverity':
+        elif name in ('source-test-coverity-coverity', 'coverity'):
             return CoverityTask(task_id, task_status)
         elif name == 'source-test-infer-infer':
             return InferTask(task_id, task_status)

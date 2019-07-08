@@ -7,7 +7,11 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 
-WORKER_CHECKOUT = '/builds/worker/checkouts/gecko'
+WORKER_CHECKOUTS = (
+    '/builds/worker/checkouts/gecko',
+    '/home/worker/nss',
+    '/home/worker/nspr',
+)
 
 
 class AnalysisTask(object):
@@ -96,8 +100,10 @@ class AnalysisTask(object):
         '''
         Helper to clean issues path from remote tasks
         '''
-        if path.startswith(WORKER_CHECKOUT):
-            path = path[len(WORKER_CHECKOUT):]
+        for checkout in WORKER_CHECKOUTS:
+            if path.startswith(checkout):
+                path = path[len(checkout):]
+                break
         if path.startswith('/'):
             path = path[1:]
         return path
