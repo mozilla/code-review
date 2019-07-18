@@ -39,7 +39,7 @@ export default {
         state: null,
         issues: null,
         revision: null,
-        source: null
+        repository: null
       },
       choices: {
         issues: [
@@ -55,16 +55,6 @@ export default {
             name: 'Publishable issues',
             func: t => t.data.issues_publishable && t.data.issues_publishable > 0
           }
-        ],
-        sources: [
-          {
-            name: 'Try',
-            func: t => t.data.source === 'try'
-          },
-          {
-            name: 'Phabricator',
-            func: t => t.data.source === 'phabricator'
-          }
         ]
       }
     }
@@ -76,6 +66,11 @@ export default {
     tasks () {
       let tasks = this.$store.state.tasks
 
+      // Filter by repository
+      if (this.filters.repository !== null) {
+        tasks = _.filter(tasks, t => t.data.repository === this.filters.repository.key)
+      }
+
       // Filter by states
       if (this.filters.state !== null) {
         tasks = _.filter(tasks, t => t.state_full === this.filters.state.key)
@@ -84,11 +79,6 @@ export default {
       // Filter by issues
       if (this.filters.issues !== null) {
         tasks = _.filter(tasks, this.filters.issues.func)
-      }
-
-      // Filter by source
-      if (this.filters.source !== null) {
-        tasks = _.filter(tasks, this.filters.source.func)
       }
 
       // Filter by revision
@@ -106,6 +96,9 @@ export default {
     },
     states () {
       return this.$store.state.states
+    },
+    repositories () {
+      return this.$store.state.repositories
     }
   }
 }
@@ -133,7 +126,7 @@ export default {
             <input class="input" type="text" v-model="filters.revision" placeholder="Filter using phabricator, bugzilla Id or word, ..."/>
           </td>
           <td>
-            <Choice :choices="choices.sources" name="source" v-on:new-choice="filters.source = $event"/>
+            <Choice :choices="[...repositories]" name="repo" v-on:new-choice="filters.repository = $event"/>
           </td>
           <td>
             <Choice :choices="states" name="state" v-on:new-choice="filters.state = $event"/>
@@ -164,9 +157,9 @@ export default {
           </td>
 
           <td>
-            <span class="tag is-light" v-if="task.data.source == 'phabricator'">Phabricator</span>
-            <span class="tag is-primary" v-else-if="task.data.source == 'try'">Try</span>
-            <span class="tag is-danger" v-else>Unknown</span>
+            <span class="tag is-primary" v-if="task.data.repository == 'mozilla-central'">Mozilla Central</span>
+            <span class="tag is-info" v-else-if="task.data.repository == 'try'">NSS</span>
+            <span class="tag is-dark" v-else>{{ task.data.repository || 'Unknown'}}</span>
           </td>
 
           <td>
@@ -198,7 +191,7 @@ export default {
           <td>
             <a class="button is-link" :href="task.data.url" target="_blank">Phabricator</a>
             <a v-if="task.data.bugzilla_id" class="button is-dark" :href="'https://bugzil.la/' + task.data.bugzilla_id" target="_blank">Bugzilla</a>
-            <a v-if="task.data.source == 'try'" class="button is-primary" :href="'https://tools.taskcluster.net/tasks/' + task.data.try_group_id" target="_blank">Try Tasks</a>
+            <a class="button is-primary" :href="'https://tools.taskcluster.net/tasks/' + task.data.try_group_id" target="_blank">Try Tasks</a>
             <router-link v-if="task.data.issues > 0" :to="{ name: 'task', params: { taskId : task.taskId }}" class="button is-primary">Issues</router-link>
           </td>
         </tr>

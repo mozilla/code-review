@@ -27,6 +27,7 @@ export default new Vuex.Store({
       start_date: new Date()
     },
     states: null,
+    repositories: new Set(),
     report: null
   },
   mutations: {
@@ -86,6 +87,12 @@ export default new Vuex.Store({
           task.data.state = 'killed'
           task.state_full = 'killed'
         }
+
+        // Add repository to set
+        if (task.data.repository) {
+          state.repositories.add(task.data.repository)
+        }
+
         return task
       })
 
