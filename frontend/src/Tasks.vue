@@ -68,7 +68,7 @@ export default {
 
       // Filter by repository
       if (this.filters.repository !== null) {
-        tasks = _.filter(tasks, t => t.data.repository === this.filters.repository.key)
+        tasks = _.filter(tasks, t => t.data.repository === this.filters.repository)
       }
 
       // Filter by states
@@ -98,7 +98,8 @@ export default {
       return this.$store.state.states
     },
     repositories () {
-      return this.$store.state.repositories
+      // Convert repositories set to an array
+      return [...this.$store.state.repositories]
     }
   }
 }
@@ -126,7 +127,7 @@ export default {
             <input class="input" type="text" v-model="filters.revision" placeholder="Filter using phabricator, bugzilla Id or word, ..."/>
           </td>
           <td>
-            <Choice :choices="[...repositories]" name="repo" v-on:new-choice="filters.repository = $event"/>
+            <Choice :choices="repositories" name="repo" v-on:new-choice="filters.repository = $event"/>
           </td>
           <td>
             <Choice :choices="states" name="state" v-on:new-choice="filters.state = $event"/>
