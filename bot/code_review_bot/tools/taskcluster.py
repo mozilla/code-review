@@ -18,13 +18,6 @@ logger = structlog.get_logger(__name__)
 
 TASKCLUSTER_DATE_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 
-with open(taskcluster._client_importer.__file__) as f:
-    TASKCLUSTER_SERVICES = [
-        line.split(' ')[1][1:]
-        for line in f.read().split('\n')
-        if line
-    ]
-
 
 def read_hosts():
     '''
@@ -114,10 +107,9 @@ class TaskclusterConfig(object):
         Build a Taskcluster service instance using current authentication
         '''
         assert self.options is not None, 'Not authenticated'
-        assert service_name in TASKCLUSTER_SERVICES, \
-            f'Service `{service_name}` does not exists.'
-
-        return getattr(taskcluster, service_name.capitalize())(self.options)
+        service = getattr(taskcluster, service_name.capitalize(), None)
+        assert service is not None, 'Invalid Taskcluster service {}'.format(service_name)
+        return service(self.options)
 
     def load_secrets(self, name, project_name, required=[], existing=dict()):
         '''
