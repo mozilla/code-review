@@ -89,10 +89,10 @@ Example configuration
     "APP_CHANNEL": "staging",
     "PAPERTRAIL_HOST": "XXXX.papertrail.net",
     "PAPERTRAIL_PORT": 12345,
-		"PHABRICATOR": {
-			"url": "https://dev.phabricator.mozilla.com",
-			"api_key": "deadbeef123456"
-		}
+    "PHABRICATOR": {
+      "url": "https://dev.phabricator.mozilla.com",
+      "api_key": "deadbeef123456"
+    }
   },
   "code-review-bot": {
     "REPORTERS": [
@@ -105,7 +105,7 @@ Example configuration
       },
       {
         "reporter": "phabricator",
-				"analyzers": ["clang-tidy", "mozlint"]
+        "analyzers": ["clang-tidy", "mozlint"]
       }
     ]
   }
