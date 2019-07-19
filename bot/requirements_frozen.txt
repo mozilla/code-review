@@ -57,7 +57,7 @@ taskcluster==14.3.1
 taskcluster-urls==11.0.0
 testfixtures==6.9.0
 toml==0.10.0
-typing-extensions==3.7.2
+typing-extensions==3.7.4
 uritemplate==3.0.0
 urllib3==1.25.3
 wcwidth==0.1.7
