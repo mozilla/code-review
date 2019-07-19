@@ -136,6 +136,9 @@ class Workflow(object):
         payload['try_task_id'] = settings.try_task_id
         payload['try_group_id'] = settings.try_group_id
 
+        # Always add the repository we are working on
+        payload['repository'] = revision.repository
+
         # Add restartable flag for monitoring
         payload['monitoring_restart'] = payload['state'] == 'error' and \
             payload.get('error_code') in ('watchdog', 'mercurial')

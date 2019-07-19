@@ -70,6 +70,7 @@ class Revision(object):
     def __init__(self, api, try_task, update_build=True):
         assert isinstance(api, PhabricatorAPI)
         assert isinstance(try_task, dict)
+        self.repository = None
         self.files = []
         self.lines = {}
         self.patch = None
@@ -282,10 +283,12 @@ class Revision(object):
         if decision_env.get('GECKO_HEAD_REPOSITORY') == REPO_GECKO_TRY:
             # Mozilla-Central Try
             self.mercurial_revision = decision_env.get('GECKO_HEAD_REV')
+            self.repository = 'mozilla-central'
 
         elif decision_env.get('NSS_HEAD_REPOSITORY') == REPO_NSS_TRY:
             # NSS Try
             self.mercurial_revision = decision_env.get('NSS_HEAD_REVISION')
+            self.repository = 'nss'
 
         else:
             raise Exception('Unsupported decision task')

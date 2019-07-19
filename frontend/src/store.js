@@ -27,6 +27,7 @@ export default new Vuex.Store({
       start_date: new Date()
     },
     states: null,
+    repositories: new Set(),
     report: null
   },
   mutations: {
@@ -86,6 +87,7 @@ export default new Vuex.Store({
           task.data.state = 'killed'
           task.state_full = 'killed'
         }
+
         return task
       })
 
@@ -117,6 +119,9 @@ export default new Vuex.Store({
           'percent': currentTasks && currentTasks.length > 0 ? Math.round(nb * 100 / currentTasks.length) : 0
         }
       }).sort((x, y) => { return y.nb - x.nb })
+
+      // Update repositories reference
+      state.repositories = new Set(state.tasks.map(t => t.data.repository).filter(x => x))
 
       // List all active tasks Ids for stats calculations
       state.stats.ids = state.stats.ids.concat(

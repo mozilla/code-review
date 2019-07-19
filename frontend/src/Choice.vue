@@ -35,6 +35,7 @@ export default {
     let initial = this.$route.query[this.name]
     if (initial && this.choices) {
       this.current = isNaN(parseInt(initial)) ? initial : this.choices[initial]
+      this.$emit('new-choice', this.current)
     }
   },
   methods: {

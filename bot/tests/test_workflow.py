@@ -12,9 +12,10 @@ class MockRevision(Revision):
     '''
     Fake revision to easily set properties
     '''
-    def __init__(self, namespaces, details):
+    def __init__(self, namespaces, details, repository):
         self._namespaces = namespaces
         self._details = details
+        self.repository = repository
 
     @property
     def namespaces(self):
@@ -35,6 +36,7 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     rev = MockRevision(
         namespaces=['mock.1234'],
         details={'id': '1234', 'someData': 'mock', 'state': 'done', },
+        repository='test-repo'
     )
     mock_workflow.index(rev, test='dummy')
 
@@ -50,6 +52,7 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     assert args['data']['source'] == 'try'
     assert args['data']['try_task_id'] == 'remoteTryTask'
     assert args['data']['try_group_id'] == 'remoteTryGroup'
+    assert args['data']['repository'] == 'test-repo'
     assert args['data']['someData'] == 'mock'
     assert 'indexed' in args['data']
 
@@ -62,6 +65,7 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     assert args['data']['source'] == 'try'
     assert args['data']['try_task_id'] == 'remoteTryTask'
     assert args['data']['try_group_id'] == 'remoteTryGroup'
+    assert args['data']['repository'] == 'test-repo'
     assert args['data']['someData'] == 'mock'
     assert 'indexed' in args['data']
 
@@ -74,6 +78,7 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     assert args['data']['source'] == 'try'
     assert args['data']['try_task_id'] == 'remoteTryTask'
     assert args['data']['try_group_id'] == 'remoteTryGroup'
+    assert args['data']['repository'] == 'test-repo'
     assert args['data']['monitoring_restart'] is False
 
 
@@ -84,7 +89,7 @@ def test_monitoring_restart(mock_config, mock_workflow):
     from code_review_bot.config import TaskCluster
     mock_config.taskcluster = TaskCluster('/tmp/dummy', 'someTaskId', 0, False)
     mock_workflow.index_service = mock.Mock()
-    rev = MockRevision([], {})
+    rev = MockRevision([], {}, 'test')
 
     # Unsupported error code
     mock_workflow.index(rev, test='dummy', error_code='nope', state='error')
