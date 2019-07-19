@@ -12,7 +12,7 @@ pip install -r requirements.txt -r requirements-dev.txt
 pip install -e .
 ```
 
-You should now be able to run linting & unit tests:
+You should now be able to run linting and unit tests:
 
 ```
 flake8
