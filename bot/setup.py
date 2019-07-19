@@ -30,11 +30,10 @@ with open('VERSION') as f:
 setuptools.setup(
     name='code_review_bot',
     version=VERSION,
-    description='Listens to bugzilla entries, executes'
-    'some code review and reports results.',
+    description='Reports issues found in Mozilla code review tasks',
     author='Mozilla Release Management',
     author_email='release-mgmt-analysis@mozilla.com',
-    url='https://shipit.mozilla-releng.net',
+    url='https://github.com/mozilla/code-review',
     tests_require=read_requirements('requirements-dev.txt'),
     install_requires=read_requirements('requirements.txt'),
     packages=setuptools.find_packages(),
