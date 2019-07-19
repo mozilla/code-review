@@ -159,7 +159,7 @@ export default {
 
           <td>
             <span class="tag is-primary" v-if="task.data.repository == 'mozilla-central'">Mozilla Central</span>
-            <span class="tag is-info" v-else-if="task.data.repository == 'try'">NSS</span>
+            <span class="tag is-info" v-else-if="task.data.repository == 'nss'">NSS</span>
             <span class="tag is-dark" v-else>{{ task.data.repository || 'Unknown'}}</span>
           </td>
 
