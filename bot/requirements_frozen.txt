@@ -63,4 +63,4 @@ urllib3==1.25.3
 wcwidth==0.1.7
 whatthepatch==0.0.5
 yarl==1.3.0
-zipp==0.5.1
+zipp==0.5.2
