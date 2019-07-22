@@ -55,7 +55,7 @@ slugid==2.0.0
 structlog==19.1.0
 taskcluster==14.3.1
 taskcluster-urls==11.0.0
-testfixtures==6.9.0
+testfixtures==6.10.0
 toml==0.10.0
 typing-extensions==3.7.4
 uritemplate==3.0.0
