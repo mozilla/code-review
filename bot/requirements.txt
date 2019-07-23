@@ -1,8 +1,8 @@
-parsepatch
-datadog
-libmozdata>=0.1.55
-toml
-taskcluster
-Logbook
-structlog
-pyyaml
+datadog==0.29.3
+Logbook==1.4.3
+libmozdata==0.1.57
+parsepatch==0.1.3
+PyYAML==5.1.1
+structlog==19.1.0
+taskcluster==14.3.1
+toml==0.10.0
