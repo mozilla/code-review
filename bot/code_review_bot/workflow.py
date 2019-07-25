@@ -237,6 +237,7 @@ class Workflow(object):
                 if artifacts is not None:
                     task_issues = task.parse_issues(artifacts, revision)
                     logger.info('Found {} issues'.format(len(task_issues)), task=task.name, id=task.id)
+                    stats.report_task(task, task_issues)
                     issues += task_issues
 
                     for name, patch in task.build_patches(artifacts):

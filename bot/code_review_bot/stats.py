@@ -6,6 +6,7 @@
 import datadog
 
 from code_review_bot.config import settings
+from code_review_bot.tasks.base import AnalysisTask
 
 
 class Datadog(object):
@@ -31,18 +32,32 @@ class Datadog(object):
         )
         assert not self.api._disabled
 
-    def report_issues(self, name, issues):
+    def report_task(self, task, issues):
         '''
-        Aggregate statistics about found issues
+        Aggregate statistics about issues from a remote analysis task
         '''
+        assert isinstance(task, AnalysisTask)
+
         # Report all issues found
         self.api.increment(
-            'issues.{}'.format(name),
+            'issues.{}'.format(task.name),
             len(issues),
         )
 
         # Report publishable issues
         self.api.increment(
-            'issues.{}.publishable'.format(name),
+            'issues.{}.publishable'.format(task.name),
             sum(i.is_publishable() for i in issues),
+        )
+
+        # Report total paths
+        self.api.increment(
+            'issues.{}.paths'.format(task.name),
+            len({i.path for i in issues}),
+        )
+
+        # Report cleaned paths
+        self.api.increment(
+            'issues.{}.cleaned_paths'.format(task.name),
+            len(task.cleaned_paths),
         )
