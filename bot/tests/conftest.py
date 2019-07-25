@@ -264,7 +264,7 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
 
 
 @pytest.fixture
-def mock_workflow(mock_phabricator):
+def mock_workflow(mock_phabricator, mock_stats):
     '''
     Mock the workflow along with Taskcluster mocks
     No phabricator output here
