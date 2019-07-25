@@ -28,7 +28,7 @@ def test_no_deps(mock_config, mock_revision, mock_workflow):
     assert str(e.value) == 'No task dependencies to analyze'
 
 
-def test_baseline(mock_config, mock_revision, mock_workflow):
+def test_baseline(mock_config, mock_revision, mock_workflow, mock_stats):
     '''
     Test a normal remote workflow (aka Try mode)
     - current task with analyzer deps
@@ -108,6 +108,11 @@ def test_baseline(mock_config, mock_revision, mock_workflow):
     assert issue.message == 'This file is uncovered'
     assert issue.line == 0
     assert issue.validates()
+
+    # Check stats
+    mock_stats.flush()
+    assert mock_stats.get_metrics('issues.source-test-mozlint-flake8.paths')[0][1] == 1
+    assert mock_stats.get_metrics('issues.source-test-mozlint-flake8.cleaned_paths')[0][1] == 0
 
 
 def test_no_failed(mock_config, mock_revision, mock_workflow):
@@ -281,7 +286,7 @@ def test_decision_task(mock_config, mock_revision, mock_workflow):
     assert mock_revision.mercurial_revision == 'someRevision'
 
 
-def test_mozlint_task(mock_config, mock_revision, mock_workflow):
+def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_stats):
     '''
     Test a remote workflow with a mozlint analyzer
     '''
@@ -328,8 +333,13 @@ def test_mozlint_task(mock_config, mock_revision, mock_workflow):
     assert issue.linter == 'flake8'
     assert issue.message == 'dummy issue'
 
+    # Check stats
+    mock_stats.flush()
+    assert mock_stats.get_metrics('issues.source-test-mozlint-dummy.paths')[0][1] == 1
+    assert mock_stats.get_metrics('issues.source-test-mozlint-dummy.cleaned_paths')[0][1] == 0
 
-def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
+
+def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_stats):
     '''
     Test a remote workflow with a clang-tidy analyzer
     '''
@@ -399,9 +409,14 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
     assert issue.reliability == Reliability.Unknown
     assert issue.message == 'some harder issue with c++'
 
+    # Check stats
+    mock_stats.flush()
+    assert mock_stats.get_metrics('issues.source-test-clang-tidy.paths')[0][1] == 1
+    assert mock_stats.get_metrics('issues.source-test-clang-tidy.cleaned_paths')[0][1] == 0
+
 
 @responses.activate
-def test_clang_format_task(mock_config, mock_revision, mock_workflow):
+def test_clang_format_task(mock_config, mock_revision, mock_workflow, mock_stats):
     '''
     Test a remote workflow with a clang-format analyzer
     '''
@@ -473,6 +488,11 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow):
     }
     assert len(mock_revision.improvement_patches) == 0
 
+    # Check stats
+    mock_stats.flush()
+    assert mock_stats.get_metrics('issues.source-test-clang-format.paths')[0][1] == 1
+    assert mock_stats.get_metrics('issues.source-test-clang-format.cleaned_paths')[0][1] == 0
+
     # Check diffs are reported as improvement patches
     tasks['clang-format']['artifacts']['public/code-review/clang-format.diff'] = 'A nice diff in here...'
     mock_workflow.setup_mock_tasks(tasks)
@@ -484,7 +504,7 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow):
     assert patch.content == 'A nice diff in here...'
 
 
-def test_coverity_task(mock_config, mock_revision, mock_workflow):
+def test_coverity_task(mock_config, mock_revision, mock_workflow, mock_stats):
     '''
     Test a remote workflow with a clang-tidy analyzer
     '''
@@ -583,6 +603,10 @@ The path that leads to this defect is:
     assert not issue.is_clang_error()
     assert issue.validates()
     assert issue.as_text() == f'Checker reliability is high, meaning that the false positive ratio is low.\nSome error here'
+    # Check stats
+    mock_stats.flush()
+    assert mock_stats.get_metrics('issues.source-test-coverity-coverity.paths')[0][1] == 2
+    assert mock_stats.get_metrics('issues.source-test-coverity-coverity.cleaned_paths')[0][1] == 1
 
 
 def test_infer_task(mock_config, mock_revision, mock_workflow):

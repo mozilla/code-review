@@ -13,6 +13,7 @@ class MockCoverityTask(CoverityTask):
         '''
         Simply skip task loading
         '''
+        self.cleaned_paths = set()
 
 
 def mock_coverity(name):
