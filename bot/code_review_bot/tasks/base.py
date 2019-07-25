@@ -3,6 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
+
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -28,6 +30,7 @@ class AnalysisTask(object):
         assert 'status' in task_status, 'No status data for {}'.format(self.id)
         self.task = task_status['task']
         self.status = task_status['status']
+        self.cleaned_paths = set()
 
     @property
     def run_id(self):
@@ -100,12 +103,15 @@ class AnalysisTask(object):
         '''
         Helper to clean issues path from remote tasks
         '''
+        if not os.path.isabs(path):
+            # Never alter a relative path
+            return path
+
         for checkout in WORKER_CHECKOUTS:
             if path.startswith(checkout):
-                path = path[len(checkout):]
-                break
-        if path.startswith('/'):
-            path = path[1:]
+                self.cleaned_paths.add(path)
+                return os.path.relpath(path, checkout)
+
         return path
 
     def build_patches(self, artifacts):
