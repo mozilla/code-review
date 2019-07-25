@@ -171,7 +171,7 @@ class MozLintTask(AnalysisTask):
         return [
             MozLintIssue(
                 revision=revision,
-                path=self.clean_path(path),
+                path=issue.get('relpath', self.clean_path(issue['path'])),
                 column=issue['column'],
                 level=issue['level'],
                 lineno=issue['lineno'],
@@ -180,6 +180,6 @@ class MozLintTask(AnalysisTask):
                 rule=issue['rule'],
             )
             for artifact in artifacts.values()
-            for path, path_issues in artifact.items()
+            for _, path_issues in artifact.items()
             for issue in path_issues
         ]
