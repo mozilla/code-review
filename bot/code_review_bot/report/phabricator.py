@@ -37,6 +37,7 @@ class PhabricatorReporter(Reporter):
         assert self.analyzers is not None, "No analyzers setup on Phabricator reporter"
 
         self.mode = configuration.get("mode", MODE_COMMENT)
+        self.publish_build_errors = configuration.get("publish_build_errors", False)
         assert self.mode in (MODE_COMMENT, MODE_HARBORMASTER), "Invalid mode"
         logger.info("Will publish using", mode=self.mode)
 
@@ -78,10 +79,30 @@ class PhabricatorReporter(Reporter):
                 self.publish_harbormaster(revision, issues)
             else:
                 raise Exception("Unsupported mode {}".format(self.mode))
+            # Also publish build issues
+            if self.publish_build_errors:
+                self.publish_harbormaster_build_errors(revision, issues)
         else:
             logger.info("No issues to publish on phabricator")
 
         return issues, patches
+
+    def publish_harbormaster_build_errors(self, revision, issues):
+        """
+        Publish build errors through Phabricator UnitResult
+        """
+        build_errors = [
+            issue.as_phabricator_unitresult()
+            for issue in issues
+            if issue.is_build_error()
+        ]
+
+        if not build_errors:
+            logger.info("No build errors encountered")
+            return
+        self.api.update_build_target(
+            revision.build_target_phid, BuildState.Fail, unit=build_errors
+        )
 
     def publish_comment(self, revision, issues, patches):
         """
@@ -103,6 +124,7 @@ class PhabricatorReporter(Reporter):
                     self.comment_inline(revision, issue, existing_comments)
                     for issue in issues
                     if issue.ANALYZER not in ANALYZERS_WITHOUT_INLINES
+                    and not issue.is_build_error()
                 ],
             )
         )

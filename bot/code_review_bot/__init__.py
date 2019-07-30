@@ -110,6 +110,19 @@ class Issue(abc.ABC):
         """
         raise NotImplementedError
 
+    def as_phabricator_unitresult(self):
+        """
+        Build a Phabricator UnitResult to publish through Harbormaster API
+        """
+        raise NotImplementedError
+
+    def is_build_error(self):
+        """
+        Is this issue a build error?
+        Default is False
+        """
+        return False
+
     def is_third_party(self):
         """
         Is this issue in a third party path ?
