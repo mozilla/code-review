@@ -25,7 +25,8 @@ from code_review_bot.tools.taskcluster import TASKCLUSTER_DATE_FORMAT
 
 logger = structlog.get_logger(__name__)
 
-TASKCLUSTER_NAMESPACE = 'project.releng.services.project.{channel}.static_analysis_bot.{name}'
+TASKCLUSTER_OLD_NAMESPACE = 'project.releng.services.project.{channel}.static_analysis_bot.{name}'
+TASKCLUSTER_NAMESPACE = 'project.relman.{channel}.code-review.{name}'
 TASKCLUSTER_INDEX_TTL = 7  # in days
 
 
@@ -152,10 +153,12 @@ class Workflow(object):
 
         # Build complete namespaces list, with monitoring update
         full_namespaces = [
-            TASKCLUSTER_NAMESPACE.format(channel=settings.app_channel, name=name)
+            ns.format(channel=settings.app_channel, name=name)
             for name in namespaces
+            for ns in (TASKCLUSTER_OLD_NAMESPACE, TASKCLUSTER_NAMESPACE)
         ]
         full_namespaces.append('project.releng.services.tasks.{}'.format(settings.taskcluster.task_id))
+        full_namespaces.append('project.relman.tasks.{}'.format(settings.taskcluster.task_id))
 
         # Index for all required namespaces
         for namespace in full_namespaces:

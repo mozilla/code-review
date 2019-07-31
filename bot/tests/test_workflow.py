@@ -40,7 +40,7 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     )
     mock_workflow.index(rev, test='dummy')
 
-    assert mock_workflow.index_service.insertTask.call_count == 3
+    assert mock_workflow.index_service.insertTask.call_count == 6
     calls = mock_workflow.index_service.insertTask.call_args_list
 
     # First call with namespace
@@ -55,10 +55,32 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     assert args['data']['repository'] == 'test-repo'
     assert args['data']['someData'] == 'mock'
     assert 'indexed' in args['data']
+    namespace, args = calls[1][0]
+    assert namespace == 'project.relman.test.code-review.mock.1234'
+    assert args['taskId'] == '12345deadbeef'
+    assert args['data']['test'] == 'dummy'
+    assert args['data']['id'] == '1234'
+    assert args['data']['source'] == 'try'
+    assert args['data']['try_task_id'] == 'remoteTryTask'
+    assert args['data']['try_group_id'] == 'remoteTryGroup'
+    assert args['data']['repository'] == 'test-repo'
+    assert args['data']['someData'] == 'mock'
+    assert 'indexed' in args['data']
 
     # Second call with sub namespace
-    namespace, args = calls[1][0]
+    namespace, args = calls[2][0]
     assert namespace == 'project.releng.services.project.test.static_analysis_bot.mock.1234.12345deadbeef'
+    assert args['taskId'] == '12345deadbeef'
+    assert args['data']['test'] == 'dummy'
+    assert args['data']['id'] == '1234'
+    assert args['data']['source'] == 'try'
+    assert args['data']['try_task_id'] == 'remoteTryTask'
+    assert args['data']['try_group_id'] == 'remoteTryGroup'
+    assert args['data']['repository'] == 'test-repo'
+    assert args['data']['someData'] == 'mock'
+    assert 'indexed' in args['data']
+    namespace, args = calls[3][0]
+    assert namespace == 'project.relman.test.code-review.mock.1234.12345deadbeef'
     assert args['taskId'] == '12345deadbeef'
     assert args['data']['test'] == 'dummy'
     assert args['data']['id'] == '1234'
@@ -70,8 +92,18 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     assert 'indexed' in args['data']
 
     # Third call for monitoring
-    namespace, args = calls[2][0]
+    namespace, args = calls[4][0]
     assert namespace == 'project.releng.services.tasks.12345deadbeef'
+    assert args['taskId'] == '12345deadbeef'
+    assert args['data']['test'] == 'dummy'
+    assert args['data']['id'] == '1234'
+    assert args['data']['source'] == 'try'
+    assert args['data']['try_task_id'] == 'remoteTryTask'
+    assert args['data']['try_group_id'] == 'remoteTryGroup'
+    assert args['data']['repository'] == 'test-repo'
+    assert args['data']['monitoring_restart'] is False
+    namespace, args = calls[5][0]
+    assert namespace == 'project.relman.tasks.12345deadbeef'
     assert args['taskId'] == '12345deadbeef'
     assert args['data']['test'] == 'dummy'
     assert args['data']['id'] == '1234'
@@ -93,27 +125,39 @@ def test_monitoring_restart(mock_config, mock_workflow):
 
     # Unsupported error code
     mock_workflow.index(rev, test='dummy', error_code='nope', state='error')
-    assert mock_workflow.index_service.insertTask.call_count == 1
+    assert mock_workflow.index_service.insertTask.call_count == 2
     calls = mock_workflow.index_service.insertTask.call_args_list
     namespace, args = calls[0][0]
     assert namespace == 'project.releng.services.tasks.someTaskId'
     assert args['taskId'] == 'someTaskId'
     assert args['data']['monitoring_restart'] is False
+    namespace, args = calls[1][0]
+    assert namespace == 'project.relman.tasks.someTaskId'
+    assert args['taskId'] == 'someTaskId'
+    assert args['data']['monitoring_restart'] is False
 
     # watchdog should be restated
     mock_workflow.index(rev, test='dummy', error_code='watchdog', state='error')
-    assert mock_workflow.index_service.insertTask.call_count == 2
+    assert mock_workflow.index_service.insertTask.call_count == 4
     calls = mock_workflow.index_service.insertTask.call_args_list
-    namespace, args = calls[1][0]
+    namespace, args = calls[2][0]
     assert namespace == 'project.releng.services.tasks.someTaskId'
+    assert args['taskId'] == 'someTaskId'
+    assert args['data']['monitoring_restart'] is True
+    namespace, args = calls[3][0]
+    assert namespace == 'project.relman.tasks.someTaskId'
     assert args['taskId'] == 'someTaskId'
     assert args['data']['monitoring_restart'] is True
 
     # Invalid state
     mock_workflow.index(rev, test='dummy', state='running')
-    assert mock_workflow.index_service.insertTask.call_count == 3
+    assert mock_workflow.index_service.insertTask.call_count == 6
     calls = mock_workflow.index_service.insertTask.call_args_list
-    namespace, args = calls[2][0]
+    namespace, args = calls[4][0]
     assert namespace == 'project.releng.services.tasks.someTaskId'
+    assert args['taskId'] == 'someTaskId'
+    assert args['data']['monitoring_restart'] is False
+    namespace, args = calls[5][0]
+    assert namespace == 'project.relman.tasks.someTaskId'
     assert args['taskId'] == 'someTaskId'
     assert args['data']['monitoring_restart'] is False
