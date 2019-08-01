@@ -1,4 +1,6 @@
 flake8==3.7.8
+flake8-coding
 flake8-isort==2.7.0
+flake8-quotes
 pytest==5.0.1
 responses==0.10.6
