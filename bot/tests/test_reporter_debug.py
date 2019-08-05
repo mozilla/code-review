@@ -10,13 +10,13 @@ import responses
 
 @responses.activate
 def test_publication(tmpdir, mock_issues, mock_revision):
-    '''
+    """
     Test debug publication and report analysis
-    '''
+    """
     from code_review_bot.report.debug import DebugReporter
 
-    report_dir = str(tmpdir.mkdir('public').realpath())
-    report_path = os.path.join(report_dir, 'report.json')
+    report_dir = str(tmpdir.mkdir("public").realpath())
+    report_path = os.path.join(report_dir, "report.json")
     assert not os.path.exists(report_path)
 
     r = DebugReporter(report_dir)
@@ -26,20 +26,20 @@ def test_publication(tmpdir, mock_issues, mock_revision):
     with open(report_path) as f:
         report = json.load(f)
 
-    assert 'issues' in report
-    assert report['issues'] == [{'nb': 0}, {'nb': 1}, {'nb': 2}, {'nb': 3}, {'nb': 4}]
+    assert "issues" in report
+    assert report["issues"] == [{"nb": 0}, {"nb": 1}, {"nb": 2}, {"nb": 3}, {"nb": 4}]
 
-    assert 'revision' in report
-    assert report['revision'] == {
-        'id': 51,
-        'diff_id': 42,
-        'url': 'https://phabricator.test/D51',
-        'bugzilla_id': '',
-        'diff_phid': 'PHID-DIFF-test',
-        'phid': 'PHID-DREV-zzzzz',
-        'title': 'Static Analysis tests',
-        'has_clang_files': False,
+    assert "revision" in report
+    assert report["revision"] == {
+        "id": 51,
+        "diff_id": 42,
+        "url": "https://phabricator.test/D51",
+        "bugzilla_id": "",
+        "diff_phid": "PHID-DIFF-test",
+        "phid": "PHID-DREV-zzzzz",
+        "title": "Static Analysis tests",
+        "has_clang_files": False,
     }
 
-    assert 'time' in report
-    assert isinstance(report['time'], float)
+    assert "time" in report
+    assert isinstance(report["time"], float)

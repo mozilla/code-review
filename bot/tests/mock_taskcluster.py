@@ -5,27 +5,27 @@
 
 from collections import namedtuple
 
-MockArtifactResponse = namedtuple('MockArtifactResponse', 'content')
+MockArtifactResponse = namedtuple("MockArtifactResponse", "content")
 
 
 class MockQueue(object):
-    '''
+    """
     Mock the Taskcluster queue, by using fake tasks descriptions, relations and artifacts
-    '''
+    """
 
     def configure(self, relations):
         # Create tasks
         assert isinstance(relations, dict)
         self._tasks = {
             task_id: {
-                'dependencies': desc.get('dependencies', []),
-                'metadata': {
-                    'name': desc.get('name', 'source-test-mozlint-{}'.format(task_id)),
+                "dependencies": desc.get("dependencies", []),
+                "metadata": {
+                    "name": desc.get("name", "source-test-mozlint-{}".format(task_id))
                 },
-                'payload': {
-                    'image': desc.get('image', 'alpine'),
-                    'env': desc.get('env', {}),
-                }
+                "payload": {
+                    "image": desc.get("image", "alpine"),
+                    "env": desc.get("env", {}),
+                },
             }
             for task_id, desc in relations.items()
         }
@@ -33,14 +33,10 @@ class MockQueue(object):
         # Create status
         self._status = {
             task_id: {
-                'status': {
-                    'taskId': task_id,
-                    'state': desc.get('state', 'completed'),
-                    'runs': [
-                        {
-                            'runId': 0,
-                        }
-                    ]
+                "status": {
+                    "taskId": task_id,
+                    "state": desc.get("state", "completed"),
+                    "runs": [{"runId": 0}],
                 }
             }
             for task_id, desc in relations.items()
@@ -49,14 +45,16 @@ class MockQueue(object):
         # Create artifacts
         self._artifacts = {
             task_id: {
-                'artifacts': [
+                "artifacts": [
                     {
-                        'name': name,
-                        'storageType': 'dummyStorage',
-                        'contentType': isinstance(artifact, (dict, list)) and 'application/json' or 'text/plain',
-                        'content': artifact,
+                        "name": name,
+                        "storageType": "dummyStorage",
+                        "contentType": isinstance(artifact, (dict, list))
+                        and "application/json"
+                        or "text/plain",
+                        "content": artifact,
                     }
-                    for name, artifact in desc.get('artifacts', {}).items()
+                    for name, artifact in desc.get("artifacts", {}).items()
                 ]
             }
             for task_id, desc in relations.items()
@@ -70,11 +68,8 @@ class MockQueue(object):
 
     def listTaskGroup(self, group_id):
         return {
-            'tasks': [
-                {
-                    'task': self.task(task_id),
-                    'status': self.status(task_id)['status'],
-                }
+            "tasks": [
+                {"task": self.task(task_id), "status": self.status(task_id)["status"]}
                 for task_id in self._tasks.keys()
             ]
         }
@@ -87,31 +82,31 @@ class MockQueue(object):
         if not artifacts:
             return
 
-        artifact = next(filter(lambda a: a['name'] == artifact_name, artifacts['artifacts']))
-        if artifact['contentType'] == 'application/json':
-            return artifact['content']
-        return {
-            'response': MockArtifactResponse(artifact['content'].encode('utf-8')),
-        }
+        artifact = next(
+            filter(lambda a: a["name"] == artifact_name, artifacts["artifacts"])
+        )
+        if artifact["contentType"] == "application/json":
+            return artifact["content"]
+        return {"response": MockArtifactResponse(artifact["content"].encode("utf-8"))}
 
     def createArtifact(self, task_id, run_id, name, payload):
         if task_id not in self._artifacts:
-            self._artifacts[task_id] = {
-                'artifacts': []
+            self._artifacts[task_id] = {"artifacts": []}
+        payload["name"] = name
+        payload["requests"] = [
+            {
+                "method": "PUT",
+                "url": "http://storage.test/{}".format(name),
+                "headers": {},
             }
-        payload['name'] = name
-        payload['requests'] = [{
-            'method': 'PUT',
-            'url': 'http://storage.test/{}'.format(name),
-            'headers': {}
-        }]
-        self._artifacts[task_id]['artifacts'].append(payload)
+        ]
+        self._artifacts[task_id]["artifacts"].append(payload)
         return payload
 
     def completeArtifact(self, task_id, run_id, name, payload):
         assert task_id in self._artifacts
-        assert 'etags' in payload
-        assert 'test123' in payload['etags']
+        assert "etags" in payload
+        assert "test123" in payload["etags"]
 
 
 class MockIndex(object):
@@ -122,9 +117,16 @@ class MockIndex(object):
         self.tasks[route] = payload
 
     def findTask(self, route):
-        task_id = next(iter([task_id for task_id, task in self.tasks.items() if task.get('route') == route]), None)
+        task_id = next(
+            iter(
+                [
+                    task_id
+                    for task_id, task in self.tasks.items()
+                    if task.get("route") == route
+                ]
+            ),
+            None,
+        )
         if task_id is None:
-            raise Exception('Task {} not found'.format(route))
-        return {
-            'taskId': task_id
-        }
+            raise Exception("Task {} not found".format(route))
+        return {"taskId": task_id}

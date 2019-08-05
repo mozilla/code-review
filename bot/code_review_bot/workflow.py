@@ -25,23 +25,31 @@ from code_review_bot.tools.taskcluster import TASKCLUSTER_DATE_FORMAT
 
 logger = structlog.get_logger(__name__)
 
-TASKCLUSTER_OLD_NAMESPACE = 'project.releng.services.project.{channel}.static_analysis_bot.{name}'
-TASKCLUSTER_NAMESPACE = 'project.relman.{channel}.code-review.{name}'
+TASKCLUSTER_OLD_NAMESPACE = (
+    "project.releng.services.project.{channel}.static_analysis_bot.{name}"
+)
+TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
 
 
 class Workflow(object):
-    '''
+    """
     Full static analysis workflow
     - setup remote analysis workflow
     - find issues from remote tasks
     - publish issues
-    '''
-    def __init__(self, reporters, index_service, queue_service, phabricator_api, zero_coverage_enabled=True):
-        assert settings.try_task_id is not None, \
-            'Cannot run without Try task id'
-        assert settings.try_group_id is not None, \
-            'Cannot run without Try task id'
+    """
+
+    def __init__(
+        self,
+        reporters,
+        index_service,
+        queue_service,
+        phabricator_api,
+        zero_coverage_enabled=True,
+    ):
+        assert settings.try_task_id is not None, "Cannot run without Try task id"
+        assert settings.try_group_id is not None, "Cannot run without Try task id"
         self.zero_coverage_enabled = zero_coverage_enabled
 
         # Use share phabricator API client
@@ -51,21 +59,23 @@ class Workflow(object):
         # Load reporters to use
         self.reporters = reporters
         if not self.reporters:
-            logger.warn('No reporters configured, this analysis will not be published')
+            logger.warn("No reporters configured, this analysis will not be published")
 
         # Always add debug reporter and Diff reporter
-        self.reporters['debug'] = DebugReporter(output_dir=settings.taskcluster.results_dir)
+        self.reporters["debug"] = DebugReporter(
+            output_dir=settings.taskcluster.results_dir
+        )
 
         # Use TC services client
         self.index_service = index_service
         self.queue_service = queue_service
 
     def run(self, revision):
-        '''
+        """
         Find all issues on remote tasks and publish them
-        '''
+        """
         # Index ASAP Taskcluster task for this revision
-        self.index(revision, state='started')
+        self.index(revision, state="started")
 
         # Set the Phabricator build as running
         revision.update_status(state=BuildState.Work)
@@ -76,8 +86,8 @@ class Workflow(object):
         # Find issues on remote tasks
         issues = self.find_issues(revision)
         if not issues:
-            logger.info('No issues, stopping there.')
-            self.index(revision, state='done', issues=0)
+            logger.info("No issues, stopping there.")
+            self.index(revision, state="done", issues=0)
             revision.update_status(BuildState.Pass)
             return []
 
@@ -87,9 +97,9 @@ class Workflow(object):
         return issues
 
     def publish(self, revision, issues):
-        '''
+        """
         Publish issues on selected reporters
-        '''
+        """
         # Publish patches on Taskcluster
         # or write locally for local development
         for patch in revision.improvement_patches:
@@ -101,27 +111,36 @@ class Workflow(object):
         # Report issues publication stats
         nb_issues = len(issues)
         nb_publishable = len([i for i in issues if i.is_publishable()])
-        self.index(revision, state='analyzed', issues=nb_issues, issues_publishable=nb_publishable)
-        stats.api.increment('analysis.issues.publishable', nb_publishable)
+        self.index(
+            revision,
+            state="analyzed",
+            issues=nb_issues,
+            issues_publishable=nb_publishable,
+        )
+        stats.api.increment("analysis.issues.publishable", nb_publishable)
 
         # Publish reports about these issues
-        with stats.api.timer('runtime.reports'):
+        with stats.api.timer("runtime.reports"):
             for reporter in self.reporters.values():
                 reporter.publish(issues, revision)
 
-        self.index(revision, state='done', issues=nb_issues, issues_publishable=nb_publishable)
+        self.index(
+            revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
+        )
 
         # Publish final HarborMaster state
-        revision.update_status(nb_publishable > 0 and BuildState.Fail or BuildState.Pass)
+        revision.update_status(
+            nb_publishable > 0 and BuildState.Fail or BuildState.Pass
+        )
 
     def index(self, revision, **kwargs):
-        '''
+        """
         Index current task on Taskcluster index
-        '''
+        """
         assert isinstance(revision, Revision)
 
         if settings.taskcluster.local or self.index_service is None:
-            logger.info('Skipping taskcluster indexing', rev=str(revision), **kwargs)
+            logger.info("Skipping taskcluster indexing", rev=str(revision), **kwargs)
             return
 
         # Build payload
@@ -130,24 +149,25 @@ class Workflow(object):
 
         # Always add the indexing
         now = datetime.utcnow()
-        payload['indexed'] = now.strftime(TASKCLUSTER_DATE_FORMAT)
+        payload["indexed"] = now.strftime(TASKCLUSTER_DATE_FORMAT)
 
         # Always add the source and try config
-        payload['source'] = 'try'
-        payload['try_task_id'] = settings.try_task_id
-        payload['try_group_id'] = settings.try_group_id
+        payload["source"] = "try"
+        payload["try_task_id"] = settings.try_task_id
+        payload["try_group_id"] = settings.try_group_id
 
         # Always add the repository we are working on
-        payload['repository'] = revision.repository
+        payload["repository"] = revision.repository
 
         # Add restartable flag for monitoring
-        payload['monitoring_restart'] = payload['state'] == 'error' and \
-            payload.get('error_code') in ('watchdog', 'mercurial')
+        payload["monitoring_restart"] = payload["state"] == "error" and payload.get(
+            "error_code"
+        ) in ("watchdog", "mercurial")
 
         # Add a sub namespace with the task id to be able to list
         # tasks from the parent namespace
         namespaces = revision.namespaces + [
-            '{}.{}'.format(namespace, settings.taskcluster.task_id)
+            "{}.{}".format(namespace, settings.taskcluster.task_id)
             for namespace in revision.namespaces
         ]
 
@@ -157,43 +177,48 @@ class Workflow(object):
             for name in namespaces
             for ns in (TASKCLUSTER_OLD_NAMESPACE, TASKCLUSTER_NAMESPACE)
         ]
-        full_namespaces.append('project.releng.services.tasks.{}'.format(settings.taskcluster.task_id))
-        full_namespaces.append('project.relman.tasks.{}'.format(settings.taskcluster.task_id))
+        full_namespaces.append(
+            "project.releng.services.tasks.{}".format(settings.taskcluster.task_id)
+        )
+        full_namespaces.append(
+            "project.relman.tasks.{}".format(settings.taskcluster.task_id)
+        )
 
         # Index for all required namespaces
         for namespace in full_namespaces:
             self.index_service.insertTask(
                 namespace,
                 {
-                    'taskId': settings.taskcluster.task_id,
-                    'rank': 0,
-                    'data': payload,
-                    'expires': (now + timedelta(days=TASKCLUSTER_INDEX_TTL)).strftime(TASKCLUSTER_DATE_FORMAT),
-                }
+                    "taskId": settings.taskcluster.task_id,
+                    "rank": 0,
+                    "data": payload,
+                    "expires": (now + timedelta(days=TASKCLUSTER_INDEX_TTL)).strftime(
+                        TASKCLUSTER_DATE_FORMAT
+                    ),
+                },
             )
 
     def find_issues(self, revision):
-        '''
+        """
         Find all issues on remote Taskcluster task group
-        '''
+        """
         # Load all tasks in task group
         tasks = self.queue_service.listTaskGroup(settings.try_group_id)
-        assert 'tasks' in tasks
-        tasks = {
-            task['status']['taskId']: task
-            for task in tasks['tasks']
-        }
+        assert "tasks" in tasks
+        tasks = {task["status"]["taskId"]: task for task in tasks["tasks"]}
         assert len(tasks) > 0
-        logger.info('Loaded Taskcluster group', id=settings.try_group_id, tasks=len(tasks))
+        logger.info(
+            "Loaded Taskcluster group", id=settings.try_group_id, tasks=len(tasks)
+        )
 
         # Update the local revision with tasks
         revision.setup_try(tasks)
 
         # Load task description
         task = tasks.get(settings.try_task_id)
-        assert task is not None, 'Missing task {}'.format(settings.try_task_id)
-        dependencies = task['task']['dependencies']
-        assert len(dependencies) > 0, 'No task dependencies to analyze'
+        assert task is not None, "Missing task {}".format(settings.try_task_id)
+        dependencies = task["task"]["dependencies"]
+        assert len(dependencies) > 0, "No task dependencies to analyze"
 
         # Skip dependencies not in group
         # But log all skipped tasks
@@ -201,14 +226,11 @@ class Workflow(object):
             if dep_id not in tasks:
                 # Used for docker images produced in tree
                 # and other artifacts
-                logger.info('Skip dependency not in group', task_id=dep_id)
+                logger.info("Skip dependency not in group", task_id=dep_id)
                 return False
             return True
-        dependencies = [
-            dep_id
-            for dep_id in dependencies
-            if _in_group(dep_id)
-        ]
+
+        dependencies = [dep_id for dep_id in dependencies if _in_group(dep_id)]
 
         # Do not run parsers when we only have a gecko decision task
         # That means no analyzer were triggered by the taskgraph decision task
@@ -216,8 +238,8 @@ class Workflow(object):
         # See issue https://github.com/mozilla/release-services/issues/2055
         if len(dependencies) == 1:
             task = tasks[dependencies[0]]
-            if task['task']['metadata']['name'] == 'Gecko Decision Task':
-                logger.warn('Only dependency is a Decision Task, skipping analysis')
+            if task["task"]["metadata"]["name"] == "Gecko Decision Task":
+                logger.warn("Only dependency is a Decision Task, skipping analysis")
                 return []
 
         # Add zero-coverage task
@@ -239,36 +261,44 @@ class Workflow(object):
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
                     task_issues = task.parse_issues(artifacts, revision)
-                    logger.info('Found {} issues'.format(len(task_issues)), task=task.name, id=task.id)
+                    logger.info(
+                        "Found {} issues".format(len(task_issues)),
+                        task=task.name,
+                        id=task.id,
+                    )
                     stats.report_task(task, task_issues)
                     issues += task_issues
 
                     for name, patch in task.build_patches(artifacts):
                         revision.add_improvement_patch(name, patch)
             except Exception as e:
-                logger.warn('Failure during task analysis', task=settings.taskcluster.task_id, error=e)
+                logger.warn(
+                    "Failure during task analysis",
+                    task=settings.taskcluster.task_id,
+                    error=e,
+                )
                 raise
 
         return issues
 
     def build_task(self, task_id, task_status):
-        '''
+        """
         Create a specific implemenation of AnalysisTask according to the task name
-        '''
+        """
         try:
-            name = task_status['task']['metadata']['name']
+            name = task_status["task"]["metadata"]["name"]
         except KeyError:
-            raise Exception('Cannot read task name {}'.format(task_id))
+            raise Exception("Cannot read task name {}".format(task_id))
 
-        if name.startswith('source-test-mozlint-'):
+        if name.startswith("source-test-mozlint-"):
             return MozLintTask(task_id, task_status)
-        elif name == 'source-test-clang-tidy':
+        elif name == "source-test-clang-tidy":
             return ClangTidyTask(task_id, task_status)
-        elif name == 'source-test-clang-format':
+        elif name == "source-test-clang-format":
             return ClangFormatTask(task_id, task_status)
-        elif name in ('source-test-coverity-coverity', 'coverity'):
+        elif name in ("source-test-coverity-coverity", "coverity"):
             return CoverityTask(task_id, task_status)
-        elif name == 'source-test-infer-infer':
+        elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
         else:
-            raise Exception('Unsupported task {}'.format(name))
+            raise Exception("Unsupported task {}".format(name))

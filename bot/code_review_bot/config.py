@@ -15,14 +15,16 @@ import requests
 import structlog
 import yaml
 
-PROJECT_NAME = 'code-review-bot'
-REPO_GECKO_TRY = 'https://hg.mozilla.org/try'
-REPO_NSS_TRY = 'https://hg.mozilla.org/projects/nss-try'
-RAW_FILE_URL = 'https://hg.mozilla.org/mozilla-central/raw-file/tip/{}'
+PROJECT_NAME = "code-review-bot"
+REPO_GECKO_TRY = "https://hg.mozilla.org/try"
+REPO_NSS_TRY = "https://hg.mozilla.org/projects/nss-try"
+RAW_FILE_URL = "https://hg.mozilla.org/mozilla-central/raw-file/tip/{}"
 
 logger = structlog.get_logger(__name__)
 
-TaskCluster = collections.namedtuple('TaskCluster', 'results_dir, task_id, run_id, local')
+TaskCluster = collections.namedtuple(
+    "TaskCluster", "results_dir, task_id, run_id, local"
+)
 
 
 class Publication(enum.Enum):
@@ -44,40 +46,46 @@ class Settings(object):
         self.try_task_id = None
         self.try_group_id = None
 
-    def setup(self,
-              app_channel,
-              publication,
-              allowed_paths,
-              ):
+    def setup(self, app_channel, publication, allowed_paths):
         # Detect source from env
-        if 'TRY_TASK_ID' in os.environ and 'TRY_TASK_GROUP_ID' in os.environ:
-            self.try_task_id = os.environ['TRY_TASK_ID']
-            self.try_group_id = os.environ['TRY_TASK_GROUP_ID']
+        if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
+            self.try_task_id = os.environ["TRY_TASK_ID"]
+            self.try_group_id = os.environ["TRY_TASK_GROUP_ID"]
         else:
-            raise Exception('Only TRY mode is supported')
+            raise Exception("Only TRY mode is supported")
 
         self.app_channel = app_channel
-        self.download({
-            'cpp_extensions': frozenset(['.c', '.cpp', '.cc', '.cxx', '.m', '.mm']),
-            'cpp_header_extensions': frozenset(['.h', '.hh', '.hpp', '.hxx']),
-            'java_extensions': frozenset(['.java']),
-            'idl_extenssions': frozenset(['.idl']),
-            'js_extensions': frozenset(['.js', '.jsm']),
-        })
-        assert 'clang_checkers' in self.config
-        assert 'target' in self.config
+        self.download(
+            {
+                "cpp_extensions": frozenset([".c", ".cpp", ".cc", ".cxx", ".m", ".mm"]),
+                "cpp_header_extensions": frozenset([".h", ".hh", ".hpp", ".hxx"]),
+                "java_extensions": frozenset([".java"]),
+                "idl_extenssions": frozenset([".idl"]),
+                "js_extensions": frozenset([".js", ".jsm"]),
+            }
+        )
+        assert "clang_checkers" in self.config
+        assert "target" in self.config
 
         assert isinstance(publication, str)
         try:
             self.publication = Publication[publication]
         except KeyError:
-            raise Exception('Publication mode should be {}'.format('|'.join(map(lambda p: p .name, Publication))))
+            raise Exception(
+                "Publication mode should be {}".format(
+                    "|".join(map(lambda p: p.name, Publication))
+                )
+            )
 
         # Save Taskcluster ID for logging
-        if 'TASK_ID' in os.environ and 'RUN_ID' in os.environ:
-            self.taskcluster = TaskCluster('/tmp/results', os.environ['TASK_ID'], os.environ['RUN_ID'], False)
+        if "TASK_ID" in os.environ and "RUN_ID" in os.environ:
+            self.taskcluster = TaskCluster(
+                "/tmp/results", os.environ["TASK_ID"], os.environ["RUN_ID"], False
+            )
         else:
-            self.taskcluster = TaskCluster(tempfile.mkdtemp(), 'local instance', 0, True)
+            self.taskcluster = TaskCluster(
+                tempfile.mkdtemp(), "local instance", 0, True
+            )
         if not os.path.isdir(self.taskcluster.results_dir):
             os.makedirs(self.taskcluster.results_dir)
 
@@ -92,59 +100,59 @@ class Settings(object):
         return self.config[key]
 
     def download(self, defaults={}):
-        '''
+        """
         Configuration is stored on mozilla central
         It has to be downloaded on each run
-        '''
+        """
+
         def _fetch(path):
             url = RAW_FILE_URL.format(path)
             resp = requests.get(url)
-            logger.debug('Fetching repository file', url=url)
-            assert resp.ok, \
-                'Failed to retrieve configuration from mozilla-central #{}'.format(resp.status_code)  # noqa
+            logger.debug("Fetching repository file", url=url)
+            assert (
+                resp.ok
+            ), "Failed to retrieve configuration from mozilla-central #{}".format(
+                resp.status_code
+            )  # noqa
             return resp.content
 
         assert isinstance(defaults, dict)
-        assert self.config is None, \
-            'Config already set.'
+        assert self.config is None, "Config already set."
 
         self.config = defaults
-        self.config.update(yaml.safe_load(_fetch('tools/clang-tidy/config.yaml')))
-        logger.info('Loaded configuration from mozilla-central')
+        self.config.update(yaml.safe_load(_fetch("tools/clang-tidy/config.yaml")))
+        logger.info("Loaded configuration from mozilla-central")
 
         # Also downloads the 3rd party file
-        self.third_party_paths = _fetch(self.third_party).decode('utf-8').splitlines()
-        logger.info('Loaded {} third party paths'.format(len(self.third_party_paths)))
+        self.third_party_paths = _fetch(self.third_party).decode("utf-8").splitlines()
+        logger.info("Loaded {} third party paths".format(len(self.third_party_paths)))
 
     def is_third_party(self, path):
-        '''
+        """
         Check if a file is a 3rd party
-        '''
+        """
         for third_party_path in self.third_party_paths:
             if path.startswith(third_party_path):
                 return True
         return False
 
     def is_publishable_check(self, check):
-        '''
+        """
         Is this check publishable ?
         Support the wildcard expansion
         Publication is enabled by default, even when missing
-        '''
+        """
         if check is None:
             return False
 
         clang_check = self.get_clang_check(check)
-        return clang_check.get('publish', True) if clang_check else False
+        return clang_check.get("publish", True) if clang_check else False
 
     def is_allowed_path(self, path):
-        '''
+        """
         Is this path allowed for reporting ?
-        '''
-        return any([
-            fnmatch.fnmatch(path, rule)
-            for rule in self.allowed_paths
-        ])
+        """
+        return any([fnmatch.fnmatch(path, rule) for rule in self.allowed_paths])
 
     def get_clang_check(self, check):
 
@@ -152,9 +160,9 @@ class Settings(object):
             return None
 
         for c in self.clang_checkers:
-            name = c['name']
+            name = c["name"]
 
-            if name.endswith('*') and check.startswith(name[:-1]):
+            if name.endswith("*") and check.startswith(name[:-1]):
                 # Wildcard at end of check name
                 return c
 
