@@ -283,7 +283,7 @@ class Workflow(object):
 
     def build_task(self, task_id, task_status):
         """
-        Create a specific implemenation of AnalysisTask according to the task name
+        Create a specific implementation of AnalysisTask according to the task name
         """
         try:
             name = task_status["task"]["metadata"]["name"]

@@ -127,8 +127,8 @@ class AnalysisTask(object):
 
     def build_patches(self, artifacts):
         """
-        Some analyzers can provide a patch appliable by developers
-        These patches are stored as Taskcluster artifacts and reported to developpers
+        Some analyzers can provide a patch applicable by developers
+        These patches are stored as Taskcluster artifacts and reported to developers
         Output is a list of tuple (patch name as str, patch content as str)
         """
         return []
