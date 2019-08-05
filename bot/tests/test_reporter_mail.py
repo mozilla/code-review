@@ -8,7 +8,7 @@ import json
 import pytest
 import responses
 
-MAIL_CONTENT = '''
+MAIL_CONTENT = """
 # Found 3 publishable issues (5 total)
 
 * **MockIssue**: 3 publishable (5 total)
@@ -28,14 +28,14 @@ This is the mock issue n°2
 
 This is the mock issue n°3
 
-This is the mock issue n°4'''
+This is the mock issue n°4"""
 
 
 @responses.activate
 def test_conf(mock_config, mock_taskcluster_config):
-    '''
+    """
     Test mail reporter configuration
-    '''
+    """
     from code_review_bot.report.mail import MailReporter
 
     # Missing emails conf
@@ -43,80 +43,64 @@ def test_conf(mock_config, mock_taskcluster_config):
         MailReporter({})
 
     # Missing emails
-    conf = {
-        'emails': [],
-    }
+    conf = {"emails": []}
     with pytest.raises(AssertionError):
         MailReporter(conf)
 
     # Valid emails
-    conf = {
-        'emails': [
-            'test@mozilla.com',
-        ],
-    }
+    conf = {"emails": ["test@mozilla.com"]}
     r = MailReporter(conf)
-    assert r.emails == ['test@mozilla.com', ]
+    assert r.emails == ["test@mozilla.com"]
 
-    conf = {
-        'emails': [
-            'test@mozilla.com',
-            'test2@mozilla.com',
-            'test3@mozilla.com',
-        ],
-    }
+    conf = {"emails": ["test@mozilla.com", "test2@mozilla.com", "test3@mozilla.com"]}
     r = MailReporter(conf)
-    assert r.emails == ['test@mozilla.com', 'test2@mozilla.com', 'test3@mozilla.com']
+    assert r.emails == ["test@mozilla.com", "test2@mozilla.com", "test3@mozilla.com"]
 
 
 @responses.activate
 def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
-    '''
+    """
     Test mail sending through Taskcluster
-    '''
+    """
     from code_review_bot.report.mail import MailReporter
     from code_review_bot.revisions import ImprovementPatch
 
     def _check_email(request):
         payload = json.loads(request.body)
 
-        assert payload['subject'] in (
-            '[test] New Static Analysis Phabricator #42 - PHID-DIFF-test',
+        assert payload["subject"] in (
+            "[test] New Static Analysis Phabricator #42 - PHID-DIFF-test",
         )
-        assert payload['address'] == 'test@mozilla.com'
-        assert payload['template'] == 'fullscreen'
-        assert payload['content'] == MAIL_CONTENT.format(results=mock_config.taskcluster.results_dir)
+        assert payload["address"] == "test@mozilla.com"
+        assert payload["template"] == "fullscreen"
+        assert payload["content"] == MAIL_CONTENT.format(
+            results=mock_config.taskcluster.results_dir
+        )
 
-        return (200, {}, '')  # ack
+        return (200, {}, "")  # ack
 
     # Add mock taskcluster email to check output
     responses.add_callback(
         responses.POST,
-        'http://taskcluster.test/api/notify/v1/email',
+        "http://taskcluster.test/api/notify/v1/email",
         callback=_check_email,
     )
 
     # Publish email
-    conf = {
-        'emails': [
-            'test@mozilla.com',
-        ],
-    }
+    conf = {"emails": ["test@mozilla.com"]}
     r = MailReporter(conf)
 
     mock_revision.improvement_patches = [
-        ImprovementPatch('clang-tidy', repr(mock_revision), 'Some code fixes'),
-        ImprovementPatch('clang-format', repr(mock_revision), 'Some lint fixes'),
+        ImprovementPatch("clang-tidy", repr(mock_revision), "Some code fixes"),
+        ImprovementPatch("clang-format", repr(mock_revision), "Some lint fixes"),
     ]
-    list(map(lambda p: p.write(), mock_revision.improvement_patches))  # trigger local write
+    list(
+        map(lambda p: p.write(), mock_revision.improvement_patches)
+    )  # trigger local write
     r.publish(mock_issues, mock_revision)
 
     # Check stats
     mock_cls = mock_issues[0].__class__
     assert r.calc_stats(mock_issues) == {
-        mock_cls: {
-            'total': 5,
-            'publishable': 3,
-            'publishable_paths': ['/path/to/file']
-        }
+        mock_cls: {"total": 5, "publishable": 3, "publishable_paths": ["/path/to/file"]}
     }

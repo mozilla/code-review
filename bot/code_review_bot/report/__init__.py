@@ -12,25 +12,22 @@ logger = structlog.get_logger(__name__)
 
 
 def get_reporters(configuration):
-    '''
+    """
     Load reporters using Taskcluster configuration
-    '''
+    """
     assert isinstance(configuration, list)
-    reporters = {
-        'mail': MailReporter,
-        'phabricator': PhabricatorReporter,
-    }
+    reporters = {"mail": MailReporter, "phabricator": PhabricatorReporter}
     out = {}
     for conf in configuration:
         try:
-            if 'reporter' not in conf:
-                raise Exception('Missing reporter declaration')
-            name = conf['reporter']
+            if "reporter" not in conf:
+                raise Exception("Missing reporter declaration")
+            name = conf["reporter"]
             cls = reporters.get(name)
             if cls is None:
-                raise Exception('Missing reporter class {}'.format(conf['reporter']))
+                raise Exception("Missing reporter class {}".format(conf["reporter"]))
             out[name] = cls(conf)
         except Exception as e:
-            logger.warning('Failed to create reporter: {}'.format(e))
+            logger.warning("Failed to create reporter: {}".format(e))
 
     return out

@@ -67,7 +67,7 @@ The emails are sent through Taskcluster notify service, the hook must have `noti
 
 Only one configuration is required: `emails` is a list of emails addresses receiving the admin output for each analysis.
 
-This reporter will send detailed informations about every issue.
+This reporter will send detailed information about every issue.
 
 Reporter: Phabricator
 ---------------------
@@ -78,7 +78,7 @@ Configuration:
 
  * `analyzers` : The analyzers that will be published on Phabricator. Possible values are: mozlint, clang-tidy, clang-format, coverity, infer, coverage.
 
-This reporter will send detailed informations about every **publishable** issue.
+This reporter will send detailed information about every **publishable** issue.
 
 Example configuration
 ---------------------

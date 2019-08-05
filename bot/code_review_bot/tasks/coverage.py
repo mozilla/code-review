@@ -10,7 +10,7 @@ from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
 
-ISSUE_MARKDOWN = '''
+ISSUE_MARKDOWN = """
 ## coverage problem
 
 - **Path**: {path}
@@ -20,7 +20,7 @@ ISSUE_MARKDOWN = '''
 ```
 {message}
 ```
-'''
+"""
 
 
 class CoverageIssue(Issue):
@@ -37,85 +37,84 @@ class CoverageIssue(Issue):
         return self.path
 
     def is_publishable(self):
-        '''
+        """
         Coverage issues are always publishable, unless they are in header files
-        '''
+        """
         return self.validates()
 
     def validates(self):
-        '''
+        """
         Coverage issues are always publishable, unless they are in header files
-        '''
+        """
         _, ext = os.path.splitext(self.path)
         return ext.lower() in settings.cpp_extensions.union(settings.js_extensions)
 
     def as_text(self):
-        '''
+        """
         Build the text content for reporters
-        '''
+        """
         return self.message
 
     def as_markdown(self):
-        '''
+        """
         Build the Markdown content for the debug email
-        '''
+        """
         return ISSUE_MARKDOWN.format(
             path=self.path,
             message=self.message,
-            third_party=self.is_third_party() and 'yes' or 'no',
-            publishable=self.is_publishable() and 'yes' or 'no',
-            is_new=self.is_new and 'yes' or 'no',
+            third_party=self.is_third_party() and "yes" or "no",
+            publishable=self.is_publishable() and "yes" or "no",
+            is_new=self.is_new and "yes" or "no",
         )
 
     def as_dict(self):
-        '''
+        """
         Outputs all available information into a serializable dict
-        '''
+        """
         return {
-            'analyzer': 'coverage',
-            'path': self.path,
-            'line': self.line,
-            'message': self.message,
-            'is_third_party': self.is_third_party(),
-            'in_patch': self.revision.contains(self),
-            'is_new': self.is_new,
-            'validates': self.validates(),
-            'publishable': self.is_publishable(),
+            "analyzer": "coverage",
+            "path": self.path,
+            "line": self.line,
+            "message": self.message,
+            "is_third_party": self.is_third_party(),
+            "in_patch": self.revision.contains(self),
+            "is_new": self.is_new,
+            "validates": self.validates(),
+            "publishable": self.is_publishable(),
         }
 
     def as_phabricator_lint(self):
-        '''
+        """
         Outputs a Phabricator lint result
-        '''
+        """
         return {
-            'name': self.message,
-            'code': 'coverage',
-            'severity': 'warning',
-            'path': self.path,
-            'line': self.line,
+            "name": self.message,
+            "code": "coverage",
+            "severity": "warning",
+            "path": self.path,
+            "line": self.line,
         }
 
 
 class ZeroCoverageTask(AnalysisTask):
-    '''
+    """
     List all issues found by coverage analysis on specified files
     Uses the most recent data from the code coverage bot
-    '''
-    route = 'project.releng.services.project.production.code_coverage_bot.latest'
-    artifacts = [
-        'public/zero_coverage_report.json',
-    ]
+    """
+
+    route = "project.releng.services.project.production.code_coverage_bot.latest"
+    artifacts = ["public/zero_coverage_report.json"]
 
     def parse_issues(self, artifacts, revision):
         zero_coverage_files = {
-            file_info['name']
+            file_info["name"]
             for artifact in artifacts.values()
-            for file_info in artifact['files']
-            if file_info['uncovered']
+            for file_info in artifact["files"]
+            if file_info["uncovered"]
         }
 
         return [
-            CoverageIssue(self.clean_path(path), 0, 'This file is uncovered', revision)
+            CoverageIssue(self.clean_path(path), 0, "This file is uncovered", revision)
             for path in revision.files
             if path in zero_coverage_files
         ]

@@ -14,9 +14,9 @@ from code_review_bot import stats
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import Revision
 
-MODE_COMMENT = 'comment'
-MODE_HARBORMASTER = 'harbormaster'
-BUG_REPORT_URL = 'https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__'  # noqa
+MODE_COMMENT = "comment"
+MODE_HARBORMASTER = "harbormaster"
+BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"  # noqa
 
 # These analyzers generate issues for which we should not write inline comments.
 ANALYZERS_WITHOUT_INLINES = [CLANG_FORMAT, COVERAGE]
@@ -25,32 +25,34 @@ logger = structlog.get_logger(__name__)
 
 
 class PhabricatorReporter(Reporter):
-    '''
+    """
     API connector to report on Phabricator
-    '''
+    """
+
     def __init__(self, configuration={}, *args, **kwargs):
-        if kwargs.get('api') is not None:
-            self.setup_api(kwargs['api'])
+        if kwargs.get("api") is not None:
+            self.setup_api(kwargs["api"])
 
-        self.analyzers = configuration.get('analyzers')
-        assert self.analyzers is not None, \
-            'No analyzers setup on Phabricator reporter'
+        self.analyzers = configuration.get("analyzers")
+        assert self.analyzers is not None, "No analyzers setup on Phabricator reporter"
 
-        self.mode = configuration.get('mode', MODE_COMMENT)
-        assert self.mode in (MODE_COMMENT, MODE_HARBORMASTER), 'Invalid mode'
-        logger.info('Will publish using', mode=self.mode)
+        self.mode = configuration.get("mode", MODE_COMMENT)
+        assert self.mode in (MODE_COMMENT, MODE_HARBORMASTER), "Invalid mode"
+        logger.info("Will publish using", mode=self.mode)
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
         self.api = api
-        logger.info('Phabricator reporter enabled')
+        logger.info("Phabricator reporter enabled")
 
     def publish(self, issues, revision):
-        '''
+        """
         Publish inline comments for each issues
-        '''
+        """
         if not isinstance(revision, Revision):
-            logger.info('Phabricator reporter only publishes Phabricator revisions. Skipping.')
+            logger.info(
+                "Phabricator reporter only publishes Phabricator revisions. Skipping."
+            )
             return None, None
 
         # Use only publishable issues and patches
@@ -60,7 +62,9 @@ class PhabricatorReporter(Reporter):
             for issue in issues
             if issue.is_publishable() and issue.ANALYZER in self.analyzers
         ]
-        analyzers_available = set(i.ANALYZER for i in issues).intersection(self.analyzers)
+        analyzers_available = set(i.ANALYZER for i in issues).intersection(
+            self.analyzers
+        )
         patches = [
             patch
             for patch in revision.improvement_patches
@@ -73,32 +77,39 @@ class PhabricatorReporter(Reporter):
             elif self.mode == MODE_HARBORMASTER:
                 self.publish_harbormaster(revision, issues)
             else:
-                raise Exception('Unsupported mode {}'.format(self.mode))
+                raise Exception("Unsupported mode {}".format(self.mode))
         else:
-            logger.info('No issues to publish on phabricator')
+            logger.info("No issues to publish on phabricator")
 
         return issues, patches
 
     def publish_comment(self, revision, issues, patches):
-        '''
+        """
         Publish issues through Phabricator comment
-        '''
+        """
         # Load existing comments for this revision
         existing_comments = self.api.list_comments(revision.phid)
-        logger.info('Found {} existing comments on review'.format(len(existing_comments)))
+        logger.info(
+            "Found {} existing comments on review".format(len(existing_comments))
+        )
 
         coverage_issues = [issue for issue in issues if issue.ANALYZER == COVERAGE]
 
         # First publish inlines as drafts
-        inlines = list(filter(None, [
-            self.comment_inline(revision, issue, existing_comments)
-            for issue in issues
-            if issue.ANALYZER not in ANALYZERS_WITHOUT_INLINES
-        ]))
+        inlines = list(
+            filter(
+                None,
+                [
+                    self.comment_inline(revision, issue, existing_comments)
+                    for issue in issues
+                    if issue.ANALYZER not in ANALYZERS_WITHOUT_INLINES
+                ],
+            )
+        )
         if not inlines and not patches and not coverage_issues:
-            logger.info('No new comments found, skipping Phabricator publication')
+            logger.info("No new comments found, skipping Phabricator publication")
             return
-        logger.info('Added inline comments', ids=[i['id'] for i in inlines])
+        logger.info("Added inline comments", ids=[i["id"] for i in inlines])
 
         # Then publish top comment
         non_coverage_issues = [issue for issue in issues if issue.ANALYZER != COVERAGE]
@@ -118,58 +129,61 @@ class PhabricatorReporter(Reporter):
             self.api.comment(
                 revision.id,
                 self.build_coverage_comment(
-                    issues=coverage_issues,
-                    bug_report_url=BUG_REPORT_URL,
+                    issues=coverage_issues, bug_report_url=BUG_REPORT_URL
                 ),
             )
 
-        stats.api.increment('report.phabricator.issues', len(inlines))
-        stats.api.increment('report.phabricator')
-        logger.info('Published phabricator comment')
+        stats.api.increment("report.phabricator.issues", len(inlines))
+        stats.api.increment("report.phabricator")
+        logger.info("Published phabricator comment")
 
     def publish_harbormaster(self, revision, issues):
-        '''
+        """
         Publish issues through HarborMaster
-        '''
+        """
         revision.update_status(
             state=BuildState.Work,
-            lint_issues=[
-                issue.as_phabricator_lint()
-                for issue in issues
-            ]
+            lint_issues=[issue.as_phabricator_lint() for issue in issues],
         )
 
     def comment_inline(self, revision, issue, existing_comments=[]):
-        '''
+        """
         Post an inline comment on a diff
-        '''
+        """
         assert isinstance(revision, Revision)
         assert isinstance(issue, Issue)
 
         # Enforce path validation or Phabricator will crash here
         if not revision.has_file(issue.path):
-            logger.warn('Will not publish inline comment on invalid path {}: {}'.format(issue.path, issue))
+            logger.warn(
+                "Will not publish inline comment on invalid path {}: {}".format(
+                    issue.path, issue
+                )
+            )
             return
 
         # Check if comment is already posted
         comment = {
-            'diffID': revision.diff_id,
-            'filePath': issue.path,
-            'lineNumber': issue.line,
-            'lineLength': issue.nb_lines - 1,
-            'content': issue.as_text(),
+            "diffID": revision.diff_id,
+            "filePath": issue.path,
+            "lineNumber": issue.line,
+            "lineLength": issue.nb_lines - 1,
+            "content": issue.as_text(),
         }
         if comment in existing_comments:
-            logger.info('Skipping existing comment', text=comment['content'], filename=comment['filePath'], line=comment['lineNumber'])
+            logger.info(
+                "Skipping existing comment",
+                text=comment["content"],
+                filename=comment["filePath"],
+                line=comment["lineNumber"],
+            )
             return
 
         inline = self.api.request(
-            'differential.createinline',
-
+            "differential.createinline",
             # This displays on the new file (right side)
             # Python boolean is not recognized by Conduit :/
             isNewFile=1,
-
             # Use comment data
             **comment
         )

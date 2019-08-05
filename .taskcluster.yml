@@ -41,17 +41,16 @@ tasks:
       deadline: {$fromNow: '1 hour'}
       payload:
         maxRunTime: 3600
-        image: python:3-alpine
+        image: python:3
         command:
           - sh
           - -lxce
-          - "apk add git --quiet &&
-            git clone --quiet ${repository} /src && cd /src/bot && git checkout ${head_rev} -b checks &&
+          - "git clone --quiet ${repository} /src && cd /src/bot && git checkout ${head_rev} -b checks &&
             pip install . && pip install -r requirements-dev.txt &&
-            flake8"
+            cd /src && pre-commit run -a"
       metadata:
         name: "Code Review Bot checks: linting"
-        description: Check python code style with flake8
+        description: Check code style with pre-commit hooks
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 

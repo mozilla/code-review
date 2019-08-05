@@ -5,10 +5,10 @@
 
 
 def test_allowed_paths(mock_config):
-    '''
+    """
     Test allowed paths for ClangFormatIssue
     The test config has these 2 rules: dom/* and tests/*.py
-    '''
+    """
     from code_review_bot.tasks.clang_format import ClangFormatIssue
 
     def _allowed(path):
@@ -18,13 +18,13 @@ def test_allowed_paths(mock_config):
         return issue.validates()
 
     checks = {
-        'nope.cpp': False,
-        'dom/whatever.cpp': True,
-        'dom/sub/folders/whatever.cpp': True,
-        'dom/noext': True,
-        'dom_fail.h': False,
-        'tests/xxx.pyc': False,
-        'tests/folder/part/1.py': True,
+        "nope.cpp": False,
+        "dom/whatever.cpp": True,
+        "dom/sub/folders/whatever.cpp": True,
+        "dom/noext": True,
+        "dom_fail.h": False,
+        "tests/xxx.pyc": False,
+        "tests/folder/part/1.py": True,
     }
     for path, result in checks.items():
         assert _allowed(path) is result

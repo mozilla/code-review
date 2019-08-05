@@ -10,62 +10,63 @@ import structlog
 logger = structlog.get_logger(__name__)
 
 WORKER_CHECKOUTS = (
-    '/builds/worker/checkouts/gecko',
-    '/home/worker/nss',
-    '/home/worker/nspr',
+    "/builds/worker/checkouts/gecko",
+    "/home/worker/nss",
+    "/home/worker/nspr",
 )
 
 
 class AnalysisTask(object):
-    '''
+    """
     An analysis CI task running on Taskcluster
-    '''
+    """
+
     artifacts = []
     route = None
-    valid_states = ('completed', 'failed')
+    valid_states = ("completed", "failed")
 
     def __init__(self, task_id, task_status):
         self.id = task_id
-        assert 'task' in task_status, 'No task data for {}'.format(self.id)
-        assert 'status' in task_status, 'No status data for {}'.format(self.id)
-        self.task = task_status['task']
-        self.status = task_status['status']
+        assert "task" in task_status, "No task data for {}".format(self.id)
+        assert "status" in task_status, "No status data for {}".format(self.id)
+        self.task = task_status["task"]
+        self.status = task_status["status"]
         self.cleaned_paths = set()
 
     @property
     def run_id(self):
-        return self.status['runs'][-1]['runId']
+        return self.status["runs"][-1]["runId"]
 
     @property
     def name(self):
-        return self.task['metadata'].get('name', 'unknown')
+        return self.task["metadata"].get("name", "unknown")
 
     @property
     def state(self):
-        return self.status['state']
+        return self.status["state"]
 
     @classmethod
     def build_from_route(cls, index_service, queue_service):
-        '''
+        """
         Build the task instance from a configured Taskcluster route
-        '''
-        assert cls.route is not None, 'Missing route on {}'.format(cls)
+        """
+        assert cls.route is not None, "Missing route on {}".format(cls)
 
         # Load its task id
         try:
             index = index_service.findTask(cls.route)
-            task_id = index['taskId']
-            logger.info('Loaded task from route', cls=cls, task_id=task_id)
+            task_id = index["taskId"]
+            logger.info("Loaded task from route", cls=cls, task_id=task_id)
         except Exception as e:
-            logger.warn('Failed loading task from route', route=cls.route, error=str(e))
+            logger.warn("Failed loading task from route", route=cls.route, error=str(e))
             return
 
         # Load the task & status description
         try:
             task_status = queue_service.status(task_id)
-            task_status['task'] = queue_service.task(task_id)
+            task_status["task"] = queue_service.task(task_id)
         except Exception as e:
-            logger.warn('Task not found', task=task_id, error=str(e))
+            logger.warn("Task not found", task=task_id, error=str(e))
             return
 
         # Build the instance
@@ -76,33 +77,43 @@ class AnalysisTask(object):
         # Process only the supported final states
         # as some tasks do not always have relevant output
         if self.state not in self.valid_states:
-            logger.warn('Invalid task state', state=self.state, id=self.id, name=self.name)
+            logger.warn(
+                "Invalid task state", state=self.state, id=self.id, name=self.name
+            )
             return
 
         # Load relevant artifacts
         out = {}
         for artifact_name in self.artifacts:
-            logger.info('Load artifact', task_id=self.id, artifact=artifact_name)
+            logger.info("Load artifact", task_id=self.id, artifact=artifact_name)
             try:
-                artifact = queue_service.getArtifact(self.id, self.run_id, artifact_name)
+                artifact = queue_service.getArtifact(
+                    self.id, self.run_id, artifact_name
+                )
 
-                if 'response' in artifact:
+                if "response" in artifact:
                     # When the response's content is empty, set content to None
-                    content = artifact['response'].content or None
+                    content = artifact["response"].content or None
                 else:
                     # Json responses are automatically parsed into Python structures
                     content = artifact
                 out[artifact_name] = content
             except Exception as e:
-                logger.warn('Failed to read artifact', task_id=self.id, run_id=self.run_id, artifact=artifact_name, error=e)
+                logger.warn(
+                    "Failed to read artifact",
+                    task_id=self.id,
+                    run_id=self.run_id,
+                    artifact=artifact_name,
+                    error=e,
+                )
                 continue
 
         return out
 
     def clean_path(self, path):
-        '''
+        """
         Helper to clean issues path from remote tasks
-        '''
+        """
         if not os.path.isabs(path):
             # Never alter a relative path
             return path
@@ -115,9 +126,9 @@ class AnalysisTask(object):
         return path
 
     def build_patches(self, artifacts):
-        '''
-        Some analyzers can provide a patch appliable by developers
-        These patches are stored as Taskcluster artifacts and reported to developpers
+        """
+        Some analyzers can provide a patch applicable by developers
+        These patches are stored as Taskcluster artifacts and reported to developers
         Output is a list of tuple (patch name as str, patch content as str)
-        '''
+        """
         return []
