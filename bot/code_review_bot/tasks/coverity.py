@@ -5,6 +5,8 @@
 
 import structlog
 from libmozdata.phabricator import LintResult
+from libmozdata.phabricator import UnitResult
+from libmozdata.phabricator import UnitResultState
 
 from code_review_bot import COVERITY
 from code_review_bot import Issue
@@ -55,6 +57,7 @@ class CoverityIssue(Issue):
             else Reliability.Unknown
         )
         self.line = issue["line"]
+        self.build_error = issue.get("build_error", False)
         self.bug_type = issue["extra"]["category"]
         self.kind = issue["flag"]
         self.message = issue["message"]
@@ -177,6 +180,27 @@ class CoverityIssue(Issue):
             line=self.line,
             description=self.body,
         )
+
+    def as_phabricator_unitresult(self):
+        """
+        Output an UnitResult if this is a build error
+        """
+        if not self.build_error:
+            raise Exception("Current issue is not a build error: {}".format(self))
+
+        return UnitResult(
+            namespace="code-review",
+            name="general",
+            result=UnitResultState.Fail,
+            details=self.message,
+            format="remarkup",
+        )
+
+    def is_build_error(self):
+        """
+        Return True if Coverity intercepted a build error forwarded by clang.
+        """
+        return self.build_error
 
 
 class CoverityTask(AnalysisTask):

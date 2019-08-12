@@ -5,6 +5,8 @@
 
 import pytest
 import responses
+from libmozdata.phabricator import UnitResult
+from libmozdata.phabricator import UnitResultState
 
 
 def test_no_deps(mock_config, mock_revision, mock_workflow):
@@ -524,6 +526,7 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow, mock_stats):
                                         "line": 66,
                                         "flag": "UNINIT",
                                         "reliability": "high",
+                                        "build_error": True,
                                         "message": 'Using uninitialized value "a".',
                                         "extra": {
                                             "category": "Memory - corruptions",
@@ -572,6 +575,7 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow, mock_stats):
     assert issue.line == 66
     assert issue.kind == "UNINIT"
     assert issue.reliability == Reliability.High
+    assert issue.build_error
     assert issue.bug_type == "Memory - corruptions"
     assert (
         issue.message
@@ -584,6 +588,15 @@ The path that leads to this defect is:
     assert issue.is_local()
     assert not issue.is_clang_error()
     assert issue.validates()
+    assert issue.is_build_error()
+
+    assert issue.as_phabricator_unitresult() == UnitResult(
+        namespace="code-review",
+        name="general",
+        result=UnitResultState.Fail,
+        details=issue.message,
+        format="remarkup",
+    )
 
     issue = issues[1]
     assert isinstance(issue, CoverityIssue)
@@ -591,11 +604,13 @@ The path that leads to this defect is:
     assert issue.line == 123
     assert issue.kind == "UNINIT"
     assert issue.reliability == Reliability.High
+    assert not issue.build_error
     assert issue.bug_type == "Nice bug"
     assert issue.message == "Some error here"
     assert issue.is_local()
     assert not issue.is_clang_error()
     assert issue.validates()
+    assert not issue.is_build_error()
     assert (
         issue.as_text()
         == f"Checker reliability is high, meaning that the false positive ratio is low.\nSome error here"
