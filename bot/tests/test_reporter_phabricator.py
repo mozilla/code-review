@@ -540,3 +540,150 @@ def test_phabricator_harbormaster(mock_phabricator, mock_try_task):
     call = responses.calls[-1]
     assert call.request.url == "http://phabricator.test/api/harbormaster.sendmessage"
     assert call.response.headers.get("unittest") == "clang-tidy"
+
+
+@responses.activate
+def test_phabricator_unitresult(mock_phabricator, mock_try_task):
+    """
+    Test Phabricator UnitResult for a CoverityIssue
+    """
+    from code_review_bot.tasks.coverity import CoverityIssue
+    from code_review_bot.report.phabricator import PhabricatorReporter
+    from code_review_bot.revisions import Revision
+
+    def _check_message(request):
+        # Check the Phabricator main comment is well formed
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+        details = json.loads(payload["params"][0])
+        assert details == {
+            "buildTargetPHID": "PHID-HMBD-deadbeef12456",
+            "lint": [
+                {
+                    "code": "coverity.NULL_RETURNS",
+                    "name": "Checker reliability is medium, meaning that the false "
+                    "positive ratio is medium.\n"
+                    'Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
+                    "line": 41,
+                    "path": "test.cpp",
+                    "severity": "error",
+                }
+            ],
+            "unit": [],
+            "type": "work",
+            "__conduit__": {"token": "deadbeef"},
+        }
+
+        # Outputs dummy empty response
+        resp = {"error_code": None, "result": None}
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "coverity"},
+            json.dumps(resp),
+        )
+
+    def _check_unitresult(request):
+        # Check the Phabricator main comment is well formed
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+        details = json.loads(payload["params"][0])
+        assert details == {
+            "buildTargetPHID": "PHID-HMBD-deadbeef12456",
+            "lint": [],
+            "unit": [
+                {
+                    "details": 'Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
+                    "format": "remarkup",
+                    "name": "general",
+                    "namespace": "code-review",
+                    "result": "fail",
+                }
+            ],
+            "type": "fail",
+            "__conduit__": {"token": "deadbeef"},
+        }
+
+        # Outputs dummy empty response
+        resp = {"error_code": None, "result": None}
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "coverity"},
+            json.dumps(resp),
+        )
+
+    # First callback is to catch the publicatio of a lint
+    responses.add_callback(
+        responses.POST,
+        "http://phabricator.test/api/harbormaster.sendmessage",
+        callback=_check_message,
+    )
+
+    # Catch the publication of a UnitResult failure
+    responses.add_callback(
+        responses.POST,
+        "http://phabricator.test/api/harbormaster.sendmessage",
+        callback=_check_unitresult,
+    )
+
+    with mock_phabricator as api:
+        revision = Revision(api, mock_try_task)
+        revision.lines = {
+            # Add dummy lines diff
+            "test.cpp": [41, 42, 43]
+        }
+        revision.build_target_phid = "PHID-HMBD-deadbeef12456"
+        reporter = PhabricatorReporter(
+            {
+                "analyzers": ["coverity"],
+                "mode": "harbormaster",
+                "publish_build_errors": True,
+            },
+            api=api,
+        )
+
+        issue_dict = {
+            "line": 41,
+            "reliability": "medium",
+            "message": 'Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
+            "flag": "NULL_RETURNS",
+            "build_error": True,
+            "extra": {
+                "category": "Null pointer dereferences",
+                "stateOnServer": {
+                    "ownerLdapServerName": "local",
+                    "stream": "Firefox",
+                    "cid": 95687,
+                    "cached": False,
+                    "retrievalDateTime": "2019-05-13T10:20:22+00:00",
+                    "firstDetectedDateTime": "2019-04-08T12:57:07+00:00",
+                    "presentInReferenceSnapshot": False,
+                    "components": ["js"],
+                    "customTriage": {},
+                    "triage": {
+                        "fixTarget": "Untargeted",
+                        "severity": "Unspecified",
+                        "classification": "Unclassified",
+                        "owner": "try",
+                        "legacy": "False",
+                        "action": "Undecided",
+                        "externalReference": "",
+                    },
+                },
+            },
+        }
+
+        issue = CoverityIssue(revision, issue_dict, "test.cpp")
+        assert issue.is_publishable()
+
+        issues, patches = reporter.publish([issue], revision)
+        assert len(issues) == 1
+        assert len(patches) == 0
+
+        # Check the callback has been used
+        assert len(responses.calls) > 0
+
+        # Only check the last call
+        print(responses.calls[-1].request.url)
+        assert responses.calls[-1].response.headers.get("unittest") == "coverity"
