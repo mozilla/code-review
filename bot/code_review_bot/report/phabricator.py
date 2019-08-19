@@ -71,17 +71,24 @@ class PhabricatorReporter(Reporter):
             for patch in revision.improvement_patches
             if patch.analyzer in analyzers_available
         ]
+        # List of issues without possible build errors
+        issues_only = [issue for issue in issues if not issue.is_build_error()]
+        build_errors = [
+            issue.as_phabricator_unitresult()
+            for issue in issues
+            if issue.is_build_error()
+        ]
 
-        if issues:
+        if issues_only or build_errors:
             if self.mode == MODE_COMMENT:
-                self.publish_comment(revision, issues, patches)
+                self.publish_comment(revision, issues_only, patches)
             elif self.mode == MODE_HARBORMASTER:
-                self.publish_harbormaster(revision, issues)
+                self.publish_harbormaster(revision, issues_only)
             else:
                 raise Exception("Unsupported mode {}".format(self.mode))
             # Also publish build issues
             if self.publish_build_errors:
-                self.publish_harbormaster_build_errors(revision, issues)
+                self.publish_harbormaster_build_errors(revision, build_errors)
         else:
             logger.info("No issues to publish on phabricator")
 
@@ -91,17 +98,11 @@ class PhabricatorReporter(Reporter):
         """
         Publish build errors through Phabricator UnitResult
         """
-        build_errors = [
-            issue.as_phabricator_unitresult()
-            for issue in issues
-            if issue.is_build_error()
-        ]
-
-        if not build_errors:
+        if not issues:
             logger.info("No build errors encountered")
             return
         self.api.update_build_target(
-            revision.build_target_phid, BuildState.Fail, unit=build_errors
+            revision.build_target_phid, BuildState.Fail, unit=issues
         )
 
     def publish_comment(self, revision, issues, patches):
@@ -124,7 +125,6 @@ class PhabricatorReporter(Reporter):
                     self.comment_inline(revision, issue, existing_comments)
                     for issue in issues
                     if issue.ANALYZER not in ANALYZERS_WITHOUT_INLINES
-                    and not issue.is_build_error()
                 ],
             )
         )

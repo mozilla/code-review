@@ -111,7 +111,7 @@ class CoverityIssue(Issue):
         """
         Publish only local Coverity issues
         """
-        return self.is_local() and not self.is_clang_error()
+        return self.is_local()
 
     def as_text(self):
         """
