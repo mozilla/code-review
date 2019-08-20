@@ -39,7 +39,9 @@ class PhabricatorReporter(Reporter):
         self.mode = configuration.get("mode", MODE_COMMENT)
         self.publish_build_errors = configuration.get("publish_build_errors", False)
         assert self.mode in (MODE_COMMENT, MODE_HARBORMASTER), "Invalid mode"
-        logger.info("Will publish using", mode=self.mode)
+        logger.info(
+            "Will publish using", mode=self.mode, build_errors=self.publish_build_errors
+        )
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
@@ -73,11 +75,7 @@ class PhabricatorReporter(Reporter):
         ]
         # List of issues without possible build errors
         issues_only = [issue for issue in issues if not issue.is_build_error()]
-        build_errors = [
-            issue.as_phabricator_unitresult()
-            for issue in issues
-            if issue.is_build_error()
-        ]
+        build_errors = [issue for issue in issues if issue.is_build_error()]
 
         if issues_only or build_errors:
             if self.mode == MODE_COMMENT:
@@ -102,7 +100,9 @@ class PhabricatorReporter(Reporter):
             logger.info("No build errors encountered")
             return
         self.api.update_build_target(
-            revision.build_target_phid, BuildState.Fail, unit=issues
+            revision.build_target_phid,
+            BuildState.Fail,
+            unit=[issue.as_phabricator_unitresult() for issue in issues],
         )
 
     def publish_comment(self, revision, issues, patches):
