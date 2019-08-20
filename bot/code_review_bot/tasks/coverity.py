@@ -188,11 +188,13 @@ class CoverityIssue(Issue):
         if not self.build_error:
             raise Exception("Current issue is not a build error: {}".format(self))
 
+        message = f"Code review bot found a **build error**: \n{self.message}"
+
         return UnitResult(
             namespace="code-review",
             name="general",
             result=UnitResultState.Fail,
-            details=self.message,
+            details=message,
             format="remarkup",
         )
 
