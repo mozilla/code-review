@@ -594,7 +594,7 @@ The path that leads to this defect is:
         namespace="code-review",
         name="general",
         result=UnitResultState.Fail,
-        details=issue.message,
+        details=f"Code review bot found a **build error**: \n{issue.message}",
         format="remarkup",
     )
 
