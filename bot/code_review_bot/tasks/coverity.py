@@ -111,7 +111,7 @@ class CoverityIssue(Issue):
         """
         Publish only local Coverity issues
         """
-        return self.is_local() and not self.is_clang_error()
+        return self.is_local()
 
     def as_text(self):
         """
@@ -188,11 +188,13 @@ class CoverityIssue(Issue):
         if not self.build_error:
             raise Exception("Current issue is not a build error: {}".format(self))
 
+        message = f"Code review bot found a **build error**: \n{self.message}"
+
         return UnitResult(
             namespace="code-review",
             name="general",
             result=UnitResultState.Fail,
-            details=self.message,
+            details=message,
             format="remarkup",
         )
 

@@ -559,17 +559,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
         details = json.loads(payload["params"][0])
         assert details == {
             "buildTargetPHID": "PHID-HMBD-deadbeef12456",
-            "lint": [
-                {
-                    "code": "coverity.NULL_RETURNS",
-                    "name": "Checker reliability is medium, meaning that the false "
-                    "positive ratio is medium.\n"
-                    'Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
-                    "line": 41,
-                    "path": "test.cpp",
-                    "severity": "error",
-                }
-            ],
+            "lint": [],
             "unit": [],
             "type": "work",
             "__conduit__": {"token": "deadbeef"},
@@ -594,7 +584,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
             "lint": [],
             "unit": [
                 {
-                    "details": 'Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
+                    "details": 'Code review bot found a **build error**: \nDereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
                     "format": "remarkup",
                     "name": "general",
                     "namespace": "code-review",
