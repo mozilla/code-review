@@ -68,6 +68,9 @@ class CoverityIssue(Issue):
             self.message += ISSUE_RELATION
             stack = issue["extra"]["stack"]
             for event in stack:
+                # When an event has `path_type` of `caretline` we skip it.
+                if event["path_type"] == "caretline":
+                    continue
                 self.message += ISSUE_ELEMENT_IN_STACK.format(
                     file_path=event["file_path"],
                     line_number=event["line_number"],
