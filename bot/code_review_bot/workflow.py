@@ -253,11 +253,11 @@ class Workflow(object):
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
                     # Build a class instance from its definition and route
                     task = dep.build_from_route(self.index_service, self.queue_service)
-                    if task is None:
-                        continue
                 else:
                     # Use a task from its id & description
                     task = self.build_task(dep, tasks[dep])
+                if task is None:
+                    continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
                     task_issues = task.parse_issues(artifacts, revision)
@@ -300,5 +300,9 @@ class Workflow(object):
             return CoverityTask(task_id, task_status)
         elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
+        elif name.startswith("source-test-"):
+            logger.error(
+                "Unssuported source-test task: will need a local implementation"
+            )
         else:
             raise Exception("Unsupported task {}".format(name))
