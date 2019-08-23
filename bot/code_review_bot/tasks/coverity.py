@@ -68,6 +68,9 @@ class CoverityIssue(Issue):
             self.message += ISSUE_RELATION
             stack = issue["extra"]["stack"]
             for event in stack:
+                # When an event has `path_type` of `caretline` we skip it.
+                if event["path_type"] == "caretline":
+                    continue
                 self.message += ISSUE_ELEMENT_IN_STACK.format(
                     file_path=event["file_path"],
                     line_number=event["line_number"],
@@ -111,7 +114,7 @@ class CoverityIssue(Issue):
         """
         Publish only local Coverity issues
         """
-        return self.is_local() and not self.is_clang_error()
+        return self.is_local()
 
     def as_text(self):
         """
@@ -188,11 +191,13 @@ class CoverityIssue(Issue):
         if not self.build_error:
             raise Exception("Current issue is not a build error: {}".format(self))
 
+        message = f"Code review bot found a **build error**: \n{self.message}"
+
         return UnitResult(
             namespace="code-review",
             name="general",
             result=UnitResultState.Fail,
-            details=self.message,
+            details=message,
             format="remarkup",
         )
 
