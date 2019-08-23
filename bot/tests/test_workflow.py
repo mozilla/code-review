@@ -5,7 +5,14 @@
 
 from unittest import mock
 
+import pytest
+
 from code_review_bot.revisions import Revision
+from code_review_bot.tasks.clang_format import ClangFormatTask
+from code_review_bot.tasks.clang_tidy import ClangTidyTask
+from code_review_bot.tasks.coverity import CoverityTask
+from code_review_bot.tasks.infer import InferTask
+from code_review_bot.tasks.lint import MozLintTask
 
 
 class MockRevision(Revision):
@@ -170,3 +177,37 @@ def test_monitoring_restart(mock_config, mock_workflow):
     assert namespace == "project.relman.tasks.someTaskId"
     assert args["taskId"] == "someTaskId"
     assert args["data"]["monitoring_restart"] is False
+
+
+@pytest.mark.parametrize(
+    "task_name, result",
+    [
+        ("source-test-clang-tidy", ClangTidyTask),
+        ("source-test-mozlint-eslint", MozLintTask),
+        ("source-test-mozlint-whatever", MozLintTask),
+        ("source-test-clang-format", ClangFormatTask),
+        ("source-test-coverity-coverity", CoverityTask),
+        ("source-test-infer-infer", InferTask),
+        ("source-test-unsupported", None),
+        ("totally-unsupported", Exception),
+    ],
+)
+def test_build_task(task_name, result, mock_workflow):
+    """
+    Test the build_task method with different task payloads
+    """
+    task_status = {"task": {"metadata": {"name": task_name}}, "status": {}}
+
+    # Check exceptions thrown
+    if result is Exception:
+        with pytest.raises(Exception) as e:
+            mock_workflow.build_task("someTaskId", task_status)
+        assert str(e.value) == f"Unsupported task {task_name}"
+        return
+
+    # Normal cases
+    task = mock_workflow.build_task("someTaskId", task_status)
+    if result is None:
+        assert task is None
+    else:
+        assert isinstance(task, result)
