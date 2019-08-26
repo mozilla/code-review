@@ -8,7 +8,7 @@ export default {
   },
   data () {
     return {
-      channels: ['testing', 'staging', 'production']
+      channels: ['testing', 'production']
     }
   },
   methods: {
