@@ -1,0 +1,1 @@
+https://github.com/La0/libmozevent/archive/taskcluster.zip#egg=libmozevent
