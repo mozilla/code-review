@@ -34,7 +34,7 @@ tasks:
 
     taskboot_image: "mozilla/taskboot:0.1.7"
   in:
-    - taskId: {$eval: as_slugid("bot_check_lint")}
+    - taskId: {$eval: as_slugid("check_lint")}
       provisionerId: aws-provisioner-v1
       workerType: github-worker
       created: {$fromNow: ''}
@@ -75,6 +75,26 @@ tasks:
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
+    - taskId: {$eval: as_slugid("events_check_tests")}
+      provisionerId: aws-provisioner-v1
+      workerType: github-worker
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      payload:
+        maxRunTime: 3600
+        image: python:3
+        command:
+          - sh
+          - -lxce
+          - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks && cd /src/events &&
+            pip install -r requirements.txt && pip install . && pip install -r requirements-dev.txt &&
+            pytest -v"
+      metadata:
+        name: "Code Review Events checks: unit tests"
+        description: Check python code with pytest
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
+
     - taskId: {$eval: as_slugid("frontend_build")}
       provisionerId: aws-provisioner-v1
       workerType: github-worker
@@ -106,7 +126,7 @@ tasks:
       provisionerId: aws-provisioner-v1
       workerType: releng-svc
       dependencies:
-        - {$eval: as_slugid("bot_check_lint")}
+        - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("bot_check_tests")}
       payload:
         capabilities:
@@ -138,6 +158,47 @@ tasks:
       metadata:
         name: Code Review Bot docker build
         description: Build docker image of code review bot
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
+
+    - taskId: {$eval: as_slugid("events_build")}
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      provisionerId: aws-provisioner-v1
+      workerType: releng-svc
+      dependencies:
+        - {$eval: as_slugid("check_lint")}
+        - {$eval: as_slugid("events_check_tests")}
+      payload:
+        capabilities:
+          privileged: true
+        maxRunTime: 3600
+        image: "${taskboot_image}"
+        env:
+          GIT_REPOSITORY: ${repository}
+          GIT_REVISION: ${head_rev}
+        command:
+          - taskboot
+          - build
+          - --image
+          - mozilla/code-review
+          - --tag
+          - "${channel}"
+          - --tag
+          - "${head_rev}"
+          - --write
+          - /events.tar
+          - events/docker/Dockerfile
+        artifacts:
+          public/code-review-events.tar:
+            expires: {$fromNow: '2 weeks'}
+            path: /events.tar
+            type: file
+      scopes:
+        - docker-worker:capability:privileged
+      metadata:
+        name: Code Review Events docker build
+        description: Build docker image of code review events
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
