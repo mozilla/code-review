@@ -210,7 +210,7 @@ export default new Vuex.Store({
 
     // Load Phabricator indexed tasks summary from Taskcluster
     load_index (state, payload) {
-      let url = TASKCLUSTER_INDEX + '/tasks/project.releng.services.project.' + this.state.channel + '.static_analysis_bot.phabricator.'
+      let url = TASKCLUSTER_INDEX + '/tasks/project.relman.' + this.state.channel + '.code-review.phabricator.'
       if (payload && payload.revision) {
         // Remove potential leading 'D' from phabricator revision
         url += !Number.isInteger(payload.revision) && payload.revision.startsWith('D') ? payload.revision.substring(1) : payload.revision
