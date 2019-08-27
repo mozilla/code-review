@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import argparse
-import asyncio
 import os
 import tempfile
 
@@ -10,7 +9,7 @@ from libmozevent.bus import MessageBus
 from libmozevent.log import init_logger
 from libmozevent.mercurial import MercurialWorker
 from libmozevent.monitoring import Monitoring
-from libmozevent.pulse import run_consumer
+from libmozevent.utils import run_tasks
 from libmozevent.web import WebServer
 
 from code_review_events import QUEUE_MERCURIAL
@@ -98,13 +97,13 @@ class Events(object):
             )
 
         # Start the web server in its own process
-        web_process = self.webserver.start()
+        self.webserver.start()
 
         # Run all tasks concurrently
-        run_consumer(asyncio.gather(*consumers))
+        run_tasks(consumers)
 
-        if self.workflow:
-            web_process.join()
+        # Stop the webserver when other async process are stopped
+        self.webserver.stop()
 
 
 def main():
