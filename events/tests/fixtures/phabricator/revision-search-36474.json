@@ -1,0 +1,57 @@
+{
+	"result": {
+		"data": [{
+			"id": 36474,
+			"type": "DREV",
+			"phid": "PHID-DREV-rsy3lphq5j46whxgpm62",
+			"fields": {
+				"title": "Bug 1546334 - Add function to create referrerInfo object to use for style system",
+				"authorPHID": "PHID-USER-o2tolnfnzsouz2afnjmx",
+				"status": {
+					"value": "needs-revision",
+					"name": "Needs Revision",
+					"closed": false,
+					"color.ansi": "red"
+				},
+				"repositoryPHID": "PHID-REPO-saax4qdxlbbhahhp2kg5",
+				"diffPHID": "PHID-DIFF-mpa55sfv2atas4tghu6m",
+				"summary": "\nBesides, hash and equals are also necessary to make ReferrerInfo becomes key of hashtable.",
+				"testPlan": "",
+				"isDraft": false,
+				"holdAsDraft": false,
+				"dateCreated": 1561980002,
+				"dateModified": 1562134051,
+				"policy": {
+					"view": "public",
+					"edit": "PHID-PROJ-njo5uuqyyq3oijbkhy55"
+				},
+				"bugzilla.bug-id": "1546334"
+			},
+			"attachments": {
+				"projects": {
+					"projectPHIDs": []
+				},
+				"reviewers": {
+					"reviewers": [{
+						"reviewerPHID": "PHID-USER-ciaomkrkqpbwfmdqahdu",
+						"status": "rejected",
+						"isBlocking": false,
+						"actorPHID": "PHID-USER-ciaomkrkqpbwfmdqahdu"
+					}]
+				}
+			}
+		}],
+		"maps": {},
+		"query": {
+			"queryKey": null
+		},
+		"cursor": {
+			"limit": 100,
+			"after": null,
+			"before": null,
+			"order": null
+		}
+	},
+	"error_code": null,
+	"error_info": null
+}

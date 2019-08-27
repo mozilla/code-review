@@ -1,0 +1,74 @@
+{
+    "error_code": null,
+    "error_info": null,
+    "result": {
+        "cursor": {
+            "after": null,
+            "before": null,
+            "limit": 100,
+            "order": null
+        },
+        "data": [
+            {
+                "attachments": {},
+                "fields": {
+                    "almanacServicePHID": null,
+                    "callsign": "MOZILLACENTRAL",
+                    "dateCreated": 1539455983,
+                    "dateModified": 1543603513,
+                    "isImporting": false,
+                    "name": "mozilla-central",
+                    "policy": {
+                        "diffusion.push": "users",
+                        "edit": "admin",
+                        "view": "public"
+                    },
+                    "refRules": {
+                        "fetchRules": [],
+                        "permanentRefRules": [],
+                        "trackRules": []
+                    },
+                    "shortName": "mozilla-central",
+                    "spacePHID": null,
+                    "status": "active",
+                    "vcs": "hg"
+                },
+                "id": 16,
+                "phid": "PHID-REPO-mc",
+                "type": "REPO"
+            },
+            {
+                "attachments": {},
+                "fields": {
+                    "almanacServicePHID": null,
+                    "callsign": "NSS",
+                    "dateCreated": 1539106756,
+                    "dateModified": 1543603469,
+                    "isImporting": false,
+                    "name": "nss",
+                    "policy": {
+                        "diffusion.push": "users",
+                        "edit": "admin",
+                        "view": "public"
+                    },
+                    "refRules": {
+                        "fetchRules": [],
+                        "permanentRefRules": [],
+                        "trackRules": []
+                    },
+                    "shortName": "nss",
+                    "spacePHID": null,
+                    "status": "active",
+                    "vcs": "hg"
+                },
+                "id": 15,
+                "phid": "PHID-REPO-nss",
+                "type": "REPO"
+            }
+        ],
+        "maps": {},
+        "query": {
+            "queryKey": null
+        }
+    }
+}
