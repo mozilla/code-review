@@ -293,3 +293,33 @@ tasks:
           description: Update Taskcluster hook triggering the code-review tasks
           owner: bastien@mozilla.com
           source: https://github.com/mozilla/code-review
+
+    - $if: 'channel in ["testing", "production"]'
+      then:
+        taskId: {$eval: as_slugid("events_deploy")}
+        created: {$fromNow: ''}
+        deadline: {$fromNow: '1 hour'}
+        provisionerId: aws-provisioner-v1
+        workerType: github-worker
+        dependencies:
+          - {$eval: as_slugid("events_build")}
+        payload:
+          features:
+            taskclusterProxy: true
+          maxRunTime: 3600
+          image: "${taskboot_image}"
+          command:
+            - taskboot
+            - deploy-heroku
+            - --heroku-app
+            - "code-review-events-${channel}"
+            - worker:public/code-review-events.tar
+          env:
+            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
+        scopes:
+          - "secrets:get:project/relman/code-review/deploy-${channel}"
+        metadata:
+          name: "Code Review Events deployment (${channel})"
+          description: Deploy docker image on Heroku
+          owner: bastien@mozilla.com
+          source: https://github.com/mozilla/code-review
