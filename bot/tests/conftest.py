@@ -20,7 +20,6 @@ MockArtifactResponse = namedtuple("MockArtifactResponse", "content")
 
 
 @pytest.fixture(scope="function")
-@responses.activate
 def mock_config():
     """
     Mock configuration for bot
@@ -78,7 +77,6 @@ def mock_issues():
 
 
 @pytest.fixture
-@responses.activate
 @contextmanager
 def mock_phabricator(mock_config):
     """
@@ -239,7 +237,6 @@ def mock_try_task():
 
 
 @pytest.fixture
-@responses.activate
 def mock_revision(mock_phabricator, mock_try_task, mock_config):
     """
     Mock a mercurial revision

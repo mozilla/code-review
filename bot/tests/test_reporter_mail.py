@@ -31,7 +31,6 @@ This is the mock issue n°3
 This is the mock issue n°4"""
 
 
-@responses.activate
 def test_conf(mock_config, mock_taskcluster_config):
     """
     Test mail reporter configuration
@@ -57,7 +56,6 @@ def test_conf(mock_config, mock_taskcluster_config):
     assert r.emails == ["test@mozilla.com", "test2@mozilla.com", "test3@mozilla.com"]
 
 
-@responses.activate
 def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
     """
     Test mail sending through Taskcluster
