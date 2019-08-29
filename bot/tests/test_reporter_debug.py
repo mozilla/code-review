@@ -5,10 +5,7 @@
 import json
 import os.path
 
-import responses
 
-
-@responses.activate
 def test_publication(tmpdir, mock_issues, mock_revision):
     """
     Test debug publication and report analysis

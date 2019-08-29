@@ -45,7 +45,6 @@ If you see a problem in this automated review, [please report it here](https://b
 """  # noqa
 
 
-@responses.activate
 def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     """
     Test Phabricator reporter publication on a mock clang-tidy issue
@@ -114,7 +113,6 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "clang-tidy"
 
 
-@responses.activate
 def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     """
     Test Phabricator reporter publication on a mock clang-format issue
@@ -175,7 +173,6 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "clang-format"
 
 
-@responses.activate
 def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
     """
     Test Phabricator reporter publication on a mock coverage issue
@@ -232,7 +229,6 @@ def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "coverage"
 
 
-@responses.activate
 def test_phabricator_clang_tidy_and_coverage(
     mock_config, mock_phabricator, mock_try_task
 ):
@@ -339,7 +335,6 @@ def test_phabricator_clang_tidy_and_coverage(
     assert call.response.headers.get("unittest") == "coverage"
 
 
-@responses.activate
 def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
     """
     Test analyzers filtering on phabricator reporter
@@ -461,7 +456,6 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
         ]
 
 
-@responses.activate
 def test_phabricator_harbormaster(mock_phabricator, mock_try_task):
     """
     Test Phabricator reporter publication on a mock clang-tidy issue
@@ -542,7 +536,6 @@ def test_phabricator_harbormaster(mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "clang-tidy"
 
 
-@responses.activate
 def test_phabricator_unitresult(mock_phabricator, mock_try_task):
     """
     Test Phabricator UnitResult for a CoverityIssue

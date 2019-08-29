@@ -407,7 +407,6 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_stats):
     )
 
 
-@responses.activate
 def test_clang_format_task(mock_config, mock_revision, mock_workflow, mock_stats):
     """
     Test a remote workflow with a clang-format analyzer
