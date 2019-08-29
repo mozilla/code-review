@@ -1,0 +1,835 @@
+[
+    {
+        "bug_class": "PROVER",
+        "bug_trace": [
+            {
+                "column_number": -1,
+                "description": "start of procedure canUseProfile(...)",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 219
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 221
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 221
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 225
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 233
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 234
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure getDir()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 1,
+                "line_number": 452
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 1,
+                "line_number": 453
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure forceCreateLocked()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 2,
+                "line_number": 461
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 2,
+                "line_number": 462
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 2,
+                "line_number": 469
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure findProfileDir()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 3,
+                "line_number": 955
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 3,
+                "line_number": 956
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure isCustomProfile()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 4,
+                "line_number": 426
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to boolean GeckoProfile.isCustomProfile()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 4,
+                "line_number": 427
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 3,
+                "line_number": 956
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 3,
+                "line_number": 957
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to File GeckoProfile.findProfileDir()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 3,
+                "line_number": 959
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 2,
+                "line_number": 469
+            },
+            {
+                "column_number": -1,
+                "description": "Skipping d(...): unknown method",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 2,
+                "line_number": 470
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to void GeckoProfile.forceCreateLocked()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 2,
+                "line_number": 478
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to File GeckoProfile.getDir()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "level": 1,
+                "line_number": 454
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 234
+            }
+        ],
+        "bug_type": "NULL_DEREFERENCE",
+        "bug_type_hum": "Null Dereference",
+        "censored_reason": "",
+        "column": -1,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+        "hash": "5c02260f531db2c82cc5a0f4ebe2582f",
+        "key": "GeckoThread.java|canUseProfile|NULL_DEREFERENCE",
+        "kind": "ERROR",
+        "line": 234,
+        "node_key": "42f56fda1ad408e362508b93a175bb0c",
+        "procedure": "boolean GeckoThread.canUseProfile(Context,GeckoProfile,String,File)",
+        "procedure_id": "org.mozilla.gecko.GeckoThread.canUseProfile(android.content.Context,org.mozilla.gecko.GeckoProfile,j.0bcbd12fb89d50a68d51463ddc7515c4",
+        "procedure_start_line": 219,
+        "qualifier": "object returned by `profile.getDir()` could be null and is dereferenced at line 234.",
+        "severity": "HIGH",
+        "visibility": "user"
+    },
+    {
+        "bug_class": "PROVER",
+        "bug_trace": [
+            {
+                "column_number": -1,
+                "description": "start of procedure onCloseNotification(...)",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 232
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 233
+            }
+        ],
+        "bug_type": "NULL_DEREFERENCE",
+        "bug_type_hum": "Null Dereference",
+        "censored_reason": "",
+        "column": -1,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "hash": "4583990b2e63fbb4d5089623c5d86529",
+        "key": "GeckoViewActivity.java|onCloseNotification|NULL_DEREFERENCE",
+        "kind": "ERROR",
+        "line": 233,
+        "node_key": "8efe1da0266e88511615b57898fdbb38",
+        "procedure": "void GeckoViewActivity$3.onCloseNotification(WebNotification)",
+        "procedure_id": "org.mozilla.geckoview_example.GeckoViewActivity$3.onCloseNotification(org.mozilla.geckoview.WebNotif.bcb1d5a27d9e2d295ca28862a214c987",
+        "procedure_start_line": 232,
+        "qualifier": "object returned by `GeckoViewActivity$3.this$0.mNotificationIDMap.get(notification.tag)` could be null and is dereferenced at line 233.",
+        "severity": "HIGH",
+        "visibility": "user"
+    },
+    {
+        "bug_class": "PROVER",
+        "bug_trace": [
+            {
+                "column_number": -1,
+                "description": "start of procedure getMainProcessArgs()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 292
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 293
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure getApplicationContext()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java",
+                "level": 1,
+                "line_number": 1493
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to Context GeckoAppShell.getApplicationContext()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java",
+                "level": 1,
+                "line_number": 1494
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 294
+            },
+            {
+                "column_number": -1,
+                "description": "Skipping add(...): unknown method",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 297
+            },
+            {
+                "column_number": -1,
+                "description": "Skipping add(...): unknown method",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 298
+            },
+            {
+                "column_number": -1,
+                "description": "Skipping add(...): unknown method",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 299
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 301
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure getProfile()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 1,
+                "line_number": 339
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 1,
+                "line_number": 340
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 1,
+                "line_number": 341
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to GeckoProfile GeckoThread.getProfile()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 1,
+                "line_number": 352
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 0,
+                "line_number": 302
+            }
+        ],
+        "bug_type": "NULL_DEREFERENCE",
+        "bug_type_hum": "Null Dereference",
+        "censored_reason": "",
+        "column": -1,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+        "hash": "b2688b99fa1aa605e05669b1c99c24d6",
+        "key": "GeckoThread.java|getMainProcessArgs|NULL_DEREFERENCE",
+        "kind": "ERROR",
+        "line": 302,
+        "node_key": "18086a76ec6f499138a84f176568ec09",
+        "procedure": "java.lang.String[] GeckoThread.getMainProcessArgs()",
+        "procedure_id": "org.mozilla.gecko.GeckoThread.getMainProcessArgs():java.lang.String[].e959ad5ab58e3ea536182ff86bbaf805",
+        "procedure_start_line": 292,
+        "qualifier": "object `profile` last assigned on line 301 could be null and is dereferenced at line 302.",
+        "severity": "HIGH",
+        "visibility": "user"
+    },
+    {
+        "bug_class": "PROVER",
+        "bug_trace": [
+            {
+                "column_number": -1,
+                "description": "start of procedure onNewIntent(...)",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 497
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 499
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 508
+            },
+            {
+                "column_number": -1,
+                "description": "Skipping getInt(...): unknown method",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 509
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 510
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 511
+            }
+        ],
+        "bug_type": "NULL_DEREFERENCE",
+        "bug_type_hum": "Null Dereference",
+        "censored_reason": "",
+        "column": -1,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "hash": "ed1d007ffabae022ad1ad4c1f6a6d198",
+        "key": "GeckoViewActivity.java|onNewIntent|NULL_DEREFERENCE",
+        "kind": "ERROR",
+        "line": 511,
+        "node_key": "25eec8bc2b565fcb7ecd79f1e598eda2",
+        "procedure": "void GeckoViewActivity.onNewIntent(Intent)",
+        "procedure_id": "org.mozilla.geckoview_example.GeckoViewActivity.onNewIntent(android.content.Intent):void.79120556933d8f93f7075491d593a8e4",
+        "procedure_start_line": 497,
+        "qualifier": "object `notification` last assigned on line 510 could be null and is dereferenced at line 511.",
+        "severity": "HIGH",
+        "visibility": "user"
+    },
+    {
+        "bug_class": "PROVER",
+        "bug_trace": [
+            {
+                "column_number": -1,
+                "description": "start of procedure getProfileDir()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "level": 0,
+                "line_number": 597
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "level": 0,
+                "line_number": 598
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure assertOnUiThread()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 1,
+                "line_number": 125
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 1,
+                "line_number": 126
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure getUiThread()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 2,
+                "line_number": 85
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to Thread ThreadUtils.getUiThread()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 2,
+                "line_number": 86
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 1,
+                "line_number": 126
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure assertOnThread(...)",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 2,
+                "line_number": 155
+            },
+            {
+                "column_number": -1,
+                "description": "start of procedure assertOnThreadComparison(...)",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 3,
+                "line_number": 163
+            },
+            {
+                "column_number": -1,
+                "description": "Skipping currentThread(): unknown method",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 3,
+                "line_number": 166
+            },
+            {
+                "column_number": -1,
+                "description": "Skipping getId(): unknown method",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 3,
+                "line_number": 167
+            },
+            {
+                "column_number": -1,
+                "description": "Skipping getId(): unknown method",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 3,
+                "line_number": 168
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 3,
+                "line_number": 170
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 3,
+                "line_number": 170
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 3,
+                "line_number": 171
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to void ThreadUtils.assertOnThreadComparison(Thread,ThreadUtils$AssertBehavior,boolean)",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 3,
+                "line_number": 192
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to void ThreadUtils.assertOnThread(Thread,ThreadUtils$AssertBehavior)",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 2,
+                "line_number": 156
+            },
+            {
+                "column_number": -1,
+                "description": "return from a call to void ThreadUtils.assertOnUiThread()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "level": 1,
+                "line_number": 127
+            },
+            {
+                "column_number": -1,
+                "description": "Skipping getActiveProfile(): empty list of specs",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "level": 0,
+                "line_number": 599
+            },
+            {
+                "column_number": -1,
+                "description": "Definition of getActiveProfile()",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "level": 1,
+                "line_number": 335
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "level": 0,
+                "line_number": 599
+            }
+        ],
+        "bug_type": "NULL_DEREFERENCE",
+        "bug_type_hum": "Null Dereference",
+        "censored_reason": "",
+        "column": -1,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "hash": "8866b5773fe1be951937778aff8b56c7",
+        "key": "GeckoRuntime.java|getProfileDir|NULL_DEREFERENCE",
+        "kind": "ERROR",
+        "line": 599,
+        "node_key": "8fe6896617fe48d976e5405cc17d2e7a",
+        "procedure": "File GeckoRuntime.getProfileDir()",
+        "procedure_id": "org.mozilla.geckoview.GeckoRuntime.getProfileDir():java.io.File.c6c6d9d3feb24beba56361d65c015e76",
+        "procedure_start_line": 597,
+        "qualifier": "object returned by `getActiveProfile()`  at line 599.",
+        "severity": "HIGH",
+        "visibility": "user"
+    },
+    {
+        "bug_class": "PROVER",
+        "bug_trace": [
+            {
+                "column_number": -1,
+                "description": "start of procedure onFullScreen(...)",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 683
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 684
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 686
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 687
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 688
+            }
+        ],
+        "bug_type": "NULL_DEREFERENCE",
+        "bug_type_hum": "Null Dereference",
+        "censored_reason": "",
+        "column": -1,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "hash": "ebf8b12c5546317e26728a7d4b1ae2d1",
+        "key": "GeckoViewActivity.java|onFullScreen|NULL_DEREFERENCE",
+        "kind": "ERROR",
+        "line": 688,
+        "node_key": "b0ed25eec6c25e7c4348974d51cf6b89",
+        "procedure": "void GeckoViewActivity$ExampleContentDelegate.onFullScreen(GeckoSession,boolean)",
+        "procedure_id": "org.mozilla.geckoview_example.GeckoViewActivity$ExampleContentDelegate.onFullScreen(org.mozilla.geck.7076550d50048990ac78eea06495a47e",
+        "procedure_start_line": 683,
+        "qualifier": "object returned by `GeckoViewActivity$ExampleContentDelegate.this$0.getSupportActionBar()`  at line 688.",
+        "severity": "HIGH",
+        "visibility": "user"
+    },
+    {
+        "bug_class": "PROVER",
+        "bug_trace": [
+            {
+                "column_number": -1,
+                "description": "start of procedure onFullScreen(...)",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 683
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 684
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 686
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 687
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 690
+            }
+        ],
+        "bug_type": "NULL_DEREFERENCE",
+        "bug_type_hum": "Null Dereference",
+        "censored_reason": "",
+        "column": -1,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "hash": "ebf8b12c5546317e26728a7d4b1ae2d1",
+        "key": "GeckoViewActivity.java|onFullScreen|NULL_DEREFERENCE",
+        "kind": "ERROR",
+        "line": 690,
+        "node_key": "b0ed25eec6c25e7c4348974d51cf6b89",
+        "procedure": "void GeckoViewActivity$ExampleContentDelegate.onFullScreen(GeckoSession,boolean)",
+        "procedure_id": "org.mozilla.geckoview_example.GeckoViewActivity$ExampleContentDelegate.onFullScreen(org.mozilla.geck.7076550d50048990ac78eea06495a47e",
+        "procedure_start_line": 683,
+        "qualifier": "object returned by `GeckoViewActivity$ExampleContentDelegate.this$0.getSupportActionBar()`  at line 690.",
+        "severity": "HIGH",
+        "visibility": "user"
+    },
+    {
+        "bug_class": "PROVER",
+        "bug_trace": [
+            {
+                "column_number": -1,
+                "description": "start of procedure normalizeMediaName(...)",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 903
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 904
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 908
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 909
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 910
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 911
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 912
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 913
+            }
+        ],
+        "bug_type": "NULL_DEREFERENCE",
+        "bug_type_hum": "Null Dereference",
+        "censored_reason": "",
+        "column": -1,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "hash": "26d2eeff475f18ba2e5dba2f9664b9de",
+        "key": "GeckoViewActivity.java|normalizeMediaName|NULL_DEREFERENCE",
+        "kind": "ERROR",
+        "line": 913,
+        "node_key": "990ccc7f82f5d8e9ddf512eae23c136a",
+        "procedure": "java.lang.String[] GeckoViewActivity$ExamplePermissionDelegate.normalizeMediaName(org.mozilla.geckoview.GeckoSession$PermissionDelegate$MediaSource[])",
+        "procedure_id": "org.mozilla.geckoview_example.GeckoViewActivity$ExamplePermissionDelegate.normalizeMediaName(org.moz.328778b173a64a8924dd8fe108689e88",
+        "procedure_start_line": 903,
+        "qualifier": "object `name` last assigned on line 911  at line 913.",
+        "severity": "HIGH",
+        "visibility": "user"
+    },
+    {
+        "bug_class": "PROVER",
+        "bug_trace": [
+            {
+                "column_number": -1,
+                "description": "start of procedure normalizeMediaName(...)",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 903
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 904
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 908
+            },
+            {
+                "column_number": -1,
+                "description": "Taking true branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 909
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 910
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 911
+            },
+            {
+                "column_number": -1,
+                "description": "Taking false branch",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 912
+            },
+            {
+                "column_number": -1,
+                "description": "",
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "level": 0,
+                "line_number": 918
+            }
+        ],
+        "bug_type": "NULL_DEREFERENCE",
+        "bug_type_hum": "Null Dereference",
+        "censored_reason": "",
+        "column": -1,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "hash": "26d2eeff475f18ba2e5dba2f9664b9de",
+        "key": "GeckoViewActivity.java|normalizeMediaName|NULL_DEREFERENCE",
+        "kind": "ERROR",
+        "line": 918,
+        "node_key": "6cccac43c00eba65da104b6f3239cef0",
+        "procedure": "java.lang.String[] GeckoViewActivity$ExamplePermissionDelegate.normalizeMediaName(org.mozilla.geckoview.GeckoSession$PermissionDelegate$MediaSource[])",
+        "procedure_id": "org.mozilla.geckoview_example.GeckoViewActivity$ExamplePermissionDelegate.normalizeMediaName(org.moz.328778b173a64a8924dd8fe108689e88",
+        "procedure_start_line": 903,
+        "qualifier": "object `name` last assigned on line 911  at line 918.",
+        "severity": "HIGH",
+        "visibility": "user"
+    }
+]
