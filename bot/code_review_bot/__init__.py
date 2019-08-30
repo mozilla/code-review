@@ -8,7 +8,7 @@ import enum
 
 from code_review_bot.config import Publication
 from code_review_bot.config import settings
-from code_review_bot.stats import Datadog
+from code_review_bot.stats import InfluxDb
 from code_review_bot.tools.taskcluster import TaskclusterConfig
 
 CLANG_TIDY = "clang-tidy"
@@ -148,7 +148,7 @@ class Reliability(enum.Enum):
 
 
 # Create common stats instance
-stats = Datadog()
+stats = InfluxDb()
 
 # Create common taskcluster config
 taskcluster = TaskclusterConfig()

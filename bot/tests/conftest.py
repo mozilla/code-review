@@ -3,16 +3,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import itertools
 import json
 import os.path
-import time
 from collections import namedtuple
 from contextlib import contextmanager
 
 import pytest
 import responses
 from libmozdata.phabricator import PhabricatorAPI
+
+from code_review_bot import stats
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -177,59 +177,6 @@ def mock_phabricator(mock_config):
 
 
 @pytest.fixture
-def mock_stats(mock_config):
-    """
-    Mock Datadog authentication and stats management
-    """
-    from code_review_bot import stats
-
-    # Configure Datadog with a dummy token
-    # and an ultra fast flushing cycle
-    stats.auth("test_token")
-    stats.api.stop()
-    stats.api.start(flush_interval=0.001)
-    assert not stats.api._disabled
-    assert stats.api._is_auto_flushing
-
-    class MemoryReporter(object):
-        """
-        A reporting class that reports to memory for testing.
-        Used in datadog unit tests:
-        https://github.com/DataDog/datadogpy/blob/master/tests/unit/threadstats/test_threadstats.py
-        """
-
-        def __init__(self, api):
-            self.metrics = []
-            self.events = []
-            self.api = api
-
-        def flush_metrics(self, metrics):
-            self.metrics += metrics
-
-        def flush_events(self, events):
-            self.events += events
-
-        def flush(self):
-            # Helper for unit tests to force flush
-            self.api.flush(time.time() + 20)
-
-        def get_metrics(self, metric_name):
-            return list(
-                itertools.chain(
-                    *[
-                        [[t, point * m["interval"]] for t, point in m["points"]]
-                        for m in self.metrics
-                        if m["metric"] == metric_name
-                    ]
-                )
-            )
-
-    # Gives reporter access to unit tests to access metrics
-    stats.api.reporter = MemoryReporter(stats.api)
-    yield stats.api.reporter
-
-
-@pytest.fixture
 def mock_try_task():
     """
     Mock a remote Try task definition
@@ -373,12 +320,15 @@ class MockIndex(object):
 
 
 @pytest.fixture
-def mock_workflow(mock_phabricator, mock_stats):
+def mock_workflow(mock_phabricator):
     """
     Mock the workflow along with Taskcluster mocks
     No phabricator output here
     """
     from code_review_bot.workflow import Workflow
+
+    # Reset stats on new workflow
+    stats.metrics = []
 
     class MockWorkflow(Workflow):
         def __init__(self):
