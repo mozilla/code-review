@@ -51,7 +51,8 @@ class InferIssue(Issue):
         self.line = entry["line"]
         self.column = entry["column"]
         self.bug_type = entry["bug_type"]
-        self.kind = entry["kind"]
+        self.kind = entry.get("kind") or entry.get("severity")
+        assert self.kind is not None, "Missing issue kind"
         self.message = entry["qualifier"]
         self.body = None
         self.nb_lines = 1

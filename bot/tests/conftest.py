@@ -15,6 +15,7 @@ import responses
 from libmozdata.phabricator import PhabricatorAPI
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")
+FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 
 MockArtifactResponse = namedtuple("MockArtifactResponse", "content")
 

@@ -1,4 +1,11 @@
 # -*- coding: utf-8 -*-
+import json
+import os
+
+import pytest
+
+from code_review_bot.tasks.infer import InferTask
+from conftest import FIXTURES_DIR
 
 
 def test_as_text(mock_revision):
@@ -56,3 +63,26 @@ Dummy body
 ```
 """
     )
+
+
+@pytest.mark.parametrize("version, nb", [("0.16.0", 9), ("0.17.0", 32)])
+def test_infer_artifact(version, nb, mock_revision):
+    """
+    Test Infer artifact per version, comparing a raw artifact processed
+    and expected issues list
+    """
+    with open(os.path.join(FIXTURES_DIR, f"infer_artifact_{version}.json")) as f:
+        artifact = json.load(f)
+
+    status = {"task": {}, "status": {}}
+    task = InferTask("someTaskId", status)
+    issues = task.parse_issues(
+        {"public/code-review/infer.json": artifact}, mock_revision
+    )
+
+    assert len(artifact) == len(issues) == nb
+
+    issues_data = [issue.as_dict() for issue in issues]
+
+    with open(os.path.join(FIXTURES_DIR, f"infer_issues_{version}.json")) as f:
+        assert issues_data == json.load(f)

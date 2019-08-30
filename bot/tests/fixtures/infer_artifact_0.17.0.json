@@ -1,0 +1,3592 @@
+[
+    {
+        "bug_type": "INEFFICIENT_KEYSET_ITERATOR",
+        "qualifier": "Accessing a value using a key that was retrieved from a `keySet` iterator. It is more efficient to use an iterator on the `entrySet` of the map, avoiding the extra `HashMap.get(key)` lookup.",
+        "severity": "ERROR",
+        "line": 102,
+        "column": -1,
+        "procedure": "org.mozilla.gecko.mozglue.GeckoLoader.setupInitialPrefs(java.util.Map):void",
+        "procedure_start_line": 97,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/mozglue/GeckoLoader.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/mozglue/GeckoLoader.java",
+                "line_number": 102,
+                "column_number": -1,
+                "description": "Accessing a value using a key that was retrieved from a `keySet` iterator. It is more efficient to use an iterator on the `entrySet` of the map, avoiding the extra `HashMap.get(key)` lookup."
+            }
+        ],
+        "key": "GeckoLoader.java|setupInitialPrefs|INEFFICIENT_KEYSET_ITERATOR",
+        "hash": "e1c9cf11d4ae040d3687a18e37884a0d",
+        "bug_type_hum": "Inefficient Keyset Iterator"
+    },
+    {
+        "bug_type": "NULL_DEREFERENCE",
+        "qualifier": "object returned by `profile.getDir()` could be null and is dereferenced at line 234.",
+        "severity": "ERROR",
+        "line": 234,
+        "column": -1,
+        "procedure": "org.mozilla.gecko.GeckoThread.canUseProfile(android.content.Context,org.mozilla.gecko.GeckoProfile,java.lang.String,java.io.File):boolean",
+        "procedure_start_line": 219,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 219,
+                "column_number": -1,
+                "description": "start of procedure canUseProfile(...)"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 221,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 221,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 225,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 233,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 234,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 452,
+                "column_number": -1,
+                "description": "start of procedure getDir()"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 453,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 461,
+                "column_number": -1,
+                "description": "start of procedure forceCreateLocked()"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 462,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 469,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 955,
+                "column_number": -1,
+                "description": "start of procedure findProfileDir()"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 956,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 426,
+                "column_number": -1,
+                "description": "start of procedure isCustomProfile()"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 427,
+                "column_number": -1,
+                "description": "return from a call to boolean GeckoProfile.isCustomProfile()"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 956,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 957,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 959,
+                "column_number": -1,
+                "description": "return from a call to File GeckoProfile.findProfileDir()"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 469,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 470,
+                "column_number": -1,
+                "description": "Skipping d(...): unknown method"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 478,
+                "column_number": -1,
+                "description": "return from a call to void GeckoProfile.forceCreateLocked()"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 454,
+                "column_number": -1,
+                "description": "return from a call to File GeckoProfile.getDir()"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 234,
+                "column_number": -1,
+                "description": ""
+            }
+        ],
+        "key": "GeckoThread.java|canUseProfile|NULL_DEREFERENCE",
+        "node_key": "42f56fda1ad408e362508b93a175bb0c",
+        "hash": "afcfee546695b0fec49a3fbbe85f1370",
+        "bug_type_hum": "Null Dereference"
+    },
+    {
+        "bug_type": "NULL_DEREFERENCE",
+        "qualifier": "object returned by `GeckoViewActivity$3.this$0.mNotificationIDMap.get(notification.tag)` could be null and is dereferenced at line 233.",
+        "severity": "ERROR",
+        "line": 233,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity$3.onCloseNotification(org.mozilla.geckoview.WebNotification):void",
+        "procedure_start_line": 232,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 232,
+                "column_number": -1,
+                "description": "start of procedure onCloseNotification(...)"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 233,
+                "column_number": -1,
+                "description": ""
+            }
+        ],
+        "key": "GeckoViewActivity.java|onCloseNotification|NULL_DEREFERENCE",
+        "node_key": "8efe1da0266e88511615b57898fdbb38",
+        "hash": "ce8c5c3e202726fd690d975bf9b17b34",
+        "bug_type_hum": "Null Dereference"
+    },
+    {
+        "bug_type": "NULL_DEREFERENCE",
+        "qualifier": "object `profile` last assigned on line 301 could be null and is dereferenced at line 302.",
+        "severity": "ERROR",
+        "line": 302,
+        "column": -1,
+        "procedure": "org.mozilla.gecko.GeckoThread.getMainProcessArgs():java.lang.String[]",
+        "procedure_start_line": 292,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 292,
+                "column_number": -1,
+                "description": "start of procedure getMainProcessArgs()"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 293,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java",
+                "line_number": 1493,
+                "column_number": -1,
+                "description": "start of procedure getApplicationContext()"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoAppShell.java",
+                "line_number": 1494,
+                "column_number": -1,
+                "description": "return from a call to Context GeckoAppShell.getApplicationContext()"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 294,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 297,
+                "column_number": -1,
+                "description": "Skipping add(...): unknown method"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 298,
+                "column_number": -1,
+                "description": "Skipping add(...): unknown method"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 299,
+                "column_number": -1,
+                "description": "Skipping add(...): unknown method"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 301,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 339,
+                "column_number": -1,
+                "description": "start of procedure getProfile()"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 340,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 341,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 352,
+                "column_number": -1,
+                "description": "return from a call to GeckoProfile GeckoThread.getProfile()"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 302,
+                "column_number": -1,
+                "description": ""
+            }
+        ],
+        "key": "GeckoThread.java|getMainProcessArgs|NULL_DEREFERENCE",
+        "node_key": "18086a76ec6f499138a84f176568ec09",
+        "hash": "36d9810509ad5d691abad7c665493485",
+        "bug_type_hum": "Null Dereference"
+    },
+    {
+        "bug_type": "NULL_DEREFERENCE",
+        "qualifier": "object `notification` last assigned on line 510 could be null and is dereferenced at line 511.",
+        "severity": "ERROR",
+        "line": 511,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onNewIntent(android.content.Intent):void",
+        "procedure_start_line": 497,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 497,
+                "column_number": -1,
+                "description": "start of procedure onNewIntent(...)"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 499,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 508,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 509,
+                "column_number": -1,
+                "description": "Skipping getInt(...): unknown method"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 510,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 511,
+                "column_number": -1,
+                "description": ""
+            }
+        ],
+        "key": "GeckoViewActivity.java|onNewIntent|NULL_DEREFERENCE",
+        "node_key": "25eec8bc2b565fcb7ecd79f1e598eda2",
+        "hash": "c119d63d6af8d1f3ab5f78b1d8b6e160",
+        "bug_type_hum": "Null Dereference"
+    },
+    {
+        "bug_type": "NULL_DEREFERENCE",
+        "qualifier": "object returned by `getActiveProfile()` could be null and is dereferenced at line 599.",
+        "severity": "ERROR",
+        "line": 599,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.getProfileDir():java.io.File",
+        "procedure_start_line": 597,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 597,
+                "column_number": -1,
+                "description": "start of procedure getProfileDir()"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 598,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "start of procedure assertOnUiThread()"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 126,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 85,
+                "column_number": -1,
+                "description": "start of procedure getUiThread()"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 86,
+                "column_number": -1,
+                "description": "return from a call to Thread ThreadUtils.getUiThread()"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 126,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 155,
+                "column_number": -1,
+                "description": "start of procedure assertOnThread(...)"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 163,
+                "column_number": -1,
+                "description": "start of procedure assertOnThreadComparison(...)"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 166,
+                "column_number": -1,
+                "description": "Skipping currentThread(): unknown method"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 167,
+                "column_number": -1,
+                "description": "Skipping getId(): unknown method"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 168,
+                "column_number": -1,
+                "description": "Skipping getId(): unknown method"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 170,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 170,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 171,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 192,
+                "column_number": -1,
+                "description": "return from a call to void ThreadUtils.assertOnThreadComparison(Thread,ThreadUtils$AssertBehavior,boolean)"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 156,
+                "column_number": -1,
+                "description": "return from a call to void ThreadUtils.assertOnThread(Thread,ThreadUtils$AssertBehavior)"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 127,
+                "column_number": -1,
+                "description": "return from a call to void ThreadUtils.assertOnUiThread()"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 599,
+                "column_number": -1,
+                "description": "Skipping getActiveProfile(): empty list of specs"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 335,
+                "column_number": -1,
+                "description": "Definition of getActiveProfile()"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 599,
+                "column_number": -1,
+                "description": ""
+            }
+        ],
+        "key": "GeckoRuntime.java|getProfileDir|NULL_DEREFERENCE",
+        "node_key": "8fe6896617fe48d976e5405cc17d2e7a",
+        "hash": "faca85814eaa2623b6d9d4c45a6230d7",
+        "bug_type_hum": "Null Dereference"
+    },
+    {
+        "bug_type": "NULL_DEREFERENCE",
+        "qualifier": "object returned by `GeckoViewActivity$ExampleContentDelegate.this$0.getSupportActionBar()` could be null and is dereferenced at line 688.",
+        "severity": "ERROR",
+        "line": 688,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity$ExampleContentDelegate.onFullScreen(org.mozilla.geckoview.GeckoSession,boolean):void",
+        "procedure_start_line": 683,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 683,
+                "column_number": -1,
+                "description": "start of procedure onFullScreen(...)"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 684,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 686,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 687,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 688,
+                "column_number": -1,
+                "description": ""
+            }
+        ],
+        "key": "GeckoViewActivity.java|onFullScreen|NULL_DEREFERENCE",
+        "node_key": "b0ed25eec6c25e7c4348974d51cf6b89",
+        "hash": "7eb6326434304a18e9d2e1a165e62d00",
+        "bug_type_hum": "Null Dereference"
+    },
+    {
+        "bug_type": "NULL_DEREFERENCE",
+        "qualifier": "object returned by `GeckoViewActivity$ExampleContentDelegate.this$0.getSupportActionBar()` could be null and is dereferenced at line 690.",
+        "severity": "ERROR",
+        "line": 690,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity$ExampleContentDelegate.onFullScreen(org.mozilla.geckoview.GeckoSession,boolean):void",
+        "procedure_start_line": 683,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 683,
+                "column_number": -1,
+                "description": "start of procedure onFullScreen(...)"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 684,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 686,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 687,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 690,
+                "column_number": -1,
+                "description": ""
+            }
+        ],
+        "key": "GeckoViewActivity.java|onFullScreen|NULL_DEREFERENCE",
+        "node_key": "b0ed25eec6c25e7c4348974d51cf6b89",
+        "hash": "7eb6326434304a18e9d2e1a165e62d00",
+        "bug_type_hum": "Null Dereference"
+    },
+    {
+        "bug_type": "NULL_DEREFERENCE",
+        "qualifier": "object `name` last assigned on line 911 could be null and is dereferenced at line 913.",
+        "severity": "ERROR",
+        "line": 913,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity$ExamplePermissionDelegate.normalizeMediaName(org.mozilla.geckoview.GeckoSession$PermissionDelegate$MediaSource[]):java.lang.String[]",
+        "procedure_start_line": 903,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 903,
+                "column_number": -1,
+                "description": "start of procedure normalizeMediaName(...)"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 904,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 908,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 909,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 910,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 911,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 912,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 913,
+                "column_number": -1,
+                "description": ""
+            }
+        ],
+        "key": "GeckoViewActivity.java|normalizeMediaName|NULL_DEREFERENCE",
+        "node_key": "990ccc7f82f5d8e9ddf512eae23c136a",
+        "hash": "e58eb3a1771f3d80bb744b780a19601f",
+        "bug_type_hum": "Null Dereference"
+    },
+    {
+        "bug_type": "NULL_DEREFERENCE",
+        "qualifier": "object `name` last assigned on line 911 could be null and is dereferenced at line 918.",
+        "severity": "ERROR",
+        "line": 918,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity$ExamplePermissionDelegate.normalizeMediaName(org.mozilla.geckoview.GeckoSession$PermissionDelegate$MediaSource[]):java.lang.String[]",
+        "procedure_start_line": 903,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 903,
+                "column_number": -1,
+                "description": "start of procedure normalizeMediaName(...)"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 904,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 908,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 909,
+                "column_number": -1,
+                "description": "Taking true branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 910,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 911,
+                "column_number": -1,
+                "description": ""
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 912,
+                "column_number": -1,
+                "description": "Taking false branch"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 918,
+                "column_number": -1,
+                "description": ""
+            }
+        ],
+        "key": "GeckoViewActivity.java|normalizeMediaName|NULL_DEREFERENCE",
+        "node_key": "6cccac43c00eba65da104b6f3239cef0",
+        "hash": "e58eb3a1771f3d80bb744b780a19601f",
+        "bug_type_hum": "Null Dereference"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `GeckoRuntime GeckoRuntime.create(Context)` runs on UI thread (because `GeckoRuntime GeckoRuntime.create(Context)` is annotated `UiThread`), and may block; calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 345,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.create(android.content.Context):org.mozilla.geckoview.GeckoRuntime",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 345,
+                "column_number": -1,
+                "description": "`GeckoRuntime GeckoRuntime.create(Context)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 345,
+                "column_number": -1,
+                "description": "Method call: `GeckoRuntime GeckoRuntime.create(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 469,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 272,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.attachToContext(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 70,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.onEnabledChange()`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 121,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.start()`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 136,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.onSystemFontScaleChange(ContentResolver,boolean)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 163,
+                "column_number": -1,
+                "description": "Method call: `GeckoRuntimeSettings GeckoRuntimeSettings.setFontSizeFactorInternal(float)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntimeSettings.java",
+                "line_number": 878,
+                "column_number": -1,
+                "description": "Method call: `void RuntimeSettings$Pref.commit(Object)`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/RuntimeSettings.java",
+                "line_number": 94,
+                "column_number": -1,
+                "description": "Method call: `void RuntimeSettings$Pref.commit()`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/RuntimeSettings.java",
+                "line_number": 104,
+                "column_number": -1,
+                "description": "Method call: `void GeckoRuntime.setDefaultPrefs(GeckoBundle)`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 328,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 12,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 13,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 14,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 15,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 343,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `GeckoRuntime GeckoRuntime.create(Context)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 343,
+                "column_number": -1,
+                "description": "`GeckoRuntime GeckoRuntime.create(Context)` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoRuntime.java|create|STARVATION",
+        "hash": "b422dedc1914a7a27f1c4ae1bc8fb2ae",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `GeckoRuntime GeckoRuntime.create(Context,GeckoRuntimeSettings)` runs on UI thread (because `GeckoRuntime GeckoRuntime.create(Context,GeckoRuntimeSettings)` is annotated `UiThread`), and may block; calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 469,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.create(android.content.Context,org.mozilla.geckoview.GeckoRuntimeSettings):org.mozilla.geckoview.GeckoRuntime",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 469,
+                "column_number": -1,
+                "description": "`GeckoRuntime GeckoRuntime.create(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 469,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 272,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.attachToContext(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 70,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.onEnabledChange()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 121,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.start()`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 136,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.onSystemFontScaleChange(ContentResolver,boolean)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 163,
+                "column_number": -1,
+                "description": "Method call: `GeckoRuntimeSettings GeckoRuntimeSettings.setFontSizeFactorInternal(float)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntimeSettings.java",
+                "line_number": 878,
+                "column_number": -1,
+                "description": "Method call: `void RuntimeSettings$Pref.commit(Object)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/RuntimeSettings.java",
+                "line_number": 94,
+                "column_number": -1,
+                "description": "Method call: `void RuntimeSettings$Pref.commit()`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/RuntimeSettings.java",
+                "line_number": 104,
+                "column_number": -1,
+                "description": "Method call: `void GeckoRuntime.setDefaultPrefs(GeckoBundle)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 328,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 12,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 13,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 14,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 459,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `GeckoRuntime GeckoRuntime.create(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 459,
+                "column_number": -1,
+                "description": "`GeckoRuntime GeckoRuntime.create(Context,GeckoRuntimeSettings)` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoRuntime.java|create|STARVATION",
+        "hash": "da663c7e5df7fd82ace5eaf235b68491",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `GeckoRuntime GeckoRuntime.getDefault(Context)` runs on UI thread (because `GeckoRuntime GeckoRuntime.getDefault(Context)` is annotated `UiThread`), and may block; calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 154,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.getDefault(android.content.Context):org.mozilla.geckoview.GeckoRuntime",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 154,
+                "column_number": -1,
+                "description": "`GeckoRuntime GeckoRuntime.getDefault(Context)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 154,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 272,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.attachToContext(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 70,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.onEnabledChange()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 121,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.start()`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 136,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.onSystemFontScaleChange(ContentResolver,boolean)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 163,
+                "column_number": -1,
+                "description": "Method call: `GeckoRuntimeSettings GeckoRuntimeSettings.setFontSizeFactorInternal(float)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntimeSettings.java",
+                "line_number": 878,
+                "column_number": -1,
+                "description": "Method call: `void RuntimeSettings$Pref.commit(Object)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/RuntimeSettings.java",
+                "line_number": 94,
+                "column_number": -1,
+                "description": "Method call: `void RuntimeSettings$Pref.commit()`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/RuntimeSettings.java",
+                "line_number": 104,
+                "column_number": -1,
+                "description": "Method call: `void GeckoRuntime.setDefaultPrefs(GeckoBundle)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 328,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 12,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 13,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 14,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 146,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `GeckoRuntime GeckoRuntime.getDefault(Context)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 146,
+                "column_number": -1,
+                "description": "`GeckoRuntime GeckoRuntime.getDefault(Context)` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoRuntime.java|getDefault|STARVATION",
+        "hash": "0b95f1ee6d0be7b9f9b247a4af08409e",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `File GeckoRuntime.getProfileDir()` runs on UI thread (because `File GeckoRuntime.getProfileDir()` is annotated `UiThread`), and may block; calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 599,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.getProfileDir():java.io.File",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 599,
+                "column_number": -1,
+                "description": "`File GeckoRuntime.getProfileDir()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 599,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoThread.getActiveProfile()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 336,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoThread.getProfile()`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 349,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.initFromArgs(Context,String)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 119,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.getGuestProfile(Context)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 328,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.get(Context,String,File)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 280,
+                "column_number": -1,
+                "description": "Method call: `void GeckoProfile.enqueueInitialization(File)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 1057,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 597,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `File GeckoRuntime.getProfileDir()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 597,
+                "column_number": -1,
+                "description": "`File GeckoRuntime.getProfileDir()` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoRuntime.java|getProfileDir|STARVATION",
+        "hash": "c1b07d796952c1f648fda6963ecdd9f9",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STRICT_MODE_VIOLATION",
+        "qualifier": "Method `File GeckoRuntime.getProfileDir()` runs on UI thread (because `File GeckoRuntime.getProfileDir()` is annotated `UiThread`), and may violate Strict Mode; calls `java.lang.String[] File.list()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 599,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.getProfileDir():java.io.File",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 599,
+                "column_number": -1,
+                "description": "`File GeckoRuntime.getProfileDir()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 599,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoThread.getActiveProfile()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 336,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoThread.getProfile()`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 349,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.initFromArgs(Context,String)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 134,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoProfile.removeProfile(Context,GeckoProfile)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 311,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoProfile.remove()`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 855,
+                "column_number": -1,
+                "description": "Method call: `boolean FileUtils.delete(File)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/FileUtils.java",
+                "line_number": 98,
+                "column_number": -1,
+                "description": "Method call: `boolean FileUtils.delete(File,boolean)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/FileUtils.java",
+                "line_number": 104,
+                "column_number": -1,
+                "description": "calls `java.lang.String[] File.list()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 597,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `File GeckoRuntime.getProfileDir()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 597,
+                "column_number": -1,
+                "description": "`File GeckoRuntime.getProfileDir()` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoRuntime.java|getProfileDir|STRICT_MODE_VIOLATION",
+        "hash": "2d8dd5a4c616a552f1226dcf02d0d005",
+        "bug_type_hum": "Strict Mode Violation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)` runs on UI thread (because it calls `void ThreadUtils.assertOnUiThread()`) and locks `this` in `class org.mozilla.gecko.GeckoThread`, which may be held by another thread which calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 301,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.init(android.content.Context,org.mozilla.geckoview.GeckoRuntimeSettings):boolean",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 301,
+                "column_number": -1,
+                "description": "[Trace 1] `boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 301,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoThread.init(GeckoThread$InitInfo)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 177,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoThread.initInternal(GeckoThread$InitInfo)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 180,
+                "column_number": -1,
+                "description": " locks `this` in `class org.mozilla.gecko.GeckoThread`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 245,
+                "column_number": -1,
+                "description": "[Trace 2] `boolean GeckoThread.canUseProfile(String,File)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 245,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoThread.getActiveProfile()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 336,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoThread.getProfile()`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 339,
+                "column_number": -1,
+                "description": " locks `this` in `class org.mozilla.gecko.GeckoThread`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 349,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.initFromArgs(Context,String)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 119,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.getGuestProfile(Context)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 328,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.get(Context,String,File)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 280,
+                "column_number": -1,
+                "description": "Method call: `void GeckoProfile.enqueueInitialization(File)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 1057,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 12,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 272,
+                "column_number": -1,
+                "description": "[Trace 1 on UI thread] `boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 272,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.attachToContext(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "it calls `void ThreadUtils.assertOnUiThread()`"
+            }
+        ],
+        "key": "GeckoRuntime.java|init|STARVATION",
+        "hash": "c2edba53c0a047c69f551b402dafdfe2",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)` runs on UI thread (because it calls `void ThreadUtils.assertOnUiThread()`), and may block; calls `void Object.wait()`.",
+        "severity": "ERROR",
+        "line": 272,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.init(android.content.Context,org.mozilla.geckoview.GeckoRuntimeSettings):boolean",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 272,
+                "column_number": -1,
+                "description": "`boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 272,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.attachToContext(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 70,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.onEnabledChange()`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 121,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.start()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 136,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.onSystemFontScaleChange(ContentResolver,boolean)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 163,
+                "column_number": -1,
+                "description": "Method call: `GeckoRuntimeSettings GeckoRuntimeSettings.setFontSizeFactorInternal(float)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntimeSettings.java",
+                "line_number": 878,
+                "column_number": -1,
+                "description": "Method call: `void RuntimeSettings$Pref.commit(Object)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/RuntimeSettings.java",
+                "line_number": 94,
+                "column_number": -1,
+                "description": "Method call: `void RuntimeSettings$Pref.commit()`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/RuntimeSettings.java",
+                "line_number": 104,
+                "column_number": -1,
+                "description": "Method call: `void GeckoRuntime.setDefaultPrefs(GeckoBundle)`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 328,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 12,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 13,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 272,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 272,
+                "column_number": -1,
+                "description": "Method call: `void GeckoFontScaleListener.attachToContext(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoFontScaleListener.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "it calls `void ThreadUtils.assertOnUiThread()`"
+            }
+        ],
+        "key": "GeckoRuntime.java|init|STARVATION",
+        "hash": "6eb76ce0c034d842a51baf60f91a90ee",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `GeckoResult GeckoViewActivity$2.onCloseTab(WebExtension,GeckoSession)` runs on UI thread (because class `GeckoResult GeckoViewActivity$2.onCloseTab(WebExtension,GeckoSession)` overrides `GeckoResult WebExtensionController$TabDelegate.onCloseTab(WebExtension,GeckoSession)`, which is annotated `UiThread`), and may block; calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 188,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity$2.onCloseTab(org.mozilla.geckoview.WebExtension,org.mozilla.geckoview.GeckoSession):org.mozilla.geckoview.GeckoResult",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 188,
+                "column_number": -1,
+                "description": "`GeckoResult GeckoViewActivity$2.onCloseTab(WebExtension,GeckoSession)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 188,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.closeTab(TabSession)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 459,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.setGeckoViewSession(TabSession)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 478,
+                "column_number": -1,
+                "description": "Method call: `GeckoSession GeckoView.releaseSession()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoView.java",
+                "line_number": 317,
+                "column_number": -1,
+                "description": "Method call: `SessionAccessibility GeckoSession.getAccessibility()`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1477,
+                "column_number": -1,
+                "description": "Method call: `SessionAccessibility.<init>(GeckoSession)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 521,
+                "column_number": -1,
+                "description": "Method call: `void SessionAccessibility$Settings.updateAccessibilitySettings()`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 640,
+                "column_number": -1,
+                "description": "Method call: `void SessionAccessibility$Settings.dispatch()`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 648,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 12,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 186,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `GeckoResult GeckoViewActivity$2.onCloseTab(WebExtension,GeckoSession)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 186,
+                "column_number": -1,
+                "description": "class `GeckoResult GeckoViewActivity$2.onCloseTab(WebExtension,GeckoSession)` overrides `GeckoResult WebExtensionController$TabDelegate.onCloseTab(WebExtension,GeckoSession)`, which is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onCloseTab|STARVATION",
+        "hash": "9cd09e834e0a68b3d370145bd6da104f",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `void GeckoViewActivity$ExampleContentDelegate.onCrash(GeckoSession)` runs on UI thread (because class `void GeckoViewActivity$ExampleContentDelegate.onCrash(GeckoSession)` overrides `void GeckoSession$ContentDelegate.onCrash(GeckoSession)`, which is annotated `UiThread`) and locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`, which may be held by another thread which calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 733,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity$ExampleContentDelegate.onCrash(org.mozilla.geckoview.GeckoSession):void",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 733,
+                "column_number": -1,
+                "description": "[Trace 1] `void GeckoViewActivity$ExampleContentDelegate.onCrash(GeckoSession)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 733,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSession.open(GeckoRuntime)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1386,
+                "column_number": -1,
+                "description": "Method call: `String GeckoSessionSettings.getChromeUri()`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 669,
+                "column_number": -1,
+                "description": "Method call: `String GeckoSessionSettings.getString(GeckoSessionSettings$Key)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 682,
+                "column_number": -1,
+                "description": " locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "[Trace 2] `void GeckoSessionSettings.setViewportMode(int)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setInt(GeckoSessionSettings$Key,int)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 575,
+                "column_number": -1,
+                "description": " locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 578,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.dispatchUpdate()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 720,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 731,
+                "column_number": -1,
+                "description": "[Trace 1 on UI thread] `void GeckoViewActivity$ExampleContentDelegate.onCrash(GeckoSession)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 731,
+                "column_number": -1,
+                "description": "class `void GeckoViewActivity$ExampleContentDelegate.onCrash(GeckoSession)` overrides `void GeckoSession$ContentDelegate.onCrash(GeckoSession)`, which is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onCrash|STARVATION",
+        "hash": "f31a3786054fc864eb87ccc7b2811080",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `void GeckoViewActivity.onCreate(Bundle)` runs on UI thread (because `void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method) and locks `this` in `class org.mozilla.gecko.GeckoThread`, which may be held by another thread which calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 176,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onCreate(android.os.Bundle):void",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 176,
+                "column_number": -1,
+                "description": "[Trace 1] `void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 176,
+                "column_number": -1,
+                "description": "Method call: `GeckoRuntime GeckoRuntime.create(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 469,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoRuntime.init(Context,GeckoRuntimeSettings)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 301,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoThread.init(GeckoThread$InitInfo)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 177,
+                "column_number": -1,
+                "description": "Method call: `boolean GeckoThread.initInternal(GeckoThread$InitInfo)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 180,
+                "column_number": -1,
+                "description": " locks `this` in `class org.mozilla.gecko.GeckoThread`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 245,
+                "column_number": -1,
+                "description": "[Trace 2] `boolean GeckoThread.canUseProfile(String,File)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 245,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoThread.getActiveProfile()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 336,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoThread.getProfile()`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 339,
+                "column_number": -1,
+                "description": " locks `this` in `class org.mozilla.gecko.GeckoThread`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoThread.java",
+                "line_number": 349,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.initFromArgs(Context,String)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 119,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.getGuestProfile(Context)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 328,
+                "column_number": -1,
+                "description": "Method call: `GeckoProfile GeckoProfile.get(Context,String,File)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 280,
+                "column_number": -1,
+                "description": "Method call: `void GeckoProfile.enqueueInitialization(File)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/GeckoProfile.java",
+                "line_number": 1057,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 12,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "[Trace 1 on UI thread] `void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "`void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onCreate|STARVATION",
+        "hash": "e2884e6fef27758be3fb4b3be14e8674",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `void GeckoViewActivity.onCreate(Bundle)` runs on UI thread (because `void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method), and may block; calls `void Object.wait()`.",
+        "severity": "ERROR",
+        "line": 255,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onCreate(android.os.Bundle):void",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 255,
+                "column_number": -1,
+                "description": "`void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 255,
+                "column_number": -1,
+                "description": "Method call: `void GeckoView.setSession(GeckoSession)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoView.java",
+                "line_number": 352,
+                "column_number": -1,
+                "description": "Method call: `GeckoSession GeckoView.releaseSession()`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoView.java",
+                "line_number": 317,
+                "column_number": -1,
+                "description": "Method call: `SessionAccessibility GeckoSession.getAccessibility()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1477,
+                "column_number": -1,
+                "description": "Method call: `SessionAccessibility.<init>(GeckoSession)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 521,
+                "column_number": -1,
+                "description": "Method call: `void SessionAccessibility$Settings.updateAccessibilitySettings()`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 640,
+                "column_number": -1,
+                "description": "Method call: `void SessionAccessibility$Settings.dispatch()`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 648,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "`void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onCreate|STARVATION",
+        "hash": "269776eec228c518b7210ea7238c7385",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `void GeckoViewActivity.onCreate(Bundle)` runs on UI thread (because `void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method) and locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`, which may be held by another thread which calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 245,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onCreate(android.os.Bundle):void",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 245,
+                "column_number": -1,
+                "description": "[Trace 1] `void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 245,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.connectSession(GeckoSession)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 325,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.updateDesktopMode(GeckoSession)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 357,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setViewportMode(int)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setInt(GeckoSessionSettings$Key,int)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 575,
+                "column_number": -1,
+                "description": " locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "[Trace 2] `void GeckoSessionSettings.setViewportMode(int)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setInt(GeckoSessionSettings$Key,int)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 575,
+                "column_number": -1,
+                "description": " locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 578,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.dispatchUpdate()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 720,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "[Trace 1 on UI thread] `void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "`void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onCreate|STARVATION",
+        "hash": "b7c87c2a9382bd964f71c93c933827f6",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `void GeckoViewActivity.onCreate(Bundle)` runs on UI thread (because `void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method) and locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`, which may be held by another thread which calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 248,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onCreate(android.os.Bundle):void",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 248,
+                "column_number": -1,
+                "description": "[Trace 1] `void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 248,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSession.open(GeckoRuntime)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1386,
+                "column_number": -1,
+                "description": "Method call: `String GeckoSessionSettings.getChromeUri()`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 669,
+                "column_number": -1,
+                "description": "Method call: `String GeckoSessionSettings.getString(GeckoSessionSettings$Key)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 682,
+                "column_number": -1,
+                "description": " locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "[Trace 2] `void GeckoSessionSettings.setViewportMode(int)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setInt(GeckoSessionSettings$Key,int)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 575,
+                "column_number": -1,
+                "description": " locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 578,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.dispatchUpdate()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 720,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "[Trace 1 on UI thread] `void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "`void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onCreate|STARVATION",
+        "hash": "b7c87c2a9382bd964f71c93c933827f6",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `void GeckoViewActivity.onCreate(Bundle)` runs on UI thread (because `void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method) and locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`, which may be held by another thread which calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 257,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onCreate(android.os.Bundle):void",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "[Trace 1] `void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `TabSession GeckoViewActivity.createSession()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 288,
+                "column_number": -1,
+                "description": "Method call: `GeckoSessionSettings$Builder GeckoSessionSettings$Builder.useMultiprocess(boolean)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 111,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setUseMultiprocess(boolean)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 417,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setBoolean(GeckoSessionSettings$Key,boolean)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 453,
+                "column_number": -1,
+                "description": " locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "[Trace 2] `void GeckoSessionSettings.setViewportMode(int)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setInt(GeckoSessionSettings$Key,int)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 575,
+                "column_number": -1,
+                "description": " locks `this.mBundle` in `class org.mozilla.geckoview.GeckoSessionSettings`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 578,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.dispatchUpdate()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 720,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "[Trace 1 on UI thread] `void GeckoViewActivity.onCreate(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 125,
+                "column_number": -1,
+                "description": "`void GeckoViewActivity.onCreate(Bundle)` is a standard UI-thread method"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onCreate|STARVATION",
+        "hash": "b7c87c2a9382bd964f71c93c933827f6",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `void GeckoViewActivity.onNewIntent(Intent)` runs on UI thread (because `void WebNotification.click()` is annotated `UiThread`), and may block; calls `void Object.wait()`.",
+        "severity": "ERROR",
+        "line": 518,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onNewIntent(android.content.Intent):void",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 518,
+                "column_number": -1,
+                "description": "`void GeckoViewActivity.onNewIntent(Intent)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 518,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.loadFromIntent(Intent)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 526,
+                "column_number": -1,
+                "description": "Method call: `void TabSession.loadUri(String)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/TabSession.java",
+                "line_number": 30,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSession.loadUri(String)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1549,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSession.loadUri(String,GeckoSession,int)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1602,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 511,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `void GeckoViewActivity.onNewIntent(Intent)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 511,
+                "column_number": -1,
+                "description": "Method call: `void WebNotification.click()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/WebNotification.java",
+                "line_number": 88,
+                "column_number": -1,
+                "description": "`void WebNotification.click()` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onNewIntent|STARVATION",
+        "hash": "2de55fd44767a84c6f80efbee7ccb8e1",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `GeckoResult GeckoViewActivity$ExampleNavigationDelegate.onNewSession(GeckoSession,String)` runs on UI thread (because class `GeckoResult GeckoViewActivity$ExampleNavigationDelegate.onNewSession(GeckoSession,String)` overrides `GeckoResult GeckoSession$NavigationDelegate.onNewSession(GeckoSession,String)`, which is annotated `UiThread`), and may block; calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 997,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity$ExampleNavigationDelegate.onNewSession(org.mozilla.geckoview.GeckoSession,java.lang.String):org.mozilla.geckoview.GeckoResult",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 997,
+                "column_number": -1,
+                "description": "`GeckoResult GeckoViewActivity$ExampleNavigationDelegate.onNewSession(GeckoSession,String)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 997,
+                "column_number": -1,
+                "description": "Method call: `TabSession GeckoViewActivity.createSession()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 292,
+                "column_number": -1,
+                "description": "Method call: `GeckoSessionSettings$Builder GeckoSessionSettings$Builder.viewportMode(int)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 211,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setViewportMode(int)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setInt(GeckoSessionSettings$Key,int)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 578,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.dispatchUpdate()`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 720,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 996,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `GeckoResult GeckoViewActivity$ExampleNavigationDelegate.onNewSession(GeckoSession,String)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 996,
+                "column_number": -1,
+                "description": "class `GeckoResult GeckoViewActivity$ExampleNavigationDelegate.onNewSession(GeckoSession,String)` overrides `GeckoResult GeckoSession$NavigationDelegate.onNewSession(GeckoSession,String)`, which is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onNewSession|STARVATION",
+        "hash": "afa808301bd1068a8842a49fc46cfb10",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `GeckoResult GeckoViewActivity$2.onNewTab(WebExtension,String)` runs on UI thread (because class `GeckoResult GeckoViewActivity$2.onNewTab(WebExtension,String)` overrides `GeckoResult WebExtensionController$TabDelegate.onNewTab(WebExtension,String)`, which is annotated `UiThread`), and may block; calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 181,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity$2.onNewTab(org.mozilla.geckoview.WebExtension,java.lang.String):org.mozilla.geckoview.GeckoResult",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 181,
+                "column_number": -1,
+                "description": "`GeckoResult GeckoViewActivity$2.onNewTab(WebExtension,String)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 181,
+                "column_number": -1,
+                "description": "Method call: `TabSession GeckoViewActivity.createSession()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 292,
+                "column_number": -1,
+                "description": "Method call: `GeckoSessionSettings$Builder GeckoSessionSettings$Builder.viewportMode(int)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 211,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setViewportMode(int)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 571,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.setInt(GeckoSessionSettings$Key,int)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 578,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSessionSettings.dispatchUpdate()`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSessionSettings.java",
+                "line_number": 720,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 180,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `GeckoResult GeckoViewActivity$2.onNewTab(WebExtension,String)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 180,
+                "column_number": -1,
+                "description": "class `GeckoResult GeckoViewActivity$2.onNewTab(WebExtension,String)` overrides `GeckoResult WebExtensionController$TabDelegate.onNewTab(WebExtension,String)`, which is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onNewTab|STARVATION",
+        "hash": "ca7fac0287811c7ff4268fced0e633a6",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `boolean GeckoViewActivity.onOptionsItemSelected(MenuItem)` runs on UI thread (because `void GeckoSession.open(GeckoRuntime)` is annotated `UiThread`), and may block; calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 415,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onOptionsItemSelected(android.view.MenuItem):boolean",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 415,
+                "column_number": -1,
+                "description": "`boolean GeckoViewActivity.onOptionsItemSelected(MenuItem)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 415,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.recreateSession()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 329,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.recreateSession(TabSession)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 340,
+                "column_number": -1,
+                "description": "Method call: `void GeckoView.setSession(GeckoSession)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoView.java",
+                "line_number": 352,
+                "column_number": -1,
+                "description": "Method call: `GeckoSession GeckoView.releaseSession()`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoView.java",
+                "line_number": 317,
+                "column_number": -1,
+                "description": "Method call: `SessionAccessibility GeckoSession.getAccessibility()`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1477,
+                "column_number": -1,
+                "description": "Method call: `SessionAccessibility.<init>(GeckoSession)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 521,
+                "column_number": -1,
+                "description": "Method call: `void SessionAccessibility$Settings.updateAccessibilitySettings()`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 640,
+                "column_number": -1,
+                "description": "Method call: `void SessionAccessibility$Settings.dispatch()`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 648,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 12,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 13,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 432,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `boolean GeckoViewActivity.onOptionsItemSelected(MenuItem)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 432,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.createNewTab()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 450,
+                "column_number": -1,
+                "description": "Method call: `void GeckoSession.open(GeckoRuntime)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1378,
+                "column_number": -1,
+                "description": "`void GeckoSession.open(GeckoRuntime)` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onOptionsItemSelected|STARVATION",
+        "hash": "5538afe1d98eca9f3d49513ac23abc43",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `void GeckoViewActivity.onRequestPermissionsResult(int,java.lang.String[],int[])` runs on UI thread (because `GeckoSession$PermissionDelegate GeckoSession.getPermissionDelegate()` is annotated `UiThread`), and may block; calls `void Object.wait()`.",
+        "severity": "ERROR",
+        "line": 552,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onRequestPermissionsResult(int,java.lang.String[],int[]):void",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 552,
+                "column_number": -1,
+                "description": "`void GeckoViewActivity.onRequestPermissionsResult(int,java.lang.String[],int[])`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 552,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.continueDownloads()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 563,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.downloadFile(GeckoSession$WebResponseInfo)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 569,
+                "column_number": -1,
+                "description": "Method call: `GeckoResult GeckoSession.getUserAgent()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 998,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 548,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `void GeckoViewActivity.onRequestPermissionsResult(int,java.lang.String[],int[])`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 548,
+                "column_number": -1,
+                "description": "Method call: `GeckoSession$PermissionDelegate GeckoSession.getPermissionDelegate()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1020,
+                "column_number": -1,
+                "description": "`GeckoSession$PermissionDelegate GeckoSession.getPermissionDelegate()` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onRequestPermissionsResult|STARVATION",
+        "hash": "9ae4ec44831df65a974606cd641cf3d9",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `void GeckoViewActivity.onRestoreInstanceState(Bundle)` runs on UI thread (because class `org.mozilla.geckoview.GeckoView` is annotated `UiThread`), and may block; calls `void Object.wait()`. Additional report(s) on the same line were suppressed.",
+        "severity": "ERROR",
+        "line": 352,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview_example.GeckoViewActivity.onRestoreInstanceState(android.os.Bundle):void",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 352,
+                "column_number": -1,
+                "description": "`void GeckoViewActivity.onRestoreInstanceState(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 352,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.recreateSession()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 329,
+                "column_number": -1,
+                "description": "Method call: `void GeckoViewActivity.recreateSession(TabSession)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 340,
+                "column_number": -1,
+                "description": "Method call: `void GeckoView.setSession(GeckoSession)`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoView.java",
+                "line_number": 352,
+                "column_number": -1,
+                "description": "Method call: `GeckoSession GeckoView.releaseSession()`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoView.java",
+                "line_number": 317,
+                "column_number": -1,
+                "description": "Method call: `SessionAccessibility GeckoSession.getAccessibility()`"
+            },
+            {
+                "level": 5,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoSession.java",
+                "line_number": 1477,
+                "column_number": -1,
+                "description": "Method call: `SessionAccessibility.<init>(GeckoSession)`"
+            },
+            {
+                "level": 6,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 521,
+                "column_number": -1,
+                "description": "Method call: `void SessionAccessibility$Settings.updateAccessibilitySettings()`"
+            },
+            {
+                "level": 7,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 640,
+                "column_number": -1,
+                "description": "Method call: `void SessionAccessibility$Settings.dispatch()`"
+            },
+            {
+                "level": 8,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/SessionAccessibility.java",
+                "line_number": 648,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle)`"
+            },
+            {
+                "level": 9,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 235,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 10,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 11,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 12,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 13,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 350,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `void GeckoViewActivity.onRestoreInstanceState(Bundle)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview_example/src/main/java/org/mozilla/geckoview_example/GeckoViewActivity.java",
+                "line_number": 350,
+                "column_number": -1,
+                "description": "Method call: `GeckoSession GeckoView.getSession()`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoView.java",
+                "line_number": 407,
+                "column_number": -1,
+                "description": "class `org.mozilla.geckoview.GeckoView` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoViewActivity.java|onRestoreInstanceState|STARVATION",
+        "hash": "6ef4a59828e16acc64150f3d8810db1a",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `GeckoResult GeckoRuntime.registerWebExtension(WebExtension)` runs on UI thread (because `GeckoResult GeckoRuntime.registerWebExtension(WebExtension)` is annotated `UiThread`), and may block; calls `void Object.wait()`.",
+        "severity": "ERROR",
+        "line": 407,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.registerWebExtension(org.mozilla.geckoview.WebExtension):org.mozilla.geckoview.GeckoResult",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 407,
+                "column_number": -1,
+                "description": "`GeckoResult GeckoRuntime.registerWebExtension(WebExtension)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 407,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 390,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `GeckoResult GeckoRuntime.registerWebExtension(WebExtension)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 390,
+                "column_number": -1,
+                "description": "`GeckoResult GeckoRuntime.registerWebExtension(WebExtension)` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoRuntime.java|registerWebExtension|STARVATION",
+        "hash": "87c829dc436e54f54303bd9ff931cae0",
+        "bug_type_hum": "UI Thread Starvation"
+    },
+    {
+        "bug_type": "STARVATION",
+        "qualifier": "Method `GeckoResult GeckoRuntime.unregisterWebExtension(WebExtension)` runs on UI thread (because `GeckoResult GeckoRuntime.unregisterWebExtension(WebExtension)` is annotated `UiThread`), and may block; calls `void Object.wait()`.",
+        "severity": "ERROR",
+        "line": 437,
+        "column": -1,
+        "procedure": "org.mozilla.geckoview.GeckoRuntime.unregisterWebExtension(org.mozilla.geckoview.WebExtension):org.mozilla.geckoview.GeckoResult",
+        "procedure_start_line": 0,
+        "file": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+        "bug_trace": [
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 437,
+                "column_number": -1,
+                "description": "`GeckoResult GeckoRuntime.unregisterWebExtension(WebExtension)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 437,
+                "column_number": -1,
+                "description": "Method call: `void EventDispatcher.dispatch(String,GeckoBundle,EventCallback)`"
+            },
+            {
+                "level": 1,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 257,
+                "column_number": -1,
+                "description": "Method call: `boolean EventDispatcher.dispatchToThreads(String,GeckoBundle,EventCallback,boolean)`"
+            },
+            {
+                "level": 2,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/EventDispatcher.java",
+                "line_number": 303,
+                "column_number": -1,
+                "description": "Method call: `Handler ThreadUtils.getBackgroundHandler()`"
+            },
+            {
+                "level": 3,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/ThreadUtils.java",
+                "line_number": 110,
+                "column_number": -1,
+                "description": "Method call: `Handler GeckoBackgroundThread.getHandler()`"
+            },
+            {
+                "level": 4,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/gecko/util/GeckoBackgroundThread.java",
+                "line_number": 60,
+                "column_number": -1,
+                "description": "calls `void Object.wait()`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 423,
+                "column_number": -1,
+                "description": "[Trace on UI thread] `GeckoResult GeckoRuntime.unregisterWebExtension(WebExtension)`"
+            },
+            {
+                "level": 0,
+                "filename": "mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntime.java",
+                "line_number": 423,
+                "column_number": -1,
+                "description": "`GeckoResult GeckoRuntime.unregisterWebExtension(WebExtension)` is annotated `UiThread`"
+            }
+        ],
+        "key": "GeckoRuntime.java|unregisterWebExtension|STARVATION",
+        "hash": "cb99c9a6100440ce20b3f883cf442ab6",
+        "bug_type_hum": "UI Thread Starvation"
+    }
+]
