@@ -8,7 +8,9 @@
 
 ## Build analysis output
 
-TODO: Default [analysis format](bot/analysis_format.md).
+TODO: Default [analysis format](analysis_format.md).
+
+TODO: describe Taskcluster public artifacts
 
 
 ## Add code-review
@@ -27,3 +29,18 @@ attributes:
 Here is an example for [clang tasks](https://hg.mozilla.org/mozilla-central/file/tip/taskcluster/ci/source-test/clang.yml#l12)
 
 ## Publish results on Phabricator
+
+Once your task is triggered with the `code-review` attribute, its analysis artifact should be retrieved automatically by the bot if you use the default format.
+
+If you produce a different format, this will need a specific implementation on the bot (:mag: doc needed here)
+
+TODO: describe filtering
+
+## Troubleshooting
+
+1. Check that your task is triggered by the decision task on new diffs
+2. Check that your task is present in the task group published by the code review bot as `Treeherder jobs`
+3. Check that your task produces the expected analysis artifact
+4. Check that the `code-review-issues` is present in that task group (for mozilla-central tasks)
+5. Check that your test diff is available on [our dashboard](https://static-analysis.moz.tools/) by searching its revision ID or title (it can take several seconds to load all the tasks available)
+6. Reach out to developers on Slack #code-review-bot
