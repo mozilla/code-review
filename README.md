@@ -6,3 +6,7 @@ This project has 2 parts:
 * `frontend` is an administration frontend (in Vue.js) displaying detailed information about current analyses.
 
 The analyzer tasks are triggered by [pulselistener](https://github.com/mozilla/release-services/tree/master/src/pulselistener), from the release-services project.
+
+:blue_book: Documentation is available in this repository [in the docs folder](docs/summary.md).
+
+:loudspeaker: You can contact the code review bot's developers on Slack #code-review-bot
