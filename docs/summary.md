@@ -4,7 +4,7 @@ This documentation is targeted towards developers of the code review bot itself,
 
 Here is the overall summary of available documentation:
 
-- [new_analyzer.md](How to add a new analyzer on the code review bot)
-- [analysis_format.md](The default analysis format supported)
+- [How to add a new analyzer on the code review bot](new_analyzer.md)
+- [The default analysis format supported](analysis_format.md)
 
 You can contact the code review bot's developers on Slack #code-review-bot

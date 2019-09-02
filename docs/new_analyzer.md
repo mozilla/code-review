@@ -8,7 +8,7 @@
 
 ## Build analysis output
 
-TODO: Default [bot/analysis_format.md](analysis format).
+TODO: Default [analysis format](bot/analysis_format.md).
 
 
 ## Add code-review
