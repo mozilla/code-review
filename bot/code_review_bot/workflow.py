@@ -117,10 +117,10 @@ class Workflow(object):
             issues=nb_issues,
             issues_publishable=nb_publishable,
         )
-        stats.api.increment("analysis.issues.publishable", nb_publishable)
+        stats.add_metric("analysis.issues.publishable", nb_publishable)
 
         # Publish reports about these issues
-        with stats.api.timer("runtime.reports"):
+        with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
                 reporter.publish(issues, revision)
 

@@ -158,8 +158,8 @@ class Revision(object):
         self.files = self.lines.keys()
 
         # Report nb of files and lines analyzed
-        stats.api.increment("analysis.files", len(self.files))
-        stats.api.increment(
+        stats.add_metric("analysis.files", len(self.files))
+        stats.add_metric(
             "analysis.lines", sum(len(line) for line in self.lines.values())
         )
 

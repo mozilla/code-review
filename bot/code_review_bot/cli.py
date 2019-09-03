@@ -38,7 +38,7 @@ def parse_cli():
     return parser.parse_args()
 
 
-@stats.api.timer("runtime.analysis")
+@stats.timer("runtime.analysis")
 def main():
 
     args = parse_cli()
@@ -70,9 +70,9 @@ def main():
         taskcluster.secrets["ALLOWED_PATHS"],
     )
     # Setup statistics
-    datadog_api_key = taskcluster.secrets.get("DATADOG_API_KEY")
-    if datadog_api_key:
-        stats.auth(datadog_api_key)
+    influx_conf = taskcluster.secrets.get("influxdb")
+    if influx_conf:
+        stats.auth(influx_conf)
 
     # Load reporters
     reporters = get_reporters(taskcluster.secrets["REPORTERS"])

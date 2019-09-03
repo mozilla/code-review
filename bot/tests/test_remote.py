@@ -8,6 +8,31 @@ import responses
 from libmozdata.phabricator import UnitResult
 from libmozdata.phabricator import UnitResultState
 
+from code_review_bot import stats
+
+
+def check_stats(summary_check):
+    """
+    Helper to check stat metrics after a workflow has run
+    """
+    assert len(stats.metrics) == len(summary_check)
+    assert all(
+        m["tags"]["app"] == "code-review-bot" and m["tags"]["channel"] == "test"
+        for m in stats.metrics
+    )
+    assert all(m["measurement"].startswith("code-review.") for m in stats.metrics)
+    stats_summary = [
+        (
+            m["measurement"],
+            m["tags"].get("task"),
+            m["fields"]["value"] if "runtime" not in m["measurement"] else "runtime",
+        )
+        for m in stats.metrics
+    ]
+    assert stats_summary == summary_check
+
+    return True
+
 
 def test_no_deps(mock_config, mock_revision, mock_workflow):
     """
@@ -32,7 +57,7 @@ def test_no_deps(mock_config, mock_revision, mock_workflow):
     assert str(e.value) == "No task dependencies to analyze"
 
 
-def test_baseline(mock_config, mock_revision, mock_workflow, mock_stats):
+def test_baseline(mock_config, mock_revision, mock_workflow):
     """
     Test a normal remote workflow (aka Try mode)
     - current task with analyzer deps
@@ -108,12 +133,21 @@ def test_baseline(mock_config, mock_revision, mock_workflow, mock_stats):
     assert issue.line == 0
     assert issue.validates()
 
-    # Check stats
-    mock_stats.flush()
-    assert mock_stats.get_metrics("issues.source-test-mozlint-flake8.paths")[0][1] == 1
-    assert (
-        mock_stats.get_metrics("issues.source-test-mozlint-flake8.cleaned_paths")[0][1]
-        == 0
+    assert check_stats(
+        [
+            ("code-review.analysis.files", None, 2),
+            ("code-review.analysis.lines", None, 2),
+            ("code-review.issues", "source-test-mozlint-flake8", 1),
+            ("code-review.issues.publishable", "source-test-mozlint-flake8", 0),
+            ("code-review.issues.paths", "source-test-mozlint-flake8", 1),
+            ("code-review.issues.cleaned_paths", "source-test-mozlint-flake8", 0),
+            ("code-review.issues", "source-test-mozlint-zero-cov", 1),
+            ("code-review.issues.publishable", "source-test-mozlint-zero-cov", 1),
+            ("code-review.issues.paths", "source-test-mozlint-zero-cov", 1),
+            ("code-review.issues.cleaned_paths", "source-test-mozlint-zero-cov", 0),
+            ("code-review.analysis.issues.publishable", None, 1),
+            ("code-review.runtime.reports", None, "runtime"),
+        ]
     )
 
 
@@ -273,7 +307,7 @@ def test_decision_task(mock_config, mock_revision, mock_workflow):
     assert mock_revision.mercurial_revision == "someRevision"
 
 
-def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_stats):
+def test_mozlint_task(mock_config, mock_revision, mock_workflow):
     """
     Test a remote workflow with a mozlint analyzer
     """
@@ -320,16 +354,21 @@ def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_stats):
     assert issue.linter == "flake8"
     assert issue.message == "dummy issue"
 
-    # Check stats
-    mock_stats.flush()
-    assert mock_stats.get_metrics("issues.source-test-mozlint-dummy.paths")[0][1] == 1
-    assert (
-        mock_stats.get_metrics("issues.source-test-mozlint-dummy.cleaned_paths")[0][1]
-        == 0
+    assert check_stats(
+        [
+            ("code-review.analysis.files", None, 2),
+            ("code-review.analysis.lines", None, 2),
+            ("code-review.issues", "source-test-mozlint-dummy", 1),
+            ("code-review.issues.publishable", "source-test-mozlint-dummy", 0),
+            ("code-review.issues.paths", "source-test-mozlint-dummy", 1),
+            ("code-review.issues.cleaned_paths", "source-test-mozlint-dummy", 0),
+            ("code-review.analysis.issues.publishable", None, 0),
+            ("code-review.runtime.reports", None, "runtime"),
+        ]
     )
 
 
-def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_stats):
+def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
     """
     Test a remote workflow with a clang-tidy analyzer
     """
@@ -399,15 +438,21 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_stats):
     assert issue.reliability == Reliability.Unknown
     assert issue.message == "some harder issue with c++"
 
-    # Check stats
-    mock_stats.flush()
-    assert mock_stats.get_metrics("issues.source-test-clang-tidy.paths")[0][1] == 1
-    assert (
-        mock_stats.get_metrics("issues.source-test-clang-tidy.cleaned_paths")[0][1] == 0
+    assert check_stats(
+        [
+            ("code-review.analysis.files", None, 2),
+            ("code-review.analysis.lines", None, 2),
+            ("code-review.issues", "source-test-clang-tidy", 2),
+            ("code-review.issues.publishable", "source-test-clang-tidy", 0),
+            ("code-review.issues.paths", "source-test-clang-tidy", 1),
+            ("code-review.issues.cleaned_paths", "source-test-clang-tidy", 0),
+            ("code-review.analysis.issues.publishable", None, 0),
+            ("code-review.runtime.reports", None, "runtime"),
+        ]
     )
 
 
-def test_clang_format_task(mock_config, mock_revision, mock_workflow, mock_stats):
+def test_clang_format_task(mock_config, mock_revision, mock_workflow):
     """
     Test a remote workflow with a clang-format analyzer
     """
@@ -475,12 +520,17 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow, mock_stats
     }
     assert len(mock_revision.improvement_patches) == 0
 
-    # Check stats
-    mock_stats.flush()
-    assert mock_stats.get_metrics("issues.source-test-clang-format.paths")[0][1] == 1
-    assert (
-        mock_stats.get_metrics("issues.source-test-clang-format.cleaned_paths")[0][1]
-        == 0
+    assert check_stats(
+        [
+            ("code-review.analysis.files", None, 2),
+            ("code-review.analysis.lines", None, 2),
+            ("code-review.issues", "source-test-clang-format", 1),
+            ("code-review.issues.publishable", "source-test-clang-format", 0),
+            ("code-review.issues.paths", "source-test-clang-format", 1),
+            ("code-review.issues.cleaned_paths", "source-test-clang-format", 0),
+            ("code-review.analysis.issues.publishable", None, 0),
+            ("code-review.runtime.reports", None, "runtime"),
+        ]
     )
 
     # Check diffs are reported as improvement patches
@@ -496,7 +546,7 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow, mock_stats
     assert patch.content == "A nice diff in here..."
 
 
-def test_coverity_task(mock_config, mock_revision, mock_workflow, mock_stats):
+def test_coverity_task(mock_config, mock_revision, mock_workflow):
     """
     Test a remote workflow with a clang-tidy analyzer
     """
@@ -614,16 +664,17 @@ The path that leads to this defect is:
         issue.as_text()
         == f"Checker reliability is high, meaning that the false positive ratio is low.\nSome error here"
     )
-    # Check stats
-    mock_stats.flush()
-    assert (
-        mock_stats.get_metrics("issues.source-test-coverity-coverity.paths")[0][1] == 2
-    )
-    assert (
-        mock_stats.get_metrics("issues.source-test-coverity-coverity.cleaned_paths")[0][
-            1
+    assert check_stats(
+        [
+            ("code-review.analysis.files", None, 2),
+            ("code-review.analysis.lines", None, 2),
+            ("code-review.issues", "source-test-coverity-coverity", 2),
+            ("code-review.issues.publishable", "source-test-coverity-coverity", 0),
+            ("code-review.issues.paths", "source-test-coverity-coverity", 2),
+            ("code-review.issues.cleaned_paths", "source-test-coverity-coverity", 1),
+            ("code-review.analysis.issues.publishable", None, 0),
+            ("code-review.runtime.reports", None, "runtime"),
         ]
-        == 1
     )
 
 

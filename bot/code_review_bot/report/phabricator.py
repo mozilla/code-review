@@ -155,8 +155,8 @@ class PhabricatorReporter(Reporter):
                 ),
             )
 
-        stats.api.increment("report.phabricator.issues", len(inlines))
-        stats.api.increment("report.phabricator")
+        stats.add_metric("report.phabricator.issues", len(inlines))
+        stats.add_metric("report.phabricator")
         logger.info("Published phabricator comment")
 
     def publish_harbormaster(self, revision, issues):

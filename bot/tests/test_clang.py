@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 
-def test_expanded_macros(mock_stats, mock_revision):
+def test_expanded_macros(mock_revision):
     """
     Test expanded macros are detected by clang issue
     """
