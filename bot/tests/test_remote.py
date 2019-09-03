@@ -15,7 +15,7 @@ def check_stats(summary_check):
     """
     Helper to check stat metrics after a workflow has run
     """
-    # assert len(stats.metrics) == len(summary_check)
+    assert len(stats.metrics) == len(summary_check)
     assert all(
         m["tags"]["app"] == "code-review-bot" and m["tags"]["channel"] == "test"
         for m in stats.metrics
