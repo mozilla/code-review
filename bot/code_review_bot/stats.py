@@ -102,9 +102,9 @@ class InfluxDb(object):
         """
         A context manager tracking the contained code's runtime
         """
-        start = time.time()
+        start = time.perf_counter()
         try:
             yield
         finally:
-            end = time.time()
+            end = time.perf_counter()
             self.add_metric(name, end - start)
