@@ -64,6 +64,7 @@ class CodeReview(PhabricatorActions):
 
             # Receive build from webserver
             build = await self.bus.receive(QUEUE_WEB_BUILDS)
+            assert build is not None, "Invalid payload"
             assert isinstance(build, PhabricatorBuild)
 
             # Update its state
