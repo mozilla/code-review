@@ -1,4 +1,4 @@
-influxdb==5.2.2
+influxdb==5.2.3
 libmozdata==0.1.58
 Logbook==1.5.2
 parsepatch==0.1.3
