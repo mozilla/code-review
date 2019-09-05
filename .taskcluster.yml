@@ -313,7 +313,7 @@ tasks:
             - deploy-heroku
             - --heroku-app
             - "code-review-events-${channel}"
-            - worker:public/code-review-events.tar
+            - web:public/code-review-events.tar
           env:
             TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
         scopes:
