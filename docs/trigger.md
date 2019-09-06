@@ -31,4 +31,4 @@ To add a new analyzer, you'll need to add a task in `automation/taskcluster/grap
 
 ## Step for other repositories
 
-Please reach out to our team, look in [README](../README.md) for contact informations.
+Please reach out to our team, look in [README](../README.md) for contact information.
