@@ -34,7 +34,7 @@ Here, the analyzer produces its JSON output as `/builds/worker/clang-tidy.json`,
 
 ## Add code-review
 
-:warning: This step is specific to mozilla-central and its taskgraph. Other repositories have different decision tasks & mechanisms.
+:warning: This step is specific to mozilla-central and its taskgraph. Other repositories have different decision tasks and mechanisms.
 
 Once your task is setup in the repository taskgraph, usually in [taskcluster/ci/source-test](https://github.com/mozilla/release-services/issues/2254), you'll need to add an attribute to the task definition so the code-review bot will automatically start your task on new diffs.
 
