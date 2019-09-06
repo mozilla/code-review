@@ -4,7 +4,7 @@
 
 1. Your repository must use [Mozilla Phabricator's instance](https://phabricator.services.mozilla.com/)
 2. Your repository must use [Taskcluster as CI](https://docs.taskcluster.net) (at least one task must start on each push).
-3. You are adding a Taskcluster task that runs on each push, analyses the modified source code and lists potential issues.
+3. You are adding a Taskcluster task that runs on each push, analyzes the modified source code and lists potential issues.
 
 ## Build analysis output
 
