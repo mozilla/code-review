@@ -17,7 +17,7 @@ Of course you can add other relevant fields to your needs, but these should at l
 
 :warning: You need to provide relative paths to the repository. The bot does not support any absolute path resolution as it's not using the same setup as your own task.
 
-Here is an example of an analysis using that format:
+Here is an example of an analysis using this format:
 
 ```json
 {
