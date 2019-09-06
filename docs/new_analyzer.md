@@ -51,8 +51,6 @@ Here is an example for [clang tasks](https://hg.mozilla.org/mozilla-central/file
 
 Once your task is triggered with the `code-review` attribute, its analysis artifact should be retrieved automatically by the bot if you use the default format.
 
-If you produce a different format, this will need a specific implementation on the bot (:mag: doc needed here)
-
 The bot will retrieve all issues from your artifact, and filter them using basic rules:
 
 * if the issue is not in a modifided line of a file in the patch, it will be discarded.
@@ -68,4 +66,4 @@ We have [plans](https://bugzilla.mozilla.org/show_bug.cgi?id=1555721) to remove 
 3. Check that your task produces the expected analysis artifact
 4. Check that the `code-review-issues` is present in that task group (for mozilla-central tasks)
 5. Check that your test diff is available on [our dashboard](https://static-analysis.moz.tools/) by searching its revision ID or title (it can take several seconds to load all the tasks available)
-6. Reach out to developers on Slack #code-review-bot
+6. Reach out to us, see [README](../README.md) for contact info

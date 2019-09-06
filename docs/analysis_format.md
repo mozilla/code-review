@@ -9,11 +9,9 @@ The [default format](https://github.com/mozilla/code-review/blob/master/bot/code
 * `level` (warning | error) of the issue
 * `rule`  describing the issue detected (often a unique shorthand code)
 * `message` with all the details to provide to the developer
-* `analyzer` if you have multiple analyzers using the same format
+* `analyzer` (optional) if you have multiple analyzers using the same format
 
 The issues should be grouped by relative paths, as a list of issues per file.
-
-Of course you can add other relevant fields to your needs, but these should at least be present (maybe except linter).
 
 :warning: You need to provide relative paths to the repository. The bot does not support any absolute path resolution as it's not using the same setup as your own task.
 
