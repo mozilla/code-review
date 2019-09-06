@@ -32,3 +32,5 @@ Here is an example of an analysis using this format:
   ]
 }
 ```
+
+To have more information about Mozlint, please see the [mozlint documentation](https://firefox-source-docs.mozilla.org/tools/lint/index.html)
