@@ -10,7 +10,7 @@ cd /opt/mercurial-$MERCURIAL_VERSION
 python2 setup.py install
 
 # Setup mercurial with needed extensions
-hg clone https://hg.mozilla.org/hgcustom/version-control-tools /src/version-control-tools/
+hg clone -u cc7be0763bb7cb36e64b55b8cec6998741709776 https://hg.mozilla.org/hgcustom/version-control-tools /src/version-control-tools/
 mkdir -p /etc/mercurial/hgrc.d
 ln -s /src/docker/hgrc /etc/mercurial/hgrc.d/code-review.rc
 
