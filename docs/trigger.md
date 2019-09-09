@@ -1,11 +1,5 @@
 # How to trigger your task on new diffs
 
-## Requirements
-
-1. Your repository must use [Mozilla Phabricator's instance](https://phabricator.services.mozilla.com/)
-2. Your repository must use [Taskcluster as CI](https://docs.taskcluster.net) (at least one task must start on each push).
-3. You are adding a Taskcluster task that runs on each push, analyzes the modified source code and lists potential issues.
-
 ## Step for mozilla-central
 
 :warning: This step is specific to mozilla-central and its taskgraph. Other repositories have different decision tasks and mechanisms.
@@ -28,7 +22,3 @@ Ask [bastien](https://phabricator.services.mozilla.com/p/bastien/) for review on
 [NSS](https://phabricator.services.mozilla.com/source/nss/) is already integrated in the code-review bot workflow, using its own decision task (no taskgraph here).
 
 To add a new analyzer, you'll need to add a task in `automation/taskcluster/graph/src/extend.js`, with the tag `code-review`. You can lookup the `coverity` for a sample implementation.
-
-## Step for other repositories
-
-Please reach out to our team, look in [README](../README.md) for contact information.
