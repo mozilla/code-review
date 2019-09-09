@@ -1,4 +1,4 @@
-# The default analysis format supported
+# The default analysis format
 
 Each analysis **must** build a JSON Taskcluster artifact publicly available, containing all the issues detected on the patch.
 
