@@ -2,7 +2,7 @@
 
 Each analysis **must** build a JSON Taskcluster artifact publicly available, containing all the issues detected on the patch.
 
-The [default format](https://github.com/mozilla/code-review/blob/master/bot/code_review_bot/tasks/lint.py#L170) (loosely based on Mozlint format) has the following fields for each issue:
+The [default format](https://github.com/mozilla/code-review/blob/1.0.2/bot/code_review_bot/tasks/lint.py#L170) (loosely based on Mozlint format) has the following fields for each issue:
 
 * `path` relative to the repository
 * `column` & `lineno` where the issue is happening in the file
