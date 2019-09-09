@@ -5,9 +5,6 @@
 The code-review bot currently supports 6 different formats to report issues (clang-tidy, clang-format, zero coverage, coverity, infer and mozlint).
 We are in the process of standardizing toward [a single format described here](analysis_format.md).
 
-New analyzers are strongly encouraged to use that format, as it's supported directly in the bot. Other formats, or more detailed versions will need an update in the bot's code itself.
-
-
 ### Taskcluster artifacts
 
 Your analyzer task needs to produce a public Taskcluster artifact listing all the issues found in the patch.
