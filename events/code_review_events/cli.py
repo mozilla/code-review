@@ -21,6 +21,9 @@ from code_review_events.workflow import CodeReview
 logger = structlog.get_logger(__name__)
 
 
+MONITORING_PERIOD = 7 * 3600
+
+
 def parse_cli():
     """
     Setup CLI options parser
@@ -76,7 +79,7 @@ class Events(object):
 
         # Setup monitoring for newly created tasks
         self.monitoring = Monitoring(
-            QUEUE_MONITORING, taskcluster_config.secrets["admins"], 7 * 3600
+            QUEUE_MONITORING, taskcluster_config.secrets["admins"], MONITORING_PERIOD
         )
         self.monitoring.register(self.bus)
 
