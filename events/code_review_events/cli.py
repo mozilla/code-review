@@ -47,7 +47,7 @@ class Events(object):
     """
 
     def __init__(self, cache_root):
-        # Create message bus shared amongst process
+        # Create message bus shared amongst processes
         self.bus = MessageBus()
 
         self.workflow = CodeReview(
