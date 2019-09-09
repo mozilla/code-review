@@ -28,7 +28,7 @@ Here, the analyzer produces its JSON output as `/builds/worker/clang-tidy.json`,
 
 ## Publish results on Phabricator
 
-Once your task is triggered with the `code-review` attribute, its analysis artifact should be retrieved automatically by the bot if you use the default format.
+Once your task is triggered with the `code-review` attribute, its analysis artifact will be retrieved automatically by the bot.
 
 The bot will retrieve all issues from your artifact, and filter them using basic rules:
 
