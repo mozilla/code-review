@@ -15,5 +15,7 @@ mkdir -p /etc/mercurial/hgrc.d
 ln -s /src/docker/hgrc /etc/mercurial/hgrc.d/code-review.rc
 
 # Cleanup
+apt-get purge -y gcc curl python-dev
 apt-get autoremove -y
-rm -rf /src/version-control-tools/.hg
+rm -rf /var/lib/apt/lists/*
+rm -rf /src/version-control-tools/.hg /src/version-control-tools/ansible /src/version-control-tools/docs /src/version-control-tools/testing
