@@ -88,7 +88,7 @@ class CodeReview(PhabricatorActions):
                 logger.info("Send build to Mercurial", build=str(build))
                 await self.bus.send(QUEUE_MERCURIAL, build)
 
-                # Report public bug as working
+                # Report public bug as 'working' (in progress)
                 await self.bus.send(QUEUE_PHABRICATOR_RESULTS, ("work", build, {}))
 
                 # Start risk analysis
