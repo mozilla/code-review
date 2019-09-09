@@ -10,7 +10,7 @@ New analyzers are strongly encouraged to use that format, as it's supported dire
 
 ### Taskcluster artifacts
 
-Your analyzer task needs to produce a [public Taskcluster artifact] listing all the issues found in the patch.
+Your analyzer task needs to produce a public Taskcluster artifact listing all the issues found in the patch.
 
 That means your task **must** write a JSON file on the local file system at a specified path. The task definition will take care of configuring Taskcluster for the storage of your file, so it becomes a publicly available file online.
 
