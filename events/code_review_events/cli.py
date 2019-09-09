@@ -102,7 +102,7 @@ class Events(object):
         # Run all tasks concurrently
         run_tasks(consumers)
 
-        # Stop the webserver when other async process are stopped
+        # Stop the webserver when other async processes are stopped
         self.webserver.stop()
 
 
