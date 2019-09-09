@@ -4,11 +4,17 @@ from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import UnitResult
 from libmozdata.phabricator import UnitResultState
 from libmozevent import taskcluster_config
+from libmozevent.bus import MessageBus
+from libmozevent.mercurial import MercurialWorker
 from libmozevent.mercurial import Repository
+from libmozevent.monitoring import Monitoring
 from libmozevent.phabricator import PhabricatorActions
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
+from libmozevent.utils import run_tasks
+from libmozevent.web import WebServer
 
+from code_review_events import MONITORING_PERIOD
 from code_review_events import QUEUE_MERCURIAL
 from code_review_events import QUEUE_MONITORING
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
@@ -183,3 +189,68 @@ class CodeReview(PhabricatorActions):
             [reviewer["fields"]["username"] for reviewer in build.reviewers]
         )
         return len(usernames.intersection(self.risk_analysis_reviewers)) > 0
+
+
+class Events(object):
+    """
+    Listen to HTTP notifications from phabricator and trigger new try jobs
+    """
+
+    def __init__(self, cache_root):
+        # Create message bus shared amongst processes
+        self.bus = MessageBus()
+
+        self.workflow = CodeReview(
+            api_key=taskcluster_config.secrets["PHABRICATOR"]["api_key"],
+            url=taskcluster_config.secrets["PHABRICATOR"]["url"],
+            publish=taskcluster_config.secrets["PHABRICATOR"].get("publish", False),
+            risk_analysis_reviewers=taskcluster_config.secrets.get(
+                "risk_analysis_reviewers", []
+            ),
+        )
+        self.workflow.register(self.bus)
+
+        # Build mercurial worker and queue
+        self.mercurial = MercurialWorker(
+            QUEUE_MERCURIAL,
+            QUEUE_PHABRICATOR_RESULTS,
+            repositories=self.workflow.get_repositories(
+                taskcluster_config.secrets["repositories"], cache_root
+            ),
+        )
+        self.mercurial.register(self.bus)
+
+        # Create web server
+        self.webserver = WebServer(QUEUE_WEB_BUILDS)
+        self.webserver.register(self.bus)
+
+        # Setup monitoring for newly created tasks
+        self.monitoring = Monitoring(
+            QUEUE_MONITORING, taskcluster_config.secrets["admins"], MONITORING_PERIOD
+        )
+        self.monitoring.register(self.bus)
+
+    def run(self):
+        consumers = [
+            # Code review main workflow
+            self.workflow.run(),
+            # Add mercurial task
+            self.mercurial.run(),
+            # Add monitoring task
+            self.monitoring.run(),
+        ]
+
+        # Publish results on Phabricator
+        if self.workflow.publish:
+            consumers.append(
+                self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS)
+            )
+
+        # Start the web server in its own process
+        self.webserver.start()
+
+        # Run all tasks concurrently
+        run_tasks(consumers)
+
+        # Stop the webserver when other async processes are stopped
+        self.webserver.stop()
