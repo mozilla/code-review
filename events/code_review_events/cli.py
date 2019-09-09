@@ -60,7 +60,7 @@ class Events(object):
         )
         self.workflow.register(self.bus)
 
-        # Build mercurial worker & queue
+        # Build mercurial worker and queue
         self.mercurial = MercurialWorker(
             QUEUE_MERCURIAL,
             QUEUE_PHABRICATOR_RESULTS,
