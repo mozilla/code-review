@@ -7,7 +7,9 @@ import requests
 
 from code_review_bot import taskcluster
 
-TC_INDEX_URL = "https://index.taskcluster.net/v1/tasks/project.releng.services.project.{}.static_analysis_bot.phabricator"
+TC_INDEX_URL = (
+    "https://index.taskcluster.net/v1/tasks/project.relman.{}.code-review.phabricator"
+)
 
 
 def list_tasks(env):
@@ -50,7 +52,7 @@ def main(env):
 
         extra_env = {"ANALYSIS_SOURCE": "phabricator", "ANALYSIS_ID": phid}
         task = hooks.triggerHook(
-            "project-releng", "services-{}-staticanalysis/bot".format(env), extra_env
+            "project-relman", "code-review-{}".format(env), extra_env
         )
         print(">> New task {}".format(task["status"]["taskId"]))
         total += 1
