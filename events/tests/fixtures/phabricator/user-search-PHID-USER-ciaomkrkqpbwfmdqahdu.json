@@ -1,0 +1,33 @@
+{
+	"result": {
+		"data": [{
+			"id": 50,
+			"type": "USER",
+			"phid": "PHID-USER-ciaomkrkqpbwfmdqahdu",
+			"fields": {
+				"username": "heycam",
+				"realName": "Cameron McCormack",
+				"roles": ["verified", "approved", "activated"],
+				"dateCreated": 1507533578,
+				"dateModified": 1507535604,
+				"policy": {
+					"view": "public",
+					"edit": "no-one"
+				}
+			},
+			"attachments": {}
+		}],
+		"maps": {},
+		"query": {
+			"queryKey": null
+		},
+		"cursor": {
+			"limit": 100,
+			"after": null,
+			"before": null,
+			"order": null
+		}
+	},
+	"error_code": null,
+	"error_info": null
+}

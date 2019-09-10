@@ -1,0 +1,5 @@
+[extensions]
+hgmo = /src/version-control-tools/hgext/hgmo
+pushlog = /src/version-control-tools/hgext/pushlog
+robustcheckout = /src/version-control-tools/hgext/robustcheckout
+strip =
