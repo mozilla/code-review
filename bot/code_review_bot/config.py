@@ -62,6 +62,7 @@ class Settings(object):
                 "java_extensions": frozenset([".java"]),
                 "idl_extenssions": frozenset([".idl"]),
                 "js_extensions": frozenset([".js", ".jsm"]),
+                "third_party": "tools/rewriting/ThirdPartyPaths.txt",
             }
         )
         assert "clang_checkers" in self.config
