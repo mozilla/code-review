@@ -2,7 +2,6 @@ influxdb==5.2.3
 libmozdata==0.1.58
 Logbook==1.5.2
 parsepatch==0.1.3
-PyYAML==5.1.2
 structlog==19.1.0
 taskcluster==16.2.0
 toml==0.10.0

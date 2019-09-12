@@ -12,7 +12,6 @@ from libmozdata.phabricator import LintResult
 from code_review_bot import CLANG_TIDY
 from code_review_bot import Issue
 from code_review_bot import Reliability
-from code_review_bot.config import settings
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
@@ -67,6 +66,7 @@ class ClangTidyIssue(Issue):
         message,
         level="warning",
         reliability=Reliability.Unknown,
+        check_config=None,
     ):
         assert isinstance(reliability, Reliability)
 
@@ -81,10 +81,19 @@ class ClangTidyIssue(Issue):
         self.notes = []
         self.level = level
         self.reason = None
-        self.reliability = reliability
-        check = settings.get_clang_check(self.check)
-        if check is not None:
-            self.reason = check.get("reason")
+
+        if check_config is not None:
+            self.reliability = (
+                Reliability(check_config["reliability"])
+                if "reliability" in check_config
+                else Reliability.Unknown
+            )
+            self.publishable_check = check_config.get("publish", True)
+            self.reason = check_config.get("reason")
+        else:
+            self.reliability = reliability
+            self.publishable_check = True
+            self.reason = None
 
     def __str__(self):
         return "[{}] {} {} {}:{}".format(
@@ -127,7 +136,7 @@ class ClangTidyIssue(Issue):
         if not self.is_problem():
             return False
 
-        return settings.is_publishable_check(self.check)
+        return self.publishable_check is True
 
     def as_text(self):
         """
@@ -249,6 +258,7 @@ class ClangTidyTask(AnalysisTask):
                 reliability=Reliability(warning["reliability"])
                 if "reliability" in warning
                 else Reliability.Unknown,
+                check_config=warning.get("check_config"),
             )
             for artifact in artifacts.values()
             for path, items in artifact["files"].items()
