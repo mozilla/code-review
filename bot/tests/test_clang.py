@@ -103,11 +103,7 @@ def test_as_dict(mock_revision):
         "body": "Dummy body withUppercaseChars",
         "reason": None,
         "notes": [],
-        "validation": {
-            "publishable_check": False,
-            "third_party": False,
-            "is_expanded_macro": False,
-        },
+        "validation": {"publishable_check": False, "is_expanded_macro": False},
         "in_patch": False,
         "is_new": False,
         "validates": False,
@@ -145,7 +141,6 @@ def test_as_markdown(mock_revision):
 - **In patch**: no
 - **Clang check**: dummy-check
 - **Publishable check**: no
-- **Third Party**: no
 - **Expanded Macro**: no
 - **Publishable **: no
 - **Is new**: no
@@ -167,25 +162,3 @@ Dummy body
         "path": "test.cpp",
         "severity": "warning",
     }
-
-
-def test_clang_format_3rd_party(mock_config, mock_revision):
-    """
-    Test a clang format issue in 3rd party is not publishable
-    """
-    from code_review_bot.tasks.clang_format import ClangFormatIssue
-
-    mock_revision.lines = {"test/not_3rd.c": [10], "test/dummy/third_party.c": [10]}
-    issue = ClangFormatIssue("test/not_3rd.c", 10, 1, mock_revision)
-    assert issue.is_publishable()
-    assert issue.as_phabricator_lint() == {
-        "code": "clang-format",
-        "line": 10,
-        "name": "C/C++ style issue",
-        "path": "test/not_3rd.c",
-        "severity": "warning",
-    }
-
-    # test/dummy is a third party directory
-    issue = ClangFormatIssue("test/dummy/third_party.c", 10, 1, mock_revision)
-    assert not issue.is_publishable()

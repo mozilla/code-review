@@ -14,7 +14,6 @@ ISSUE_MARKDOWN = """
 - **Path**: {path}
 - **Level**: {level}
 - **Line**: {line}
-- **Third Party**: {third_party}
 - **Disabled rule**: {disabled_rule}
 - **Publishable**: {publishable}
 - **Is new**: {is_new}
@@ -74,10 +73,9 @@ class MozLintIssue(Issue):
     def validates(self):
         """
         A mozlint issues is publishable when:
-        * file is not 3rd party
         * rule is not disabled
         """
-        return not self.is_third_party() and not self.is_disabled_rule()
+        return not self.is_disabled_rule()
 
     def as_text(self):
         """
@@ -99,7 +97,6 @@ class MozLintIssue(Issue):
             level=self.level,
             line=self.line,
             message=self.message,
-            third_party=self.is_third_party() and "yes" or "no",
             publishable=self.is_publishable() and "yes" or "no",
             disabled_rule=self.is_disabled_rule() and "yes" or "no",
             is_new=self.is_new and "yes" or "no",

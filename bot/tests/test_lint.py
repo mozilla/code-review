@@ -17,21 +17,6 @@ def test_flake8_rules(mock_config, mock_revision):
     assert not issue.is_disabled_rule()
     assert issue.validates()
 
-    # 3rd party
-    issue = MozLintIssue(
-        "test/dummy/XXX.py",
-        1,
-        "error",
-        1,
-        "flake8",
-        "Dummy test",
-        "dummy rule",
-        mock_revision,
-    )
-    assert not issue.is_disabled_rule()
-    assert issue.is_third_party()
-    assert not issue.validates()
-
     # Flake8 bad quotes
     issue = MozLintIssue(
         "test.py",

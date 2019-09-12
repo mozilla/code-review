@@ -49,7 +49,7 @@ class ClangFormatIssue(Issue):
         """
         Should match one of the allowed paths rules
         """
-        return settings.is_allowed_path(self.path) and not self.is_third_party()
+        return settings.is_allowed_path(self.path)
 
     def as_text(self):
         """
