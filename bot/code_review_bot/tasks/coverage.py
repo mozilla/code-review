@@ -14,7 +14,6 @@ ISSUE_MARKDOWN = """
 ## coverage problem
 
 - **Path**: {path}
-- **Third Party**: {third_party}
 - **Publishable**: {publishable}
 
 ```
@@ -62,7 +61,6 @@ class CoverageIssue(Issue):
         return ISSUE_MARKDOWN.format(
             path=self.path,
             message=self.message,
-            third_party=self.is_third_party() and "yes" or "no",
             publishable=self.is_publishable() and "yes" or "no",
             is_new=self.is_new and "yes" or "no",
         )
@@ -76,7 +74,6 @@ class CoverageIssue(Issue):
             "path": self.path,
             "line": self.line,
             "message": self.message,
-            "is_third_party": self.is_third_party(),
             "in_patch": self.revision.contains(self),
             "is_new": self.is_new,
             "validates": self.validates(),

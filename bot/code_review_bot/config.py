@@ -62,7 +62,6 @@ class Settings(object):
                 "java_extensions": frozenset([".java"]),
                 "idl_extenssions": frozenset([".idl"]),
                 "js_extensions": frozenset([".js", ".jsm"]),
-                "third_party": "tools/rewriting/ThirdPartyPaths.txt",
             }
         )
         assert "clang_checkers" in self.config
@@ -123,19 +122,6 @@ class Settings(object):
         self.config = defaults
         self.config.update(yaml.safe_load(_fetch("tools/clang-tidy/config.yaml")))
         logger.info("Loaded configuration from mozilla-central")
-
-        # Also downloads the 3rd party file
-        self.third_party_paths = _fetch(self.third_party).decode("utf-8").splitlines()
-        logger.info("Loaded {} third party paths".format(len(self.third_party_paths)))
-
-    def is_third_party(self, path):
-        """
-        Check if a file is a 3rd party
-        """
-        for third_party_path in self.third_party_paths:
-            if path.startswith(third_party_path):
-                return True
-        return False
 
     def is_publishable_check(self, check):
         """

@@ -123,12 +123,6 @@ class Issue(abc.ABC):
         """
         return False
 
-    def is_third_party(self):
-        """
-        Is this issue in a third party path ?
-        """
-        return settings.is_third_party(self.path)
-
 
 class Reliability(enum.Enum):
     Unknown = "unknown"
