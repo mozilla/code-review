@@ -66,7 +66,8 @@ class ClangTidyIssue(Issue):
         message,
         level="warning",
         reliability=Reliability.Unknown,
-        check_config=None,
+        reason=None,
+        publish=True,
     ):
         assert isinstance(reliability, Reliability)
 
@@ -80,20 +81,9 @@ class ClangTidyIssue(Issue):
         self.body = None
         self.notes = []
         self.level = level
-        self.reason = None
-
-        if check_config is not None:
-            self.reliability = (
-                Reliability(check_config["reliability"])
-                if "reliability" in check_config
-                else Reliability.Unknown
-            )
-            self.publishable_check = check_config.get("publish", True)
-            self.reason = check_config.get("reason")
-        else:
-            self.reliability = reliability
-            self.publishable_check = True
-            self.reason = None
+        self.reliability = reliability
+        self.publishable_check = publish
+        self.reason = reason
 
     def __str__(self):
         return "[{}] {} {} {}:{}".format(
@@ -258,7 +248,8 @@ class ClangTidyTask(AnalysisTask):
                 reliability=Reliability(warning["reliability"])
                 if "reliability" in warning
                 else Reliability.Unknown,
-                check_config=warning.get("check_config"),
+                reason=warning.get("reason"),
+                publish=warning.get("publish"),
             )
             for artifact in artifacts.values()
             for path, items in artifact["files"].items()
