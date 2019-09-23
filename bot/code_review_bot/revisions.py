@@ -220,7 +220,7 @@ class Revision(object):
 
         def _is_idl(filename):
             _, ext = os.path.splitext(filename)
-            return ext.lower() in settings.idl_extenssions
+            return ext.lower() in settings.idl_extensions
 
         return any(_is_idl(f) for f in self.files)
 

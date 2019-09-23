@@ -11,9 +11,7 @@ import fnmatch
 import os
 import tempfile
 
-import requests
 import structlog
-import yaml
 
 PROJECT_NAME = "code-review-bot"
 REPO_GECKO_TRY = "https://hg.mozilla.org/try"
@@ -39,7 +37,13 @@ class Publication(enum.Enum):
 
 class Settings(object):
     def __init__(self):
-        self.config = None
+        self.config = {
+            "cpp_extensions": frozenset([".c", ".cpp", ".cc", ".cxx", ".m", ".mm"]),
+            "cpp_header_extensions": frozenset([".h", ".hh", ".hpp", ".hxx"]),
+            "java_extensions": frozenset([".java"]),
+            "idl_extensions": frozenset([".idl"]),
+            "js_extensions": frozenset([".js", ".jsm"]),
+        }
         self.app_channel = None
         self.publication = None
         self.taskcluster = None
@@ -55,17 +59,6 @@ class Settings(object):
             raise Exception("Only TRY mode is supported")
 
         self.app_channel = app_channel
-        self.download(
-            {
-                "cpp_extensions": frozenset([".c", ".cpp", ".cc", ".cxx", ".m", ".mm"]),
-                "cpp_header_extensions": frozenset([".h", ".hh", ".hpp", ".hxx"]),
-                "java_extensions": frozenset([".java"]),
-                "idl_extenssions": frozenset([".idl"]),
-                "js_extensions": frozenset([".js", ".jsm"]),
-            }
-        )
-        assert "clang_checkers" in self.config
-        assert "target" in self.config
 
         assert isinstance(publication, str)
         try:
@@ -99,65 +92,11 @@ class Settings(object):
             raise AttributeError
         return self.config[key]
 
-    def download(self, defaults={}):
-        """
-        Configuration is stored on mozilla central
-        It has to be downloaded on each run
-        """
-
-        def _fetch(path):
-            url = RAW_FILE_URL.format(path)
-            resp = requests.get(url)
-            logger.debug("Fetching repository file", url=url)
-            assert (
-                resp.ok
-            ), "Failed to retrieve configuration from mozilla-central #{}".format(
-                resp.status_code
-            )  # noqa
-            return resp.content
-
-        assert isinstance(defaults, dict)
-        assert self.config is None, "Config already set."
-
-        self.config = defaults
-        self.config.update(yaml.safe_load(_fetch("tools/clang-tidy/config.yaml")))
-        logger.info("Loaded configuration from mozilla-central")
-
-    def is_publishable_check(self, check):
-        """
-        Is this check publishable ?
-        Support the wildcard expansion
-        Publication is enabled by default, even when missing
-        """
-        if check is None:
-            return False
-
-        clang_check = self.get_clang_check(check)
-        return clang_check.get("publish", True) if clang_check else False
-
     def is_allowed_path(self, path):
         """
         Is this path allowed for reporting ?
         """
         return any([fnmatch.fnmatch(path, rule) for rule in self.allowed_paths])
-
-    def get_clang_check(self, check):
-
-        if check is None:
-            return None
-
-        for c in self.clang_checkers:
-            name = c["name"]
-
-            if name.endswith("*") and check.startswith(name[:-1]):
-                # Wildcard at end of check name
-                return c
-
-            elif name == check:
-                # Same exact check name
-                return c
-
-        return None
 
 
 # Shared instance

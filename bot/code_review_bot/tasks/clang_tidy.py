@@ -12,7 +12,6 @@ from libmozdata.phabricator import LintResult
 from code_review_bot import CLANG_TIDY
 from code_review_bot import Issue
 from code_review_bot import Reliability
-from code_review_bot.config import settings
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
@@ -67,6 +66,8 @@ class ClangTidyIssue(Issue):
         message,
         level="warning",
         reliability=Reliability.Unknown,
+        reason=None,
+        publish=True,
     ):
         assert isinstance(reliability, Reliability)
 
@@ -80,11 +81,9 @@ class ClangTidyIssue(Issue):
         self.body = None
         self.notes = []
         self.level = level
-        self.reason = None
         self.reliability = reliability
-        check = settings.get_clang_check(self.check)
-        if check is not None:
-            self.reason = check.get("reason")
+        self.publishable_check = publish
+        self.reason = reason
 
     def __str__(self):
         return "[{}] {} {} {}:{}".format(
@@ -127,7 +126,7 @@ class ClangTidyIssue(Issue):
         if not self.is_problem():
             return False
 
-        return settings.is_publishable_check(self.check)
+        return self.publishable_check is True
 
     def as_text(self):
         """
@@ -249,6 +248,8 @@ class ClangTidyTask(AnalysisTask):
                 reliability=Reliability(warning["reliability"])
                 if "reliability" in warning
                 else Reliability.Unknown,
+                reason=warning.get("reason"),
+                publish=warning.get("publish"),
             )
             for artifact in artifacts.values()
             for path, items in artifact["files"].items()
