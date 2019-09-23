@@ -13,6 +13,7 @@ import responses
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import stats
+from code_review_bot.config import settings
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -28,25 +29,6 @@ def mock_config():
     """
     os.environ["TRY_TASK_ID"] = "remoteTryTask"
     os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
-    third_party = ["test/dummy/", "3rdparty/"]
-
-    path = os.path.join(MOCK_DIR, "config.yaml")
-    responses.add(
-        responses.GET,
-        "https://hg.mozilla.org/mozilla-central/raw-file/tip/tools/clang-tidy/config.yaml",
-        body=open(path).read(),
-        content_type="text/plain",
-    )
-    responses.add(
-        responses.GET,
-        "https://hg.mozilla.org/mozilla-central/raw-file/tip/3rdparty.txt",
-        body="\n".join(third_party),
-        content_type="text/plain",
-    )
-
-    from code_review_bot.config import settings
-
-    settings.config = None
     settings.setup("test", "IN_PATCH", ["dom/*", "tests/*.py", "test/*.c"])
     return settings
 

@@ -103,10 +103,10 @@ def test_as_dict(mock_revision):
         "body": "Dummy body withUppercaseChars",
         "reason": None,
         "notes": [],
-        "validation": {"publishable_check": False, "is_expanded_macro": False},
+        "validation": {"publishable_check": True, "is_expanded_macro": False},
         "in_patch": False,
         "is_new": False,
-        "validates": False,
+        "validates": True,
         "publishable": False,
         "reliability": "low",
     }
@@ -140,7 +140,7 @@ def test_as_markdown(mock_revision):
 - **Location**: test.cpp:42:51
 - **In patch**: no
 - **Clang check**: dummy-check
-- **Publishable check**: no
+- **Publishable check**: yes
 - **Expanded Macro**: no
 - **Publishable **: no
 - **Is new**: no
@@ -162,3 +162,19 @@ Dummy body
         "path": "test.cpp",
         "severity": "warning",
     }
+
+
+def test_settings(mock_config):
+    """
+    Extensions are hard-coded in settings are
+    """
+    assert mock_config.app_channel == "test"
+    assert mock_config.try_task_id == "remoteTryTask"
+    assert mock_config.try_group_id == "remoteTryGroup"
+    assert mock_config.cpp_extensions == frozenset(
+        [".c", ".cpp", ".cc", ".cxx", ".m", ".mm"]
+    )
+    assert mock_config.cpp_header_extensions == frozenset([".h", ".hh", ".hpp", ".hxx"])
+    assert mock_config.java_extensions == frozenset([".java"])
+    assert mock_config.idl_extensions == frozenset([".idl"])
+    assert mock_config.js_extensions == frozenset([".js", ".jsm"])
