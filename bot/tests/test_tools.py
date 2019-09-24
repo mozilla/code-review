@@ -5,7 +5,7 @@
 
 import pytest
 
-from code_review_bot.tools.taskcluster import TaskclusterConfig
+from code_review_tools.taskcluster import TaskclusterConfig
 
 
 def test_taskcluster_service():

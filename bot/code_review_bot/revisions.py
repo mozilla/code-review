@@ -16,7 +16,7 @@ from code_review_bot import stats
 from code_review_bot.config import REPO_GECKO_TRY
 from code_review_bot.config import REPO_NSS_TRY
 from code_review_bot.config import settings
-from code_review_bot.tools.taskcluster import create_blob_artifact
+from code_review_tools.taskcluster import create_blob_artifact
 
 logger = structlog.get_logger(__name__)
 

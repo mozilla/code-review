@@ -17,8 +17,8 @@ from code_review_bot import taskcluster
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision
-from code_review_bot.tools.log import init_logger
 from code_review_bot.workflow import Workflow
+from code_review_tools.log import init_logger
 
 logger = structlog.get_logger(__name__)
 
@@ -57,7 +57,8 @@ def main():
     )
 
     init_logger(
-        config.PROJECT_NAME,
+        "bot",
+        channel=taskcluster.secrets.get("APP_CHANNEL", "dev"),
         PAPERTRAIL_HOST=taskcluster.secrets.get("PAPERTRAIL_HOST"),
         PAPERTRAIL_PORT=taskcluster.secrets.get("PAPERTRAIL_PORT"),
         SENTRY_DSN=taskcluster.secrets.get("SENTRY_DSN"),
