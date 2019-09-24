@@ -1,0 +1,4 @@
+Logbook==1.5.2
+structlog==19.1.0
+taskcluster==16.2.0
+raven==6.10.0
