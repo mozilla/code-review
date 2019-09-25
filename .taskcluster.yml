@@ -150,7 +150,7 @@ tasks:
           - "${head_rev}"
           - --write
           - /bot.tar
-          - bot/Dockerfile
+          - bot/docker/Dockerfile
         artifacts:
           public/code-review-bot.tar:
             expires: {$fromNow: '2 weeks'}
