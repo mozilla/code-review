@@ -11,8 +11,24 @@ here = os.path.dirname(__file__)
 
 
 def read_requirements(file_):
-    with open(os.path.join(here, file_)) as f:
-        return sorted(list(set(line.split("#")[0].strip() for line in f)))
+    lines = []
+    with open(file_) as f:
+        for line in f.readlines():
+            line = line.strip()
+            if (
+                line.startswith("-e ")
+                or line.startswith("http://")
+                or line.startswith("https://")
+            ):
+                extras = ""
+                if "[" in line:
+                    extras = "[" + line.split("[")[1].split("]")[0] + "]"
+                line = line.split("#")[1].split("egg=")[1] + extras
+            elif line == "" or line.startswith("#") or line.startswith("-"):
+                continue
+            line = line.split("#")[0].strip()
+            lines.append(line)
+    return sorted(list(set(lines)))
 
 
 with open(os.path.join(here, "VERSION")) as f:
