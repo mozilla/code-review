@@ -45,8 +45,9 @@ tasks:
         command:
           - sh
           - -lxce
-          - "git clone --quiet ${repository} /src && cd /src/bot && git checkout ${head_rev} -b checks &&
-            pip install . && pip install -r requirements-dev.txt &&
+          - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+            cd /src/tools && pip install . &&
+            cd /src/bot && pip install . && pip install -r requirements-dev.txt &&
             cd /src && pre-commit run -a"
       metadata:
         name: "Code Review Bot checks: linting"
@@ -66,8 +67,9 @@ tasks:
           - sh
           - -lxce
           - "apk add git --quiet &&
-            git clone --quiet ${repository} /src && cd /src/bot && git checkout ${head_rev} -b checks &&
-            pip install . && pip install -r requirements-dev.txt &&
+            git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+            cd /src/tools && pip install . &&
+            cd /src/bot && pip install . && pip install -r requirements-dev.txt &&
             pytest -v"
       metadata:
         name: "Code Review Bot checks: unit tests"
@@ -86,8 +88,9 @@ tasks:
         command:
           - sh
           - -lxce
-          - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks && cd /src/events &&
-            pip install -r requirements.txt && pip install . && pip install -r requirements-dev.txt &&
+          - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+            cd /src/tools && pip install . &&
+            cd /src/events && pip install . && pip install -r requirements-dev.txt &&
             pytest -v"
       metadata:
         name: "Code Review Events checks: unit tests"
@@ -147,7 +150,7 @@ tasks:
           - "${head_rev}"
           - --write
           - /bot.tar
-          - bot/Dockerfile
+          - bot/docker/Dockerfile
         artifacts:
           public/code-review-bot.tar:
             expires: {$fromNow: '2 weeks'}

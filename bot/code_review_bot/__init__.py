@@ -9,7 +9,7 @@ import enum
 from code_review_bot.config import Publication
 from code_review_bot.config import settings
 from code_review_bot.stats import InfluxDb
-from code_review_bot.tools.taskcluster import TaskclusterConfig
+from code_review_tools.taskcluster import TaskclusterConfig
 
 CLANG_TIDY = "clang-tidy"
 CLANG_FORMAT = "clang-format"

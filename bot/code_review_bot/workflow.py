@@ -21,7 +21,7 @@ from code_review_bot.tasks.coverage import ZeroCoverageTask
 from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
-from code_review_bot.tools.taskcluster import TASKCLUSTER_DATE_FORMAT
+from code_review_tools.taskcluster import TASKCLUSTER_DATE_FORMAT
 
 logger = structlog.get_logger(__name__)
 
