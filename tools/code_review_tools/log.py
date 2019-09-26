@@ -50,14 +50,26 @@ def setup_sentry(name, channel, dsn):
     """
 
     # Detect environment
-    if "TASK_ID" in os.environ:
+    task_id = os.environ.get("TASK_ID")
+    if task_id is not None:
         site = "taskcluster"
     elif "DYNO" in os.environ:
         site = "heroku"
     else:
         site = "unknown"
 
-    sentry_client = raven.Client(dsn=dsn, site=site, name=name, environment=channel)
+    sentry_client = raven.Client(
+        dsn=dsn,
+        site=site,
+        name=name,
+        environment=channel,
+        release=raven.fetch_package_version(f"code-review-{name}"),
+    )
+
+    if task_id is not None:
+        # Add a Taskcluster task id when available
+        # It will be shown in the Additional Data section on the dashboard
+        sentry_client.context.merge({"extra": {"task_id": task_id}})
 
     sentry_handler = raven.handlers.logbook.SentryHandler(
         sentry_client, level=logbook.WARNING, bubble=True
