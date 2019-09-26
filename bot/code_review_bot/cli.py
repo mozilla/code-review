@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import sys
 
 import structlog
 from libmozdata.phabricator import BuildState
@@ -92,12 +93,28 @@ def main():
         reporters["phabricator"].setup_api(phabricator_api)
 
     # Load unique revision
-    revision = Revision(
-        phabricator_api,
-        try_task=queue_service.task(settings.try_task_id),
-        # Update build status only when phabricator reporting is enabled
-        update_build=phabricator_reporting_enabled,
-    )
+    try:
+        revision = Revision(
+            phabricator_api,
+            try_task=queue_service.task(settings.try_task_id),
+            # Update build status only when phabricator reporting is enabled
+            update_build=phabricator_reporting_enabled,
+        )
+    except Exception as e:
+        # Report revision loading failure on production only
+        # On testing or dev instances, we can use different Phabricator
+        # configuration that do not match all the pulse messages sent
+        if settings.on_production:
+            raise
+
+        else:
+            logger.info(
+                "Failed to load revision",
+                task=settings.try_task_id,
+                error=str(e),
+                phabricator=phabricator["url"],
+            )
+            return 1
 
     # Run workflow according to source
     w = Workflow(
@@ -126,6 +143,8 @@ def main():
         # Then raise to mark task as erroneous
         raise
 
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

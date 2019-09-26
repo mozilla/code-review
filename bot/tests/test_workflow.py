@@ -3,10 +3,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import os
 from unittest import mock
 
 import pytest
 
+from code_review_bot.config import Settings
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
@@ -161,3 +163,31 @@ def test_build_task(task_name, result, mock_workflow):
         assert task is None
     else:
         assert isinstance(task, result)
+
+
+def test_on_production(mock_config):
+    """
+    Test the production environment detection
+    """
+    # By default mock_config is not as production
+    assert mock_config.app_channel == "test"
+    assert mock_config.taskcluster.local is True
+    assert mock_config.on_production is False
+
+    # Taskcluster env + testing is not production
+    os.environ["TASK_ID"] = "testingTask"
+    os.environ["RUN_ID"] = "0"
+    testing = Settings()
+    testing.setup("testing", "IN_PATCH", [])
+    assert testing.app_channel == "testing"
+    assert testing.taskcluster.local is False
+    assert testing.on_production is False
+
+    # Taskcluster env + production is production
+    os.environ["TASK_ID"] = "prodTask"
+    os.environ["RUN_ID"] = "0"
+    testing = Settings()
+    testing.setup("production", "IN_PATCH", [])
+    assert testing.app_channel == "production"
+    assert testing.taskcluster.local is False
+    assert testing.on_production is True
