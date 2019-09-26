@@ -92,6 +92,13 @@ class Settings(object):
             raise AttributeError
         return self.config[key]
 
+    @property
+    def on_production(self):
+        """
+        Are we running on production ?
+        """
+        return self.app_channel == "production" and self.taskcluster.local is False
+
     def is_allowed_path(self, path):
         """
         Is this path allowed for reporting ?
