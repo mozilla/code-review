@@ -27,6 +27,9 @@ def mock_config():
     Mock configuration for bot
     Using try source
     """
+    # Make sure we are running in local mode
+    if "TASK_ID" in os.environ:
+        del os.environ["TASK_ID"]
     os.environ["TRY_TASK_ID"] = "remoteTryTask"
     os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
     settings.setup("test", "IN_PATCH", ["dom/*", "tests/*.py", "test/*.c"])
