@@ -30,6 +30,15 @@ This is the mock issue n°3
 
 This is the mock issue n°4"""
 
+MAIL_CONTENT_BUILD_ERRORS = """
+# Found 2 build errors.
+
+Review Url: https://phabricator.test/D51
+
+This is the mock issue n°0
+
+This is the mock issue n°4"""
+
 
 def test_conf(mock_config, mock_taskcluster_config):
     """
@@ -102,3 +111,36 @@ def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
     assert r.calc_stats(mock_issues) == {
         mock_cls: {"total": 5, "publishable": 3, "publishable_paths": ["/path/to/file"]}
     }
+
+
+def test_mail_builderrors(
+    mock_config, mock_issues, mock_revision, mock_taskcluster_config
+):
+    """
+    Test mail_builderrors sending through Taskcluster
+    """
+    from code_review_bot.report.mail_builderrors import BuildErrorsReporter
+
+    def _check_email(request):
+        payload = json.loads(request.body)
+
+        assert payload["subject"] in (
+            "Build errors encountered for Phabricator #42 - PHID-DIFF-test",
+        )
+        assert payload["address"] == "test@mozilla.com"
+        assert payload["content"] == MAIL_CONTENT_BUILD_ERRORS
+
+        return (200, {}, "")  # ack
+
+    # Add mock taskcluster email to check output
+    responses.add_callback(
+        responses.POST,
+        "http://taskcluster.test/api/notify/v1/email",
+        callback=_check_email,
+    )
+
+    # Publish email
+    conf = {"emails": ["test@mozilla.com"]}
+    r = BuildErrorsReporter(conf)
+
+    r.publish(mock_issues, mock_revision)

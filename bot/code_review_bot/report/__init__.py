@@ -6,6 +6,7 @@
 import structlog
 
 from code_review_bot.report.mail import MailReporter
+from code_review_bot.report.mail_builderrors import BuildErrorsReporter
 from code_review_bot.report.phabricator import PhabricatorReporter
 
 logger = structlog.get_logger(__name__)
@@ -16,7 +17,12 @@ def get_reporters(configuration):
     Load reporters using Taskcluster configuration
     """
     assert isinstance(configuration, list)
-    reporters = {"mail": MailReporter, "phabricator": PhabricatorReporter}
+    reporters = {
+        "mail": MailReporter,
+        "build_error": BuildErrorsReporter,
+        "phabricator": PhabricatorReporter,
+    }
+
     out = {}
     for conf in configuration:
         try:
