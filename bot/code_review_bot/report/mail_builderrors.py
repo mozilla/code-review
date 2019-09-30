@@ -71,6 +71,8 @@ class BuildErrorsReporter(Reporter):
             logger.info("Unable to find the author for commit.")
             return
 
+        logger.info("Send build error email", to=commit["author"]["email"])
+
         # Since we nw know that there is an "author" field we assume that we have "email"
         self.notify.email(
             {
