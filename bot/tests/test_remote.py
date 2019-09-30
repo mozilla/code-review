@@ -575,7 +575,6 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow):
                                         "line": 66,
                                         "flag": "UNINIT",
                                         "reliability": "high",
-                                        "build_error": True,
                                         "message": 'Using uninitialized value "a".',
                                         "extra": {
                                             "category": "Memory - corruptions",
@@ -600,12 +599,21 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow):
                                         "line": 123,
                                         "flag": "UNINIT",
                                         "reliability": "high",
+                                        "build_error": True,
                                         "message": "Some error here",
                                         "extra": {
                                             "category": "Nice bug",
                                             "stateOnServer": {
                                                 "presentInReferenceSnapshot": False
                                             },
+                                            "stack": [
+                                                {
+                                                    "line_number": 61,
+                                                    "description": 'Condition "!target.oper…", taking false branch.',
+                                                    "file_path": "dom/animation/Animation.cpp",
+                                                    "path_type": "path",
+                                                }
+                                            ],
                                         },
                                     }
                                 ]
@@ -624,7 +632,7 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow):
     assert issue.line == 66
     assert issue.kind == "UNINIT"
     assert issue.reliability == Reliability.High
-    assert issue.build_error
+    assert not issue.build_error
     assert issue.bug_type == "Memory - corruptions"
     assert (
         issue.message
@@ -637,15 +645,7 @@ The path that leads to this defect is:
     assert issue.is_local()
     assert not issue.is_clang_error()
     assert issue.validates()
-    assert issue.is_build_error()
-
-    assert issue.as_phabricator_unitresult() == UnitResult(
-        namespace="code-review",
-        name="general",
-        result=UnitResultState.Fail,
-        details=f"Code review bot found a **build error**: \n{issue.message}",
-        format="remarkup",
-    )
+    assert not issue.is_build_error()
 
     issue = issues[1]
     assert isinstance(issue, CoverityIssue)
@@ -653,16 +653,23 @@ The path that leads to this defect is:
     assert issue.line == 123
     assert issue.kind == "UNINIT"
     assert issue.reliability == Reliability.High
-    assert not issue.build_error
+    assert issue.build_error
     assert issue.bug_type == "Nice bug"
     assert issue.message == "Some error here"
     assert issue.is_local()
     assert not issue.is_clang_error()
     assert issue.validates()
-    assert not issue.is_build_error()
+    assert issue.is_build_error()
     assert (
         issue.as_text()
         == f"Checker reliability is high, meaning that the false positive ratio is low.\nSome error here"
+    )
+    assert issue.as_phabricator_unitresult() == UnitResult(
+        namespace="code-review",
+        name="general",
+        result=UnitResultState.Fail,
+        details=f"Code review bot found a **build error**: \n{issue.message}",
+        format="remarkup",
     )
     assert check_stats(
         [

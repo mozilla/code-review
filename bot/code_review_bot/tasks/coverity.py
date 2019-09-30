@@ -31,6 +31,11 @@ ISSUE_MARKDOWN = """
 ```
 """
 
+ERROR_MARKDOWN = """
+**Message**: ```{message}```
+**Location**: {location}
+"""
+
 ISSUE_ELEMENT_IN_STACK = """
 - //{file_path}:{line_number}//:
 -- `{path_type}: {description}`.
@@ -63,6 +68,14 @@ class CoverityIssue(Issue):
         self.message = issue["message"]
 
         self.state_on_server = issue["extra"]["stateOnServer"]
+
+        self.body = None
+        self.nb_lines = 1
+
+        # For build errors we don't embed the stack into the message
+        if self.build_error:
+            return
+
         # If we have `stack` in the `try` result then embed it in the message.
         if "stack" in issue["extra"]:
             self.message += ISSUE_RELATION
@@ -77,9 +90,6 @@ class CoverityIssue(Issue):
                     path_type=event["path_type"],
                     description=event["description"],
                 )
-
-        self.body = None
-        self.nb_lines = 1
 
     def __str__(self):
         return "[{}] {} {}".format(self.kind, self.path, self.line)
@@ -137,6 +147,13 @@ class CoverityIssue(Issue):
             is_local=self.is_local() and "yes" or "no",
             reliability=self.reliability.value,
             is_clang_error=self.is_clang_error() and "yes" or "no",
+        )
+
+    def as_error(self):
+        assert self.build_error, "CoverityIssue is not a build error."
+
+        return ERROR_MARKDOWN.format(
+            message=self.message, location="{}:{}".format(self.path, self.line)
         )
 
     def as_dict(self):

@@ -14,6 +14,7 @@ from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import stats
 from code_review_bot.config import settings
+from code_review_bot.tasks.coverity import CoverityIssue
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -63,6 +64,29 @@ def mock_issues():
             return self.nb % 4 == 0
 
     return [MockIssue(i) for i in range(5)]
+
+
+@pytest.fixture
+def mock_coverity_issues():
+    """
+    Build a list of Coverity issues
+    """
+
+    return [
+        CoverityIssue(
+            0,
+            {
+                "reliability": "high",
+                "line": i,
+                "build_error": True,
+                "message": "Unidentified symbol",
+                "extra": {"category": "bug", "stateOnServer": False},
+                "flag": "flag",
+            },
+            "some/file/path",
+        )
+        for i in range(2)
+    ]
 
 
 @pytest.fixture

@@ -10,12 +10,12 @@ from code_review_bot.report.base import Reporter
 
 logger = structlog.get_logger(__name__)
 
+EMAIL_SUBJECT = """Code Review bot found {build_errors} build errors on D{phab_id}"""
+
 EMAIL_HEADER = """
-# Found {build_errors} build errors.
+# [Code Review bot](https://github.com/mozilla/code-review) found {build_errors} build errors on [D{phab_id}]({review_url})
 
-Review Url: {review_url}
-
-"""
+{content}"""
 
 
 class BuildErrorsReporter(Reporter):
@@ -53,16 +53,15 @@ class BuildErrorsReporter(Reporter):
             return
 
         content = EMAIL_HEADER.format(
-            build_errors=len(build_errors), review_url=revision.url
+            build_errors=len(build_errors),
+            phab_id=revision.id,
+            review_url=revision.url,
+            content="\n".join([i.as_error() for i in build_errors]),
         )
-
-        content += "\n\n".join([i.as_markdown() for i in build_errors])
 
         if len(content) > 102400:
             # Content is 102400 chars max
             content = content[:102000] + "\n\n... Content max limit reached!"
-
-        subject = "Build errors encountered for {}".format(revision)
 
         # Get the last commit
         commit = attachments["commits"]["commits"][-1]
@@ -77,7 +76,9 @@ class BuildErrorsReporter(Reporter):
         self.notify.email(
             {
                 "address": commit["author"]["email"],
-                "subject": subject,
+                "subject": EMAIL_SUBJECT.format(
+                    build_errors=len(build_errors), phab_id=revision.id
+                ),
                 "content": content,
             }
         )

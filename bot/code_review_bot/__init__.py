@@ -94,6 +94,12 @@ class Issue(abc.ABC):
         """
         raise NotImplementedError
 
+    def as_error(self):
+        """
+        Build the Markdown content for for build error issues
+        """
+        raise NotImplementedError
+
     @abc.abstractmethod
     def as_dict(self):
         """
