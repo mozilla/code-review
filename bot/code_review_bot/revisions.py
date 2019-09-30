@@ -125,7 +125,11 @@ class Revision(object):
         assert self.diff_phid.startswith("PHID-DIFF-")
 
         # Load diff details to get the diff revision
-        diffs = self.api.search_diffs(diff_phid=self.diff_phid)
+        # We also load the commits list in order to get the email of the author of the
+        # patch for sending email if builds are failing.
+        diffs = self.api.search_diffs(
+            diff_phid=self.diff_phid, attachments={"commits": True}
+        )
         assert len(diffs) == 1, "No diff available for {}".format(self.diff_phid)
         self.diff = diffs[0]
         self.diff_id = self.diff["id"]

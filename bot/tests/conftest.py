@@ -59,6 +59,9 @@ def mock_issues():
         def is_publishable(self):
             return self.nb % 2 == 0
 
+        def is_build_error(self):
+            return self.nb % 4 == 0
+
     return [MockIssue(i) for i in range(5)]
 
 

@@ -25,7 +25,26 @@
                         "view": "public"
                     }
                 },
-                "attachments": {}
+                "attachments": {
+                    "commits": {
+                        "commits": [
+                            {
+                                "identifier": "dcfebedebe9f18bce45f9bfc0339fe8255e5468b",
+                                "tree": null,
+                                "parents": [
+                                    "083ea767da9b11d52d71c227415d2a1b4fab6173"
+                                ],
+                                "author": {
+                                    "name": "test",
+                                    "email": "test@mozilla.com",
+                                    "raw": "\"test\" <test>",
+                                    "epoch": 0
+                                },
+                                "message": "create update for phabsend test\n\nDifferential Revision: https://phabricator-dev.allizom.org/D1354"
+                            }
+                        ]
+                    }
+                }
             }
         ],
         "maps": {},
