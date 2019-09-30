@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import itertools
+import urllib.parse
 
 from code_review_bot.tasks.clang_format import ClangFormatIssue
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue
@@ -42,9 +43,10 @@ COMMENT_COVERAGE = """
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
 {paths}
 
-Should they have tests, or are they dead code?
-You can file a bug blocking https://bugzilla.mozilla.org/show_bug.cgi?id=1415824 for untested files that should be tested.
-You can file a bug blocking https://bugzilla.mozilla.org/show_bug.cgi?id=1415819 for untested files that should be removed.
+Should they have tests, or are they dead code ?
+
+ - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
+ - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 """
 BUG_REPORT = """
 If you see a problem in this automated review, [please report it here]({bug_report_url}).
@@ -166,8 +168,15 @@ class Reporter(object):
         """
         Build a Markdown comment about coverage-related issues
         """
+
+        def coverage_url(path):
+            path = urllib.parse.quote_plus(path)
+            return f"https://coverage.moz.tools/#revision=latest&path={path}&view=file"
+
         comment = COMMENT_COVERAGE.format(
-            paths="\n".join(issue.path for issue in issues)
+            paths="\n".join(
+                f" - [{issue.path}]({coverage_url(issue.path)})" for issue in issues
+            )
         )
 
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)

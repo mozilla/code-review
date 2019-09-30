@@ -35,11 +35,12 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_COVERAGE_MESSAGE = """
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
-test.cpp
+ - [path/to/test.cpp](https://coverage.moz.tools/#revision=latest&path=path%2Fto%2Ftest.cpp&view=file)
 
-Should they have tests, or are they dead code?
-You can file a bug blocking https://bugzilla.mozilla.org/show_bug.cgi?id=1415824 for untested files that should be tested.
-You can file a bug blocking https://bugzilla.mozilla.org/show_bug.cgi?id=1415819 for untested files that should be removed.
+Should they have tests, or are they dead code ?
+
+ - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
+ - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """  # noqa
@@ -187,9 +188,7 @@ def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
         assert payload["output"] == ["json"]
         assert len(payload["params"]) == 1
         details = json.loads(payload["params"][0])
-        assert details["message"] == VALID_COVERAGE_MESSAGE.format(
-            results=mock_config.taskcluster.results_dir
-        )
+        assert details["message"] == VALID_COVERAGE_MESSAGE
 
         # Outputs dummy empty response
         resp = {"error_code": None, "result": None}
@@ -210,12 +209,12 @@ def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
         revision.lines = {
             # Add dummy lines diff
             "test.txt": [0],
-            "test.cpp": [0],
+            "path/to/test.cpp": [0],
             "dom/test.cpp": [42],
         }
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
 
-    issue = CoverageIssue("test.cpp", 0, "This file is uncovered", revision)
+    issue = CoverageIssue("path/to/test.cpp", 0, "This file is uncovered", revision)
     assert issue.is_publishable()
 
     issues, patches = reporter.publish([issue], revision)
@@ -267,9 +266,7 @@ def test_phabricator_clang_tidy_and_coverage(
         assert payload["output"] == ["json"]
         assert len(payload["params"]) == 1
         details = json.loads(payload["params"][0])
-        assert details["message"] == VALID_COVERAGE_MESSAGE.format(
-            results=mock_config.taskcluster.results_dir
-        )
+        assert details["message"] == VALID_COVERAGE_MESSAGE
 
         # Outputs dummy empty response
         resp = {"error_code": None, "result": None}
@@ -296,7 +293,7 @@ def test_phabricator_clang_tidy_and_coverage(
         revision.lines = {
             # Add dummy lines diff
             "test.txt": [0],
-            "test.cpp": [0],
+            "path/to/test.cpp": [0],
             "another_test.cpp": [41, 42, 43],
         }
         revision.files = ["test.txt", "test.cpp", "another_test.cpp"]
@@ -315,7 +312,9 @@ def test_phabricator_clang_tidy_and_coverage(
     )
     assert issue_clang_tidy.is_publishable()
 
-    issue_coverage = CoverageIssue("test.cpp", 0, "This file is uncovered", revision)
+    issue_coverage = CoverageIssue(
+        "path/to/test.cpp", 0, "This file is uncovered", revision
+    )
     assert issue_coverage.is_publishable()
 
     issues, patches = reporter.publish([issue_clang_tidy, issue_coverage], revision)
