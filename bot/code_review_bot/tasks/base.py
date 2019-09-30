@@ -121,6 +121,7 @@ class AnalysisTask(object):
         for checkout in WORKER_CHECKOUTS:
             if path.startswith(checkout):
                 self.cleaned_paths.add(path)
+                logger.warning("Cleaned issue absolute path", path=path, name=self.name)
                 return os.path.relpath(path, checkout)
 
         return path

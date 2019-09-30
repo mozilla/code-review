@@ -14,6 +14,7 @@ class MockCoverityTask(CoverityTask):
         Simply skip task loading
         """
         self.cleaned_paths = set()
+        self.task = {"metadata": {"name": "mock-coverity"}}
 
 
 def mock_coverity(name):
@@ -26,7 +27,7 @@ def mock_coverity(name):
         return {"public/code-review/coverity.json": json.load(f)}
 
 
-def test_simple(mock_revision, mock_config):
+def test_simple(mock_revision, mock_config, log):
     """
     Test parsing a simple Coverity artifact
     """
@@ -81,6 +82,14 @@ The path that leads to this defect is:
     }
     assert issue.body is None
     assert issue.nb_lines == 1
+
+    # Check the issue's absolute path has been cleaned
+    assert log.has(
+        "Cleaned issue absolute path",
+        path="/builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp",
+        name="mock-coverity",
+        level="warning",
+    )
 
     assert issue.validates()
     assert not issue.is_publishable()
