@@ -76,10 +76,15 @@ class AnalysisTask(object):
 
         # Process only the supported final states
         # as some tasks do not always have relevant output
+        # Do not report completed tasks as warning
         if self.state not in self.valid_states:
-            logger.warn(
-                "Invalid task state", state=self.state, id=self.id, name=self.name
-            )
+            if self.state == "completed":
+                logger.info("Ignoring completed task", id=self.id, name=self.name)
+
+            else:
+                logger.warn(
+                    "Invalid task state", state=self.state, id=self.id, name=self.name
+                )
             return
 
         # Load relevant artifacts
