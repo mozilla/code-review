@@ -153,8 +153,9 @@ class MozLintTask(AnalysisTask):
 
     artifacts = ["public/code-review/mozlint.json"]
 
-    # Only process failed states, as a completed task means than no issues were found
+    # Only process failed states, as a completed task means that no issues were found
     valid_states = ("failed",)
+    skipped_states = ("completed",)
 
     def parse_issues(self, artifacts, revision):
         """

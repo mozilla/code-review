@@ -24,6 +24,7 @@ class AnalysisTask(object):
     artifacts = []
     route = None
     valid_states = ("completed", "failed")
+    skipped_states = ()
 
     def __init__(self, task_id, task_status):
         self.id = task_id
@@ -76,8 +77,11 @@ class AnalysisTask(object):
 
         # Process only the supported final states
         # as some tasks do not always have relevant output
-        if self.state not in self.valid_states:
-            logger.warn(
+        if self.state in self.skipped_states:
+            logger.info("Skipping task", state=self.state, id=self.id, name=self.name)
+            return
+        elif self.state not in self.valid_states:
+            logger.warning(
                 "Invalid task state", state=self.state, id=self.id, name=self.name
             )
             return
