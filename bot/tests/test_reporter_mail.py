@@ -31,13 +31,16 @@ This is the mock issue n°3
 This is the mock issue n°4"""
 
 MAIL_CONTENT_BUILD_ERRORS = """
-# Found 2 build errors.
+# [Code Review bot](https://github.com/mozilla/code-review) found 2 build errors on [D51](https://phabricator.test/D51)
 
-Review Url: https://phabricator.test/D51
 
-This is the mock issue n°0
+**Message**: ```Unidentified symbol```
+**Location**: some/file/path:0
 
-This is the mock issue n°4"""
+
+**Message**: ```Unidentified symbol```
+**Location**: some/file/path:1
+"""
 
 
 def test_conf(mock_config, mock_taskcluster_config):
@@ -114,7 +117,7 @@ def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
 
 
 def test_mail_builderrors(
-    mock_config, mock_issues, mock_revision, mock_taskcluster_config
+    log, mock_config, mock_coverity_issues, mock_revision, mock_taskcluster_config
 ):
     """
     Test mail_builderrors sending through Taskcluster
@@ -124,9 +127,7 @@ def test_mail_builderrors(
     def _check_email(request):
         payload = json.loads(request.body)
 
-        assert payload["subject"] in (
-            "Build errors encountered for Phabricator #42 - PHID-DIFF-test",
-        )
+        assert payload["subject"] == "Code Review bot found 2 build errors on D51"
         assert payload["address"] == "test@mozilla.com"
         assert payload["content"] == MAIL_CONTENT_BUILD_ERRORS
 
@@ -143,4 +144,6 @@ def test_mail_builderrors(
     conf = {"emails": ["test@mozilla.com"]}
     r = BuildErrorsReporter(conf)
 
-    r.publish(mock_issues, mock_revision)
+    r.publish(mock_coverity_issues, mock_revision)
+
+    assert log.has("Send build error email", to="test@mozilla.com")
