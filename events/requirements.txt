@@ -1,4 +1,2 @@
 -e ../tools #egg=code-review-tools
-
-# libmozevent==1.0.0
-https://github.com/mozilla/libmozevent/archive/0166a5e8a8ec11b971efb6f6acc14892f2d2f158.tar.gz #egg=libmozevent
+libmozevent==1.0.1
