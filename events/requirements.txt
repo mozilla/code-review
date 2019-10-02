@@ -1,2 +1,2 @@
 -e ../tools #egg=code-review-tools
-libmozevent==1.0.0
+libmozevent==1.0.1
