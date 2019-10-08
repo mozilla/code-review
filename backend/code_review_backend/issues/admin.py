@@ -4,6 +4,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.contrib import admin
-from django.urls import path
 
-urlpatterns = [path("admin/", admin.site.urls)]
+from code_review_backend.issues.models import Issue
+
+
+class IssueAdmin(admin.ModelAdmin):
+    """
+    Manage stored issues
+    """
+
+
+admin.site.register(Issue, IssueAdmin)
