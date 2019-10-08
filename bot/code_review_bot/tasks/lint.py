@@ -116,10 +116,7 @@ class MozLintIssue(Issue):
             "nb_lines": self.nb_lines,
             "rule": self.rule,
             "message": self.message,
-            "validation": {
-                "third_party": self.is_third_party(),
-                "disabled_rule": self.is_disabled_rule(),
-            },
+            "validation": {"disabled_rule": self.is_disabled_rule()},
             "in_patch": self.revision.contains(self),
             "is_new": self.is_new,
             "validates": self.validates(),
