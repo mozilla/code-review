@@ -28,6 +28,12 @@ class Repository(PhabricatorModel):
     url = models.URLField(unique=True)
     slug = models.SlugField(unique=True)
 
+    class Meta:
+        verbose_name_plural = "repositories"
+
+    def __str__(self):
+        return self.slug
+
 
 class Revision(PhabricatorModel):
     repository = models.ForeignKey(
@@ -35,7 +41,10 @@ class Revision(PhabricatorModel):
     )
 
     title = models.CharField(max_length=250)
-    bugzilla_id = models.PositiveIntegerField()
+    bugzilla_id = models.PositiveIntegerField(null=True)
+
+    def __str__(self):
+        return f"D{self.id} - {self.title}"
 
 
 class Diff(PhabricatorModel):
@@ -43,7 +52,10 @@ class Diff(PhabricatorModel):
         Revision, related_name="diffs", on_delete=models.CASCADE
     )
 
-    review_task_id = models.CharField(max_length=20, unique=True)
+    review_task_id = models.CharField(max_length=30, unique=True)
+
+    def __str__(self):
+        return f"Diff {self.id}"
 
 
 class Issue(models.Model):
@@ -58,8 +70,9 @@ class Issue(models.Model):
     nb_lines = models.PositiveIntegerField()
     char = models.PositiveIntegerField(null=True)
     level = models.CharField(max_length=20, choices=ISSUE_LEVELS)
-    check = models.CharField(max_length=250)
-    message = models.TextField()
+    check = models.CharField(max_length=250, null=True)
+    message = models.TextField(null=True)
+    analyzer = models.CharField(max_length=50)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
