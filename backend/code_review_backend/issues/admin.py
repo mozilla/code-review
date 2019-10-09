@@ -34,3 +34,6 @@ class IssueAdmin(admin.ModelAdmin):
 admin.site.register(Repository, RepositoryAdmin)
 admin.site.register(Revision, RevisionAdmin)
 admin.site.register(Issue, IssueAdmin)
+
+# Naming
+admin.site.site_header = "Mozilla Code Review Backend"
