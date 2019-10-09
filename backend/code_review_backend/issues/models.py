@@ -7,10 +7,17 @@ import uuid
 
 from django.db import models
 
+LEVEL_WARNING = "warning"
+LEVEL_ERROR = "error"
+ISSUE_LEVELS = ((LEVEL_WARNING, "Warning"), (LEVEL_ERROR, "Error"))
+
 
 class PhabricatorModel(models.Model):
     id = models.PositiveIntegerField(primary_key=True)
     phid = models.CharField(max_length=40, unique=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         abstract = True
@@ -28,6 +35,7 @@ class Revision(PhabricatorModel):
     )
 
     title = models.CharField(max_length=250)
+    bugzilla_id = models.PositiveIntegerField()
 
 
 class Diff(PhabricatorModel):
@@ -35,10 +43,23 @@ class Diff(PhabricatorModel):
         Revision, related_name="diffs", on_delete=models.CASCADE
     )
 
+    review_task_id = models.CharField(max_length=20, unique=True)
+
 
 class Issue(models.Model):
     """An issue detected on a Phabricator patch"""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-
     diff = models.ForeignKey(Diff, related_name="issues", on_delete=models.CASCADE)
+
+    # Raw issue data
+    path = models.CharField(max_length=250)
+    line = models.PositiveIntegerField()
+    nb_lines = models.PositiveIntegerField()
+    char = models.PositiveIntegerField(null=True)
+    level = models.CharField(max_length=20, choices=ISSUE_LEVELS)
+    check = models.CharField(max_length=250)
+    message = models.TextField()
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
