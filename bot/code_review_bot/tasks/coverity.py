@@ -53,24 +53,27 @@ class CoverityIssue(Issue):
 
     ANALYZER = COVERITY
 
-    def __init__(self, revision, issue, file_path):
-        self.revision = revision
-        self.path = file_path
+    def __init__(self, analyzer, revision, issue, file_path):
+        super().__init__(
+            analyzer,
+            revision,
+            file_path,
+            line=issue["line"],
+            nb_lines=1,
+            check=issue["flag"],
+            level="error",
+            message=issue["message"],
+        )
         self.reliability = (
             Reliability(issue["reliability"])
             if "reliability" in issue
             else Reliability.Unknown
         )
-        self.line = issue["line"]
         self.build_error = issue.get("build_error", False)
-        self.bug_type = issue["extra"]["category"]
-        self.kind = issue["flag"]
-        self.message = issue["message"]
 
         self.state_on_server = issue["extra"]["stateOnServer"]
 
         self.body = None
-        self.nb_lines = 1
 
         # For build errors we don't embed the stack into the message
         if self.build_error:
@@ -92,19 +95,19 @@ class CoverityIssue(Issue):
                 )
 
     def __str__(self):
-        return "[{}] {} {}".format(self.kind, self.path, self.line)
+        return "[{}] {} {}".format(self.check, self.path, self.line)
 
     def build_extra_identifiers(self):
         """
         Used to compare with same-class issues
         """
-        return {"bug_type": self.bug_type, "kind": self.kind, "line": self.line}
+        return {"check": self.check, "line": self.line}
 
     def is_clang_error(self):
         """
         Determine if the current issue is a translation unit error forwarded by Clang
         """
-        return "RW.CLANG" in self.kind
+        return "RW.CLANG" in self.check
 
     def is_local(self):
         """
@@ -139,7 +142,7 @@ class CoverityIssue(Issue):
 
     def as_markdown(self):
         return ISSUE_MARKDOWN.format(
-            check=self.kind,
+            check=self.check,
             message=self.message,
             location="{}:{}".format(self.path, self.line),
             body=self.body,
@@ -156,29 +159,15 @@ class CoverityIssue(Issue):
             message=self.message, location="{}:{}".format(self.path, self.line)
         )
 
-    def as_dict(self):
+    def build_extra_informations(self):
         """
         Outputs all available information into a serializable dict
         """
         return {
-            "analyzer": "Coverity",
-            "path": self.path,
-            "line": self.line,
-            "nb_lines": self.nb_lines,
-            "bug_type": self.bug_type,
-            "kind": self.kind,
-            "reliability": self.reliability.value,
-            "message": self.message,
             "body": self.body,
-            "in_patch": self.revision.contains(self),
-            "is_new": self.is_new,
+            "reliability": self.reliability.value,
             "is_local": self.is_local(),
-            "validates": self.validates(),
-            "validation": {
-                "is_local": self.is_local(),
-                "is_clang_error": self.is_clang_error(),
-            },
-            "publishable": self.is_publishable(),
+            "build_error": self.build_error,
         }
 
     def as_phabricator_lint(self):
@@ -194,7 +183,7 @@ class CoverityIssue(Issue):
 
         return LintResult(
             name=message,
-            code="coverity.{}".format(self.kind),
+            code="coverity.{}".format(self.check),
             severity="error",
             path=self.path,
             line=self.line,
@@ -238,7 +227,12 @@ class CoverityTask(AnalysisTask):
         """
         assert isinstance(artifacts, dict)
         return [
-            CoverityIssue(revision, issue=warning, file_path=self.clean_path(path))
+            CoverityIssue(
+                analyzer=self.name,
+                revision=revision,
+                issue=warning,
+                file_path=self.clean_path(path),
+            )
             for artifact in artifacts.values()
             for path, items in artifact["files"].items()
             for warning in items["warnings"]

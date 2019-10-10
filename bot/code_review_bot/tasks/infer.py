@@ -21,10 +21,6 @@ ISSUE_MARKDOWN = """
 - **Infer check**: {check}
 - **Publishable **: {publishable}
 - **Is new**: {is_new}
-
-```
-{body}
-```
 """
 
 INFER_SETUP_CMD = [
@@ -44,30 +40,33 @@ class InferIssue(Issue):
 
     ANALYZER = INFER
 
-    def __init__(self, entry, revision):
+    def __init__(self, analyzer, entry, revision):
         assert isinstance(entry, dict)
-        self.revision = revision
-        self.path = entry["file"]
-        self.line = entry["line"]
-        self.column = entry["column"]
-        self.bug_type = entry["bug_type"]
-        self.kind = entry.get("kind") or entry.get("severity")
-        assert self.kind is not None, "Missing issue kind"
-        self.message = entry["qualifier"]
-        self.body = None
-        self.nb_lines = 1
+        kind = entry.get("kind") or entry.get("severity")
+        assert kind is not None, "Missing issue kind"
+        super().__init__(
+            analyzer,
+            revision,
+            path=entry["file"],
+            line=entry["line"],
+            nb_lines=1,
+            check=entry["bug_type"],
+            column=entry["column"],
+            level=kind,
+            message=entry["qualifier"],
+        )
 
     def __str__(self):
-        return "[{}] {} {}:{}".format(self.bug_type, self.path, self.line, self.column)
+        return "[{}] {} {}:{}".format(self.check, self.path, self.line, self.column)
 
     def build_extra_identifiers(self):
         """
         Used to compare with same-class issues
         """
-        return {"bug_type": self.bug_type, "kind": self.kind, "column": self.column}
+        return {"check": self.check, "level": self.level, "column": self.column}
 
     def is_problem(self):
-        return self.kind in ("ERROR")
+        return self.level in ("ERROR")
 
     def validates(self):
         """
@@ -82,41 +81,23 @@ class InferIssue(Issue):
         message = self.message
         if len(message) > 0:
             message = message[0].capitalize() + message[1:]
-        body = "{}: {} [infer: {}]".format(self.kind, message, self.bug_type)
-        if self.body:
-            self.body += "\n{}".format(body)
-        return body
+        return "{}: {} [infer: {}]".format(self.level, message, self.check)
 
     def as_markdown(self):
         return ISSUE_MARKDOWN.format(
-            check=self.bug_type,
+            check=self.check,
             message=self.message,
             location="{}:{}:{}".format(self.path, self.line, self.column),
-            body=self.body,
             in_patch="yes" if self.revision.contains(self) else "no",
             publishable="yes" if self.is_publishable() else "no",
             is_new="yes" if self.is_new else "no",
         )
 
-    def as_dict(self):
+    def build_extra_informations(self):
         """
-        Outputs all available information into a serializable dict
+        No extras available on Infer
         """
-        return {
-            "analyzer": "infer",
-            "path": self.path,
-            "line": self.line,
-            "nb_lines": self.nb_lines,
-            "column": self.column,
-            "bug_type": self.bug_type,
-            "kind": self.kind,
-            "message": self.message,
-            "body": self.body,
-            "in_patch": self.revision.contains(self),
-            "is_new": self.is_new,
-            "validates": self.validates(),
-            "publishable": self.is_publishable(),
-        }
+        return {}
 
     def as_phabricator_lint(self):
         """
@@ -124,12 +105,12 @@ class InferIssue(Issue):
         """
         return LintResult(
             name=self.message,
-            code="infer.{}".format(self.bug_type),
-            severity=self.kind,
+            code="infer.{}".format(self.check),
+            severity=self.level,
             path=self.path,
             line=self.line,
             char=self.column,
-            description=self.body,
+            description="Infer detected an issue on that line",
         )
 
 
@@ -146,7 +127,7 @@ class InferTask(AnalysisTask):
         """
         assert isinstance(artifacts, dict)
         return [
-            InferIssue(issue, revision)
+            InferIssue(analyzer=self.name, revision=revision, entry=issue)
             for issues in artifacts.values()
             for issue in issues
         ]

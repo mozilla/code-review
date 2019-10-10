@@ -25,14 +25,21 @@ class ClangFormatIssue(Issue):
 
     ANALYZER = CLANG_FORMAT
 
-    def __init__(self, path, line, nb_lines, revision, column=None, patch=None):
-        self.path = path
-        self.line = line
-        self.nb_lines = nb_lines
-        self.revision = revision
+    def __init__(
+        self, analyzer, path, line, nb_lines, revision, column=None, patch=None
+    ):
+        super().__init__(
+            analyzer,
+            revision,
+            path,
+            line,
+            nb_lines,
+            check="invalid-styling",
+            column=column,
+            level="warning",
+        )
         self.is_new = True
         self.patch = patch
-        self.column = column
 
     def build_extra_identifiers(self):
         """
@@ -69,23 +76,11 @@ class ClangFormatIssue(Issue):
             is_new="yes" if self.is_new else "no",
         )
 
-    def as_dict(self):
+    def build_extra_informations(self):
         """
-        Outputs all available information into a serializable dict
+        Add the clang-format patch to report
         """
-        return {
-            "analyzer": "clang-format",
-            "path": self.path,
-            "line": self.line,
-            "nb_lines": self.nb_lines,
-            "validation": {},
-            "in_patch": self.revision.contains(self),
-            "is_new": self.is_new,
-            "validates": self.validates(),
-            "publishable": self.is_publishable(),
-            "patch": self.patch,
-            "column": self.column,
-        }
+        return {"patch": self.patch}
 
     def as_phabricator_lint(self):
         """
@@ -124,6 +119,7 @@ class ClangFormatTask(AnalysisTask):
 
         return [
             ClangFormatIssue(
+                analyzer=self.name,
                 path=self.clean_path(path),
                 line=issue["line"],
                 nb_lines=issue["lines_modified"],

@@ -44,6 +44,11 @@ def test_coverage(mock_config, mock_revision, mock_coverage_artifact):
         "is_new": False,
         "validates": True,
         "publishable": True,
+        "check": "no-coverage",
+        "column": None,
+        "extras": {},
+        "level": "warning",
+        "nb_lines": 1,
     }
     assert issue.as_phabricator_lint() == {
         "code": "coverage",
@@ -84,6 +89,11 @@ This file is uncovered
         "is_new": False,
         "validates": True,
         "publishable": True,
+        "check": "no-coverage",
+        "column": None,
+        "extras": {},
+        "level": "warning",
+        "nb_lines": 1,
     }
     assert issue.as_phabricator_lint() == {
         "code": "coverage",
@@ -124,6 +134,11 @@ This file is uncovered
         "is_new": False,
         "validates": False,
         "publishable": False,
+        "check": "no-coverage",
+        "column": None,
+        "extras": {},
+        "level": "warning",
+        "nb_lines": 1,
     }
     assert issue.as_phabricator_lint() == {
         "code": "coverage",
