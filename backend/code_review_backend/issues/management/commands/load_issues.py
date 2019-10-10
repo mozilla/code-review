@@ -26,11 +26,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--repository",
-            default="mozilla-central",
-            help="Repository slug to use for new revisions",
-        )
-        parser.add_argument(
             "--offline",
             action="store_true",
             default=False,
@@ -38,11 +33,12 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Load repository
-        try:
-            self.repository = Repository.objects.get(slug=options["repository"])
-        except Repository.DoesNotExist:
-            raise CommandError(f"Missing repository {options['repository']}")
+        # Check repositories
+        for repo in ("mozilla-central", "nss"):
+            try:
+                Repository.objects.get(slug=repo)
+            except Repository.DoesNotExist:
+                raise CommandError(f"Missing repository {repo}")
 
         # Setup cache dir
         self.cache_dir = os.path.join(tempfile.gettempdir(), "code-review-reports")
@@ -114,6 +110,29 @@ class Command(BaseCommand):
                             continue
                         raise
 
+                    # Load the task definition of the main task in group
+                    # to get the mercurial revision of the patch
+                    # It should always be the decision task that has mercurial refs
+                    decision_task = queue.task(task["data"]["try_group_id"])
+                    decision_env = decision_task["payload"].get("env", {})
+                    if "GECKO_HEAD_REV" in decision_env:
+                        # mozilla-central rev
+                        repo_slug = "mozilla-central"
+                        repo_rev = decision_env["GECKO_HEAD_REV"]
+
+                    elif "NSS_HEAD_REVISION" in decision_env:
+                        # nss rev
+                        repo_slug = "nss"
+                        repo_rev = decision_env["NSS_HEAD_REVISION"]
+                    else:
+                        raise Exception(
+                            f"Missing gecko rev in task {task['data']['try_group_id']}"
+                        )
+
+                    # Add missing data in artifact
+                    artifact["revision"]["mercurial"] = repo_rev
+                    artifact["revision"]["repository"] = repo_slug
+
                     # Store artifact in cache
                     with open(path, "w") as f:
                         json.dump(artifact, f, sort_keys=True, indent=4)
@@ -131,7 +150,8 @@ class Command(BaseCommand):
 
     def build_hierarchy(self, data, task_id):
         """Build or retrieve a revision and diff in current repo from report's data"""
-        revision, _ = self.repository.revisions.get_or_create(
+        repository = Repository.objects.get(slug=data["repository"])
+        revision, _ = repository.revisions.get_or_create(
             id=data["id"],
             defaults={
                 "phid": data["phid"],
@@ -143,6 +163,10 @@ class Command(BaseCommand):
         )
         diff, _ = revision.diffs.get_or_create(
             id=data["diff_id"],
-            defaults={"phid": data["diff_phid"], "review_task_id": task_id},
+            defaults={
+                "phid": data["diff_phid"],
+                "review_task_id": task_id,
+                "mercurial": data["mercurial"],
+            },
         )
         return revision, diff

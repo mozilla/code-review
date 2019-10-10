@@ -53,6 +53,7 @@ class Diff(PhabricatorModel):
     )
 
     review_task_id = models.CharField(max_length=30, unique=True)
+    mercurial = models.CharField(max_length=40)
 
     def __str__(self):
         return f"Diff {self.id}"
@@ -76,3 +77,8 @@ class Issue(models.Model):
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    def build_hash(self):
+
+        # First we need the affected lines
+        pass

@@ -18,7 +18,7 @@ class RepositoryAdmin(admin.ModelAdmin):
 class DiffInline(admin.TabularInline):
     # Read only inline
     model = Diff
-    readonly_fields = ("id", "phid", "review_task_id")
+    readonly_fields = ("id", "mercurial", "phid", "review_task_id")
 
 
 class RevisionAdmin(admin.ModelAdmin):
