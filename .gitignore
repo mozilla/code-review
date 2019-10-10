@@ -1,4 +1,5 @@
 .vscode/
 *.pyc
 *.egg-info
-*.sqlite3
+*.sqlite*
+backend/hgmo

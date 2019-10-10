@@ -57,7 +57,7 @@ class Command(BaseCommand):
                 diff.issues.all().delete()
 
                 # Build all issues for that diff, in a single DB call
-                out = Issue.objects.bulk_create(
+                issues = Issue.objects.bulk_create(
                     Issue(
                         diff=diff,
                         path=i["path"],
@@ -71,7 +71,11 @@ class Command(BaseCommand):
                     )
                     for i in report["issues"]
                 )
-                print(task_id, len(out))
+                print(task_id, len(issues))
+
+                for issue in issues:
+                    issue.hash = issue.build_hash()
+                    issue.save()
 
     def load_tasks(self, chunk=200):
         # Direct unauthenticated usage
