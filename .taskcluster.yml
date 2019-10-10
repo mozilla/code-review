@@ -127,7 +127,7 @@ tasks:
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
       provisionerId: aws-provisioner-v1
-      workerType: releng-svc
+      workerType: relman-svc
       dependencies:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("bot_check_tests")}
