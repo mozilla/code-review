@@ -25,7 +25,7 @@ class MockRevision(Revision):
     def __init__(self, namespaces, details, repository):
         self._namespaces = namespaces
         self._details = details
-        self.repository = repository
+        self.target_repository = repository
 
     @property
     def namespaces(self):
