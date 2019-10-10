@@ -27,7 +27,7 @@ def mock_coverity(name):
         return {"public/code-review/coverity.json": json.load(f)}
 
 
-def test_simple(mock_revision, mock_config, log):
+def test_simple(mock_revision, mock_config, log, mock_hgmo):
     """
     Test parsing a simple Coverity artifact
     """
@@ -139,4 +139,5 @@ The path that leads to this defect is:
         "path": "js/src/jit/BaselineCompiler.cpp",
         "publishable": False,
         "validates": True,
+        "hash": "4304590c14cd2ed9e7a7f913165af94b",
     }

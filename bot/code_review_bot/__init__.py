@@ -5,11 +5,18 @@
 
 import abc
 import enum
+import hashlib
+import json
+
+import requests
+import structlog
 
 from code_review_bot.config import Publication
 from code_review_bot.config import settings
 from code_review_bot.stats import InfluxDb
 from code_review_tools.taskcluster import TaskclusterConfig
+
+logger = structlog.get_logger(__name__)
 
 CLANG_TIDY = "clang-tidy"
 CLANG_FORMAT = "clang-format"
@@ -100,6 +107,45 @@ class Issue(abc.ABC):
 
         raise Exception("Unsupported publication mode {}".format(settings.publication))
 
+    def build_hash(self):
+        """
+        Build a uniquely identifying hash for that issue
+        """
+        assert self.revision is not None, "Missing revision"
+
+        try:
+            # Load all the lines affected by the issue
+            file_content = self.revision.load_file(self.path)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                logger.warning(
+                    "Failed to download a file with an issue", path=self.path
+                )
+                return
+            raise
+
+        # Build raw content:
+        # 1. lines affected by patch
+        # 2. without any spaces around each line
+        file_lines = file_content.splitlines()
+        start = self.line - 1  # file_lines start at 0, not 1
+        raw_content = "\n".join(
+            [
+                line.strip()
+                for line in file_lines[start : start + self.nb_lines]  # noqa E203
+            ]
+        )
+
+        # Build hash payload using issue data
+        # excluding file position information (lines & char)
+        extras = json.dumps(self.build_extra_identifiers(), sort_keys=True)
+        payload = ":".join(
+            [self.analyzer, self.path, self.level, self.check, extras, raw_content]
+        ).encode("utf-8")
+
+        # Finally build the MD5 hash
+        return hashlib.md5(payload).hexdigest()
+
     @abc.abstractmethod
     def validates(self):
         """
@@ -146,6 +192,7 @@ class Issue(abc.ABC):
             "is_new": self.is_new,
             "validates": self.validates(),
             "publishable": self.is_publishable(),
+            "hash": self.build_hash(),
         }
 
     @abc.abstractmethod

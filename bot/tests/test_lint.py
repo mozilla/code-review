@@ -4,7 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-def test_flake8_checks(mock_config, mock_revision):
+def test_flake8_checks(mock_config, mock_revision, mock_hgmo):
     """
     Check flake8 check detection
     """
@@ -53,10 +53,11 @@ def test_flake8_checks(mock_config, mock_revision):
         "path": "test.py",
         "publishable": False,
         "validates": False,
+        "hash": "57a49008d6a3ec23f987c0bf62c43d75",
     }
 
 
-def test_as_text(mock_config, mock_revision):
+def test_as_text(mock_config, mock_revision, mock_hgmo):
     """
     Test text export for ClangTidyIssue
     """
@@ -101,4 +102,5 @@ def test_as_text(mock_config, mock_revision):
         "path": "test.py",
         "publishable": False,
         "validates": True,
+        "hash": "34c27d119c21ea5a2cd3f6ac230d8c4e",
     }

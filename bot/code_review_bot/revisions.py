@@ -4,8 +4,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+import urllib.parse
 from datetime import timedelta
 
+import requests
 import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
@@ -167,6 +169,32 @@ class Revision(object):
         stats.add_metric(
             "analysis.lines", sum(len(line) for line in self.lines.values())
         )
+
+    def load_file(self, path):
+        """
+        Load a file content at current revision from remote HGMO
+        """
+        # Check in hgmo cache first
+        cache_path = os.path.join(settings.hgmo_cache, path)
+        if os.path.exists(cache_path):
+            return open(cache_path).read()
+
+        # Retrieve remote file
+        url = urllib.parse.urljoin(
+            "https://hg.mozilla.org",
+            f"{self.repository}/raw-file/{self.mercurial_revision}/{path}",
+        )
+        logger.info("Downloading HGMO file", url=url)
+        response = requests.get(url)
+        response.raise_for_status()
+
+        # Store in cache
+        content = response.content.decode("utf-8")
+        os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+        with open(cache_path, "w") as f:
+            f.write(content)
+
+        return content
 
     def has_file(self, path):
         """

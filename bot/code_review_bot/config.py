@@ -49,6 +49,7 @@ class Settings(object):
         self.taskcluster = None
         self.try_task_id = None
         self.try_group_id = None
+        self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
 
     def setup(self, app_channel, publication, allowed_paths):
         # Detect source from env

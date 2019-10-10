@@ -5,6 +5,7 @@
 
 import json
 import os.path
+import re
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -375,3 +376,25 @@ def mock_taskcluster_config():
     from code_review_bot import taskcluster
 
     taskcluster.options = {"rootUrl": "http://taskcluster.test"}
+
+
+@pytest.fixture
+def mock_hgmo():
+    """
+    Mock HGMO raw-file response to buidl a issue hash
+    """
+
+    def fake_raw_file(request):
+        repo, _, revision, *path = request.path_url[1:].split("/")
+        path = "/".join(path)
+
+        # Produce a long fake file
+        content = "\n".join(f"{repo}:{revision}:{path}:{i+1}" for i in range(1000))
+
+        return (200, {}, content)
+
+    responses.add_callback(
+        responses.GET,
+        re.compile(r"^https://hg.mozilla.org/[\w-]+/raw-file/.*"),
+        callback=fake_raw_file,
+    )
