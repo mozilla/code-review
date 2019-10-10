@@ -12,6 +12,25 @@ def test_publication(tmpdir, mock_issues, mock_revision):
     """
     from code_review_bot.report.debug import DebugReporter
 
+    # Load description from Taskcluster tasks
+    mock_revision.setup_try(
+        {
+            # Base information are retrieved from the decision task
+            "decision": {
+                "task": {
+                    "payload": {
+                        "image": "taskcluster/decision",
+                        "env": {
+                            "GECKO_HEAD_REV": "deadc0ffee",
+                            "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                            "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-central",
+                        },
+                    }
+                }
+            }
+        }
+    )
+
     report_dir = str(tmpdir.mkdir("public").realpath())
     report_path = os.path.join(report_dir, "report.json")
     assert not os.path.exists(report_path)
@@ -36,6 +55,9 @@ def test_publication(tmpdir, mock_issues, mock_revision):
         "phid": "PHID-DREV-zzzzz",
         "title": "Static Analysis tests",
         "has_clang_files": False,
+        "repository": "try",
+        "target_repository": "mozilla-central",
+        "mercurial_revision": "deadc0ffee",
     }
 
     assert "time" in report

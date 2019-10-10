@@ -154,7 +154,8 @@ class Workflow(object):
         payload["try_group_id"] = settings.try_group_id
 
         # Always add the repository we are working on
-        payload["repository"] = revision.repository
+        # This is mainly used by the frontend to list & filter diffs
+        payload["repository"] = revision.target_repository
 
         # Add restartable flag for monitoring
         payload["monitoring_restart"] = payload["state"] == "error" and payload.get(
