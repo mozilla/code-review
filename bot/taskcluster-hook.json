@@ -89,7 +89,7 @@
             "notify:email:*"
         ],
         "tags": {},
-        "workerType": "releng-svc"
+        "workerType": "relman-svc"
     },
     "triggerSchema": {
         "additionalProperties": true,
