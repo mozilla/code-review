@@ -74,11 +74,10 @@ def test_as_text(mock_revision):
         "dummy message withUppercaseChars",
         "error",
     )
-    issue.body = "Dummy body withUppercaseChars"
 
     assert (
         issue.as_text()
-        == "Error: Dummy message withUppercaseChars [clang-tidy: dummy-check]\n```\nDummy body withUppercaseChars\n```"
+        == "Error: Dummy message withUppercaseChars [clang-tidy: dummy-check]"
     )
 
 
@@ -100,7 +99,6 @@ def test_as_dict(mock_revision):
         "error",
         Reliability.Low,
     )
-    issue.body = "Dummy body withUppercaseChars"
 
     assert issue.as_dict() == {
         "analyzer": "clang-tidy",
@@ -115,12 +113,7 @@ def test_as_dict(mock_revision):
         "is_new": False,
         "validates": True,
         "publishable": False,
-        "extras": {
-            "body": "Dummy body withUppercaseChars",
-            "notes": [],
-            "reason": None,
-            "reliability": "low",
-        },
+        "extras": {"notes": [], "reason": None, "reliability": "low"},
     }
 
 
@@ -142,7 +135,6 @@ def test_as_markdown(mock_revision):
         "error",
         Reliability.High,
     )
-    issue.body = "Dummy body"
 
     assert (
         issue.as_markdown()
@@ -159,10 +151,6 @@ def test_as_markdown(mock_revision):
 - **Is new**: no
 - **Checker reliability **: high (false positive risk)
 
-```
-Dummy body
-```
-
 
 """
     )
@@ -171,7 +159,7 @@ Dummy body
         "code": "clang-tidy.dummy-check",
         "line": 42,
         "name": "Clang-Tidy - dummy-check",
-        "description": "dummy message\nChecker reliability is high, meaning that the false positive ratio is low.\n\n > Dummy body",
+        "description": "dummy message\nChecker reliability is high, meaning that the false positive ratio is low.",
         "path": "test.cpp",
         "severity": "warning",
     }

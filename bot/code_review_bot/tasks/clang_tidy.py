@@ -30,10 +30,6 @@ ISSUE_MARKDOWN = """
 - **Is new**: {is_new}
 - **Checker reliability **: {reliability} (false positive risk)
 
-```
-{body}
-```
-
 {notes}
 """
 
@@ -83,7 +79,6 @@ class ClangTidyIssue(Issue):
             level=level,
             message=message,
         )
-        self.body = None
         self.notes = []
         self.reliability = reliability
         self.publishable_check = publish
@@ -144,8 +139,6 @@ class ClangTidyIssue(Issue):
         )
 
         # Always add body as it's been cleaned up
-        if self.body:
-            body += "\n```\n{}\n```".format(self.body)
         if self.reason:
             body += "\n{}".format(self.reason)
         # Also add the reliability of the checker
@@ -160,7 +153,6 @@ class ClangTidyIssue(Issue):
             level=self.level,
             message=self.message,
             location="{}:{}:{}".format(self.path, self.line, self.column),
-            body=self.body,
             reason=self.reason,
             check=self.check,
             in_patch="yes" if self.revision.contains(self) else "no",
@@ -186,7 +178,6 @@ class ClangTidyIssue(Issue):
         Outputs all available information into a serializable dict
         """
         return {
-            "body": self.body,
             "reason": self.reason,
             "notes": [note.as_dict() for note in self.notes],
             "reliability": self.reliability.value,
@@ -204,8 +195,6 @@ class ClangTidyIssue(Issue):
                 self.reliability.value, self.reliability.invert
             )
 
-        if self.body:
-            description += "\n\n > {}".format(self.body)
         return LintResult(
             name="Clang-Tidy - {}".format(self.check),
             description=description,
