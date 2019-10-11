@@ -31,7 +31,7 @@ def test_coverage(mock_config, mock_revision, mock_coverage_artifact):
     assert issue.path == "my/path/file1.cpp"
     assert issue.line == 0
     assert issue.message == "This file is uncovered"
-    assert str(issue) == "my/path/file1.cpp"
+    assert str(issue) == "coverage issue no-coverage@warning my/path/file1.cpp line 0"
 
     assert issue.validates()
 
@@ -46,7 +46,6 @@ def test_coverage(mock_config, mock_revision, mock_coverage_artifact):
         "publishable": True,
         "check": "no-coverage",
         "column": None,
-        "extras": {},
         "level": "warning",
         "nb_lines": 1,
     }
@@ -76,7 +75,10 @@ This file is uncovered
     assert issue.path == "test/dummy/thirdparty.c"
     assert issue.line == 0
     assert issue.message == "This file is uncovered"
-    assert str(issue) == "test/dummy/thirdparty.c"
+    assert (
+        str(issue)
+        == "coverage issue no-coverage@warning test/dummy/thirdparty.c line 0"
+    )
 
     assert issue.validates()
 
@@ -91,7 +93,6 @@ This file is uncovered
         "publishable": True,
         "check": "no-coverage",
         "column": None,
-        "extras": {},
         "level": "warning",
         "nb_lines": 1,
     }
@@ -121,7 +122,7 @@ This file is uncovered
     assert issue.path == "my/path/header.h"
     assert issue.line == 0
     assert issue.message == "This file is uncovered"
-    assert str(issue) == "my/path/header.h"
+    assert str(issue) == "coverage issue no-coverage@warning my/path/header.h line 0"
 
     assert not issue.validates()
 
@@ -136,7 +137,6 @@ This file is uncovered
         "publishable": False,
         "check": "no-coverage",
         "column": None,
-        "extras": {},
         "level": "warning",
         "nb_lines": 1,
     }

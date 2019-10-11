@@ -84,17 +84,6 @@ class ClangTidyIssue(Issue):
         self.publishable_check = publish
         self.reason = reason
 
-    def __str__(self):
-        return "[{}] {} {} {}:{}".format(
-            self.level, self.check, self.path, self.line, self.column
-        )
-
-    def build_extra_identifiers(self):
-        """
-        Used to compare with same-class issues
-        """
-        return {"level": self.level, "check": self.check, "column": self.column}
-
     def is_problem(self):
         return self.level in ("warning", "error")
 
@@ -172,16 +161,6 @@ class ClangTidyIssue(Issue):
                 ]
             ),
         )
-
-    def build_extra_informations(self):
-        """
-        Outputs all available information into a serializable dict
-        """
-        return {
-            "reason": self.reason,
-            "notes": [note.as_dict() for note in self.notes],
-            "reliability": self.reliability.value,
-        }
 
     def as_phabricator_lint(self):
         """

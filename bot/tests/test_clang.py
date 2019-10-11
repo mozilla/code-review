@@ -113,7 +113,6 @@ def test_as_dict(mock_revision):
         "is_new": False,
         "validates": True,
         "publishable": False,
-        "extras": {"notes": [], "reason": None, "reliability": "low"},
     }
 
 

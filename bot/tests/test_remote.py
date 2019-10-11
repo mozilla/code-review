@@ -508,7 +508,6 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow):
     assert issue.as_dict() == {
         "analyzer": "source-test-clang-format",
         "check": "invalid-styling",
-        "extras": {"patch": "Multi\nlines"},
         "level": "warning",
         "message": None,
         "column": 11,
@@ -754,7 +753,6 @@ def test_infer_task(mock_config, mock_revision, mock_workflow):
     assert issue.as_dict() == {
         "analyzer": "source-test-infer-infer",
         "check": "THREAD_SAFETY_VIOLATION",
-        "extras": {},
         "column": -1,
         "in_patch": False,
         "is_new": False,

@@ -92,15 +92,6 @@ class CoverityIssue(Issue):
                     description=event["description"],
                 )
 
-    def __str__(self):
-        return "[{}] {} {}".format(self.check, self.path, self.line)
-
-    def build_extra_identifiers(self):
-        """
-        Used to compare with same-class issues
-        """
-        return {"check": self.check, "line": self.line}
-
     def is_clang_error(self):
         """
         Determine if the current issue is a translation unit error forwarded by Clang
@@ -155,16 +146,6 @@ class CoverityIssue(Issue):
         return ERROR_MARKDOWN.format(
             message=self.message, location="{}:{}".format(self.path, self.line)
         )
-
-    def build_extra_informations(self):
-        """
-        Outputs all available information into a serializable dict
-        """
-        return {
-            "reliability": self.reliability.value,
-            "is_local": self.is_local(),
-            "build_error": self.build_error,
-        }
 
     def as_phabricator_lint(self):
         """

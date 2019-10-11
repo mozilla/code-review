@@ -37,9 +37,6 @@ class CoverageIssue(Issue):
             message=message,
         )
 
-    def __str__(self):
-        return self.path
-
     def is_publishable(self):
         """
         Coverage issues are always publishable, unless they are in header files
@@ -69,10 +66,6 @@ class CoverageIssue(Issue):
             publishable=self.is_publishable() and "yes" or "no",
             is_new=self.is_new and "yes" or "no",
         )
-
-    def build_extra_informations(self):
-        """No extras for zero coverage"""
-        return {}
 
     def as_phabricator_lint(self):
         """

@@ -56,15 +56,6 @@ class InferIssue(Issue):
             message=entry["qualifier"],
         )
 
-    def __str__(self):
-        return "[{}] {} {}:{}".format(self.check, self.path, self.line, self.column)
-
-    def build_extra_identifiers(self):
-        """
-        Used to compare with same-class issues
-        """
-        return {"check": self.check, "level": self.level, "column": self.column}
-
     def is_problem(self):
         return self.level in ("ERROR")
 
@@ -92,12 +83,6 @@ class InferIssue(Issue):
             publishable="yes" if self.is_publishable() else "no",
             is_new="yes" if self.is_new else "no",
         )
-
-    def build_extra_informations(self):
-        """
-        No extras available on Infer
-        """
-        return {}
 
     def as_phabricator_lint(self):
         """

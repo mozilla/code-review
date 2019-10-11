@@ -55,17 +55,6 @@ class MozLintIssue(Issue):
         )
         self.linter = linter
 
-    def __str__(self):
-        return "{} issue {} {} line {}".format(
-            self.linter, self.level, self.path, self.line
-        )
-
-    def build_extra_identifiers(self):
-        """
-        Used to compare with same-class issues
-        """
-        return {"level": self.level, "check": self.check, "linter": self.linter}
-
     def is_disabled_check(self):
         """
         Some checks are disabled:
@@ -109,12 +98,6 @@ class MozLintIssue(Issue):
             disabled_check=self.is_disabled_check() and "yes" or "no",
             is_new=self.is_new and "yes" or "no",
         )
-
-    def build_extra_informations(self):
-        """
-        No extra data needed for mozlint
-        """
-        return {}
 
     def as_phabricator_lint(self):
         """

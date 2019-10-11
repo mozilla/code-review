@@ -46,7 +46,6 @@ def test_as_dict(mock_revision):
         "analyzer": "mock-infer",
         "check": "SOMETYPE",
         "column": -1,
-        "extras": {},
         "in_patch": False,
         "is_new": False,
         "level": "SomeKindOfBug",

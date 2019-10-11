@@ -121,7 +121,6 @@ The path that leads to this defect is:
         "is_new": False,
         "check": "NULL_RETURNS",
         "column": None,
-        "extras": {"build_error": False, "is_local": True, "reliability": "medium"},
         "level": "error",
         "line": 3703,
         "message": """Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".

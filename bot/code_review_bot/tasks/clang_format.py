@@ -41,17 +41,6 @@ class ClangFormatIssue(Issue):
         self.is_new = True
         self.patch = patch
 
-    def build_extra_identifiers(self):
-        """
-        Used to compare with same-class issues
-        """
-        return {"nb_lines": self.nb_lines}
-
-    def __str__(self):
-        return "clang-format issue {} line {}-{}".format(
-            self.path, self.line, self.nb_lines
-        )
-
     def validates(self):
         """
         Should match one of the allowed paths rules
@@ -75,12 +64,6 @@ class ClangFormatIssue(Issue):
             nb_lines=self.nb_lines,
             is_new="yes" if self.is_new else "no",
         )
-
-    def build_extra_informations(self):
-        """
-        Add the clang-format patch to report
-        """
-        return {"patch": self.patch}
 
     def as_phabricator_lint(self):
         """

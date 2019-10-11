@@ -68,9 +68,12 @@ class Issue(abc.ABC):
         self.message = message
         self.level = level
 
+    def __str__(self):
+        return f"{self.analyzer} issue {self.check}@{self.level} {self.path} line {self.line}"
+
     def build_extra_identifiers(self):
         """
-        Used to compare with same-class issues
+        Used to add information when building an issue unique hash
         """
         return {}
 
@@ -143,15 +146,7 @@ class Issue(abc.ABC):
             "is_new": self.is_new,
             "validates": self.validates(),
             "publishable": self.is_publishable(),
-            "extras": self.build_extra_informations(),
         }
-
-    def build_extra_informations(self):
-        """
-        Build the extra information as a dict of JSON serializable values
-        Currently used by Issue.as_dict to populate debug report
-        """
-        raise NotImplementedError
 
     @abc.abstractmethod
     def as_phabricator_lint(self):
