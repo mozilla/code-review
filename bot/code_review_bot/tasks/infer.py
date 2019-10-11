@@ -110,7 +110,7 @@ class InferIssue(Issue):
             path=self.path,
             line=self.line,
             char=self.column,
-            description="Infer detected an issue on that line",
+            description="Infer detected an issue on this line",
         )
 
 
