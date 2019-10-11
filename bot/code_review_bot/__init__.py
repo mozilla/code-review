@@ -148,7 +148,7 @@ class Issue(abc.ABC):
 
     def build_extra_informations(self):
         """
-        Build the extras information as a dict of JSON serializable values
+        Build the extra information as a dict of JSON serializable values
         Currently used by Issue.as_dict to populate debug report
         """
         raise NotImplementedError
