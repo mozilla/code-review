@@ -4,21 +4,30 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 
-def test_flake8_rules(mock_config, mock_revision):
+def test_flake8_checks(mock_config, mock_revision):
     """
-    Check flake8 rule detection
+    Check flake8 check detection
     """
     from code_review_bot.tasks.lint import MozLintIssue
 
     # Valid issue
     issue = MozLintIssue(
-        "test.py", 1, "error", 1, "flake8", "Dummy test", "dummy rule", mock_revision
+        "mock-lint-flake8",
+        "test.py",
+        1,
+        "error",
+        1,
+        "flake8",
+        "Dummy test",
+        "dummy rule",
+        mock_revision,
     )
-    assert not issue.is_disabled_rule()
+    assert not issue.is_disabled_check()
     assert issue.validates()
 
     # Flake8 bad quotes
     issue = MozLintIssue(
+        "mock-lint-flake8",
         "test.py",
         1,
         "error",
@@ -28,8 +37,23 @@ def test_flake8_rules(mock_config, mock_revision):
         "Q000",
         mock_revision,
     )
-    assert issue.is_disabled_rule()
+    assert issue.is_disabled_check()
     assert not issue.validates()
+
+    assert issue.as_dict() == {
+        "analyzer": "mock-lint-flake8",
+        "check": "Q000",
+        "column": 1,
+        "in_patch": False,
+        "is_new": False,
+        "level": "error",
+        "line": 1,
+        "message": "Remove bad quotes or whatever.",
+        "nb_lines": 1,
+        "path": "test.py",
+        "publishable": False,
+        "validates": False,
+    }
 
 
 def test_as_text(mock_config, mock_revision):
@@ -39,6 +63,7 @@ def test_as_text(mock_config, mock_revision):
     from code_review_bot.tasks.lint import MozLintIssue
 
     issue = MozLintIssue(
+        "mock-lint-flake8",
         "test.py",
         1,
         "error",
@@ -61,4 +86,19 @@ def test_as_text(mock_config, mock_revision):
         "description": "dummy test withUppercaseChars",
         "path": "test.py",
         "severity": "error",
+    }
+
+    assert issue.as_dict() == {
+        "analyzer": "mock-lint-flake8",
+        "check": "dummy rule",
+        "column": 1,
+        "in_patch": False,
+        "is_new": False,
+        "level": "error",
+        "line": 1,
+        "message": "dummy test withUppercaseChars",
+        "nb_lines": 1,
+        "path": "test.py",
+        "publishable": False,
+        "validates": True,
     }

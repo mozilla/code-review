@@ -30,10 +30,6 @@ ISSUE_MARKDOWN = """
 - **Is new**: {is_new}
 - **Checker reliability **: {reliability} (false positive risk)
 
-```
-{body}
-```
-
 {notes}
 """
 
@@ -58,10 +54,11 @@ class ClangTidyIssue(Issue):
 
     def __init__(
         self,
+        analyzer,
         revision,
         path,
         line,
-        char,
+        column,
         check,
         message,
         level="warning",
@@ -71,30 +68,21 @@ class ClangTidyIssue(Issue):
     ):
         assert isinstance(reliability, Reliability)
 
-        self.revision = revision
-        self.path = path
-        self.line = int(line)
-        self.nb_lines = 1  # Only 1 line affected on clang-tidy
-        self.char = int(char)
-        self.check = check
-        self.message = message
-        self.body = None
+        super().__init__(
+            analyzer,
+            revision,
+            path,
+            line=int(line),
+            nb_lines=1,  # Only 1 line affected on clang-tidy
+            check=check,
+            column=int(column),
+            level=level,
+            message=message,
+        )
         self.notes = []
-        self.level = level
         self.reliability = reliability
         self.publishable_check = publish
         self.reason = reason
-
-    def __str__(self):
-        return "[{}] {} {} {}:{}".format(
-            self.level, self.check, self.path, self.line, self.char
-        )
-
-    def build_extra_identifiers(self):
-        """
-        Used to compare with same-class issues
-        """
-        return {"level": self.level, "check": self.check, "char": self.char}
 
     def is_problem(self):
         return self.level in ("warning", "error")
@@ -140,8 +128,6 @@ class ClangTidyIssue(Issue):
         )
 
         # Always add body as it's been cleaned up
-        if self.body:
-            body += "\n```\n{}\n```".format(self.body)
         if self.reason:
             body += "\n{}".format(self.reason)
         # Also add the reliability of the checker
@@ -155,8 +141,7 @@ class ClangTidyIssue(Issue):
         return ISSUE_MARKDOWN.format(
             level=self.level,
             message=self.message,
-            location="{}:{}:{}".format(self.path, self.line, self.char),
-            body=self.body,
+            location="{}:{}:{}".format(self.path, self.line, self.column),
             reason=self.reason,
             check=self.check,
             in_patch="yes" if self.revision.contains(self) else "no",
@@ -169,40 +154,13 @@ class ClangTidyIssue(Issue):
                 [
                     ISSUE_NOTE_MARKDOWN.format(
                         message=n.message,
-                        location="{}:{}:{}".format(n.path, n.line, n.char),
+                        location="{}:{}:{}".format(n.path, n.line, n.column),
                         body=n.body,
                     )
                     for n in self.notes
                 ]
             ),
         )
-
-    def as_dict(self):
-        """
-        Outputs all available information into a serializable dict
-        """
-        return {
-            "analyzer": "clang-tidy",
-            "path": self.path,
-            "line": self.line,
-            "nb_lines": self.nb_lines,
-            "char": self.char,
-            "check": self.check,
-            "level": self.level,
-            "message": self.message,
-            "body": self.body,
-            "reason": self.reason,
-            "notes": [note.as_dict() for note in self.notes],
-            "validation": {
-                "publishable_check": self.has_publishable_check(),
-                "is_expanded_macro": self.is_expanded_macro(),
-            },
-            "in_patch": self.revision.contains(self),
-            "is_new": self.is_new,
-            "validates": self.validates(),
-            "publishable": self.is_publishable(),
-            "reliability": self.reliability.value,
-        }
 
     def as_phabricator_lint(self):
         """
@@ -216,8 +174,6 @@ class ClangTidyIssue(Issue):
                 self.reliability.value, self.reliability.invert
             )
 
-        if self.body:
-            description += "\n\n > {}".format(self.body)
         return LintResult(
             name="Clang-Tidy - {}".format(self.check),
             description=description,
@@ -225,7 +181,7 @@ class ClangTidyIssue(Issue):
             severity="warning",
             path=self.path,
             line=self.line,
-            char=self.char,
+            char=self.column,
         )
 
 
@@ -239,10 +195,11 @@ class ClangTidyTask(AnalysisTask):
     def parse_issues(self, artifacts, revision):
         return [
             ClangTidyIssue(
-                revision,
+                analyzer=self.name,
+                revision=revision,
                 path=self.clean_path(path),
                 line=warning["line"],
-                char=warning["column"],
+                column=warning["column"],
                 check=warning["flag"],
                 message=warning["message"],
                 reliability=Reliability(warning["reliability"])

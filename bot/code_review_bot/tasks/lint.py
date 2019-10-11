@@ -14,7 +14,7 @@ ISSUE_MARKDOWN = """
 - **Path**: {path}
 - **Level**: {level}
 - **Line**: {line}
-- **Disabled rule**: {disabled_rule}
+- **Disabled check**: {disabled_check}
 - **Publishable**: {publishable}
 - **Is new**: {is_new}
 
@@ -28,44 +28,41 @@ class MozLintIssue(Issue):
     ANALYZER = MOZLINT
 
     def __init__(
-        self, path, column, level, lineno, linter, message, rule, revision, **kwargs
+        self,
+        analyzer,
+        path,
+        column,
+        level,
+        lineno,
+        linter,
+        message,
+        check,
+        revision,
+        **kwargs
     ):
-        self.nb_lines = 1
-        self.column = column
-        self.level = level
-        self.line = (
-            lineno and int(lineno) or 0
-        )  # mozlint sometimes produce strings here
-        self.linter = linter
-        self.message = message
-        self.rule = rule
-        self.revision = revision
-        self.path = path
-
-    def __str__(self):
-        return "{} issue {} {} line {}".format(
-            self.linter, self.level, self.path, self.line
+        super().__init__(
+            analyzer,
+            revision,
+            path,
+            line=(
+                lineno and int(lineno) or 0
+            ),  # mozlint sometimes produce strings here
+            nb_lines=1,
+            check=check,
+            column=column,
+            level=level,
+            message=message,
         )
+        self.linter = linter
 
-    def build_extra_identifiers(self):
+    def is_disabled_check(self):
         """
-        Used to compare with same-class issues
-        """
-        return {
-            "level": self.level,
-            "rule": self.rule,
-            "linter": self.linter,
-            "column": self.column,
-        }
-
-    def is_disabled_rule(self):
-        """
-        Some rules are disabled:
+        Some checks are disabled:
         * Python "bad" quotes
         """
 
         # See https://github.com/mozilla/release-services/issues/777
-        if self.linter == "flake8" and self.rule == "Q000":
+        if self.linter == "flake8" and self.check == "Q000":
             return True
 
         return False
@@ -73,9 +70,9 @@ class MozLintIssue(Issue):
     def validates(self):
         """
         A mozlint issues is publishable when:
-        * rule is not disabled
+        * check is not disabled
         """
-        return not self.is_disabled_rule()
+        return not self.is_disabled_check()
 
     def as_text(self):
         """
@@ -84,7 +81,7 @@ class MozLintIssue(Issue):
         message = self.message
         if len(message) > 0:
             message = message[0].capitalize() + message[1:]
-        linter = "{}: {}".format(self.linter, self.rule) if self.rule else self.linter
+        linter = "{}: {}".format(self.linter, self.check) if self.check else self.linter
         return "{}: {} [{}]".format(self.level.capitalize(), message, linter)
 
     def as_markdown(self):
@@ -98,30 +95,9 @@ class MozLintIssue(Issue):
             line=self.line,
             message=self.message,
             publishable=self.is_publishable() and "yes" or "no",
-            disabled_rule=self.is_disabled_rule() and "yes" or "no",
+            disabled_check=self.is_disabled_check() and "yes" or "no",
             is_new=self.is_new and "yes" or "no",
         )
-
-    def as_dict(self):
-        """
-        Outputs all available information into a serializable dict
-        """
-        return {
-            "analyzer": "mozlint",
-            "level": self.level,
-            "path": self.path,
-            "linter": self.linter,
-            "line": self.line,
-            "column": self.column,
-            "nb_lines": self.nb_lines,
-            "rule": self.rule,
-            "message": self.message,
-            "validation": {"disabled_rule": self.is_disabled_rule()},
-            "in_patch": self.revision.contains(self),
-            "is_new": self.is_new,
-            "validates": self.validates(),
-            "publishable": self.is_publishable(),
-        }
 
     def as_phabricator_lint(self):
         """
@@ -129,9 +105,9 @@ class MozLintIssue(Issue):
         """
         code = self.linter
         name = "MozLint {}".format(self.linter.capitalize())
-        if self.rule:
-            code += ".{}".format(self.rule)
-            name += " - {}".format(self.rule)
+        if self.check:
+            code += ".{}".format(self.check)
+            name += " - {}".format(self.check)
         return LintResult(
             name=name,
             description=self.message,
@@ -161,6 +137,7 @@ class MozLintTask(AnalysisTask):
         assert isinstance(artifacts, dict)
         return [
             MozLintIssue(
+                analyzer=self.name,
                 revision=revision,
                 path=issue.get("relpath", self.clean_path(issue["path"])),
                 column=issue["column"],
@@ -168,7 +145,7 @@ class MozLintTask(AnalysisTask):
                 lineno=issue["lineno"],
                 linter=issue["linter"],
                 message=issue["message"],
-                rule=issue["rule"],
+                check=issue["rule"],
             )
             for artifact in artifacts.values()
             for _, path_issues in artifact.items()

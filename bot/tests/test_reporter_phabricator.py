@@ -93,6 +93,7 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
         )
 
     issue = ClangTidyIssue(
+        "mock-clang-tidy",
         revision,
         "another_test.cpp",
         "42",
@@ -155,7 +156,7 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
         }
         reporter = PhabricatorReporter({"analyzers": ["clang-format"]}, api=api)
 
-    issue = ClangFormatIssue("dom/test.cpp", 42, 1, revision)
+    issue = ClangFormatIssue("mock-clang-format", "dom/test.cpp", 42, 1, revision)
     assert issue.is_publishable()
 
     revision.improvement_patches = [
@@ -302,6 +303,7 @@ def test_phabricator_clang_tidy_and_coverage(
         )
 
     issue_clang_tidy = ClangTidyIssue(
+        "mock-clang-format",
         revision,
         "another_test.cpp",
         "42",
@@ -353,8 +355,9 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
         reporter = PhabricatorReporter({"analyzers": analyzers}, api=api)
 
         issues = [
-            ClangFormatIssue("dom/test.cpp", 42, 1, revision),
+            ClangFormatIssue("mock-clang-format", "dom/test.cpp", 42, 1, revision),
             ClangTidyIssue(
+                "mock-clang-tidy",
                 revision,
                 "test.cpp",
                 "42",
@@ -364,6 +367,7 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
                 "error",
             ),
             InferIssue(
+                "mock-infer",
                 {
                     "file": "test.cpp",
                     "line": 42,
@@ -375,7 +379,15 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
                 revision,
             ),
             MozLintIssue(
-                "test.cpp", 1, "danger", 42, "flake8", "Python error", "EXXX", revision
+                "mock-lint-flake8",
+                "test.cpp",
+                1,
+                "danger",
+                42,
+                "flake8",
+                "Python error",
+                "EXXX",
+                revision,
             ),
             CoverageIssue("test.cpp", 0, "This file is uncovered", revision),
         ]
@@ -514,6 +526,7 @@ def test_phabricator_harbormaster(mock_phabricator, mock_try_task):
         )
 
     issue = ClangTidyIssue(
+        "mock-clang-tidy",
         revision,
         "test.cpp",
         "42",
@@ -656,7 +669,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
             },
         }
 
-        issue = CoverityIssue(revision, issue_dict, "test.cpp")
+        issue = CoverityIssue("mock-coverity", revision, issue_dict, "test.cpp")
         assert issue.is_publishable()
 
         issues, patches = reporter.publish([issue], revision)

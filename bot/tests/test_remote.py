@@ -122,7 +122,7 @@ def test_baseline(mock_config, mock_revision, mock_workflow):
     assert issue.line == 12
     assert issue.column == 1
     assert issue.message == "strange issue"
-    assert issue.rule == "checker XXX"
+    assert issue.check == "checker XXX"
     assert issue.revision is mock_revision
     assert issue.validates()
 
@@ -424,7 +424,7 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
     assert isinstance(issue, ClangTidyIssue)
     assert issue.path == "test.cpp"
     assert issue.line == 123
-    assert issue.char == 12
+    assert issue.column == 12
     assert issue.check == "checker.XXX"
     assert issue.reliability == Reliability.High
     assert issue.message == "some hard issue with c++"
@@ -433,7 +433,7 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
     assert isinstance(issue, ClangTidyIssue)
     assert issue.path == "test.cpp"
     assert issue.line == 987
-    assert issue.char == 51
+    assert issue.column == 51
     assert issue.check == "checker.YYY"
     assert issue.reliability == Reliability.Unknown
     assert issue.message == "some harder issue with c++"
@@ -506,17 +506,18 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow):
     assert issue.patch == "Multi\nlines"
     assert issue.column == 11
     assert issue.as_dict() == {
-        "analyzer": "clang-format",
+        "analyzer": "source-test-clang-format",
+        "check": "invalid-styling",
+        "level": "warning",
+        "message": None,
         "column": 11,
         "in_patch": False,
         "is_new": True,
         "line": 1386,
         "nb_lines": 2,
-        "patch": "Multi\nlines",
         "path": "test.cpp",
         "publishable": False,
         "validates": False,
-        "validation": {},
     }
     assert len(mock_revision.improvement_patches) == 0
 
@@ -630,10 +631,9 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow):
     assert isinstance(issue, CoverityIssue)
     assert issue.path == "test.cpp"
     assert issue.line == 66
-    assert issue.kind == "UNINIT"
+    assert issue.check == "UNINIT"
     assert issue.reliability == Reliability.High
     assert not issue.build_error
-    assert issue.bug_type == "Memory - corruptions"
     assert (
         issue.message
         == """Using uninitialized value "a".
@@ -651,10 +651,9 @@ The path that leads to this defect is:
     assert isinstance(issue, CoverityIssue)
     assert issue.path == "dom/something.cpp"
     assert issue.line == 123
-    assert issue.kind == "UNINIT"
+    assert issue.check == "UNINIT"
     assert issue.reliability == Reliability.High
     assert issue.build_error
-    assert issue.bug_type == "Nice bug"
     assert issue.message == "Some error here"
     assert issue.is_local()
     assert not issue.is_clang_error()
@@ -747,19 +746,17 @@ def test_infer_task(mock_config, mock_revision, mock_workflow):
     assert issue.path == "mobile/android/geckoview/src/main/java/org/mozilla/test.java"
     assert issue.line == 1196
     assert issue.column == -1
-    assert issue.bug_type == "THREAD_SAFETY_VIOLATION"
-    assert issue.kind == "ERROR"
+    assert issue.check == "THREAD_SAFETY_VIOLATION"
+    assert issue.level == "ERROR"
     assert issue.message == "Read/Write race."
-    assert issue.body is None
     assert issue.nb_lines == 1
     assert issue.as_dict() == {
-        "analyzer": "infer",
-        "body": None,
-        "bug_type": "THREAD_SAFETY_VIOLATION",
+        "analyzer": "source-test-infer-infer",
+        "check": "THREAD_SAFETY_VIOLATION",
         "column": -1,
         "in_patch": False,
         "is_new": False,
-        "kind": "ERROR",
+        "level": "ERROR",
         "line": 1196,
         "message": "Read/Write race.",
         "nb_lines": 1,

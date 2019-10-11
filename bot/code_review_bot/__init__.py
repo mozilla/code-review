@@ -32,20 +32,48 @@ class AnalysisException(Exception):
 class Issue(abc.ABC):
     """
     Common reported issue interface
-
-    Several properties are also needed:
-    - path: Source file path relative to repo
-    - line: Line where the issue begins
-    - nb_lines: Number of lines affected by the issue
     """
 
-    lines_hash = None
     is_new = False
     revision = None
 
+    def __init__(
+        self,
+        analyzer: str,
+        revision,
+        path: str,
+        line: int,
+        nb_lines: int,
+        check: str,
+        column: int = None,
+        message: str = None,
+        level: str = "error",
+    ):
+        # Check while avoiding circular dependencies
+        from code_review_bot.revisions import Revision
+
+        assert isinstance(revision, Revision)
+
+        # Base required fields for all issues
+        self.revision = revision
+        self.analyzer = analyzer
+        self.check = check
+        self.path = path
+        self.line = line
+        self.nb_lines = nb_lines
+        self.check = check
+
+        # Optional common fields
+        self.column = column
+        self.message = message
+        self.level = level
+
+    def __str__(self):
+        return f"{self.analyzer} issue {self.check}@{self.level} {self.path} line {self.line}"
+
     def build_extra_identifiers(self):
         """
-        Used to compare with same-class issues
+        Used to add information when building an issue unique hash
         """
         return {}
 
@@ -100,13 +128,25 @@ class Issue(abc.ABC):
         """
         raise NotImplementedError
 
-    @abc.abstractmethod
     def as_dict(self):
         """
         Build the serializable dict representation of the issue
         Used by debugging tools
         """
-        raise NotImplementedError
+        return {
+            "analyzer": self.analyzer,
+            "path": self.path,
+            "line": self.line,
+            "nb_lines": self.nb_lines,
+            "column": self.column,
+            "check": self.check,
+            "level": self.level,
+            "message": self.message,
+            "in_patch": self.revision.contains(self),
+            "is_new": self.is_new,
+            "validates": self.validates(),
+            "publishable": self.is_publishable(),
+        }
 
     @abc.abstractmethod
     def as_phabricator_lint(self):

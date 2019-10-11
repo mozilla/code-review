@@ -4,6 +4,7 @@ import os
 
 import pytest
 
+from code_review_bot.tasks.infer import InferIssue
 from code_review_bot.tasks.infer import InferTask
 from conftest import FIXTURES_DIR
 
@@ -12,7 +13,24 @@ def test_as_text(mock_revision):
     """
     Test text export for InferIssue
     """
-    from code_review_bot.tasks.infer import InferIssue
+    parts = {
+        "file": "path/to/file.java",
+        "line": 3,
+        "column": -1,
+        "bug_type": "SOMETYPE",
+        "kind": "SomeKindOfBug",
+        "qualifier": "Error on this line",
+    }
+    issue = InferIssue("mock-infer", parts, mock_revision)
+
+    expected = "SomeKindOfBug: Error on this line [infer: SOMETYPE]"
+    assert issue.as_text() == expected
+
+
+def test_as_dict(mock_revision):
+    """
+    Test dict export for InferIssue
+    """
 
     parts = {
         "file": "path/to/file.java",
@@ -22,18 +40,28 @@ def test_as_text(mock_revision):
         "kind": "SomeKindOfBug",
         "qualifier": "Error on this line",
     }
-    issue = InferIssue(parts, mock_revision)
-    issue.body = "Dummy body withUppercaseChars"
+    issue = InferIssue("mock-infer", parts, mock_revision)
 
-    expected = "SomeKindOfBug: Error on this line [infer: SOMETYPE]"
-    assert issue.as_text() == expected
+    assert issue.as_dict() == {
+        "analyzer": "mock-infer",
+        "check": "SOMETYPE",
+        "column": -1,
+        "in_patch": False,
+        "is_new": False,
+        "level": "SomeKindOfBug",
+        "line": 3,
+        "message": "Error on this line",
+        "nb_lines": 1,
+        "path": "path/to/file.java",
+        "publishable": False,
+        "validates": True,
+    }
 
 
 def test_as_markdown(mock_revision):
     """
     Test markdown generation for InferIssue
     """
-    from code_review_bot.tasks.infer import InferIssue
 
     parts = {
         "file": "path/to/file.java",
@@ -43,8 +71,7 @@ def test_as_markdown(mock_revision):
         "kind": "SomeKindOfBug",
         "qualifier": "Error on this line",
     }
-    issue = InferIssue(parts, mock_revision)
-    issue.body = "Dummy body"
+    issue = InferIssue("mock-infer", parts, mock_revision)
 
     assert (
         issue.as_markdown()
@@ -57,10 +84,6 @@ def test_as_markdown(mock_revision):
 - **Infer check**: SOMETYPE
 - **Publishable **: no
 - **Is new**: no
-
-```
-Dummy body
-```
 """
     )
 
@@ -74,7 +97,7 @@ def test_infer_artifact(version, nb, mock_revision):
     with open(os.path.join(FIXTURES_DIR, f"infer_artifact_{version}.json")) as f:
         artifact = json.load(f)
 
-    status = {"task": {}, "status": {}}
+    status = {"task": {"metadata": {"name": "mock-infer"}}, "status": {}}
     task = InferTask("someTaskId", status)
     issues = task.parse_issues(
         {"public/code-review/infer.json": artifact}, mock_revision

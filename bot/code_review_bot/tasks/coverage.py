@@ -26,14 +26,16 @@ class CoverageIssue(Issue):
     ANALYZER = COVERAGE
 
     def __init__(self, path, lineno, message, revision):
-        self.revision = revision
-        self.path = path
-        self.line = lineno and int(lineno) or 0
-        self.message = message
-        self.nb_lines = 1
-
-    def __str__(self):
-        return self.path
+        super().__init__(
+            "coverage",
+            revision,
+            path,
+            line=lineno and int(lineno) or 0,
+            nb_lines=1,
+            check="no-coverage",
+            level="warning",
+            message=message,
+        )
 
     def is_publishable(self):
         """
@@ -64,21 +66,6 @@ class CoverageIssue(Issue):
             publishable=self.is_publishable() and "yes" or "no",
             is_new=self.is_new and "yes" or "no",
         )
-
-    def as_dict(self):
-        """
-        Outputs all available information into a serializable dict
-        """
-        return {
-            "analyzer": "coverage",
-            "path": self.path,
-            "line": self.line,
-            "message": self.message,
-            "in_patch": self.revision.contains(self),
-            "is_new": self.is_new,
-            "validates": self.validates(),
-            "publishable": self.is_publishable(),
-        }
 
     def as_phabricator_lint(self):
         """

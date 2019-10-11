@@ -25,25 +25,21 @@ class ClangFormatIssue(Issue):
 
     ANALYZER = CLANG_FORMAT
 
-    def __init__(self, path, line, nb_lines, revision, column=None, patch=None):
-        self.path = path
-        self.line = line
-        self.nb_lines = nb_lines
-        self.revision = revision
+    def __init__(
+        self, analyzer, path, line, nb_lines, revision, column=None, patch=None
+    ):
+        super().__init__(
+            analyzer,
+            revision,
+            path,
+            line,
+            nb_lines,
+            check="invalid-styling",
+            column=column,
+            level="warning",
+        )
         self.is_new = True
         self.patch = patch
-        self.column = column
-
-    def build_extra_identifiers(self):
-        """
-        Used to compare with same-class issues
-        """
-        return {"nb_lines": self.nb_lines}
-
-    def __str__(self):
-        return "clang-format issue {} line {}-{}".format(
-            self.path, self.line, self.nb_lines
-        )
 
     def validates(self):
         """
@@ -68,24 +64,6 @@ class ClangFormatIssue(Issue):
             nb_lines=self.nb_lines,
             is_new="yes" if self.is_new else "no",
         )
-
-    def as_dict(self):
-        """
-        Outputs all available information into a serializable dict
-        """
-        return {
-            "analyzer": "clang-format",
-            "path": self.path,
-            "line": self.line,
-            "nb_lines": self.nb_lines,
-            "validation": {},
-            "in_patch": self.revision.contains(self),
-            "is_new": self.is_new,
-            "validates": self.validates(),
-            "publishable": self.is_publishable(),
-            "patch": self.patch,
-            "column": self.column,
-        }
 
     def as_phabricator_lint(self):
         """
@@ -124,6 +102,7 @@ class ClangFormatTask(AnalysisTask):
 
         return [
             ClangFormatIssue(
+                analyzer=self.name,
                 path=self.clean_path(path),
                 line=issue["line"],
                 nb_lines=issue["lines_modified"],

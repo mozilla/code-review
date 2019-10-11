@@ -39,12 +39,12 @@ def test_simple(mock_revision, mock_config, log):
 
     issue = issues[0]
 
+    assert issue.analyzer == "mock-coverity"
     assert issue.revision == mock_revision
     assert issue.reliability == Reliability.Medium
     assert issue.path == "js/src/jit/BaselineCompiler.cpp"
     assert issue.line == 3703
-    assert issue.bug_type == "Null pointer dereferences"
-    assert issue.kind == "NULL_RETURNS"
+    assert issue.check == "NULL_RETURNS"
     assert (
         issue.message
         == """Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
@@ -80,7 +80,6 @@ The path that leads to this defect is:
             "severity": "Unspecified",
         },
     }
-    assert issue.body is None
     assert issue.nb_lines == 1
 
     # Check the issue's absolute path has been cleaned
@@ -117,13 +116,12 @@ The path that leads to this defect is:
 
     assert issue.as_text() == checker_desc
     assert issue.as_dict() == {
-        "analyzer": "Coverity",
-        "body": None,
-        "bug_type": "Null pointer dereferences",
+        "analyzer": "mock-coverity",
         "in_patch": False,
-        "is_local": True,
         "is_new": False,
-        "kind": "NULL_RETURNS",
+        "check": "NULL_RETURNS",
+        "column": None,
+        "level": "error",
         "line": 3703,
         "message": """Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
 The path that leads to this defect is:
@@ -140,7 +138,5 @@ The path that leads to this defect is:
         "nb_lines": 1,
         "path": "js/src/jit/BaselineCompiler.cpp",
         "publishable": False,
-        "reliability": "medium",
         "validates": True,
-        "validation": {"is_clang_error": False, "is_local": True},
     }

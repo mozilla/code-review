@@ -67,14 +67,15 @@ def mock_issues():
 
 
 @pytest.fixture
-def mock_coverity_issues():
+def mock_coverity_issues(mock_revision,):
     """
     Build a list of Coverity issues
     """
 
     return [
         CoverityIssue(
-            0,
+            "mock-coverity",
+            mock_revision,
             {
                 "reliability": "high",
                 "line": i,

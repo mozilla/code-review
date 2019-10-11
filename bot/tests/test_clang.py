@@ -8,17 +8,25 @@ def test_expanded_macros(mock_revision):
     from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 
     issue = ClangTidyIssue(
-        mock_revision, "test.cpp", "42", "51", "dummy message", "dummy-check", "error"
+        "clang-tidy",
+        mock_revision,
+        "test.cpp",
+        "42",
+        "51",
+        "dummy message",
+        "dummy-check",
+        "error",
     )
     assert issue.is_problem()
     assert issue.line == 42
-    assert issue.char == 51
+    assert issue.column == 51
     assert issue.notes == []
     assert issue.is_expanded_macro() is False
 
     # Add a note starting with "expanded from macro..."
     issue.notes.append(
         ClangTidyIssue(
+            "clang-tidy",
             mock_revision,
             "test.cpp",
             "42",
@@ -33,6 +41,7 @@ def test_expanded_macros(mock_revision):
     # Add another note does not change it
     issue.notes.append(
         ClangTidyIssue(
+            "clang-tidy",
             mock_revision,
             "test.cpp",
             "42",
@@ -56,6 +65,7 @@ def test_as_text(mock_revision):
     from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 
     issue = ClangTidyIssue(
+        "clang-tidy",
         mock_revision,
         "test.cpp",
         "42",
@@ -64,11 +74,10 @@ def test_as_text(mock_revision):
         "dummy message withUppercaseChars",
         "error",
     )
-    issue.body = "Dummy body withUppercaseChars"
 
     assert (
         issue.as_text()
-        == "Error: Dummy message withUppercaseChars [clang-tidy: dummy-check]\n```\nDummy body withUppercaseChars\n```"
+        == "Error: Dummy message withUppercaseChars [clang-tidy: dummy-check]"
     )
 
 
@@ -80,6 +89,7 @@ def test_as_dict(mock_revision):
     from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 
     issue = ClangTidyIssue(
+        "clang-tidy",
         mock_revision,
         "test.cpp",
         "42",
@@ -89,26 +99,20 @@ def test_as_dict(mock_revision):
         "error",
         Reliability.Low,
     )
-    issue.body = "Dummy body withUppercaseChars"
 
     assert issue.as_dict() == {
         "analyzer": "clang-tidy",
         "path": "test.cpp",
         "line": 42,
         "nb_lines": 1,
-        "char": 51,
+        "column": 51,
         "check": "dummy-check",
         "level": "error",
         "message": "dummy message withUppercaseChars",
-        "body": "Dummy body withUppercaseChars",
-        "reason": None,
-        "notes": [],
-        "validation": {"publishable_check": True, "is_expanded_macro": False},
         "in_patch": False,
         "is_new": False,
         "validates": True,
         "publishable": False,
-        "reliability": "low",
     }
 
 
@@ -120,6 +124,7 @@ def test_as_markdown(mock_revision):
     from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 
     issue = ClangTidyIssue(
+        "clang-tidy",
         mock_revision,
         "test.cpp",
         "42",
@@ -129,7 +134,6 @@ def test_as_markdown(mock_revision):
         "error",
         Reliability.High,
     )
-    issue.body = "Dummy body"
 
     assert (
         issue.as_markdown()
@@ -146,10 +150,6 @@ def test_as_markdown(mock_revision):
 - **Is new**: no
 - **Checker reliability **: high (false positive risk)
 
-```
-Dummy body
-```
-
 
 """
     )
@@ -158,7 +158,7 @@ Dummy body
         "code": "clang-tidy.dummy-check",
         "line": 42,
         "name": "Clang-Tidy - dummy-check",
-        "description": "dummy message\nChecker reliability is high, meaning that the false positive ratio is low.\n\n > Dummy body",
+        "description": "dummy message\nChecker reliability is high, meaning that the false positive ratio is low.",
         "path": "test.cpp",
         "severity": "warning",
     }
