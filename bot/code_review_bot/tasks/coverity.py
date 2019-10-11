@@ -25,10 +25,6 @@ ISSUE_MARKDOWN = """
 - **Is Clang Error**: {is_clang_error}
 - **Is Local**: {is_local}
 - **Reliability**: {reliability} (false positive risk)
-
-```
-{body}
-```
 """
 
 ERROR_MARKDOWN = """
