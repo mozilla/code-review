@@ -112,9 +112,9 @@ class MozLintIssue(Issue):
 
     def build_extra_informations(self):
         """
-        Outputs all available information into a serializable dict
+        No extra data needed for mozlint
         """
-        return {"linter": self.linter}
+        return {}
 
     def as_phabricator_lint(self):
         """
