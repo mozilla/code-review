@@ -73,8 +73,6 @@ class CoverityIssue(Issue):
 
         self.state_on_server = issue["extra"]["stateOnServer"]
 
-        self.body = None
-
         # For build errors we don't embed the stack into the message
         if self.build_error:
             return
@@ -145,7 +143,6 @@ class CoverityIssue(Issue):
             check=self.check,
             message=self.message,
             location="{}:{}".format(self.path, self.line),
-            body=self.body,
             publishable=self.is_publishable() and "yes" or "no",
             is_local=self.is_local() and "yes" or "no",
             reliability=self.reliability.value,
@@ -164,7 +161,6 @@ class CoverityIssue(Issue):
         Outputs all available information into a serializable dict
         """
         return {
-            "body": self.body,
             "reliability": self.reliability.value,
             "is_local": self.is_local(),
             "build_error": self.build_error,
@@ -187,7 +183,6 @@ class CoverityIssue(Issue):
             severity="error",
             path=self.path,
             line=self.line,
-            description=self.body,
         )
 
     def as_phabricator_unitresult(self):

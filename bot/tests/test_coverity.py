@@ -80,7 +80,6 @@ The path that leads to this defect is:
             "severity": "Unspecified",
         },
     }
-    assert issue.body is None
     assert issue.nb_lines == 1
 
     # Check the issue's absolute path has been cleaned
@@ -122,12 +121,7 @@ The path that leads to this defect is:
         "is_new": False,
         "check": "NULL_RETURNS",
         "column": None,
-        "extras": {
-            "body": None,
-            "build_error": False,
-            "is_local": True,
-            "reliability": "medium",
-        },
+        "extras": {"build_error": False, "is_local": True, "reliability": "medium"},
         "level": "error",
         "line": 3703,
         "message": """Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
