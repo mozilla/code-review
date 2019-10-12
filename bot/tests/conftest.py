@@ -381,7 +381,7 @@ def mock_taskcluster_config():
 @pytest.fixture
 def mock_hgmo():
     """
-    Mock HGMO raw-file response to buidl a issue hash
+    Mock HGMO raw-file response to build a issue hash
     """
 
     def fake_raw_file(request):
