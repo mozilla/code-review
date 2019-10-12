@@ -296,7 +296,7 @@ class Workflow(object):
             return InferTask(task_id, task_status)
         elif name.startswith("source-test-"):
             logger.error(
-                "Unssuported source-test task: will need a local implementation"
+                "Unsupported source-test task: will need a local implementation"
             )
         else:
             raise Exception("Unsupported task {}".format(name))
