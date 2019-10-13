@@ -121,8 +121,12 @@ class Issue(abc.ABC):
                 logger.warning(
                     "Failed to download a file with an issue", path=self.path
                 )
-                return
-            raise
+
+                # We still build the hash with empty content
+                file_content = ""
+            else:
+                # When encoutenring another HTTP error, raise the issue
+                raise
 
         # Build raw content:
         # 1. lines affected by patch

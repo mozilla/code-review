@@ -177,7 +177,8 @@ class Revision(object):
         # Check in hgmo cache first
         cache_path = os.path.join(settings.hgmo_cache, path)
         if os.path.exists(cache_path):
-            return open(cache_path).read()
+            with open(cache_path) as f:
+                return f.read()
 
         # Retrieve remote file
         url = urllib.parse.urljoin(
