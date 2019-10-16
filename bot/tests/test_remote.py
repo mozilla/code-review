@@ -452,7 +452,7 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
     )
 
 
-def test_clang_format_task(mock_config, mock_revision, mock_workflow):
+def test_clang_format_task(mock_config, mock_revision, mock_workflow, mock_hgmo):
     """
     Test a remote workflow with a clang-format analyzer
     """
@@ -518,6 +518,7 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow):
         "path": "test.cpp",
         "publishable": False,
         "validates": False,
+        "hash": "56f81d5190f8e1bd7a7d2380e7da6d67",
     }
     assert len(mock_revision.improvement_patches) == 0
 
@@ -684,7 +685,7 @@ The path that leads to this defect is:
     )
 
 
-def test_infer_task(mock_config, mock_revision, mock_workflow):
+def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo):
     """
     Test a remote workflow with an infer analyzer
     """
@@ -763,6 +764,7 @@ def test_infer_task(mock_config, mock_revision, mock_workflow):
         "path": "mobile/android/geckoview/src/main/java/org/mozilla/test.java",
         "publishable": False,
         "validates": True,
+        "hash": "e8b55c0cf890fc79f4ca4eb6c41cc2fa",
     }
 
 

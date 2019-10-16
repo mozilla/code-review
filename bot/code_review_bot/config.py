@@ -5,10 +5,12 @@
 
 from __future__ import absolute_import
 
+import atexit
 import collections
 import enum
 import fnmatch
 import os
+import shutil
 import tempfile
 
 import structlog
@@ -49,6 +51,10 @@ class Settings(object):
         self.taskcluster = None
         self.try_task_id = None
         self.try_group_id = None
+        self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
+
+        # Always cleanup at the end of the execution
+        atexit.register(self.cleanup)
 
     def setup(self, app_channel, publication, allowed_paths):
         # Detect source from env
@@ -104,6 +110,9 @@ class Settings(object):
         Is this path allowed for reporting ?
         """
         return any([fnmatch.fnmatch(path, rule) for rule in self.allowed_paths])
+
+    def cleanup(self):
+        shutil.rmtree(self.hgmo_cache)
 
 
 # Shared instance

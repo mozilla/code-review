@@ -1,0 +1,5 @@
+def hello():
+    print("Hello !")
+
+# Same line as above, without indent
+print("Hello !")

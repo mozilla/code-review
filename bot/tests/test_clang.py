@@ -81,7 +81,7 @@ def test_as_text(mock_revision):
     )
 
 
-def test_as_dict(mock_revision):
+def test_as_dict(mock_revision, mock_hgmo):
     """
     Test text export for ClangTidyIssue
     """
@@ -113,6 +113,7 @@ def test_as_dict(mock_revision):
         "is_new": False,
         "validates": True,
         "publishable": False,
+        "hash": "f94457942070fa51a52230f35a488be0",
     }
 
 

@@ -27,7 +27,7 @@ def test_as_text(mock_revision):
     assert issue.as_text() == expected
 
 
-def test_as_dict(mock_revision):
+def test_as_dict(mock_revision, mock_hgmo):
     """
     Test dict export for InferIssue
     """
@@ -55,6 +55,7 @@ def test_as_dict(mock_revision):
         "path": "path/to/file.java",
         "publishable": False,
         "validates": True,
+        "hash": "405fafd74d01b0d109903804e6cf3a5a",
     }
 
 
@@ -89,7 +90,7 @@ def test_as_markdown(mock_revision):
 
 
 @pytest.mark.parametrize("version, nb", [("0.16.0", 9), ("0.17.0", 32)])
-def test_infer_artifact(version, nb, mock_revision):
+def test_infer_artifact(version, nb, mock_revision, mock_hgmo):
     """
     Test Infer artifact per version, comparing a raw artifact processed
     and expected issues list

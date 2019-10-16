@@ -2,7 +2,7 @@
 from code_review_bot.tasks.coverage import ZeroCoverageTask
 
 
-def test_coverage(mock_config, mock_revision, mock_coverage_artifact):
+def test_coverage(mock_config, mock_revision, mock_coverage_artifact, mock_hgmo):
     task_status = {"task": {}, "status": {}}
     cov = ZeroCoverageTask("covTaskId", task_status)
 
@@ -48,6 +48,7 @@ def test_coverage(mock_config, mock_revision, mock_coverage_artifact):
         "column": None,
         "level": "warning",
         "nb_lines": 1,
+        "hash": "1e322c4bceb3c26faf438dd455dbfbb3",
     }
     assert issue.as_phabricator_lint() == {
         "code": "coverage",
@@ -95,6 +96,7 @@ This file is uncovered
         "column": None,
         "level": "warning",
         "nb_lines": 1,
+        "hash": "90942509a5caf769847952f1f6d471f5",
     }
     assert issue.as_phabricator_lint() == {
         "code": "coverage",
@@ -139,6 +141,7 @@ This file is uncovered
         "column": None,
         "level": "warning",
         "nb_lines": 1,
+        "hash": "c61422fa78fea8b2bcdd0adbe2a61d37",
     }
     assert issue.as_phabricator_lint() == {
         "code": "coverage",
