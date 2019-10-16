@@ -29,8 +29,6 @@ def get_reporters(configuration):
             if "reporter" not in conf:
                 raise Exception("Missing reporter declaration")
             name = conf["reporter"]
-            if name != "build_error":
-                continue
             cls = reporters.get(name)
             if cls is None:
                 raise Exception("Missing reporter class {}".format(conf["reporter"]))
