@@ -388,8 +388,14 @@ def mock_hgmo():
         repo, _, revision, *path = request.path_url[1:].split("/")
         path = "/".join(path)
 
-        # Produce a long fake file
-        content = "\n".join(f"{repo}:{revision}:{path}:{i+1}" for i in range(1000))
+        mock_path = os.path.join(MOCK_DIR, f"hgmo_{path}")
+        if os.path.exists(mock_path):
+            # Read existing mock file
+            with open(mock_path) as f:
+                content = f.read()
+        else:
+            # Produce a long fake file
+            content = "\n".join(f"{repo}:{revision}:{path}:{i+1}" for i in range(1000))
 
         return (200, {}, content)
 
