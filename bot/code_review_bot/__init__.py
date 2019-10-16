@@ -125,7 +125,7 @@ class Issue(abc.ABC):
                 # We still build the hash with empty content
                 file_content = ""
             else:
-                # When encoutenring another HTTP error, raise the issue
+                # When encountering another HTTP error, raise the issue
                 raise
 
         # Build raw content:
