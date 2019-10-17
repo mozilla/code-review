@@ -28,6 +28,7 @@ class RevisionAdmin(admin.ModelAdmin):
 
 
 class IssueAdmin(admin.ModelAdmin):
+    list_filter = ("analyzer",)
     list_display = ("id", "path", "line", "level", "analyzer", "check", "diff")
 
 

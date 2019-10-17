@@ -119,6 +119,3 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = "/static/"
-
-# Remote HGMO local cache
-HGMO_CACHE = os.environ.get("HGMO_CACHE", os.path.join(ROOT_DIR, "hgmo"))
