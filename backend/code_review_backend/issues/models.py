@@ -25,8 +25,9 @@ class PhabricatorModel(models.Model):
 
 class Repository(PhabricatorModel):
 
-    url = models.URLField(unique=True)
     slug = models.SlugField(unique=True)
+    url = models.URLField(unique=True)
+    try_url = models.URLField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "repositories"
