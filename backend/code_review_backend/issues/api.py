@@ -43,6 +43,10 @@ class IssueViewSet(CreateListRetrieveViewSet):
     def get_queryset(self):
         return Issue.objects.filter(diff_id=self.kwargs["diff_id"])
 
+    def perform_create(self, serializer):
+        # Attach diff to issue created
+        serializer.save(diff=Diff.objects.get(pk=self.kwargs["diff_id"]))
+
 
 router = routers.DefaultRouter()
 router.register(r"revision", RevisionViewSet)
