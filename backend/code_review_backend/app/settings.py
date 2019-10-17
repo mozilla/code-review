@@ -135,7 +135,7 @@ if "DYNO" in os.environ:
     # Database setup
     if "DATABASE_URL" in os.environ:
         logger.info("Using remote database from $DATABASE_URL")
-        DATABASES["default"] = dj_database_url.config(
+        DATABASES["default"] = dj_database_url.parse(
             os.environ["DATABASE_URL"], ssl_require=True
         )
     else:
