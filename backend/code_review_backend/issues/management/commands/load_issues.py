@@ -21,6 +21,14 @@ logger = logging.getLogger(__name__)
 INDEX_PATH = "project.relman.{environment}.code-review.phabricator.diff"
 
 
+def positive_int(x):
+    """
+    Some analyzer may give line & char positions below 0 to indicate a full file
+    We store it as null values
+    """
+    return x if isinstance(x, int) and x >= 0 else None
+
+
 class Command(BaseCommand):
     help = "Load issues from remote taskcluster reports"
 
@@ -74,9 +82,9 @@ class Command(BaseCommand):
                     Issue(
                         diff=diff,
                         path=i["path"],
-                        line=i["line"],
+                        line=positive_int(i["line"]),
                         nb_lines=i.get("nb_lines", 1),
-                        char=i.get("char"),
+                        char=positive_int(i.get("char")),
                         level=i.get("level", "warning"),
                         check=i.get("kind") or i.get("check"),
                         message=i.get("message"),
@@ -85,7 +93,7 @@ class Command(BaseCommand):
                     )
                     for i in report["issues"]
                 )
-                print(task_id, len(issues))
+                logger.info(f"Imported task {task_id} - {len(issues)}")
 
     def load_tasks(self, environment, chunk=200):
         # Direct unauthenticated usage

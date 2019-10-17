@@ -68,8 +68,8 @@ class Issue(models.Model):
 
     # Raw issue data
     path = models.CharField(max_length=250)
-    line = models.PositiveIntegerField()
-    nb_lines = models.PositiveIntegerField()
+    line = models.PositiveIntegerField(null=True)
+    nb_lines = models.PositiveIntegerField(null=True)
     char = models.PositiveIntegerField(null=True)
     level = models.CharField(max_length=20, choices=ISSUE_LEVELS)
     check = models.CharField(max_length=250, null=True)

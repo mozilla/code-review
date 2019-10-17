@@ -130,7 +130,10 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
-    "loggers": {"django": {"handlers": ["console"], "level": "INFO"}},
+    "loggers": {
+        "django": {"handlers": ["console"], "level": "INFO"},
+        "code_review_backend": {"handlers": ["console"], "level": "INFO"},
+    },
 }
 
 # Static files are set in a dedicated path in Docker image
