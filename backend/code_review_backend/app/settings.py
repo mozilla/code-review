@@ -137,6 +137,9 @@ LOGGING = {
 if "DJANGO_DOCKER" in os.environ:
     STATIC_ROOT = "/static"
 
+    # Enable GZip and cache, and build a manifest during collectstatic
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 # Heroku settings override to run the web app in production mode
 if "DYNO" in os.environ:
     logger.info("Setting up Heroku environment")
@@ -154,6 +157,3 @@ if "DYNO" in os.environ:
 
     # Insert Whitenoise Middleware after the security one
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
-
-    # Enable GZip and cache
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
