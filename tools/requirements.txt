@@ -1,4 +1,4 @@
-Logbook==1.5.2
+Logbook==1.5.3
 structlog==19.2.0
 taskcluster==20.0.0
 raven==6.10.0
