@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "rest_framework",
     "code_review_backend.issues",
 ]
 
@@ -119,11 +120,31 @@ USE_L10N = True
 
 USE_TZ = True
 
+# API configuration
+REST_FRAMEWORK = {
+    # Use Django's standard `django.contrib.auth` permissions,
+    # or allow read-only access for unauthenticated users.
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly"
+    ],
+    # Setup pagination
+    "PAGE_SIZE": 50,
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
+}
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = "/static/"
+
+# Static files are set in a dedicated path in Docker image
+if "DJANGO_DOCKER" in os.environ:
+    STATIC_ROOT = "/static"
+
+    # Enable GZip and cache, and build a manifest during collectstatic
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
 
 # Internal logging setup
 LOGGING = {
@@ -135,13 +156,6 @@ LOGGING = {
         "code_review_backend": {"handlers": ["console"], "level": "INFO"},
     },
 }
-
-# Static files are set in a dedicated path in Docker image
-if "DJANGO_DOCKER" in os.environ:
-    STATIC_ROOT = "/static"
-
-    # Enable GZip and cache, and build a manifest during collectstatic
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Heroku settings override to run the web app in production mode
 if "DYNO" in os.environ:
