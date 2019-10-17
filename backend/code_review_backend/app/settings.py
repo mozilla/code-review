@@ -130,7 +130,7 @@ STATIC_URL = "/static/"
 if "DYNO" in os.environ:
     logger.info("Setting up Heroku environment")
     ALLOWED_HOSTS = ["*"]
-    DEBUG = False
+    DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
     # Database setup
     if "DATABASE_URL" in os.environ:
