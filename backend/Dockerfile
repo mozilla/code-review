@@ -8,7 +8,6 @@ WORKDIR /src/backend
 ENV DJANGO_DOCKER=true
 
 RUN pip install --no-cache-dir .
-RUN pip install --no-cache-dir gunicorn
 
 # Collect all static files
 RUN ./manage.py collectstatic --no-input
