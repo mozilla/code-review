@@ -6,13 +6,14 @@
 from rest_framework import serializers
 
 from code_review_backend.issues.models import Diff
+from code_review_backend.issues.models import Issue
 from code_review_backend.issues.models import Repository
 from code_review_backend.issues.models import Revision
 
 
 class RevisionSerializer(serializers.HyperlinkedModelSerializer):
     """
-    Serialize a Revision in a repository
+    Serialize a Revision in a Repository
     """
 
     repository = serializers.SlugRelatedField(
@@ -26,11 +27,35 @@ class RevisionSerializer(serializers.HyperlinkedModelSerializer):
 
 class DiffSerializer(serializers.HyperlinkedModelSerializer):
     """
-    Serialize a Diff in a revision
+    Serialize a Diff in a Revision
     """
 
     revision = serializers.PrimaryKeyRelatedField(queryset=Revision.objects.all())
+    issues_url = serializers.HyperlinkedIdentityField(
+        view_name="issues-list", lookup_url_kwarg="diff_id"
+    )
 
     class Meta:
         model = Diff
-        fields = ("id", "revision", "phid", "review_task_id", "mercurial")
+        fields = ("id", "revision", "phid", "review_task_id", "mercurial", "issues_url")
+
+
+class IssueSerializer(serializers.HyperlinkedModelSerializer):
+    """
+    Serialize an Issue in a Diff
+    """
+
+    class Meta:
+        model = Issue
+        fields = (
+            "id",
+            "hash",
+            "analyzer",
+            "path",
+            "line",
+            "nb_lines",
+            "char",
+            "level",
+            "check",
+            "message",
+        )

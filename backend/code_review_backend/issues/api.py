@@ -8,8 +8,10 @@ from rest_framework import routers
 from rest_framework import viewsets
 
 from code_review_backend.issues.models import Diff
+from code_review_backend.issues.models import Issue
 from code_review_backend.issues.models import Revision
 from code_review_backend.issues.serializers import DiffSerializer
+from code_review_backend.issues.serializers import IssueSerializer
 from code_review_backend.issues.serializers import RevisionSerializer
 
 
@@ -35,6 +37,14 @@ class DiffViewSet(CreateListRetrieveViewSet):
     serializer_class = DiffSerializer
 
 
+class IssueViewSet(CreateListRetrieveViewSet):
+    serializer_class = IssueSerializer
+
+    def get_queryset(self):
+        return Issue.objects.filter(diff_id=self.kwargs["diff_id"])
+
+
 router = routers.DefaultRouter()
 router.register(r"revision", RevisionViewSet)
 router.register(r"diff", DiffViewSet)
+router.register(r"diff/(?P<diff_id>\d+)/issues", IssueViewSet, basename="issues")

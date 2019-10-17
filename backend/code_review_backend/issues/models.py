@@ -21,6 +21,7 @@ class PhabricatorModel(models.Model):
 
     class Meta:
         abstract = True
+        ordering = ("id",)
 
 
 class Repository(PhabricatorModel):
@@ -81,3 +82,6 @@ class Issue(models.Model):
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("diff", "path", "line", "analyzer")
