@@ -32,8 +32,8 @@ class Command(BaseCommand):
             help="Use only previously downloaded reports",
         )
         parser.add_argument(
-            "-e, --environment",
-            dest="environment",
+            "-e",
+            "--environment",
             default="production",
             choices=("production", "testing"),
             help="Specify the environment to load issues from",
@@ -144,7 +144,7 @@ class Command(BaseCommand):
             if token is None:
                 break
 
-    def load_local_reports(self, environment):
+    def load_local_reports(self):
         for task_id in os.listdir(self.cache_dir):
             report = json.load(open(os.path.join(self.cache_dir, task_id)))
             yield task_id, report

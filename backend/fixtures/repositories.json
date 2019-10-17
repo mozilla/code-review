@@ -6,7 +6,8 @@
         "phid": "PHID-REPO-saax4qdxlbbhahhp2kg5",
         "created": "2019-10-17T07:17:06.396Z",
         "updated": "2019-10-17T07:17:06.396Z",
-        "url": "https://hg.mozilla.org/mozilla-central/",
+        "url": "https://hg.mozilla.org/mozilla-central",
+        "try_url": "https://hg.mozilla.org/try",
         "slug": "mozilla-central"
     }
 },
@@ -17,7 +18,8 @@
         "phid": "PHID-REPO-3lrloqw4qf6fluy2a5ni",
         "created": "2019-10-17T07:17:32.970Z",
         "updated": "2019-10-17T07:17:32.970Z",
-        "url": "https://hg.mozilla.org/nss",
+        "url": "https://hg.mozilla.org/projects/nss",
+        "try_url": "https://hg.mozilla.org/projects/nss-try",
         "slug": "nss"
     }
 }
