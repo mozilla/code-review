@@ -105,12 +105,12 @@ tasks:
       deadline: {$fromNow: '1 hour'}
       payload:
         maxRunTime: 3600
-        image: python:3-slim
+        image: python:3
         command:
           - sh
           - -lxce
           - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-            cd /src/backend && pip install . && pip install -r requirements-dev.txt &&
+            cd /src/backend && pip install -q . && pip install -q -r requirements-dev.txt &&
             ./manage.py test"
       metadata:
         name: "Code Review Backend checks: unit tests"
@@ -389,7 +389,7 @@ tasks:
           source: https://github.com/mozilla/code-review
 
     # TODO: remove backend branch after tests are OK
-    - $if: 'channel in ["testing", "production"] || head_branch == "refs/heads/backend"'
+    - $if: 'channel in ["testing", "production"] || head_branch == "backend"'
       then:
         taskId: {$eval: as_slugid("backend_deploy")}
         created: {$fromNow: ''}
