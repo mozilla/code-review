@@ -2,7 +2,15 @@ FROM python:3.7-slim
 
 ADD backend /src/backend
 
-RUN cd /src/backend && pip install --no-cache-dir .
+WORKDIR /src/backend
+
+# Activate Django settings for in docker image
+ENV DJANGO_DOCKER=true
+
+RUN pip install --no-cache-dir .
 RUN pip install --no-cache-dir gunicorn
+
+# Collect all static files
+RUN ./manage.py collectstatic --no-input
 
 CMD gunicorn code_review_backend.app.wsgi

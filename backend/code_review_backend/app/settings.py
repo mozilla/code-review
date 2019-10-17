@@ -125,6 +125,17 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
+# Internal logging setup
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {"django": {"handlers": ["console"], "level": "INFO"}},
+}
+
+# Static files are set in a dedicated path in Docker image
+if "DJANGO_DOCKER" in os.environ:
+    STATIC_ROOT = "/static"
 
 # Heroku settings override to run the web app in production mode
 if "DYNO" in os.environ:
@@ -141,13 +152,8 @@ if "DYNO" in os.environ:
     else:
         logger.info("DATABASE_URL not found, will use sqlite. Data may be lost.")
 
-    # Staticfiles configuration
-    STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
-    STATIC_URL = "/static/"
-    os.makedirs(STATIC_ROOT, exist_ok=True)
+    # Insert Whitenoise Middleware after the security one
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
 
-    # Insert Whitenoise Middleware in top position
-    MIDDLEWARE.insert(0, "whitenoise.middleware.WhiteNoiseMiddleware")
-
-    # Enable GZip
+    # Enable GZip and cache
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
