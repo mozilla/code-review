@@ -388,7 +388,8 @@ tasks:
           owner: bastien@mozilla.com
           source: https://github.com/mozilla/code-review
 
-    - $if: 'channel in ["testing", "production"]'
+    # TODO: remove backend branch after tests are OK
+    - $if: 'channel in ["testing", "production"] || head_branch == "refs/heads/backend"'
       then:
         taskId: {$eval: as_slugid("backend_deploy")}
         created: {$fromNow: ''}
