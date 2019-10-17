@@ -18,7 +18,7 @@ from code_review_backend.issues.models import Repository
 
 logger = logging.getLogger(__name__)
 
-INDEX_PATH = "project.relman.production.code-review.phabricator.diff"
+INDEX_PATH = "project.relman.{environment}.code-review.phabricator.diff"
 
 
 class Command(BaseCommand):
@@ -31,6 +31,13 @@ class Command(BaseCommand):
             default=False,
             help="Use only previously downloaded reports",
         )
+        parser.add_argument(
+            "-e, --environment",
+            dest="environment",
+            default="production",
+            choices=("production", "testing"),
+            help="Specify the environment to load issues from",
+        )
 
     def handle(self, *args, **options):
         # Check repositories
@@ -41,11 +48,17 @@ class Command(BaseCommand):
                 raise CommandError(f"Missing repository {repo}")
 
         # Setup cache dir
-        self.cache_dir = os.path.join(tempfile.gettempdir(), "code-review-reports")
+        self.cache_dir = os.path.join(
+            tempfile.gettempdir(), "code-review-reports", options["environment"]
+        )
         os.makedirs(self.cache_dir, exist_ok=True)
 
         # Load available tasks from Taskcluster or already downloaded
-        tasks = self.load_local_reports() if options["offline"] else self.load_tasks()
+        tasks = (
+            self.load_local_reports()
+            if options["offline"]
+            else self.load_tasks(options["environment"])
+        )
 
         for task_id, report in tasks:
 
@@ -77,7 +90,7 @@ class Command(BaseCommand):
                     issue.hash = issue.build_hash()
                     issue.save()
 
-    def load_tasks(self, chunk=200):
+    def load_tasks(self, environment, chunk=200):
         # Direct unauthenticated usage
         index = taskcluster.Index({"rootUrl": "https://taskcluster.net"})
         queue = taskcluster.Queue({"rootUrl": "https://taskcluster.net"})
@@ -88,7 +101,9 @@ class Command(BaseCommand):
             query = {"limit": chunk}
             if token is not None:
                 query["continuationToken"] = token
-            data = index.listTasks(INDEX_PATH, query=query)
+            data = index.listTasks(
+                INDEX_PATH.format(environment=environment), query=query
+            )
 
             for task in data["tasks"]:
 
@@ -147,7 +162,7 @@ class Command(BaseCommand):
             if token is None:
                 break
 
-    def load_local_reports(self):
+    def load_local_reports(self, environment):
         for task_id in os.listdir(self.cache_dir):
             report = json.load(open(os.path.join(self.cache_dir, task_id)))
             yield task_id, report
