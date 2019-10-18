@@ -46,8 +46,7 @@ tasks:
           - sh
           - -lxce
           - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-            cd /src/tools && pip install . &&
-            cd /src/bot && pip install . && pip install -r requirements-dev.txt &&
+            cd /src/bot && pip install -r requirements-dev.txt &&
             cd /src && pre-commit run -a"
       metadata:
         name: "Code Review Bot checks: linting"
