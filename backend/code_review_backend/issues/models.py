@@ -28,7 +28,6 @@ class Repository(PhabricatorModel):
 
     slug = models.SlugField(unique=True)
     url = models.URLField(unique=True)
-    try_url = models.URLField(null=True, blank=True)
 
     class Meta:
         verbose_name_plural = "repositories"
@@ -65,7 +64,12 @@ class Issue(models.Model):
     """An issue detected on a Phabricator patch"""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    diff = models.ForeignKey(Diff, related_name="issues", on_delete=models.CASCADE)
+
+    # Diff can be null to support issues without any link to Phabricator
+    # like the issues used to initialize the database on a full tree analyzer run
+    diff = models.ForeignKey(
+        Diff, related_name="issues", on_delete=models.CASCADE, null=True, blank=True
+    )
 
     # Raw issue data
     path = models.CharField(max_length=250)
