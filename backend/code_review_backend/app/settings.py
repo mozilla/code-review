@@ -31,9 +31,7 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get(
-    "SECRET_KEY", "t!+s!@x5p!85x19q83jufr#95_z0fv7$!u5z*c&gi!%hr3^w+r"
-)
+SECRET_KEY = "t!+s!@x5p!85x19q83jufr#95_z0fv7$!u5z*c&gi!%hr3^w+r"
 
 # Only use DEBUG mode for local development
 # When running on Heroku, we disable that mode (see end of file & DYNO mode)
@@ -176,3 +174,6 @@ if "DYNO" in os.environ:
 
     # Insert Whitenoise Middleware after the security one
     MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+
+    # Use Secret key from env
+    SECRET_KEY = os.environ.get("SECRET_KEY", SECRET_KEY)
