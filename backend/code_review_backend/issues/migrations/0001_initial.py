@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                 ("created", models.DateTimeField(auto_now_add=True)),
                 ("updated", models.DateTimeField(auto_now=True)),
                 ("review_task_id", models.CharField(max_length=30, unique=True)),
-                ("mercurial", models.CharField(max_length=40)),
+                ("mercurial_hash", models.CharField(max_length=40)),
             ],
             options={"ordering": ("id",), "abstract": False},
         ),

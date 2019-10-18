@@ -37,7 +37,14 @@ class DiffSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = Diff
-        fields = ("id", "revision", "phid", "review_task_id", "mercurial", "issues_url")
+        fields = (
+            "id",
+            "revision",
+            "phid",
+            "review_task_id",
+            "mercurial_hash",
+            "issues_url",
+        )
 
 
 class IssueSerializer(serializers.HyperlinkedModelSerializer):

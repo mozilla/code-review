@@ -60,7 +60,7 @@ class CreationAPITestCase(APITestCase):
             "revision": 123,
             "phid": "PHID-DIFF-xxx",
             "review_task_id": "deadbeef123",
-            "mercurial": "coffee12345",
+            "mercurial_hash": "coffee12345",
         }
 
         # No auth will give a permission denied
@@ -99,7 +99,7 @@ class CreationAPITestCase(APITestCase):
         # Check a diff has been created
         self.assertEqual(Diff.objects.count(), 1)
         diff = Diff.objects.get(pk=1234)
-        self.assertEqual(diff.mercurial, "coffee12345")
+        self.assertEqual(diff.mercurial_hash, "coffee12345")
         self.assertEqual(diff.revision, revision)
 
     def test_create_issue(self):
@@ -117,7 +117,7 @@ class CreationAPITestCase(APITestCase):
             id=1234,
             phid="PHID-DIFF-xxx",
             review_task_id="deadbeef123",
-            mercurial="coffee12345",
+            mercurial_hash="coffee12345",
         )
 
         data = {

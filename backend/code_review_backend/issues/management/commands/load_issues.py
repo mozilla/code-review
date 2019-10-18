@@ -174,7 +174,7 @@ class Command(BaseCommand):
             defaults={
                 "phid": data["diff_phid"],
                 "review_task_id": task_id,
-                "mercurial": data["mercurial_revision"],
+                "mercurial_hash": data["mercurial_revision"],
             },
         )
         return revision, diff

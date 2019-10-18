@@ -55,7 +55,7 @@ class Diff(PhabricatorModel):
     )
 
     review_task_id = models.CharField(max_length=30, unique=True)
-    mercurial = models.CharField(max_length=40)
+    mercurial_hash = models.CharField(max_length=40)
 
     def __str__(self):
         return f"Diff {self.id}"
