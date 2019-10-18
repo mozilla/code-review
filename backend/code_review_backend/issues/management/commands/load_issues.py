@@ -21,14 +21,6 @@ logger = logging.getLogger(__name__)
 INDEX_PATH = "project.relman.{environment}.code-review.phabricator.diff"
 
 
-def positive_int(x):
-    """
-    Some analyzer may give line & char positions below 0 to indicate a full file
-    We store it as null values
-    """
-    return x if isinstance(x, int) and x >= 0 else None
-
-
 class Command(BaseCommand):
     help = "Load issues from remote taskcluster reports"
 
@@ -73,27 +65,34 @@ class Command(BaseCommand):
             # Build revision & diff
             revision, diff = self.build_hierarchy(report["revision"], task_id)
 
-            with transaction.atomic():
-                # Remove all issues from diff
-                diff.issues.all().delete()
-
-                # Build all issues for that diff, in a single DB call
-                issues = Issue.objects.bulk_create(
-                    Issue(
-                        diff=diff,
-                        path=i["path"],
-                        line=positive_int(i["line"]),
-                        nb_lines=i.get("nb_lines", 1),
-                        char=positive_int(i.get("char")),
-                        level=i.get("level", "warning"),
-                        check=i.get("kind") or i.get("check"),
-                        message=i.get("message"),
-                        analyzer=i["analyzer"],
-                        hash=i["hash"],
-                    )
-                    for i in report["issues"]
-                )
+            # Save all issues in a single db transaction
+            try:
+                issues = self.save_issues(diff, report["issues"])
                 logger.info(f"Imported task {task_id} - {len(issues)}")
+            except Exception as e:
+                logger.error(f"Failed to save issues for {task_id}: {e}")
+
+    @transaction.atomic
+    def save_issues(self, diff, issues):
+        # Remove all issues from diff
+        diff.issues.all().delete()
+
+        # Build all issues for that diff, in a single DB call
+        return Issue.objects.bulk_create(
+            Issue(
+                diff=diff,
+                path=i["path"],
+                line=i["line"],
+                nb_lines=i.get("nb_lines", 1),
+                char=i.get("char"),
+                level=i.get("level", "warning"),
+                check=i.get("kind") or i.get("check"),
+                message=i.get("message"),
+                analyzer=i["analyzer"],
+                hash=i["hash"],
+            )
+            for i in issues
+        )
 
     def load_tasks(self, environment, chunk=200):
         # Direct unauthenticated usage
