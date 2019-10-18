@@ -97,6 +97,26 @@ tasks:
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
+    - taskId: {$eval: as_slugid("backend_check_tests")}
+      provisionerId: aws-provisioner-v1
+      workerType: github-worker
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      payload:
+        maxRunTime: 3600
+        image: python:3
+        command:
+          - sh
+          - -lxce
+          - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+            cd /src/backend && pip install -q . && pip install -q -r requirements-dev.txt &&
+            ./manage.py test"
+      metadata:
+        name: "Code Review Backend checks: unit tests"
+        description: Check python code with Django tests
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
+
     - taskId: {$eval: as_slugid("frontend_build")}
       provisionerId: aws-provisioner-v1
       workerType: github-worker
@@ -201,6 +221,47 @@ tasks:
       metadata:
         name: Code Review Events docker build
         description: Build docker image of code review events
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
+
+    - taskId: {$eval: as_slugid("backend_build")}
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      provisionerId: aws-provisioner-v1
+      workerType: releng-svc
+      dependencies:
+        - {$eval: as_slugid("check_lint")}
+        - {$eval: as_slugid("backend_check_tests")}
+      payload:
+        capabilities:
+          privileged: true
+        maxRunTime: 3600
+        image: "${taskboot_image}"
+        env:
+          GIT_REPOSITORY: ${repository}
+          GIT_REVISION: ${head_rev}
+        command:
+          - taskboot
+          - build
+          - --image
+          - mozilla/code-review
+          - --tag
+          - "${channel}"
+          - --tag
+          - "${head_rev}"
+          - --write
+          - /backend.tar
+          - backend/Dockerfile
+        artifacts:
+          public/code-review-backend.tar:
+            expires: {$fromNow: '2 weeks'}
+            path: /backend.tar
+            type: file
+      scopes:
+        - docker-worker:capability:privileged
+      metadata:
+        name: Code Review Backend docker build
+        description: Build docker image of code review backend
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
@@ -322,6 +383,36 @@ tasks:
           - "secrets:get:project/relman/code-review/deploy-${channel}"
         metadata:
           name: "Code Review Events deployment (${channel})"
+          description: Deploy docker image on Heroku
+          owner: bastien@mozilla.com
+          source: https://github.com/mozilla/code-review
+
+    - $if: 'channel in ["testing", "production"]'
+      then:
+        taskId: {$eval: as_slugid("backend_deploy")}
+        created: {$fromNow: ''}
+        deadline: {$fromNow: '1 hour'}
+        provisionerId: aws-provisioner-v1
+        workerType: github-worker
+        dependencies:
+          - {$eval: as_slugid("backend_build")}
+        payload:
+          features:
+            taskclusterProxy: true
+          maxRunTime: 3600
+          image: "${taskboot_image}"
+          command:
+            - taskboot
+            - deploy-heroku
+            - --heroku-app
+            - "code-review-backend-${channel}"
+            - web:public/code-review-backend.tar
+          env:
+            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
+        scopes:
+          - "secrets:get:project/relman/code-review/deploy-${channel}"
+        metadata:
+          name: "Code Review Backend deployment (${channel})"
           description: Deploy docker image on Heroku
           owner: bastien@mozilla.com
           source: https://github.com/mozilla/code-review
