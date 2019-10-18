@@ -63,7 +63,7 @@ class Command(BaseCommand):
         for task_id, report in tasks:
 
             # Build revision & diff
-            revision, diff = self.build_hierarchy(report["revision"], task_id)
+            revision, diff = self.build_revision_and_diff(report["revision"], task_id)
 
             # Save all issues in a single db transaction
             try:
@@ -156,7 +156,7 @@ class Command(BaseCommand):
             report = json.load(open(os.path.join(self.cache_dir, task_id)))
             yield task_id, report
 
-    def build_hierarchy(self, data, task_id):
+    def build_revision_and_diff(self, data, task_id):
         """Build or retrieve a revision and diff in current repo from report's data"""
         repository = Repository.objects.get(slug=data["target_repository"])
         revision, _ = repository.revisions.get_or_create(
