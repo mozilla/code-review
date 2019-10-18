@@ -1,0 +1,24 @@
+[
+{
+    "model": "issues.repository",
+    "pk": 1,
+    "fields": {
+        "phid": "PHID-REPO-saax4qdxlbbhahhp2kg5",
+        "created": "2019-10-17T07:17:06.396Z",
+        "updated": "2019-10-17T07:17:06.396Z",
+        "url": "https://hg.mozilla.org/mozilla-central",
+        "slug": "mozilla-central"
+    }
+},
+{
+    "model": "issues.repository",
+    "pk": 8,
+    "fields": {
+        "phid": "PHID-REPO-3lrloqw4qf6fluy2a5ni",
+        "created": "2019-10-17T07:17:32.970Z",
+        "updated": "2019-10-17T07:17:32.970Z",
+        "url": "https://hg.mozilla.org/projects/nss",
+        "slug": "nss"
+    }
+}
+]

@@ -5,9 +5,13 @@
 
 from django.contrib import admin
 from django.shortcuts import redirect
+from django.urls import include
 from django.urls import path
 
+from code_review_backend.issues import api
+
 urlpatterns = [
-    path("", lambda request: redirect("admin/", permanent=False)),
+    path("", lambda request: redirect("v1/", permanent=False)),
+    path("v1/", include(api.router.urls)),
     path("admin/", admin.site.urls),
 ]
