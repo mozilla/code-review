@@ -68,7 +68,7 @@ class Issue(abc.ABC):
         self.path = path
         self.line = line
         self.nb_lines = nb_lines
-        self.check = check
+        self.check = check or "unknown"
 
         # Optional common fields
         self.column = column

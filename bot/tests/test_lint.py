@@ -3,12 +3,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
+import os
+
+from code_review_bot.tasks.lint import MozLintIssue
+from code_review_bot.tasks.lint import MozLintTask
+from conftest import FIXTURES_DIR
+
 
 def test_flake8_checks(mock_config, mock_revision, mock_hgmo):
     """
     Check flake8 check detection
     """
-    from code_review_bot.tasks.lint import MozLintIssue
 
     # Valid issue
     issue = MozLintIssue(
@@ -61,7 +67,6 @@ def test_as_text(mock_config, mock_revision, mock_hgmo):
     """
     Test text export for ClangTidyIssue
     """
-    from code_review_bot.tasks.lint import MozLintIssue
 
     issue = MozLintIssue(
         "mock-lint-flake8",
@@ -104,3 +109,34 @@ def test_as_text(mock_config, mock_revision, mock_hgmo):
         "validates": True,
         "hash": "34c27d119c21ea5a2cd3f6ac230d8c4e",
     }
+
+
+def test_licence_payload(mock_revision, mock_hgmo):
+    """
+    Test mozlint licence payload, without a check
+    See https://github.com/mozilla/code-review/issues/172
+    """
+    mock_revision.repository = "test-try"
+    mock_revision.mercurial_revision = "deadbeef1234"
+    task_status = {
+        "task": {"metadata": {"name": "source-test-mozlint-license"}},
+        "status": {},
+    }
+    task = MozLintTask("lintTaskId", task_status)
+
+    # Load artifact related to that bug
+    path = os.path.join(FIXTURES_DIR, "mozlint_license_no_check.json")
+    with open(path) as f:
+        issues = task.parse_issues(
+            {"public/code-review/mozlint": json.load(f)}, mock_revision
+        )
+
+    # Check the issue
+    assert len(issues) == 1
+    issue = issues.pop()
+    assert (
+        str(issue)
+        == "source-test-mozlint-license issue unknown@error intl/locale/rust/unic-langid-ffi/src/lib.rs line 0"
+    )
+    assert issue.check == "unknown"
+    assert issue.build_hash() == "2ff81f67e7f8c3bec2c8d29b73c2f8c2"
