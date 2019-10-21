@@ -26,10 +26,13 @@ COVERAGE = "coverage"
 COVERITY = "coverity"
 
 
-def positive_int(x):
+def positive_int(name, x):
     """Helper to get a positive integer or None"""
-    if isinstance(x, int) and x >= 0:
-        return x
+    if isinstance(x, int):
+        if x >= 0:
+            return x
+        else:
+            logger.warning(f"Negative {name} value found, defaults to None", value=x)
     return None
 
 
@@ -73,8 +76,8 @@ class Issue(abc.ABC):
         self.analyzer = analyzer
         self.check = check
         self.path = path
-        self.line = positive_int(line)
-        self.nb_lines = positive_int(nb_lines)
+        self.line = positive_int("line", line)
+        self.nb_lines = positive_int("nb_lines", nb_lines)
         self.check = check
 
         # Optional common fields
@@ -146,7 +149,7 @@ class Issue(abc.ABC):
         else:
             # Use a range of lines
             start = self.line - 1  # file_lines start at 0, not 1
-            lines = file_lines[start : start + self.nb_lines]  # noqa E203
+            lines = file_lines[start : start + self.nb_lines]
         raw_content = "\n".join([line.strip() for line in lines])
 
         # Build hash payload using issue data
