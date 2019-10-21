@@ -87,3 +87,49 @@ def test_indentation_effect(mock_revision, mock_hgmo):
         == issue_no_indent.build_hash()
         == "9a9b08552e9e2a5f1da5c103c3a4657d"
     )
+
+
+def test_full_file(mock_revision, mock_hgmo):
+    """
+    Test build hash algorithm when using a full file (line is -1)
+    """
+    # Hardcode revision & repo
+    mock_revision.repository = "test-try"
+    mock_revision.mercurial_revision = "deadbeef1234"
+
+    issue = MozLintIssue(
+        "mock-analyzer-fullfile",
+        "path/to/afile.py",
+        0,
+        "error",
+        -1,
+        "fullfile",
+        "Some issue found on a file",
+        "EXXX",
+        mock_revision,
+    )
+    assert (
+        str(issue)
+        == "mock-analyzer-fullfile issue EXXX@error path/to/afile.py line None"
+    )
+    assert issue.line is None
+
+    # Build hash should use the full file
+    assert issue.build_hash() == "76a76ba6e023d933acba9e07ae2897f6"
+
+    # Check positive integers or None are used in report
+    assert issue.as_dict() == {
+        "analyzer": "mock-analyzer-fullfile",
+        "check": "EXXX",
+        "column": 0,
+        "hash": "76a76ba6e023d933acba9e07ae2897f6",
+        "in_patch": False,
+        "is_new": False,
+        "level": "error",
+        "line": None,
+        "message": "Some issue found on a file",
+        "nb_lines": 1,
+        "path": "path/to/afile.py",
+        "publishable": False,
+        "validates": True,
+    }
