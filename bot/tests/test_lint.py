@@ -114,6 +114,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo):
 def test_licence_payload(mock_revision, mock_hgmo):
     """
     Test mozlint licence payload, without a check
+    The analyzer name replaces the empty check
     See https://github.com/mozilla/code-review/issues/172
     """
     mock_revision.repository = "test-try"
@@ -136,7 +137,7 @@ def test_licence_payload(mock_revision, mock_hgmo):
     issue = issues.pop()
     assert (
         str(issue)
-        == "source-test-mozlint-license issue unknown@error intl/locale/rust/unic-langid-ffi/src/lib.rs line 0"
+        == "source-test-mozlint-license issue source-test-mozlint-license@error intl/locale/rust/unic-langid-ffi/src/lib.rs line 0"
     )
-    assert issue.check == "unknown"
-    assert issue.build_hash() == "2ff81f67e7f8c3bec2c8d29b73c2f8c2"
+    assert issue.check == issue.analyzer == "source-test-mozlint-license"
+    assert issue.build_hash() == "6e2ff91aa6dcd1bf0622d9556478722c"

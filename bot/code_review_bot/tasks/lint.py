@@ -40,6 +40,10 @@ class MozLintIssue(Issue):
         revision,
         **kwargs
     ):
+        # Use analyzer name when check is not provided
+        # This happens for analyzers who only have one rule
+        if check is None:
+            check = analyzer
         super().__init__(
             analyzer,
             revision,
