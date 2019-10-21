@@ -26,6 +26,16 @@ COVERAGE = "coverage"
 COVERITY = "coverity"
 
 
+def positive_int(name, x):
+    """Helper to get a positive integer or None"""
+    if isinstance(x, int):
+        if x >= 0:
+            return x
+        else:
+            logger.warning(f"Negative {name} value found, defaults to None", value=x)
+    return None
+
+
 class AnalysisException(Exception):
     """
     Custom exception used in controlled errors
@@ -66,8 +76,8 @@ class Issue(abc.ABC):
         self.analyzer = analyzer
         self.check = check
         self.path = path
-        self.line = line
-        self.nb_lines = nb_lines
+        self.line = positive_int("line", line)
+        self.nb_lines = positive_int("nb_lines", nb_lines)
         self.check = check
 
         # Optional common fields
@@ -132,13 +142,15 @@ class Issue(abc.ABC):
         # 1. lines affected by patch
         # 2. without any spaces around each line
         file_lines = file_content.splitlines()
-        start = self.line - 1  # file_lines start at 0, not 1
-        raw_content = "\n".join(
-            [
-                line.strip()
-                for line in file_lines[start : start + self.nb_lines]  # noqa E203
-            ]
-        )
+        if self.line is None or self.nb_lines is None:
+            # Use full file when line is not specified
+            lines = file_lines
+
+        else:
+            # Use a range of lines
+            start = self.line - 1  # file_lines start at 0, not 1
+            lines = file_lines[start : start + self.nb_lines]
+        raw_content = "\n".join([line.strip() for line in lines])
 
         # Build hash payload using issue data
         # excluding file position information (lines & char)
