@@ -1,0 +1,18 @@
+{
+    "/builds/worker/checkouts/gecko/intl/locale/rust/unic-langid-ffi/src/lib.rs": [
+        {
+            "rule": null,
+            "linter": "license",
+            "column": null,
+            "lineoffset": null,
+            "lineno": 0,
+            "path": "/builds/worker/checkouts/gecko/intl/locale/rust/unic-langid-ffi/src/lib.rs",
+            "relpath": "intl/locale/rust/unic-langid-ffi/src/lib.rs",
+            "level": "error",
+            "diff": null,
+            "source": null,
+            "hint": null,
+            "message": "No matching license strings found in tools/lint/license/valid-licenses.txt"
+        }
+    ]
+}
