@@ -19,6 +19,7 @@ from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.coverage import ZeroCoverageTask
 from code_review_bot.tasks.coverity import CoverityTask
+from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_tools.taskcluster import TASKCLUSTER_DATE_FORMAT
@@ -294,9 +295,15 @@ class Workflow(object):
             return CoverityTask(task_id, task_status)
         elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
-        elif name.startswith("source-test-"):
-            logger.error(
-                "Unsupported source-test task: will need a local implementation"
-            )
         else:
-            raise Exception("Unsupported task {}".format(name))
+
+            # If default artifacts available > boom
+            if DefaultTask.matches(task_id):
+                return DefaultTask(task_id, task_status)
+
+            elif name.startswith("source-test-"):
+                logger.error(
+                    f"Unsupported {name} task: will need a local implementation"
+                )
+            else:
+                raise Exception("Unsupported task {}".format(name))

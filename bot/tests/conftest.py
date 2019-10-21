@@ -216,6 +216,8 @@ class MockQueue(object):
     Mock the Taskcluster queue, by using fake tasks descriptions, relations and artifacts
     """
 
+    _artifacts = {}
+
     def configure(self, relations):
         # Create tasks
         assert isinstance(relations, dict)
@@ -280,6 +282,9 @@ class MockQueue(object):
     def listArtifacts(self, task_id, run_id):
         return self._artifacts.get(task_id, {})
 
+    def listLatestArtifacts(self, task_id):
+        return self._artifacts.get(task_id, {})
+
     def getArtifact(self, task_id, run_id, artifact_name):
         artifacts = self._artifacts.get(task_id, {})
         if not artifacts:
@@ -335,8 +340,15 @@ class MockIndex(object):
         return {"taskId": task_id}
 
 
+class MockNotify(object):
+    emails = []
+
+    def email(self, payload):
+        self.emails.append(payload)
+
+
 @pytest.fixture
-def mock_workflow(mock_phabricator):
+def mock_workflow(mock_phabricator, mock_taskcluster_config):
     """
     Mock the workflow along with Taskcluster mocks
     No phabricator output here
@@ -350,8 +362,8 @@ def mock_workflow(mock_phabricator):
         def __init__(self):
             self.reporters = {}
             self.phabricator_api = None
-            self.index_service = MockIndex()
-            self.queue_service = MockQueue()
+            self.index_service = mock_taskcluster_config.get_service("index")
+            self.queue_service = mock_taskcluster_config.get_service("queue")
             self.zero_coverage_enabled = True
 
         def setup_mock_tasks(self, tasks):
@@ -378,6 +390,25 @@ def mock_taskcluster_config():
     from code_review_bot import taskcluster
 
     taskcluster.options = {"rootUrl": "http://taskcluster.test"}
+
+    # Shared instance by fixture
+    queue = MockQueue()
+    index = MockIndex()
+    notify = MockNotify()
+
+    def _get_service(name):
+        if name == "queue":
+            return queue
+        elif name == "index":
+            return index
+        elif name == "notify":
+            return notify
+        else:
+            raise NotImplementedError
+
+    taskcluster.get_service = _get_service
+
+    return taskcluster
 
 
 @pytest.fixture
