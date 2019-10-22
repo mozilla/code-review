@@ -346,6 +346,14 @@ class Revision(object):
         assert self.mercurial_revision is not None, "Missing try revision"
         logger.info("Using Try mercurial revision", rev=self.mercurial_revision)
 
+    @property
+    def bugzilla_id(self):
+        return self.revision["fields"].get("bugzilla.bug-id")
+
+    @property
+    def title(self):
+        return self.revision["fields"].get("title")
+
     def as_dict(self):
         """
         Outputs a serializable representation of this revision
@@ -358,8 +366,8 @@ class Revision(object):
             "url": self.url,
             "has_clang_files": self.has_clang_files,
             # Extra infos for frontend
-            "title": self.revision["fields"].get("title"),
-            "bugzilla_id": self.revision["fields"].get("bugzilla.bug-id"),
+            "title": self.title,
+            "bugzilla_id": self.bugzilla_id,
             # Extra infos for backend
             "repository": self.repository,
             "target_repository": self.target_repository,
