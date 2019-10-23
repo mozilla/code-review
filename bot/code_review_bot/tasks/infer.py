@@ -6,7 +6,6 @@
 import structlog
 from libmozdata.phabricator import LintResult
 
-from code_review_bot import INFER
 from code_review_bot import Issue
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -37,8 +36,6 @@ class InferIssue(Issue):
     """
     An issue reported by infer
     """
-
-    ANALYZER = INFER
 
     def __init__(self, analyzer, entry, revision):
         assert isinstance(entry, dict)

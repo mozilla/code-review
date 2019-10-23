@@ -24,8 +24,6 @@ ISSUE_MARKDOWN = """
 
 
 class DefaultIssue(Issue):
-    ANALYZER = "default"
-
     def validates(self):
         """
         Default issues are valid as long as they match the format

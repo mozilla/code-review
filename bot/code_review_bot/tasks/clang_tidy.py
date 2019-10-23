@@ -9,7 +9,6 @@ import re
 import structlog
 from libmozdata.phabricator import LintResult
 
-from code_review_bot import CLANG_TIDY
 from code_review_bot import Issue
 from code_review_bot import Reliability
 from code_review_bot.tasks.base import AnalysisTask
@@ -49,8 +48,6 @@ class ClangTidyIssue(Issue):
     """
     An issue reported by clang-tidy
     """
-
-    ANALYZER = CLANG_TIDY
 
     def __init__(
         self,
