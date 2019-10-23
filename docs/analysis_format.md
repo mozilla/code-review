@@ -10,7 +10,7 @@ The [default format](https://github.com/mozilla/code-review/blob/1.0.5/bot/code_
 * `column` & `line` where the issue is happening in the file. They must be positive integers, or `null` when unknown or for an issue linked to a full file.
 * `nb_lines` (optional) is a positive integer when your issue spans across several lines. It will default to 1 line.
 * `level` (warning | error) of the issue
-* `check`  describing the issue detected (often a unique shorthand code)
+* `check` (optional) describing the issue detected (often a unique shorthand code). It can be optional when the analyzer only produce one type of issues. In that case, the analyzer name will be used instead.
 * `message` with all the details to provide to the developer
 * `analyzer` (optional) if you have multiple analyzers using the same format. It will default to the task name.
 

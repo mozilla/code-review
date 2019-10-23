@@ -80,6 +80,17 @@ class DefaultTask(AnalysisTask):
         Parse issues from a log file content
         """
         assert isinstance(artifacts, dict)
+
+        def default_check(issue):
+            # Use analyzer name when check is not provided
+            # This happens for analyzers who only have one rule
+            # This logic could become the standard once most analyzers
+            # use that format
+            check = issue.get("check")
+            if check:
+                return check
+            return issue.get("analyzer", self.name)
+
         return [
             DefaultIssue(
                 analyzer=issue.get("analyzer", self.name),
@@ -89,7 +100,7 @@ class DefaultTask(AnalysisTask):
                 column=issue["column"],
                 nb_lines=issue.get("nb_lines", 1),
                 level=issue["level"],
-                check=issue["check"],
+                check=default_check(issue),
                 message=issue["message"],
             )
             for artifact in artifacts.values()
