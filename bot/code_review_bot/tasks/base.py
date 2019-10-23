@@ -3,17 +3,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
-
 import structlog
 
 logger = structlog.get_logger(__name__)
-
-WORKER_CHECKOUTS = (
-    "/builds/worker/checkouts/gecko",
-    "/home/worker/nss",
-    "/home/worker/nspr",
-)
 
 
 class AnalysisTask(object):
@@ -32,7 +24,6 @@ class AnalysisTask(object):
         assert "status" in task_status, "No status data for {}".format(self.id)
         self.task = task_status["task"]
         self.status = task_status["status"]
-        self.cleaned_paths = set()
 
     @property
     def run_id(self):
@@ -113,22 +104,6 @@ class AnalysisTask(object):
                 continue
 
         return out
-
-    def clean_path(self, path):
-        """
-        Helper to clean issues path from remote tasks
-        """
-        if not os.path.isabs(path):
-            # Never alter a relative path
-            return path
-
-        for checkout in WORKER_CHECKOUTS:
-            if path.startswith(checkout):
-                self.cleaned_paths.add(path)
-                logger.warning("Cleaned issue absolute path", path=path, name=self.name)
-                return os.path.relpath(path, checkout)
-
-        return path
 
     def build_patches(self, artifacts):
         """

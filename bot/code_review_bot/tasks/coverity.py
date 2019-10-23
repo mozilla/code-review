@@ -200,10 +200,7 @@ class CoverityTask(AnalysisTask):
         assert isinstance(artifacts, dict)
         return [
             CoverityIssue(
-                analyzer=self.name,
-                revision=revision,
-                issue=warning,
-                file_path=self.clean_path(path),
+                analyzer=self.name, revision=revision, issue=warning, file_path=path
             )
             for artifact in artifacts.values()
             for path, items in artifact["files"].items()

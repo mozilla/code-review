@@ -13,7 +13,6 @@ class MockCoverityTask(CoverityTask):
         """
         Simply skip task loading
         """
-        self.cleaned_paths = set()
         self.task = {"metadata": {"name": "mock-coverity"}}
 
 
@@ -50,13 +49,13 @@ def test_simple(mock_revision, mock_config, log, mock_hgmo):
         == """Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
 The path that leads to this defect is:
 
-- ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3697//:
+- //js/src/jit/BaselineCompiler.cpp:3697//:
 -- `returned_null: "GetModuleEnvironmentForScript" returns "nullptr" (checked 2 out of 2 times).`.
 
-- ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3697//:
+- //js/src/jit/BaselineCompiler.cpp:3697//:
 -- `var_assigned: Assigning: "env" = "nullptr" return value from "GetModuleEnvironmentForScript".`.
 
-- ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3703//:
+- //js/src/jit/BaselineCompiler.cpp:3703//:
 -- `dereference: Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".`.
 """
     )
@@ -82,14 +81,7 @@ The path that leads to this defect is:
     }
     assert issue.nb_lines == 1
 
-    # Check the issue's absolute path has been cleaned
-    assert log.has(
-        "Cleaned issue absolute path",
-        path="/builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp",
-        name="mock-coverity",
-        level="warning",
-    )
-
+    assert issue.path == "js/src/jit/BaselineCompiler.cpp"
     assert issue.validates()
     assert not issue.is_publishable()
 
@@ -97,13 +89,13 @@ The path that leads to this defect is:
 Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
 The path that leads to this defect is:
 
-- ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3697//:
+- //js/src/jit/BaselineCompiler.cpp:3697//:
 -- `returned_null: "GetModuleEnvironmentForScript" returns "nullptr" (checked 2 out of 2 times).`.
 
-- ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3697//:
+- //js/src/jit/BaselineCompiler.cpp:3697//:
 -- `var_assigned: Assigning: "env" = "nullptr" return value from "GetModuleEnvironmentForScript".`.
 
-- ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3703//:
+- //js/src/jit/BaselineCompiler.cpp:3703//:
 -- `dereference: Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".`.
 """
     assert issue.as_phabricator_lint() == {
@@ -126,13 +118,13 @@ The path that leads to this defect is:
         "message": """Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
 The path that leads to this defect is:
 
-- ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3697//:
+- //js/src/jit/BaselineCompiler.cpp:3697//:
 -- `returned_null: "GetModuleEnvironmentForScript" returns "nullptr" (checked 2 out of 2 times).`.
 
-- ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3697//:
+- //js/src/jit/BaselineCompiler.cpp:3697//:
 -- `var_assigned: Assigning: "env" = "nullptr" return value from "GetModuleEnvironmentForScript".`.
 
-- ///builds/worker/checkouts/gecko/js/src/jit/BaselineCompiler.cpp:3703//:
+- //js/src/jit/BaselineCompiler.cpp:3703//:
 -- `dereference: Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".`.
 """,
         "nb_lines": 1,
