@@ -35,6 +35,7 @@ tasks:
     taskboot_image: "mozilla/taskboot:0.1.10"
 
     pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
+    python_version: "3.7"
   in:
     - taskId: {$eval: as_slugid("check_lint")}
       provisionerId: aws-provisioner-v1
@@ -43,7 +44,7 @@ tasks:
       deadline: {$fromNow: '1 hour'}
       payload:
         maxRunTime: 3600
-        image: python:3
+        image: "python:${python_version}"
         command:
           - sh
           - -lxce
@@ -63,7 +64,7 @@ tasks:
       deadline: {$fromNow: '1 hour'}
       payload:
         maxRunTime: 3600
-        image: python:3-alpine
+        image: "python:${python_version}-alpine"
         command:
           - sh
           - -lxce
@@ -85,7 +86,7 @@ tasks:
       deadline: {$fromNow: '1 hour'}
       payload:
         maxRunTime: 3600
-        image: python:3
+        image: "python:${python_version}"
         command:
           - sh
           - -lxce
@@ -106,7 +107,7 @@ tasks:
       deadline: {$fromNow: '1 hour'}
       payload:
         maxRunTime: 3600
-        image: python:3
+        image: "python:${python_version}"
         command:
           - sh
           - -lxce

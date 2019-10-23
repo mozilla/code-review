@@ -1,4 +1,4 @@
-FROM python:3-alpine
+FROM python:3.7-alpine
 
 ADD tools /src/tools
 ADD bot /src/bot
