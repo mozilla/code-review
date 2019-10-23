@@ -7,7 +7,7 @@ The file **must** be available as `public/code-review/issues.json`.
 The [default format](https://github.com/mozilla/code-review/blob/1.0.5/bot/code_review_bot/tasks/default.py#L170) (loosely based on Mozlint format) has the following fields for each issue:
 
 * `path` **relative** to the repository
-* `column` & `line` where the issue is happening in the file. They must be positive integers, or `null` when unknown or for a full file.
+* `column` & `line` where the issue is happening in the file. They must be positive integers, or `null` when unknown or for an issue linked to a full file.
 * `nb_lines` (optional) is a positive integer when your issue spans across several lines. It will default to 1 line.
 * `level` (warning | error) of the issue
 * `check`  describing the issue detected (often a unique shorthand code)
