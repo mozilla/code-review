@@ -140,11 +140,9 @@ def test_baseline(mock_config, mock_revision, mock_workflow):
             ("code-review.issues", "source-test-mozlint-flake8", 1),
             ("code-review.issues.publishable", "source-test-mozlint-flake8", 0),
             ("code-review.issues.paths", "source-test-mozlint-flake8", 1),
-            ("code-review.issues.cleaned_paths", "source-test-mozlint-flake8", 0),
             ("code-review.issues", "source-test-mozlint-zero-cov", 1),
             ("code-review.issues.publishable", "source-test-mozlint-zero-cov", 1),
             ("code-review.issues.paths", "source-test-mozlint-zero-cov", 1),
-            ("code-review.issues.cleaned_paths", "source-test-mozlint-zero-cov", 0),
             ("code-review.analysis.issues.publishable", None, 1),
             ("code-review.runtime.reports", None, "runtime"),
         ]
@@ -361,7 +359,6 @@ def test_mozlint_task(mock_config, mock_revision, mock_workflow):
             ("code-review.issues", "source-test-mozlint-dummy", 1),
             ("code-review.issues.publishable", "source-test-mozlint-dummy", 0),
             ("code-review.issues.paths", "source-test-mozlint-dummy", 1),
-            ("code-review.issues.cleaned_paths", "source-test-mozlint-dummy", 0),
             ("code-review.analysis.issues.publishable", None, 0),
             ("code-review.runtime.reports", None, "runtime"),
         ]
@@ -445,7 +442,6 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
             ("code-review.issues", "source-test-clang-tidy", 2),
             ("code-review.issues.publishable", "source-test-clang-tidy", 0),
             ("code-review.issues.paths", "source-test-clang-tidy", 1),
-            ("code-review.issues.cleaned_paths", "source-test-clang-tidy", 0),
             ("code-review.analysis.issues.publishable", None, 0),
             ("code-review.runtime.reports", None, "runtime"),
         ]
@@ -529,7 +525,6 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow, mock_hgmo)
             ("code-review.issues", "source-test-clang-format", 1),
             ("code-review.issues.publishable", "source-test-clang-format", 0),
             ("code-review.issues.paths", "source-test-clang-format", 1),
-            ("code-review.issues.cleaned_paths", "source-test-clang-format", 0),
             ("code-review.analysis.issues.publishable", None, 0),
             ("code-review.runtime.reports", None, "runtime"),
         ]
@@ -595,7 +590,7 @@ def test_coverity_task(mock_config, mock_revision, mock_workflow):
                                     }
                                 ]
                             },
-                            "/builds/worker/checkouts/gecko/dom/something.cpp": {
+                            "dom/something.cpp": {
                                 "warnings": [
                                     {
                                         "line": 123,
@@ -678,7 +673,6 @@ The path that leads to this defect is:
             ("code-review.issues", "source-test-coverity-coverity", 2),
             ("code-review.issues.publishable", "source-test-coverity-coverity", 0),
             ("code-review.issues.paths", "source-test-coverity-coverity", 2),
-            ("code-review.issues.cleaned_paths", "source-test-coverity-coverity", 1),
             ("code-review.analysis.issues.publishable", None, 0),
             ("code-review.runtime.reports", None, "runtime"),
         ]
