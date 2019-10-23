@@ -3,7 +3,6 @@ import os
 
 import structlog
 
-from code_review_bot import COVERAGE
 from code_review_bot import Issue
 from code_review_bot.config import settings
 from code_review_bot.tasks.base import AnalysisTask
@@ -23,8 +22,6 @@ ISSUE_MARKDOWN = """
 
 
 class CoverageIssue(Issue):
-    ANALYZER = COVERAGE
-
     def __init__(self, path, lineno, message, revision):
         super().__init__(
             "coverage",

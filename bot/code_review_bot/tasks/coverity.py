@@ -8,7 +8,6 @@ from libmozdata.phabricator import LintResult
 from libmozdata.phabricator import UnitResult
 from libmozdata.phabricator import UnitResultState
 
-from code_review_bot import COVERITY
 from code_review_bot import Issue
 from code_review_bot import Reliability
 from code_review_bot.tasks.base import AnalysisTask
@@ -46,8 +45,6 @@ class CoverityIssue(Issue):
     """
     An issue reported by coverity
     """
-
-    ANALYZER = COVERITY
 
     def __init__(self, analyzer, revision, issue, file_path):
         super().__init__(

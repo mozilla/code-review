@@ -2,7 +2,6 @@
 import structlog
 from libmozdata.phabricator import LintResult
 
-from code_review_bot import MOZLINT
 from code_review_bot import Issue
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -25,8 +24,6 @@ ISSUE_MARKDOWN = """
 
 
 class MozLintIssue(Issue):
-    ANALYZER = MOZLINT
-
     def __init__(
         self,
         analyzer,

@@ -2,7 +2,6 @@
 import structlog
 from libmozdata.phabricator import LintResult
 
-from code_review_bot import CLANG_FORMAT
 from code_review_bot import Issue
 from code_review_bot.config import settings
 from code_review_bot.tasks.base import AnalysisTask
@@ -22,8 +21,6 @@ class ClangFormatIssue(Issue):
     """
     An issue created by the Clang Format tool
     """
-
-    ANALYZER = CLANG_FORMAT
 
     def __init__(
         self, analyzer, path, line, nb_lines, revision, column=None, patch=None
