@@ -143,7 +143,7 @@ class MozLintTask(AnalysisTask):
             MozLintIssue(
                 analyzer=self.name,
                 revision=revision,
-                path=issue.get("relpath", self.clean_path(issue["path"])),
+                path=issue.get("relpath", issue["path"]),
                 column=issue["column"],
                 level=issue["level"],
                 lineno=issue["lineno"],

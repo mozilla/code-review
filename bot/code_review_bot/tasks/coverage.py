@@ -98,7 +98,7 @@ class ZeroCoverageTask(AnalysisTask):
         }
 
         return [
-            CoverageIssue(self.clean_path(path), 0, "This file is uncovered", revision)
+            CoverageIssue(path, 0, "This file is uncovered", revision)
             for path in revision.files
             if path in zero_coverage_files
         ]

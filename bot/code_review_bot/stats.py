@@ -94,9 +94,6 @@ class InfluxDb(object):
         # Report total paths
         self.add_metric("issues.paths", len({i.path for i in issues}), tags)
 
-        # Report cleaned paths
-        self.add_metric("issues.cleaned_paths", len(task.cleaned_paths), tags)
-
     @contextmanager
     def timer(self, name):
         """

@@ -103,7 +103,7 @@ class ClangFormatTask(AnalysisTask):
         return [
             ClangFormatIssue(
                 analyzer=self.name,
-                path=self.clean_path(path),
+                path=path,
                 line=issue["line"],
                 nb_lines=issue["lines_modified"],
                 column=issue["line_offset"],
