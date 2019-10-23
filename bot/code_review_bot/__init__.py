@@ -7,6 +7,7 @@ import abc
 import enum
 import hashlib
 import json
+import os
 
 import requests
 import structlog
@@ -72,6 +73,7 @@ class Issue(abc.ABC):
         assert isinstance(revision, Revision)
 
         # Base required fields for all issues
+        assert not os.path.isabs(path), f"Issue path can not be absolute {path}"
         self.revision = revision
         self.analyzer = analyzer
         self.check = check

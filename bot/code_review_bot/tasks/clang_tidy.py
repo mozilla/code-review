@@ -197,7 +197,7 @@ class ClangTidyTask(AnalysisTask):
             ClangTidyIssue(
                 analyzer=self.name,
                 revision=revision,
-                path=self.clean_path(path),
+                path=path,
                 line=warning["line"],
                 column=warning["column"],
                 check=warning["flag"],
