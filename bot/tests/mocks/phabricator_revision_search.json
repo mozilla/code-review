@@ -23,7 +23,7 @@
                         "view": "public",
                         "edit": "users"
                     },
-                    "bugzilla.bug-id": ""
+                    "bugzilla.bug-id": "1234567"
                 },
                 "attachments": {}
             }

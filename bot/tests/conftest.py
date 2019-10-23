@@ -6,6 +6,8 @@
 import json
 import os.path
 import re
+import uuid
+from collections import defaultdict
 from collections import namedtuple
 from contextlib import contextmanager
 
@@ -82,7 +84,7 @@ def mock_coverity_issues(mock_revision,):
                 "line": i,
                 "build_error": True,
                 "message": "Unidentified symbol",
-                "extra": {"category": "bug", "stateOnServer": False},
+                "extra": {"category": "bug", "stateOnServer": []},
                 "flag": "flag",
             },
             "some/file/path",
@@ -404,3 +406,93 @@ def mock_hgmo():
         re.compile(r"^https://hg.mozilla.org/[\w-]+/raw-file/.*"),
         callback=fake_raw_file,
     )
+
+
+@pytest.fixture
+def mock_backend():
+    """
+    Mock the code review backend endpoints
+    """
+    host = "code-review-backend.test"
+
+    revisions = {}
+    diffs = {}
+    issues = defaultdict(list)
+
+    def get_revision(request):
+        """Get a revision when available in db"""
+        revision_id = int(request.path_url.split("/")[3])
+        if revision_id in revisions:
+            return (200, {}, revisions[revision_id])
+        return (404, {}, "")
+
+    def post_revision(request):
+        """Create a revision when not available in db"""
+        payload = json.loads(request.body)
+        revision_id = payload["id"]
+        if revision_id in revisions:
+            return (400, {}, "")
+        revisions[revision_id] = payload
+        return (201, {}, request.body)
+
+    def get_diff(request):
+        """Get a diff when available in db"""
+        diff_id = int(request.path_url.split("/")[3])
+        if diff_id in diffs:
+            return (200, {}, diffs[diff_id])
+        return (404, {}, "")
+
+    def post_diff(request):
+        """Create a diff when not available in db"""
+        payload = json.loads(request.body)
+        diff_id = payload["id"]
+        if diff_id in diffs:
+            return (400, {}, "")
+        diffs[diff_id] = payload
+
+        # Add issues_url to the output
+        payload["issues_url"] = f"http://{host}/v1/diff/{diff_id}/issues/"
+
+        return (201, {}, json.dumps(payload))
+
+    def post_issue(request):
+        """Create a issue when not available in db"""
+        diff_id = int(request.path_url.split("/")[3])
+        payload = json.loads(request.body)
+
+        # Add a constant uuid as issue id
+        payload["id"] = str(
+            uuid.uuid5(uuid.NAMESPACE_URL, request.url + str(len(issues[diff_id])))
+        )
+
+        issues[diff_id].append(payload)
+        return (201, {}, json.dumps(payload))
+
+    # Revision
+    responses.add_callback(
+        responses.GET,
+        re.compile(rf"^http://{host}/v1/revision/(\d+)/$"),
+        callback=get_revision,
+    )
+    responses.add_callback(
+        responses.POST,
+        re.compile(f"^http://{host}/v1/revision/$"),
+        callback=post_revision,
+    )
+
+    # Diff
+    responses.add_callback(
+        responses.GET, re.compile(rf"^http://{host}/v1/diff/(\d+)/$"), callback=get_diff
+    )
+    responses.add_callback(
+        responses.POST, re.compile(f"^http://{host}/v1/diff/$"), callback=post_diff
+    )
+
+    # Issues
+    responses.add_callback(
+        responses.POST,
+        re.compile(rf"^http://{host}/v1/diff/(\d+)/issues/$"),
+        callback=post_issue,
+    )
+
+    return revisions, diffs, issues
