@@ -123,4 +123,4 @@ class ClangFormatTask(AnalysisTask):
             logger.info("Empty patch in clang-format.diff")
             return []
 
-        return [("clang-format", patch)]
+        return [patch]

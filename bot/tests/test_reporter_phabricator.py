@@ -7,7 +7,6 @@ import json
 import unittest
 import urllib
 
-import pytest
 import responses
 
 VALID_CLANG_TIDY_MESSAGE = """
@@ -348,11 +347,13 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
     from code_review_bot.tasks.lint import MozLintIssue
     from code_review_bot.tasks.coverage import CoverageIssue
 
-    def _test_reporter(api, analyzers):
+    def _test_reporter(api, analyzers_skipped):
         # Always use the same setup, only varies the analyzers
         revision = Revision(api, mock_try_task)
         revision.lines = {"test.cpp": [0, 41, 42, 43], "dom/test.cpp": [42]}
-        reporter = PhabricatorReporter({"analyzers": analyzers}, api=api)
+        reporter = PhabricatorReporter(
+            {"analyzers_skipped": analyzers_skipped}, api=api
+        )
 
         issues = [
             ClangFormatIssue("mock-clang-format", "dom/test.cpp", 42, 1, revision),
@@ -396,10 +397,10 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
 
         revision.improvement_patches = [
             ImprovementPatch("dummy", repr(revision), "Whatever"),
-            ImprovementPatch("clang-tidy", repr(revision), "Some C fixes"),
-            ImprovementPatch("clang-format", repr(revision), "Some lint fixes"),
-            ImprovementPatch("infer", repr(revision), "Some java fixes"),
-            ImprovementPatch("mozlint", repr(revision), "Some js fixes"),
+            ImprovementPatch("mock-clang-tidy", repr(revision), "Some C fixes"),
+            ImprovementPatch("mock-clang-format", repr(revision), "Some lint fixes"),
+            ImprovementPatch("mock-infer", repr(revision), "Some java fixes"),
+            ImprovementPatch("mock-lint-flake8", repr(revision), "Some js fixes"),
         ]
         list(
             map(lambda p: p.write(), revision.improvement_patches)
@@ -414,56 +415,55 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
         # we only care about filtering issues
         api.comment = unittest.mock.Mock(return_value=True)
 
-        # No analyzers at all
-        with pytest.raises(AssertionError):
-            _test_reporter(api, None)
-
-        # Only clang-tidy
-        issues, patches = _test_reporter(api, ["clang-tidy"])
-        assert len(issues) == 1
-        assert len(patches) == 1
-        assert [p.analyzer for p in patches] == ["clang-tidy"]
-
-        # Only clang-format
-        issues, patches = _test_reporter(api, ["clang-format"])
-        assert len(issues) == 1
-        assert len(patches) == 1
-        assert [p.analyzer for p in patches] == ["clang-format"]
-
-        # Only infer
-        issues, patches = _test_reporter(api, ["infer"])
-        assert len(issues) == 1
-        assert len(patches) == 1
-        assert [p.analyzer for p in patches] == ["infer"]
-
-        # Only mozlint
-        issues, patches = _test_reporter(api, ["mozlint"])
-        assert len(issues) == 1
-        assert len(patches) == 1
-        assert [p.analyzer for p in patches] == ["mozlint"]
-
-        # Only coverage
-        issues, patches = _test_reporter(api, ["coverage"])
-        assert len(issues) == 1
-        assert len(patches) == 0
-
-        # clang-format + clang-tidy
-        issues, patches = _test_reporter(api, ["clang-tidy", "clang-format"])
-        assert len(issues) == 2
-        assert len(patches) == 2
-        assert [p.analyzer for p in patches] == ["clang-tidy", "clang-format"]
-
         # All of them
-        issues, patches = _test_reporter(
-            api, ["clang-tidy", "clang-format", "infer", "mozlint", "coverage"]
-        )
+        issues, patches = _test_reporter(api, [])
         assert len(issues) == 5
-        assert len(patches) == 4
+        assert len(patches) == 5
+        assert [i.analyzer for i in issues] == [
+            "mock-clang-format",
+            "mock-clang-tidy",
+            "mock-infer",
+            "mock-lint-flake8",
+            "coverage",
+        ]
         assert [p.analyzer for p in patches] == [
-            "clang-tidy",
-            "clang-format",
-            "infer",
-            "mozlint",
+            "dummy",
+            "mock-clang-tidy",
+            "mock-clang-format",
+            "mock-infer",
+            "mock-lint-flake8",
+        ]
+
+        # Skip clang-tidy
+        issues, patches = _test_reporter(api, ["mock-clang-tidy"])
+        assert len(issues) == 4
+        assert len(patches) == 4
+        assert [i.analyzer for i in issues] == [
+            "mock-clang-format",
+            "mock-infer",
+            "mock-lint-flake8",
+            "coverage",
+        ]
+        assert [p.analyzer for p in patches] == [
+            "dummy",
+            "mock-clang-format",
+            "mock-infer",
+            "mock-lint-flake8",
+        ]
+
+        # Skip clang-tidy and mozlint
+        issues, patches = _test_reporter(api, ["mock-clang-format", "mock-clang-tidy"])
+        assert len(issues) == 3
+        assert len(patches) == 3
+        assert [i.analyzer for i in issues] == [
+            "mock-infer",
+            "mock-lint-flake8",
+            "coverage",
+        ]
+        assert [p.analyzer for p in patches] == [
+            "dummy",
+            "mock-infer",
+            "mock-lint-flake8",
         ]
 
 

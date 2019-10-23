@@ -264,8 +264,8 @@ class Workflow(object):
                     stats.report_task(task, task_issues)
                     issues += task_issues
 
-                    for name, patch in task.build_patches(artifacts):
-                        revision.add_improvement_patch(name, patch)
+                    for patch in task.build_patches(artifacts):
+                        revision.add_improvement_patch(task.name, patch)
             except Exception as e:
                 logger.warn(
                     "Failure during task analysis",

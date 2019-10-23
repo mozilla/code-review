@@ -7,19 +7,15 @@ import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
-from code_review_bot import CLANG_FORMAT
-from code_review_bot import COVERAGE
 from code_review_bot import Issue
 from code_review_bot import stats
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import Revision
+from code_review_bot.tasks.coverage import CoverageIssue
 
 MODE_COMMENT = "comment"
 MODE_HARBORMASTER = "harbormaster"
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"  # noqa
-
-# These analyzers generate issues for which we should not write inline comments.
-ANALYZERS_WITHOUT_INLINES = [CLANG_FORMAT, COVERAGE]
 
 logger = structlog.get_logger(__name__)
 
@@ -33,8 +29,10 @@ class PhabricatorReporter(Reporter):
         if kwargs.get("api") is not None:
             self.setup_api(kwargs["api"])
 
-        self.analyzers = configuration.get("analyzers")
-        assert self.analyzers is not None, "No analyzers setup on Phabricator reporter"
+        self.analyzers_skipped = configuration.get("analyzers_skipped", [])
+        assert isinstance(
+            self.analyzers_skipped, list
+        ), "analyzers_skipped must be a list"
 
         self.mode = configuration.get("mode", MODE_COMMENT)
         self.publish_build_errors = configuration.get("publish_build_errors", False)
@@ -59,19 +57,16 @@ class PhabricatorReporter(Reporter):
             return None, None
 
         # Use only publishable issues and patches
-        # and avoid publishing a non related patch from an anlyzer partly activated (allowed paths)
+        # and avoid publishing a patch from a de-activated analyzer
         issues = [
             issue
             for issue in issues
-            if issue.is_publishable() and issue.ANALYZER in self.analyzers
+            if issue.is_publishable() and issue.analyzer not in self.analyzers_skipped
         ]
-        analyzers_available = set(i.ANALYZER for i in issues).intersection(
-            self.analyzers
-        )
         patches = [
             patch
             for patch in revision.improvement_patches
-            if patch.analyzer in analyzers_available
+            if patch.analyzer not in self.analyzers_skipped
         ]
         # List of issues without possible build errors
         issues_only = [issue for issue in issues if not issue.is_build_error()]
@@ -115,16 +110,25 @@ class PhabricatorReporter(Reporter):
             "Found {} existing comments on review".format(len(existing_comments))
         )
 
-        coverage_issues = [issue for issue in issues if issue.ANALYZER == COVERAGE]
+        coverage_issues = [
+            issue for issue in issues if isinstance(issue, CoverageIssue)
+        ]
+        non_coverage_issues = [
+            issue for issue in issues if not isinstance(issue, CoverageIssue)
+        ]
+        patches_analyzers = set(p.analyzer for p in patches)
 
         # First publish inlines as drafts
+        # * skipping coverage issues as they get a dedicated comment
+        # * skipping issues reported in a patch
         inlines = list(
             filter(
                 None,
                 [
                     self.comment_inline(revision, issue, existing_comments)
                     for issue in issues
-                    if issue.ANALYZER not in ANALYZERS_WITHOUT_INLINES
+                    if issue in non_coverage_issues
+                    and issue.analyzer not in patches_analyzers
                 ],
             )
         )
@@ -134,7 +138,6 @@ class PhabricatorReporter(Reporter):
         logger.info("Added inline comments", ids=[i["id"] for i in inlines])
 
         # Then publish top comment
-        non_coverage_issues = [issue for issue in issues if issue.ANALYZER != COVERAGE]
         if len(non_coverage_issues):
             self.api.comment(
                 revision.id,
