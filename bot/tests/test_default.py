@@ -1,0 +1,118 @@
+# -*- coding: utf-8 -*-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+import pytest
+
+from code_review_bot.tasks.default import DefaultIssue
+from code_review_bot.tasks.default import DefaultTask
+
+
+@pytest.mark.parametrize(
+    "path, matches",
+    [
+        ("public/code-review/issues.json", True),
+        ("private/code-review/issues.json", False),
+        ("public/code-review/mozlint.json", False),
+    ],
+)
+def test_matches(path, matches, mock_taskcluster_config):
+    """Test that DefaultTask matches tasks with valid artifacts"""
+
+    queue = mock_taskcluster_config.get_service("queue")
+    queue.configure(
+        {
+            "testDefaultTask": {
+                "name": "some-analyzer",
+                "state": "failed",
+                "artifacts": {path: {}},
+            }
+        }
+    )
+    assert DefaultTask.matches("testDefaultTask") is matches
+
+
+def test_parser(mock_workflow, mock_revision, mock_hgmo):
+    """Test the default format parser"""
+    mock_workflow.setup_mock_tasks(
+        {
+            "decision": {
+                "image": "taskcluster/decision:XXX",
+                "env": {
+                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                    "GECKO_HEAD_REV": "deadbeef1234",
+                },
+            },
+            "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
+            "analyzer-A": {},
+            "analyzer-B": {
+                "name": "any-analyzer-name",
+                "state": "failed",
+                "artifacts": {
+                    "nope.log": "No issues here !",
+                    "still-nope.txt": "xxxxx",
+                    "public/code-review/issues.json": {
+                        "test.cpp": [
+                            {
+                                "path": "test.cpp",
+                                "line": 42,
+                                "column": 51,
+                                "level": "error",
+                                "check": "XYZ",
+                                "message": "A random issue happened here",
+                            }
+                        ]
+                    },
+                },
+            },
+            "extra-task": {},
+        }
+    )
+    issues = mock_workflow.run(mock_revision)
+    assert len(issues) == 1
+    issue = issues.pop()
+
+    assert isinstance(issue, DefaultIssue)
+    assert str(issue) == "any-analyzer-name issue XYZ@error test.cpp line 42"
+    assert issue.path == "test.cpp"
+    assert issue.line == 42
+    assert issue.nb_lines == 1
+    assert issue.column == 51
+    assert issue.level == "error"
+    assert issue.check == "XYZ"
+    assert issue.message == "A random issue happened here"
+    assert issue.as_text() == "Error: A random issue happened here [XYZ]"
+    assert (
+        issue.as_markdown()
+        == """
+## issue any-analyzer-name
+
+- **Path**: test.cpp
+- **Level**: error
+- **Check**: XYZ
+- **Line**: 42
+- **Publishable**: no
+
+```
+A random issue happened here
+```
+"""
+    )
+
+    assert issue.build_hash() == "006f9f3481aec88ed3de11bc8de2eff6"
+    assert issue.as_dict() == {
+        "analyzer": "any-analyzer-name",
+        "check": "XYZ",
+        "column": 51,
+        "hash": "006f9f3481aec88ed3de11bc8de2eff6",
+        "in_patch": False,
+        "is_new": False,
+        "level": "error",
+        "line": 42,
+        "message": "A random issue happened here",
+        "nb_lines": 1,
+        "path": "test.cpp",
+        "publishable": False,
+        "validates": True,
+    }
