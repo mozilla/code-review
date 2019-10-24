@@ -1,11 +1,6 @@
 <script>
-import Tasks from './Tasks.vue'
-
 export default {
   name: 'App',
-  components: {
-    Tasks
-  },
   computed: {
     backend_url () {
       return this.$store.state.backend_url

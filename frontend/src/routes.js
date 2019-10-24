@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Diffs from './Tasks.vue'
-import Diff from './Task.vue'
+import Diffs from './Diffs.vue'
+import Diff from './Diff.vue'
 import Stats from './Stats.vue'
 import Check from './Check.vue'
 
