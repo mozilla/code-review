@@ -348,7 +348,11 @@ class Revision(object):
 
     @property
     def bugzilla_id(self):
-        return self.revision["fields"].get("bugzilla.bug-id")
+        try:
+            return int(self.revision["fields"].get("bugzilla.bug-id"))
+        except ValueError:
+            logger.info("No bugzilla id available for this revision")
+            return None
 
     @property
     def title(self):

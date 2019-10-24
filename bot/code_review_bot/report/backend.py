@@ -38,7 +38,7 @@ class BackendReporter(Reporter):
             "id": revision.id,
             "phid": revision.phid,
             "title": revision.title,
-            "bugzilla_id": int(revision.bugzilla_id),
+            "bugzilla_id": revision.bugzilla_id,
             "repository": revision.target_repository,
         }
         backend_revision = self.create("/v1/revision/", data)
@@ -80,6 +80,8 @@ class BackendReporter(Reporter):
         response = requests.post(
             url_post, json=data, auth=(self.username, self.password)
         )
+        if not response.ok:
+            logger.warn("Backend rejected the payload: {}".format(response.content))
         response.raise_for_status()
         out = response.json()
         logger.info("Created item on backend", url=url_post, id=out["id"])
