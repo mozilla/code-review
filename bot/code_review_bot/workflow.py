@@ -285,7 +285,10 @@ class Workflow(object):
         except KeyError:
             raise Exception("Cannot read task name {}".format(task_id))
 
-        if name.startswith("source-test-mozlint-"):
+        # Default format is used first when the correct artifact is available
+        if DefaultTask.matches(task_id):
+            return DefaultTask(task_id, task_status)
+        elif name.startswith("source-test-mozlint-"):
             return MozLintTask(task_id, task_status)
         elif name == "source-test-clang-tidy":
             return ClangTidyTask(task_id, task_status)
@@ -295,15 +298,7 @@ class Workflow(object):
             return CoverityTask(task_id, task_status)
         elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
+        elif name.startswith("source-test-"):
+            logger.error(f"Unsupported {name} task: will need a local implementation")
         else:
-
-            # If default artifacts available > boom
-            if DefaultTask.matches(task_id):
-                return DefaultTask(task_id, task_status)
-
-            elif name.startswith("source-test-"):
-                logger.error(
-                    f"Unsupported {name} task: will need a local implementation"
-                )
-            else:
-                raise Exception("Unsupported task {}".format(name))
+            raise Exception("Unsupported task {}".format(name))
