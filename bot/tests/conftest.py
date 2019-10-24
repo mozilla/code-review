@@ -463,8 +463,12 @@ def mock_backend():
         revision_id = payload["id"]
         if revision_id in revisions:
             return (400, {}, "")
+
+        # Add diffs_url to the output
+        payload["diffs_url"] = f"http://{host}/v1/revision/{revision_id}/diffs/"
+
         revisions[revision_id] = payload
-        return (201, {}, request.body)
+        return (201, {}, json.dumps(payload))
 
     def get_diff(request):
         """Get a diff when available in db"""
@@ -513,10 +517,14 @@ def mock_backend():
 
     # Diff
     responses.add_callback(
-        responses.GET, re.compile(rf"^http://{host}/v1/diff/(\d+)/$"), callback=get_diff
+        responses.GET,
+        re.compile(rf"^http://{host}/v1/revision/(\d+)/diffs/(\d+)/$"),
+        callback=get_diff,
     )
     responses.add_callback(
-        responses.POST, re.compile(f"^http://{host}/v1/diff/$"), callback=post_diff
+        responses.POST,
+        re.compile(rf"^http://{host}/v1/revision/(\d+)/diffs/$"),
+        callback=post_diff,
     )
 
     # Issues
