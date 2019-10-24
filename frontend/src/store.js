@@ -3,7 +3,6 @@ import Vuex from 'vuex'
 import axios from 'axios'
 Vue.use(Vuex)
 
-const PREFERENCES_KEY = 'mozilla-sa-dashboard'
 const TASKCLUSTER_ROOT_URL = 'https://firefox-ci-tc.services.mozilla.com/'
 const TASKS_SLICE = 10
 const FINAL_STATES = ['done', 'error']
@@ -15,7 +14,7 @@ const MAX_TTL = 2 * 3600 * 1000
 export default new Vuex.Store({
   state: {
     backend_url: process.env.BACKEND_URL,
-    tasks: [],
+    diffs: [],
     indexes: [],
     stats: {
       loaded: 0,
@@ -30,7 +29,7 @@ export default new Vuex.Store({
   },
   mutations: {
     reset (state) {
-      state.tasks = []
+      state.diffs = []
       state.indexes = []
       state.stats = {
         loaded: 0,
@@ -40,6 +39,12 @@ export default new Vuex.Store({
         start_date: new Date()
       }
     },
+
+    use_diffs (state, diffs) {
+      // Simply store diffs & their current pagination
+      state.diffs = diffs
+    },
+
     use_tasks (state, payload) {
       var now = new Date()
 
@@ -167,34 +172,13 @@ export default new Vuex.Store({
     }
   },
   actions: {
-    // Load Phabricator indexed tasks summary from Taskcluster
-    load_index (state, payload) {
-      let url = TASKCLUSTER_ROOT_URL + 'api/index/v1/tasks/project.relman.production.code-review.phabricator.'
-      if (payload && payload.revision) {
-        // Remove potential leading 'D' from phabricator revision
-        url += !Number.isInteger(payload.revision) && payload.revision.startsWith('D') ? payload.revision.substring(1) : payload.revision
-      } else {
-        url += 'diff'
-      }
+    // Load Phabricator diffs from our backend
+    // Load a single page at once, providing pagination state
+    load_diffs (state, payload) {
+      let url = this.state.backend_url + '/v1/diff/'
 
-      url += '?limit=200'
-      if (payload && payload.continuationToken) {
-        url += '&continuationToken=' + payload.continuationToken
-      }
-      if (state.state.indexes.includes(url)) {
-        console.debug('Already loaded', url)
-        return
-      }
       return axios.get(url).then(resp => {
-        state.commit('use_tasks', {
-          tasks: resp.data.tasks,
-          url: url
-        })
-
-        // Continue loading available tasks
-        if (resp.data.continuationToken) {
-          state.dispatch('load_index', { continuationToken: resp.data.continuationToken })
-        }
+        state.commit('use_diffs', resp.data)
       })
     },
 

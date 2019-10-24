@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import Tasks from './Tasks.vue'
-import Task from './Task.vue'
+import Diffs from './Tasks.vue'
+import Diff from './Task.vue'
 import Stats from './Stats.vue'
 import Check from './Check.vue'
 
@@ -11,18 +11,18 @@ export default new VueRouter({
   routes: [
     {
       path: '/',
-      name: 'tasks',
-      component: Tasks
+      name: 'diffs',
+      component: Diffs
     },
     {
       path: '/rev/:revision',
       name: 'revision',
-      component: Tasks
+      component: Diffs
     },
     {
-      path: '/task/:taskId',
-      name: 'task',
-      component: Task
+      path: '/diff/:diffId',
+      name: 'diff',
+      component: Diff
     },
     {
       path: '/stats',

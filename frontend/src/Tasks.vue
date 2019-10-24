@@ -6,18 +6,18 @@ import Choice from './Choice.vue'
 export default {
   mounted () {
     // Load new tasks at startup
-    this.load_tasks()
+    this.load_diffs()
   },
   watch: {
     '$route' (to, from, next) {
       // Load new tasks when route change
       if (to.path !== from.path) {
-        this.load_tasks()
+        this.load_diffs()
       }
     }
   },
   methods: {
-    load_tasks () {
+    load_diffs () {
       var payload = {}
 
       // Reset state
@@ -27,7 +27,7 @@ export default {
       if (this.$route.params.revision) {
         payload['revision'] = this.$route.params.revision
       }
-      this.$store.dispatch('load_index', payload)
+      this.$store.dispatch('load_diffs', payload)
     }
   },
   components: {
@@ -63,36 +63,38 @@ export default {
     mixins.date
   ],
   computed: {
-    tasks () {
-      let tasks = this.$store.state.tasks
+    diffs () {
+      let diffs = this.$store.state.diffs.results
+
+      // TODO: implement those filters on the backend
 
       // Filter by repository
       if (this.filters.repository !== null) {
-        tasks = _.filter(tasks, t => t.data.repository === this.filters.repository)
+        diffs = _.filter(diffs, t => t.revision.repository === this.filters.repository)
       }
 
       // Filter by states
       if (this.filters.state !== null) {
-        tasks = _.filter(tasks, t => t.state_full === this.filters.state.key)
+        diffs = _.filter(diffs, t => t.state_full === this.filters.state.key)
       }
 
       // Filter by issues
       if (this.filters.issues !== null) {
-        tasks = _.filter(tasks, this.filters.issues.func)
+        diffs = _.filter(diffs, this.filters.issues.func)
       }
 
       // Filter by revision
       if (this.filters.revision !== null) {
-        tasks = _.filter(tasks, t => {
+        diffs = _.filter(diffs, t => {
           let payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid + t.data.id + t.data.diff_id
           return payload.toLowerCase().indexOf(this.filters.revision.toLowerCase()) !== -1
         })
       }
 
-      return tasks
+      return diffs
     },
-    tasks_total () {
-      return this.$store.state.tasks ? this.$store.state.tasks.length : 0
+    diffs_total () {
+      return this.$store.state.diffs.count
     },
     states () {
       return this.$store.state.states
@@ -146,19 +148,18 @@ export default {
       </thead>
 
       <tbody>
-        <tr v-for="task in tasks">
+        <tr v-for="diff in diffs">
           <td>
-            <a class="mono" :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + task.taskId" target="_blank">{{ task.taskId }}</a>
+            Diff {{ diff.id }}
+            <br />
+            <a class="mono" :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + diff.review_task_id" target="_blank">{{ diff.review_task_id }}</a>
           </td>
 
           <td>
-            <p v-if="task.data.title">{{ task.data.title }}</p>
+            <p v-if="diff.revision.title">{{ diff.revision.title }}</p>
             <p class="has-text-danger" v-else>No title</p>
             <p>
-              <small class="mono has-text-grey-light">{{ task.data.diff_phid}}</small> - diff {{ task.data.diff_id || 'unknown'     }}
-            </p>
-            <p>
-              <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - <router-link :to="{ name: 'revision', params: { revision: task.data.id }}">rev {{ task.data.id }}</router-link>
+              <small class="mono has-text-grey-light">{{ diff.revision.phid}}</small> - <router-link :to="{ name: 'revision', params: { revision: diff.revision.id }}">rev {{ diff.revision.id }}</router-link>
             </p>
           </td>
 
@@ -169,36 +170,43 @@ export default {
           </td>
 
           <td>
-            <span class="tag is-light" v-if="task.data.state == 'started'">Started</span>
-            <span class="tag is-info" v-else-if="task.data.state == 'cloned'">Cloned</span>
-            <span class="tag is-info" v-else-if="task.data.state == 'analyzing'">Analyzing</span>
-            <span class="tag is-primary" v-else-if="task.data.state == 'analyzed'">Analyzed</span>
-            <span class="tag is-danger" v-else-if="task.data.state == 'killed'">
+            <span class="tag is-light" v-if="diff.state == 'started'">Started</span>
+            <span class="tag is-info" v-else-if="diff.state == 'cloned'">Cloned</span>
+            <span class="tag is-info" v-else-if="diff.state == 'analyzing'">Analyzing</span>
+            <span class="tag is-primary" v-else-if="diff.state == 'analyzed'">Analyzed</span>
+            <span class="tag is-danger" v-else-if="diff.state == 'killed'">
               Killed for timeout
             </span>
-            <span class="tag is-danger" v-else-if="task.data.state == 'error'" :title="task.data.error_message">
-              Error: {{ task.data.error_code || 'unknown' }}
+            <span class="tag is-danger" v-else-if="diff.state == 'error'" :title="diff.error_message">
+              Error: {{ diff.error_code || 'unknown' }}
             </span>
-            <span class="tag is-success" v-else-if="task.data.state == 'done'">Done</span>
+            <span class="tag is-success" v-else-if="diff.state == 'done'">Done</span>
             <span class="tag is-black" v-else>Unknown</span>
           </td>
 
-          <td :class="{'has-text-success': task.data.issues_publishable > 0}">
+          <td :class="{'has-text-success': diff.issues_publishable > 0}">
 
-            <span v-if="task.data.issues_publishable > 0">{{ task.data.issues_publishable }}</span>
-            <span v-else-if="task.data.issues_publishable == 0">{{ task.data.issues_publishable }}</span>
+            <span v-if="diff.issues_publishable > 0">{{ diff.issues_publishable }}</span>
+            <span v-else-if="diff.issues_publishable == 0">{{ diff.issues_publishable }}</span>
             <span v-else>-</span>
-            / {{ task.data.issues }}
+            / {{ diff.nb_issues }}
           </td>
 
           <td>
-            <span :title="task.data.indexed">{{ task.data.indexed|since }} ago</span>
+            <span :title="diff.indexed">{{ diff.indexed|since }} ago</span>
           </td>
           <td>
+<<<<<<< HEAD
             <a class="button is-link" :href="task.data.url" target="_blank">Phabricator</a>
             <a v-if="task.data.bugzilla_id" class="button is-dark" :href="'https://bugzil.la/' + task.data.bugzilla_id" target="_blank">Bugzilla</a>
             <a class="button is-primary" :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + task.data.try_group_id" target="_blank">Try Tasks</a>
             <router-link v-if="task.data.issues > 0" :to="{ name: 'task', params: { taskId : task.taskId }}" class="button is-primary">Issues</router-link>
+=======
+            <a class="button is-link" :href="diff.url" target="_blank">Phabricator</a>
+            <a v-if="diff.revision.bugzilla_id" class="button is-dark" :href="'https://bugzil.la/' + diff.revision.bugzilla_id" target="_blank">Bugzilla</a>
+            <a class="button is-primary" :href="'https://tools.taskcluster.net/tasks/' + diff.try_group_id" target="_blank">Try Tasks</a>
+            <router-link v-if="diff.nb_issues > 0" :to="{ name: 'diff', params: { diffId: diff.id }}" class="button is-primary">Issues</router-link>
+>>>>>>> frontend: load diffs on home page
           </td>
         </tr>
       </tbody>
