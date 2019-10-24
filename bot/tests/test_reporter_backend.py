@@ -129,4 +129,5 @@ def test_missing_bugzilla_id(
         "phid": "PHID-DREV-zzzzz",
         "repository": "test",
         "title": "Static Analysis tests",
+        "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
     }
