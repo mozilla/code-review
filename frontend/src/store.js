@@ -3,24 +3,12 @@ import Vuex from 'vuex'
 import axios from 'axios'
 Vue.use(Vuex)
 
-const FINAL_STATES = ['done', 'error']
-
-// Must stay in sync with src/staticanalysis/bot/default.nix maxRunTime & deadline parameters
-// This is currently set to 2 hours in ms
-const MAX_TTL = 2 * 3600 * 1000
-
 export default new Vuex.Store({
   state: {
     backend_url: process.env.BACKEND_URL,
     diffs: [],
-    indexes: [],
-    stats: {
-      loaded: 0,
-      errors: 0,
-      ids: [],
-      checks: {},
-      start_date: new Date()
-    },
+    stats: null,
+    total_stats: 0, // Used to track download progress
     states: null,
     repositories: new Set(),
     diff: null
@@ -29,94 +17,16 @@ export default new Vuex.Store({
     reset (state) {
       state.diffs = []
       state.diff = null
-      state.indexes = []
-      state.stats = {
-        loaded: 0,
-        errors: 0,
-        ids: [],
-        checks: {},
-        start_date: new Date()
-      }
+    },
+
+    reset_stats (state) {
+      state.stats = []
+      state.total_stats = 0
     },
 
     use_diffs (state, diffs) {
       // Simply store diffs & their current pagination
       state.diffs = diffs
-    },
-
-    use_tasks (state, payload) {
-      var now = new Date()
-
-      // Save url
-      state.indexes.push(payload.url)
-
-      // Filter tasks without extra data
-      let currentTasks = state.tasks.concat(
-        payload.tasks.filter(task => task.data.indexed !== undefined)
-      )
-
-      currentTasks.map(task => {
-        // Add a descriptive state key name to tasks
-        task.state_full = task.data.state
-        if (task.state_full === 'error' && task.data.error_code) {
-          task.state_full += '.' + task.data.error_code
-        }
-
-        // Detect and update invalid state when a task got killed by Taskcluster
-        let date = new Date(task.data.indexed)
-        if (now - date > MAX_TTL && FINAL_STATES.indexOf(task.data.state) === -1) {
-          task.data.state = 'killed'
-          task.state_full = 'killed'
-        }
-
-        // Use full urls for old style slugs
-        if (task.data.repository === 'mozilla-central') {
-          task.data.repository = 'https://hg.mozilla.org/mozilla-central'
-        } else if (task.data.repository === 'nss') {
-          task.data.repository = 'https://hg.mozilla.org/projects/nss'
-        }
-
-        return task
-      })
-
-      // Sort by indexation date
-      currentTasks.sort((x, y) => {
-        return new Date(y.data.indexed) - new Date(x.data.indexed)
-      })
-
-      // Crunch stats about status
-      let states = {}
-      states = currentTasks.reduce((states, task) => {
-        if (states[task.state_full] === undefined) {
-          states[task.state_full] = 0
-        }
-        states[task.state_full] += 1
-        return states
-      }, states)
-
-      // Save tasks
-      state.tasks = currentTasks
-
-      // Order states by their nb, and calc percents
-      state.states = Object.keys(states).map(state => {
-        let nb = states[state]
-        return {
-          'key': state,
-          'name': state.startsWith('error.') ? 'error: ' + state.substring(6) : state,
-          'nb': nb,
-          'percent': currentTasks && currentTasks.length > 0 ? Math.round(nb * 100 / currentTasks.length) : 0
-        }
-      }).sort((x, y) => { return y.nb - x.nb })
-
-      // Update repositories reference
-      state.repositories = new Set(state.tasks.map(t => t.data.repository).filter(x => x))
-
-      // List all active tasks Ids for stats calculations
-      state.stats.ids = state.stats.ids.concat(
-        payload.tasks
-          .filter((task) => task.data.state === 'done' && task.data.issues > 0)
-          .map(t => t.taskId)
-      )
     },
 
     // Store a new diff to display
@@ -133,6 +43,12 @@ export default new Vuex.Store({
         return null
       }
       state.diff = Object.assign({}, state.diff, { 'issues': state.diff.issues.concat(issues) })
+    },
+
+    // Add stats to the store
+    add_stats (state, data) {
+      state.stats = state.stats.concat(data.results)
+      state.total_stats = data.count
     }
   },
   actions: {
@@ -174,6 +90,23 @@ export default new Vuex.Store({
 
         // Load next issues
         state.dispatch('load_issues', resp.data.next)
+      })
+    },
+
+    load_stats (state, url) {
+      if (url === null) {
+        return
+      } else if (url === undefined) {
+        state.commit('reset_stats')
+        url = this.state.backend_url + '/v1/check/stats/'
+      }
+
+      axios.get(url).then(resp => {
+        // Store new stats
+        state.commit('add_stats', resp.data)
+
+        // Load next stats
+        state.dispatch('load_stats', resp.data.next)
       })
     }
   }

@@ -5,10 +5,10 @@ export default {
         return this.$store.state.stats
       },
       progress () {
-        if (!this.stats.ids || !this.stats.loaded) {
-          return 0.0
+        if (!this.$store.state.total_stats) {
+          return 0
         }
-        return 100 * this.stats.loaded / this.stats.ids.length
+        return 100 * this.stats.length / this.$store.state.total_stats
       }
     }
   },
