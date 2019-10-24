@@ -57,24 +57,20 @@ class CreationAPITestCase(APITestCase):
         """
         data = {
             "id": 1234,
-            "revision": 123,
             "phid": "PHID-DIFF-xxx",
             "review_task_id": "deadbeef123",
             "mercurial_hash": "coffee12345",
         }
 
         # No auth will give a permission denied
-        response = self.client.post("/v1/revision/", data, format="json")
+        response = self.client.post("/v1/revision/123/diffs/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Once authenticated, creation will require the revision to exist
         self.assertEqual(Diff.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        response = self.client.post("/v1/diff/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertDictEqual(
-            response.json(), {"revision": ['Invalid pk "123" - object does not exist.']}
-        )
+        response = self.client.post("/v1/revision/123/diffs/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
         # Create the requested revision
         revision = Revision.objects.create(
@@ -88,7 +84,7 @@ class CreationAPITestCase(APITestCase):
         # Now creation will work
         self.assertEqual(Diff.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        response = self.client.post("/v1/diff/", data, format="json")
+        response = self.client.post("/v1/revision/123/diffs/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Response should have url to create issues
@@ -145,3 +141,8 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(issue.line, 1)
         self.assertEqual(issue.diff, diff)
         self.assertEqual(issue.diff.revision, revision)
+
+        # The diff now counts an issue
+        response = self.client.get("/v1/diff/1234/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["nb_issues"], 1)
