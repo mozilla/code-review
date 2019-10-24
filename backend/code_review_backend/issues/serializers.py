@@ -66,3 +66,17 @@ class IssueSerializer(serializers.HyperlinkedModelSerializer):
             "check",
             "message",
         )
+
+
+class IssueCheckSerializer(serializers.Serializer):
+    """
+    Serialize the usage statistics for each check encountered
+    """
+
+    repository = serializers.CharField(source="diff__revision__repository__slug")
+    analyzer = serializers.CharField()
+    check = serializers.CharField()
+    total = serializers.IntegerField()
+
+    # TODO: support publishable stats number once we have hash comparison stored
+    publishable = serializers.IntegerField(default=0)
