@@ -3,8 +3,6 @@ import Vuex from 'vuex'
 import axios from 'axios'
 Vue.use(Vuex)
 
-const TASKCLUSTER_ROOT_URL = 'https://firefox-ci-tc.services.mozilla.com/'
-const TASKS_SLICE = 10
 const FINAL_STATES = ['done', 'error']
 
 // Must stay in sync with src/staticanalysis/bot/default.nix maxRunTime & deadline parameters
@@ -25,11 +23,12 @@ export default new Vuex.Store({
     },
     states: null,
     repositories: new Set(),
-    report: null
+    diff: null
   },
   mutations: {
     reset (state) {
       state.diffs = []
+      state.diff = null
       state.indexes = []
       state.stats = {
         loaded: 0,
@@ -119,56 +118,21 @@ export default new Vuex.Store({
           .map(t => t.taskId)
       )
     },
-    use_report (state, report) {
-      if (report === null) {
-        return
+
+    // Store a new diff to display
+    use_diff (state, diff) {
+      state.diff = diff
+      if (state.diff !== null) {
+        state.diff.issues = []
       }
+    },
 
-      // Save raw report for issues listing
-      state.report = report
-
-      if (report.response && report.response.status !== 200) {
-        // Manage errors
-        state.stats.errors += 1
-        return
+    // Add issues to the currently stored diff
+    add_issues (state, issues) {
+      if (!state.diff) {
+        return null
       }
-
-      if (state.stats !== null && report.issues) {
-        // Calc stats for this report
-        state.stats.checks = report.issues.reduce((stats, issue) => {
-          let key = issue.analyzer + '.' + issue.check
-          if (stats[key] === undefined) {
-            stats[key] = {
-              analyzer: issue.analyzer,
-              key: key,
-              message: issue.message,
-              check: issue.check,
-              publishable: 0,
-              issues: [],
-              total: 0
-            }
-          }
-          stats[key].publishable += issue.publishable ? 1 : 0
-          stats[key].total++
-
-          // Save publishable issues for Check component
-          // and link report data to the issue
-          if (issue.publishable) {
-            let extras = {
-              revision: report.revision,
-              taskId: report.taskId
-            }
-            stats[key].issues.push(Object.assign(extras, issue))
-          }
-          return stats
-        }, state.stats.checks)
-
-        // Save start date
-        state.stats.start_date = new Date(Math.min(new Date(report.time * 1000.0), state.stats.start_date))
-
-        // Mark new report loaded
-        state.stats.loaded += 1
-      }
+      state.diff = Object.assign({}, state.diff, { 'issues': state.diff.issues.concat(issues) })
     }
   },
   actions: {
@@ -182,46 +146,35 @@ export default new Vuex.Store({
       })
     },
 
-    // Load the report for a given task
-    load_report (state, taskId) {
-      let url = TASKCLUSTER_ROOT_URL + 'api/queue/v1/task/' + taskId + '/artifacts/public/results/report.json'
-      state.commit('use_report', null)
+    // Load a specific diff and its issues
+    load_diff (state, diffId) {
+      let url = this.state.backend_url + '/v1/diff/' + diffId
+      state.commit('use_diff', null)
       return axios.get(url).then(resp => {
-        state.commit('use_report', Object.assign({ taskId }, resp.data))
+        state.commit('use_diff', resp.data)
+
+        // Load all issues in that diff
+        state.dispatch('load_issues', resp.data.issues_url)
       }).catch(err => {
-        state.commit('use_report', err)
+        state.commit('use_diff', err)
       })
     },
 
-    // Load multiple reports for stats crunching
-    calc_stats (state, tasksId) {
-      // Avoid multiple loads
-      if (state.state.stats.loaded > 0) {
+    load_issues (state, issuesUrl) {
+      if (issuesUrl === null) {
         return
       }
+      if (this.state.diff === null) {
+        throw new Error('Cannot load issues without a diff')
+      }
 
-      // Load all indexes to get task ids
-      // and avoid reloading tasks
-      var indexes = state.state.tasks.length > 0 ? Promise.resolve(true) : state.dispatch('load_index')
-      indexes.then(() => {
-        console.log('Start analysis')
+      axios.get(issuesUrl).then(resp => {
+        // Store new issues
+        state.commit('add_issues', resp.data.results)
 
-        // Start processing by batches
-        state.dispatch('load_report_batch', 0)
+        // Load next issues
+        state.dispatch('load_issues', resp.data.next)
       })
-    },
-    load_report_batch (state, step) {
-      if (step * TASKS_SLICE > state.state.stats.ids.length) {
-        return
-      }
-
-      // Slice full loading in smaller batches to avoid using too many resources
-      var slice = state.state.stats.ids.slice(step * TASKS_SLICE, (step + 1) * TASKS_SLICE)
-      var batch = Promise.all(
-        slice.map(taskId => state.dispatch('load_report', taskId))
-      )
-      batch.then(resp => console.info('Loaded batch', step))
-      batch.then(resp => state.dispatch('load_report_batch', step + 1))
     }
   }
 })

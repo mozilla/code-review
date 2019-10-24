@@ -29,8 +29,8 @@ export default {
               <div class="navbar-item" v-if="$route.name != 'stats'">
                 <router-link to="/stats" class="button is-link">All checks</router-link>
               </div>
-              <div class="navbar-item" v-if="$route.name != 'tasks'">
-                <router-link to="/" class="button is-link">All tasks</router-link>
+              <div class="navbar-item" v-if="$route.name != 'diffs'">
+                <router-link to="/" class="button is-link">All diffs</router-link>
               </div>
             </div>
           </div>

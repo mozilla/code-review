@@ -4,7 +4,7 @@ import _ from 'lodash'
 import Choice from './Choice.vue'
 
 export default {
-  name: 'Task',
+  name: 'Diff',
   data () {
     return {
       state: 'loading',
@@ -38,9 +38,9 @@ export default {
     this.filters.path = this.$route.query.path || null
     this.filters.analyzer = this.$route.query.analyzer || null
 
-    // Load report
-    var report = this.$store.dispatch('load_report', this.$route.params.taskId)
-    report.then(
+    // Load diff
+    var diff = this.$store.dispatch('load_diff', this.$route.params.diffId)
+    diff.then(
       (response) => {
         this.$set(this, 'state', 'loaded')
       },
@@ -50,31 +50,31 @@ export default {
     )
   },
   computed: {
-    report () {
-      return this.$store.state.report
+    diff () {
+      return this.$store.state.diff
     },
     paths () {
-      if (!this.report) {
+      if (!this.diff) {
         return null
       }
       // List sorted unique paths as choices
-      return _.sortBy(_.uniq(_.map(this.report.issues, 'path')))
+      return _.sortBy(_.uniq(_.map(this.diff.issues, 'path')))
     },
     analyzers () {
-      if (!this.report) {
+      if (!this.diff) {
         return null
       }
       // List sorted unique analyzers as choices
-      return _.sortBy(_.uniq(_.map(this.report.issues, 'analyzer')))
+      return _.sortBy(_.uniq(_.map(this.diff.issues, 'analyzer')))
     },
     nb_publishable () {
-      if (!this.report || !this.report.issues) {
+      if (!this.diff || !this.diff.issues) {
         return 0
       }
-      return this.report.issues.filter(i => i.publishable).length
+      return this.diff.issues.filter(i => i.publishable).length
     },
     issues () {
-      let issues = this.report ? this.report.issues : []
+      let issues = this.diff ? this.diff.issues : []
 
       // Filter by publishable
       if (this.filters.publishable !== null) {
@@ -91,8 +91,7 @@ export default {
         issues = _.filter(issues, i => i.analyzer === this.filters.analyzer)
       }
 
-      // Always display publishable first
-      return _.sortBy(issues, i => !i.publishable)
+      return issues
     }
   },
   filters: {
@@ -105,14 +104,14 @@ export default {
 
 <template>
   <div>
-    <h1 class="title">Task <a :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + $route.params.taskId" target="_blank">{{ $route.params.taskId }}</a></h1>
+    <h1 class="title">Diff {{ $route.params.diffId }}</h1>
 
-    <div class="notification is-info" v-if="state == 'loading'">Loading report...</div>
-    <div class="notification is-warning" v-else-if="state == 'missing'">No report, so no issues !</div>
+    <div class="notification is-info" v-if="state == 'loading'">Loading diff...</div>
+    <div class="notification is-warning" v-else-if="state == 'missing'">No diff, so no issues !</div>
     <div class="notification is-danger" v-else-if="state == 'error'">Failure</div>
     <div v-else-if="state == 'loaded'">
 
-      <nav class="level" v-if="report">
+      <nav class="level" v-if="diff && diff.id">
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">Publishable</p>
@@ -122,19 +121,19 @@ export default {
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">Issues</p>
-            <p class="title">{{ report.issues.length }}</p>
+            <p class="title">{{ diff.issues.length }}</p>
           </div>
         </div>
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">Source</p>
-            <p class="title"><a :href="report.revision.url" target="_blank">{{ report.revision.title }}</a></p>
+            <p class="title"><a :href="diff.revision.url" target="_blank">{{ diff.revision.title }}</a></p>
           </div>
         </div>
         <div class="level-item has-text-centered">
           <div>
-            <p class="heading">Reported</p>
-            <p class="title">{{ report.time|from_timestamp }}</p>
+            <p class="heading">diffed</p>
+            <p class="title">{{ diff.time|from_timestamp }}</p>
           </div>
         </div>
       </nav>
@@ -142,6 +141,7 @@ export default {
       <table class="table is-fullwidth" v-if="issues">
         <thead>
           <tr>
+            <td>Hash</td>
             <td><Choice :choices="analyzers" name="analyzer" v-on:new-choice="filters.analyzer = $event"/></td>
             <td><Choice :choices="paths" name="path" v-on:new-choice="filters.path = $event"/></td>
             <td>Lines</td>
@@ -154,9 +154,9 @@ export default {
 
         <tbody>
           <tr v-for="issue in issues" :class="{'publishable': issue.publishable}">
+            <td><samp>{{ issue.hash.substring(0, 12) }}</samp></td>
             <td>
-              <span v-if="issue.analyzer == 'mozlint'">{{ issue.linter }}<br />by Mozlint</span>
-              <span v-else>{{ issue.analyzer }}</span>
+              <span>{{ issue.analyzer }}</span>
             </td>
             <td class="path">{{ issue.path }}</td>
             <td>{{ issue.line }} <span v-if="issue.nb_lines > 1">&rarr; {{ issue.line - 1 + issue.nb_lines }}</span></td>
@@ -170,38 +170,19 @@ export default {
             </td>
 
             <td>
-              <span v-if="issue.analyzer == 'mozlint'">{{ issue.rule }}</span>
-              <span v-if="issue.analyzer == 'clang-tidy'">{{ issue.check }}</span>
-              <span v-if="issue.analyzer == 'clang-format'">Style issue</span>
-              <span v-if="issue.analyzer == 'infer'">{{ issue.bug_type }}</span>
-              <span v-if="issue.analyzer == 'Coverity'">{{ issue.bug_type }}<br /><code>{{ issue.kind }}</code></span>
+              <span>{{ issue.check }}</span>
             </td>
             <td>
-              <span v-if="issue.level == 'error' || issue.type == 'error' || issue.kind == 'ERROR' || issue.analyzer == 'Coverity'" class="tag is-danger">Error</span>
-              <span v-if="issue.level == 'warning' || issue.type == 'warning' || issue.kind == 'WARNING' || issue.analyzer == 'clang-format'" class="tag is-warning">Warning</span>
+              <span v-if="issue.level == 'error'" class="tag is-danger">Error</span>
+              <span v-else-if="issue.level == 'warning'" class="tag is-warning">Warning</span>
+              <span v-else class="tag is-dark">{{ issue.level }}</span>
             </td>
             <td>
-              <pre v-if="issue.analyzer == 'Coverity'">{{ issue.message }}</pre>
-              <p v-else>{{ issue.message }}</p>
+              <pre>{{ issue.message }}</pre>
 
               <pre v-if="issue.body">
                 {{ issue.body }}
               </pre>
-
-              <div v-if="issue.analyzer == 'clang-format' && issue.mode == 'replace'">
-                <strong>Replace</strong>
-                <pre>{{ issue.old_lines }}</pre>
-                <strong>by these:</strong>
-                <pre>{{ issue.new_lines }}</pre>
-              </div>
-              <div v-if="issue.analyzer == 'clang-format' && issue.mode == 'insert'">
-                <strong>Insert these lines</strong>
-                <pre>{{ issue.new_lines }}</pre>
-              </div>
-              <div v-if="issue.analyzer == 'clang-format' && issue.mode == 'delete'">
-                <strong>Delete these lines</strong>
-                <pre>{{ issue.old_lines }}</pre>
-              </div>
             </td>
           </tr>
         </tbody>
