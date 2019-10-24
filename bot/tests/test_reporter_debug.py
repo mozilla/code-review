@@ -50,7 +50,7 @@ def test_publication(tmpdir, mock_issues, mock_revision):
         "id": 51,
         "diff_id": 42,
         "url": "https://phabricator.test/D51",
-        "bugzilla_id": "1234567",
+        "bugzilla_id": 1234567,
         "diff_phid": "PHID-DIFF-test",
         "phid": "PHID-DREV-zzzzz",
         "title": "Static Analysis tests",
