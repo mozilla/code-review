@@ -19,6 +19,8 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
     mock_revision.target_repository = "test"
     mock_revision.mercurial_revision = "deadbeef1234"
 
+    assert mock_revision.bugzilla_id == 1234567
+
     configuration = {
         "url": "http://code-review-backend.test",
         "username": "tester",
@@ -89,3 +91,42 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
             "validates": False,
         },
     ]
+
+
+def test_missing_bugzilla_id(
+    mock_coverity_issues, mock_revision, mock_backend, mock_hgmo
+):
+    """
+    Test revision creation on the backend without a bugzilla id (None instead)
+    """
+    # Nothing in backend at first
+    revisions, diffs, issues = mock_backend
+    assert not revisions and not diffs and not issues
+
+    # Hardcode revision & repo
+    mock_revision.repository = "test-try"
+    mock_revision.target_repository = "test"
+    mock_revision.mercurial_revision = "deadbeef1234"
+
+    # Set bugzilla id as empty string
+    mock_revision.revision["fields"]["bugzilla.bug-id"] = ""
+    assert mock_revision.bugzilla_id is None
+
+    configuration = {
+        "url": "http://code-review-backend.test",
+        "username": "tester",
+        "password": "test1234",
+    }
+
+    r = BackendReporter(configuration)
+    r.publish(mock_coverity_issues, mock_revision)
+
+    assert len(revisions) == 1
+    assert 51 in revisions
+    assert revisions[51] == {
+        "bugzilla_id": None,
+        "id": 51,
+        "phid": "PHID-DREV-zzzzz",
+        "repository": "test",
+        "title": "Static Analysis tests",
+    }
