@@ -6,19 +6,9 @@ export default {
   components: {
     Tasks
   },
-  data () {
-    return {
-      channels: ['testing', 'production']
-    }
-  },
-  methods: {
-    switch_channel (channel) {
-      this.$store.dispatch('switch_channel', channel)
-    }
-  },
   computed: {
-    channel () {
-      return this.$store.state.channel
+    backend_url () {
+      return this.$store.state.backend_url
     }
   }
 }
@@ -30,18 +20,13 @@ export default {
       <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
         <div class="container is-fluid">
           <div class="navbar-brand">
-            <div class="navbar-item">Static analysis</div>
+            <div class="navbar-item">Code Review Bot</div>
           </div>
           <div class="navbar-menu">
 
             <div class="navbar-start">
-              <div class="navbar-item has-dropdown is-hoverable">
-                <span class="navbar-link">{{ channel }}</span>
-                <div class="navbar-dropdown is-boxed">
-                  <a class="dropdown-item" v-for="c in channels" :class="{'is-active': c == channel}" v-on:click="switch_channel(c)">
-                    {{ c }}
-                  </a>
-                </div>
+              <div class="navbar-item">
+                <span class="navbar-item">Connected to {{ backend_url }}</span>
               </div>
             </div>
 

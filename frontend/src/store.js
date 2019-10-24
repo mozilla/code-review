@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import axios from 'axios'
-import router from './routes'
 Vue.use(Vuex)
 
 const PREFERENCES_KEY = 'mozilla-sa-dashboard'
@@ -15,7 +14,7 @@ const MAX_TTL = 2 * 3600 * 1000
 
 export default new Vuex.Store({
   state: {
-    channel: 'production',
+    backend_url: process.env.BACKEND_URL,
     tasks: [],
     indexes: [],
     stats: {
@@ -30,27 +29,6 @@ export default new Vuex.Store({
     report: null
   },
   mutations: {
-    load_preferences (state) {
-      // Load prefs from local storage
-      let rawPrefs = localStorage.getItem(PREFERENCES_KEY)
-      if (rawPrefs) {
-        let prefs = JSON.parse(rawPrefs)
-        if (prefs.channel) {
-          state.channel = prefs.channel
-        }
-      }
-    },
-    save_preferences (state) {
-      // Save channel to preferences
-      localStorage.setItem(PREFERENCES_KEY, JSON.stringify({
-        channel: state.channel
-      }))
-    },
-    use_channel (state, channel) {
-      state.channel = channel
-      this.commit('reset')
-      this.commit('save_preferences')
-    },
     reset (state) {
       state.tasks = []
       state.indexes = []
@@ -189,16 +167,9 @@ export default new Vuex.Store({
     }
   },
   actions: {
-    // Switch data channel to use
-    switch_channel (state, channel) {
-      state.commit('use_channel', channel)
-      state.dispatch('load_index')
-      router.push({ name: 'tasks' })
-    },
-
     // Load Phabricator indexed tasks summary from Taskcluster
     load_index (state, payload) {
-      let url = TASKCLUSTER_ROOT_URL + 'api/index/v1/tasks/project.relman.' + this.state.channel + '.code-review.phabricator.'
+      let url = TASKCLUSTER_ROOT_URL + 'api/index/v1/tasks/project.relman.production.code-review.phabricator.'
       if (payload && payload.revision) {
         // Remove potential leading 'D' from phabricator revision
         url += !Number.isInteger(payload.revision) && payload.revision.startsWith('D') ? payload.revision.substring(1) : payload.revision
