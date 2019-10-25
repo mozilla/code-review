@@ -49,12 +49,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "corsheaders",
     "rest_framework",
     "code_review_backend.issues",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -158,6 +160,9 @@ LOGGING = {
     },
 }
 
+# Cors open by default in dev
+CORS_ORIGIN_ALLOW_ALL = True
+
 # Heroku settings override to run the web app in production mode
 if "DYNO" in os.environ:
     logger.info("Setting up Heroku environment")
@@ -173,8 +178,12 @@ if "DYNO" in os.environ:
     else:
         logger.info("DATABASE_URL not found, will use sqlite. Data may be lost.")
 
-    # Insert Whitenoise Middleware after the security one
-    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
+    # Insert Whitenoise Middleware after the security and cors ones
+    MIDDLEWARE.insert(2, "whitenoise.middleware.WhiteNoiseMiddleware")
 
     # Use Secret key from env
     SECRET_KEY = os.environ.get("SECRET_KEY", SECRET_KEY)
+
+    # Cors closed on heroku
+    CORS_ORIGIN_ALLOW_ALL = False
+    CORS_ORIGIN_WHITELIST = os.getenv("CORS_DOMAINS", "").split(",")
