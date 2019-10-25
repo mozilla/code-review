@@ -19,6 +19,10 @@ import logging
 import os
 
 import dj_database_url
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
+from code_review_backend.app import taskcluster
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +30,9 @@ logger = logging.getLogger(__name__)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ROOT_DIR = os.path.dirname(BASE_DIR)
 
+# Load current Version
+with open(os.path.join(ROOT_DIR, "VERSION")) as f:
+    VERSION = f.read().strip()
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -186,4 +193,27 @@ if "DYNO" in os.environ:
 
     # Cors closed on heroku
     CORS_ORIGIN_ALLOW_ALL = False
-    CORS_ORIGIN_WHITELIST = os.getenv("CORS_DOMAINS", "").split(",")
+
+    # Load taskcluster secrets on Heroku
+    taskcluster_client_id = os.getenv("TASKCLUSTER_CLIENT_ID")
+    taskcluster_access_token = os.getenv("TASKCLUSTER_ACCESS_TOKEN")
+    taskcluster_secret = os.getenv("TASKCLUSTER_SECRET")
+    if taskcluster_client_id and taskcluster_access_token and taskcluster_secret:
+        taskcluster.auth(taskcluster_client_id, taskcluster_access_token)
+        taskcluster.load_secrets(taskcluster_secret, "backend")
+
+        # Setup Sentry
+        if "SENTRY_DSN" in taskcluster.secrets:
+            sentry_sdk.init(
+                taskcluster.secrets["SENTRY_DSN"],
+                integrations=[DjangoIntegration()],
+                environment=taskcluster.secrets.get("APP_CHANNEL"),
+                release=VERSION,
+            )
+            logger.info("Enabled Sentry error reporting")
+
+        # Setup Cors allowed domains
+        CORS_ORIGIN_WHITELIST = taskcluster.secrets.get("cors-domains", [])
+
+    else:
+        logger.info("Skipping taskcluster configuration")
