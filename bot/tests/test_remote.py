@@ -34,7 +34,7 @@ def check_stats(summary_check):
     return True
 
 
-def test_no_deps(mock_config, mock_revision, mock_workflow):
+def test_no_deps(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test an error occurs when no dependencies are found on root task
     """
@@ -57,7 +57,7 @@ def test_no_deps(mock_config, mock_revision, mock_workflow):
     assert str(e.value) == "No task dependencies to analyze"
 
 
-def test_baseline(mock_config, mock_revision, mock_workflow):
+def test_baseline(mock_config, mock_revision, mock_workflow, mock_backend, mock_hgmo):
     """
     Test a normal remote workflow (aka Try mode)
     - current task with analyzer deps
@@ -149,7 +149,7 @@ def test_baseline(mock_config, mock_revision, mock_workflow):
     )
 
 
-def test_no_failed(mock_config, mock_revision, mock_workflow):
+def test_no_failed(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow without any failed tasks
     """
@@ -173,7 +173,7 @@ def test_no_failed(mock_config, mock_revision, mock_workflow):
     assert len(issues) == 0
 
 
-def test_no_issues(mock_config, mock_revision, mock_workflow):
+def test_no_issues(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow without any issues in its artifacts
     """
@@ -205,7 +205,7 @@ def test_no_issues(mock_config, mock_revision, mock_workflow):
     assert len(issues) == 0
 
 
-def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow):
+def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with an unsupported analyzer (not mozlint)
     """
@@ -236,7 +236,7 @@ def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow):
     assert str(e.value) == "Unsupported task custom-analyzer-from-vendor"
 
 
-def test_decision_task(mock_config, mock_revision, mock_workflow):
+def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with different decision task setup
     """
@@ -305,7 +305,7 @@ def test_decision_task(mock_config, mock_revision, mock_workflow):
     assert mock_revision.mercurial_revision == "someRevision"
 
 
-def test_mozlint_task(mock_config, mock_revision, mock_workflow):
+def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with a mozlint analyzer
     """
@@ -365,7 +365,7 @@ def test_mozlint_task(mock_config, mock_revision, mock_workflow):
     )
 
 
-def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
+def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with a clang-tidy analyzer
     """
@@ -448,7 +448,9 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow):
     )
 
 
-def test_clang_format_task(mock_config, mock_revision, mock_workflow, mock_hgmo):
+def test_clang_format_task(
+    mock_config, mock_revision, mock_workflow, mock_hgmo, mock_backend
+):
     """
     Test a remote workflow with a clang-format analyzer
     """
@@ -543,7 +545,9 @@ def test_clang_format_task(mock_config, mock_revision, mock_workflow, mock_hgmo)
     assert patch.content == "A nice diff in here..."
 
 
-def test_coverity_task(mock_config, mock_revision, mock_workflow):
+def test_coverity_task(
+    mock_config, mock_revision, mock_workflow, mock_backend, mock_hgmo
+):
     """
     Test a remote workflow with a clang-tidy analyzer
     """
@@ -679,7 +683,7 @@ The path that leads to this defect is:
     )
 
 
-def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo):
+def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_backend):
     """
     Test a remote workflow with an infer analyzer
     """
@@ -762,7 +766,7 @@ def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo):
     }
 
 
-def test_no_tasks(mock_config, mock_revision, mock_workflow):
+def test_no_tasks(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with only a Gecko decision task as dep
     https://github.com/mozilla/release-services/issues/2055
@@ -785,7 +789,7 @@ def test_no_tasks(mock_config, mock_revision, mock_workflow):
     assert len(issues) == 0
 
 
-def test_zero_coverage_option(mock_config, mock_revision, mock_workflow):
+def test_zero_coverage_option(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test the zero coverage trigger on the workflow
     """

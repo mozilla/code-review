@@ -3,7 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from code_review_bot.report.backend import BackendReporter
+from code_review_bot.backend import BackendAPI
 
 
 def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgmo):
@@ -21,14 +21,9 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
 
     assert mock_revision.bugzilla_id == 1234567
 
-    configuration = {
-        "url": "http://code-review-backend.test",
-        "username": "tester",
-        "password": "test1234",
-    }
-
-    r = BackendReporter(configuration)
-    r.publish(mock_coverity_issues, mock_revision)
+    r = BackendAPI()
+    assert r.enabled is True
+    r.publish_revision(mock_revision)
 
     # Check the revision in the backend
     assert len(revisions) == 1
@@ -52,6 +47,12 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
         "phid": "PHID-DIFF-test",
         "review_task_id": "local instance",
     }
+
+    # No issues at that point
+    assert len(issues) == 0
+
+    # Let's publish them
+    r.publish_issues(mock_coverity_issues, mock_revision)
 
     # Check the issues in the backend
     assert len(issues) == 1
@@ -93,9 +94,7 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
     ]
 
 
-def test_missing_bugzilla_id(
-    mock_coverity_issues, mock_revision, mock_backend, mock_hgmo
-):
+def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
     """
     Test revision creation on the backend without a bugzilla id (None instead)
     """
@@ -112,14 +111,8 @@ def test_missing_bugzilla_id(
     mock_revision.revision["fields"]["bugzilla.bug-id"] = ""
     assert mock_revision.bugzilla_id is None
 
-    configuration = {
-        "url": "http://code-review-backend.test",
-        "username": "tester",
-        "password": "test1234",
-    }
-
-    r = BackendReporter(configuration)
-    r.publish(mock_coverity_issues, mock_revision)
+    r = BackendAPI()
+    r.publish_revision(mock_revision)
 
     assert len(revisions) == 1
     assert 51 in revisions

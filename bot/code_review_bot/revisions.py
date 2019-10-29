@@ -87,6 +87,7 @@ class Revision(object):
         self.api = api
         self.mercurial_revision = None
         self.update_build = update_build
+        self.issues_url = None
         self.load_phabricator(try_task)
 
     @property

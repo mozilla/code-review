@@ -33,7 +33,7 @@ def test_matches(path, matches, mock_taskcluster_config):
     assert DefaultTask.matches("testDefaultTask") is matches
 
 
-def test_parser(mock_workflow, mock_revision, mock_hgmo):
+def test_parser(mock_workflow, mock_revision, mock_hgmo, mock_backend):
     """Test the default format parser"""
     mock_workflow.setup_mock_tasks(
         {
