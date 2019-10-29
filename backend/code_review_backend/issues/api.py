@@ -9,9 +9,11 @@ from rest_framework import viewsets
 
 from code_review_backend.issues.models import Diff
 from code_review_backend.issues.models import Issue
+from code_review_backend.issues.models import Repository
 from code_review_backend.issues.models import Revision
 from code_review_backend.issues.serializers import DiffSerializer
 from code_review_backend.issues.serializers import IssueSerializer
+from code_review_backend.issues.serializers import RepositorySerializer
 from code_review_backend.issues.serializers import RevisionSerializer
 
 
@@ -25,6 +27,11 @@ class CreateListRetrieveViewSet(
     A viewset that allows creation, listing and retrieval of Model instances
     From https://www.django-rest-framework.org/api-guide/viewsets/#custom-viewset-base-classes
     """
+
+
+class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Repository.objects.all().order_by("slug")
+    serializer_class = RepositorySerializer
 
 
 class RevisionViewSet(CreateListRetrieveViewSet):
@@ -49,6 +56,7 @@ class IssueViewSet(CreateListRetrieveViewSet):
 
 
 router = routers.DefaultRouter()
+router.register(r"repository", RepositoryViewSet)
 router.register(r"revision", RevisionViewSet)
 router.register(r"diff", DiffViewSet)
 router.register(r"diff/(?P<diff_id>\d+)/issues", IssueViewSet, basename="issues")
