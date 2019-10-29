@@ -57,6 +57,21 @@ class StatsAPITestCase(APITestCase):
                 hash=uuid.uuid4().hex,
             )
 
+        # Add some issues not attached to a diff
+        for i in range(10):
+            Issue.objects.create(
+                diff_id=None,
+                path="path/to/file",
+                line=random.randint(1, 100),
+                nb_lines=random.randint(1, 100),
+                char=None,
+                level="warning",
+                message=None,
+                analyzer=analyzers[i % len(analyzers)],
+                check=checks[i % len(checks)],
+                hash=uuid.uuid4().hex,
+            )
+
     def test_stats(self):
         """
         Check stats generation from the list of random issues
@@ -67,7 +82,7 @@ class StatsAPITestCase(APITestCase):
         self.assertDictEqual(
             response.json(),
             {
-                "count": 15,
+                "count": 25,
                 "next": None,
                 "previous": None,
                 "results": [
@@ -175,6 +190,76 @@ class StatsAPITestCase(APITestCase):
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
+                    },
+                    {
+                        "analyzer": "analyzer-X",
+                        "check": None,
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
+                    },
+                    {
+                        "analyzer": "analyzer-X",
+                        "check": "check-1",
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
+                    },
+                    {
+                        "analyzer": "analyzer-X",
+                        "check": "check-10",
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
+                    },
+                    {
+                        "analyzer": "analyzer-X",
+                        "check": "check-1000",
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
+                    },
+                    {
+                        "analyzer": "analyzer-Y",
+                        "check": None,
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
+                    },
+                    {
+                        "analyzer": "analyzer-Y",
+                        "check": "check-10",
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
+                    },
+                    {
+                        "analyzer": "analyzer-Y",
+                        "check": "check-42",
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
+                    },
+                    {
+                        "analyzer": "analyzer-Z",
+                        "check": "check-1",
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
+                    },
+                    {
+                        "analyzer": "analyzer-Z",
+                        "check": "check-1000",
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
+                    },
+                    {
+                        "analyzer": "analyzer-Z",
+                        "check": "check-42",
+                        "publishable": 0,
+                        "repository": None,
+                        "total": 1,
                     },
                 ],
             },
