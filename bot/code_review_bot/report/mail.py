@@ -31,7 +31,7 @@ class MailReporter(Reporter):
     """
 
     def __init__(self, configuration):
-        self.emails, = self.requires(configuration, "emails")
+        (self.emails,) = self.requires(configuration, "emails")
         assert len(self.emails) > 0, "Missing emails data"
 
         # Load TC services & secrets
