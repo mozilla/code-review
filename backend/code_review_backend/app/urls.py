@@ -12,6 +12,6 @@ from code_review_backend.issues import api
 
 urlpatterns = [
     path("", lambda request: redirect("v1/", permanent=False)),
-    path("v1/", include(api.router.urls)),
+    path("v1/", include(api.urls)),
     path("admin/", admin.site.urls),
 ]
