@@ -11,6 +11,16 @@ from code_review_backend.issues.models import Repository
 from code_review_backend.issues.models import Revision
 
 
+class RepositorySerializer(serializers.ModelSerializer):
+    """
+    Serialize a Repository
+    """
+
+    class Meta:
+        model = Repository
+        fields = ("id", "phid", "slug", "url")
+
+
 class RevisionSerializer(serializers.HyperlinkedModelSerializer):
     """
     Serialize a Revision in a Repository
