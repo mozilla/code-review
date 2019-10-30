@@ -112,6 +112,7 @@ tasks:
           - sh
           - -lxce
           - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+            cd /src/tools && ${pip_install} . &&
             cd /src/backend && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
             ./manage.py test"
       metadata:

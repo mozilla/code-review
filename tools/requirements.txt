@@ -1,6 +1,7 @@
 Logbook==1.5.3
 structlog==19.2.0
 taskcluster==21.2.0
+toml==0.10.0
 raven==6.10.0
 
 # Limit yarl version to avoid using the alpha 1.4.0a that breaks builds
