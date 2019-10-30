@@ -11,6 +11,7 @@ from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import stats
+from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
@@ -68,6 +69,9 @@ class Workflow(object):
         self.index_service = index_service
         self.queue_service = queue_service
 
+        # Setup Backend API client
+        self.backend_api = BackendAPI()
+
     def run(self, revision):
         """
         Find all issues on remote tasks and publish them
@@ -81,6 +85,9 @@ class Workflow(object):
         # Analyze revision patch to get files/lines data
         revision.analyze_patch()
 
+        # Store the revision in the backend
+        self.backend_api.publish_revision(revision)
+
         # Find issues on remote tasks
         issues = self.find_issues(revision)
         if not issues:
@@ -88,6 +95,11 @@ class Workflow(object):
             self.index(revision, state="done", issues=0)
             revision.update_status(BuildState.Pass)
             return []
+
+        # Publish issues on backend to retrieve their comparison state
+        self.backend_api.publish_issues(issues, revision)
+
+        # TODO: load issues detected as new by the backend
 
         # Publish all issues
         self.publish(revision, issues)

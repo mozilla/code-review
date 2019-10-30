@@ -8,30 +8,42 @@ import urllib.parse
 import requests
 import structlog
 
+from code_review_bot import taskcluster
 from code_review_bot.config import settings
-from code_review_bot.report.base import Reporter
 
 logger = structlog.get_logger(__name__)
 
 
-class BackendReporter(Reporter):
+class BackendAPI(object):
     """
-    Publish the issues on our backend for further analysis
+    API client for our own code-review backend
     """
 
-    def __init__(self, configuration):
-        assert "url" in configuration, "Missing backend url"
-        assert "username" in configuration, "Missing backend username"
-        assert "password" in configuration, "Missing backend password"
-        self.url = configuration["url"]
-        self.username = configuration["username"]
-        self.password = configuration["password"]
-        logger.info("Will publish issues on backend", url=self.url, user=self.username)
+    def __init__(self):
+        configuration = taskcluster.secrets.get("backend", {})
+        self.url = configuration.get("url")
+        self.username = configuration.get("username")
+        self.password = configuration.get("password")
+        if self.enabled:
+            logger.info("Will use backend", url=self.url, user=self.username)
+        else:
+            logger.info("Skipping backend storage")
 
-    def publish(self, issues, revision):
+    @property
+    def enabled(self):
+        return (
+            self.url is not None
+            and self.username is not None
+            and self.password is not None
+        )
+
+    def publish_revision(self, revision):
         """
-        Display issues choices
+        Create Revision and Diff instances in backend
         """
+        if not self.enabled:
+            logger.warn("Skipping revision publication on backend")
+            return
 
         # Create revision on backend if it does not exists
         data = {
@@ -52,9 +64,20 @@ class BackendReporter(Reporter):
         }
         backend_diff = self.create(backend_revision["diffs_url"], data)
 
-        # Publish each issue on the backend
+        # Store the issues url on the revision
+        revision.issues_url = backend_diff["issues_url"]
+
+    def publish_issues(self, issues, revision):
+        """
+        Publish all issues on the backend
+        """
+        if not self.enabled:
+            logger.warn("Skipping issues publication on backend")
+            return
+
+        assert revision.issues_url is not None, "Missing issues_url on revision"
         for issue in issues:
-            self.create(backend_diff["issues_url"], issue.as_dict())
+            self.create(revision.issues_url, issue.as_dict())
 
         logger.info("Published all issues on backend")
 
@@ -63,6 +86,7 @@ class BackendReporter(Reporter):
         Make an authenticated POST request on the backend
         Check that the requested item does not already exists on the backend
         """
+        assert self.enabled is True, "Backend API is not enabled"
         assert url_path.endswith("/")
         auth = (self.username, self.password)
 
@@ -76,9 +100,7 @@ class BackendReporter(Reporter):
 
         # Create the requested item
         url_post = urllib.parse.urljoin(self.url, url_path)
-        response = requests.post(
-            url_post, json=data, auth=(self.username, self.password)
-        )
+        response = requests.post(url_post, json=data, auth=auth)
         if not response.ok:
             logger.warn("Backend rejected the payload: {}".format(response.content))
         response.raise_for_status()

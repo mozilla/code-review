@@ -16,6 +16,7 @@ import responses
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import stats
+from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
 from code_review_bot.tasks.coverity import CoverityIssue
 
@@ -347,6 +348,20 @@ class MockNotify(object):
         self.emails.append(payload)
 
 
+@pytest.fixture(scope="function")
+def mock_backend_secret(mock_taskcluster_config):
+    """
+    Mock the taskcluster secret needed for backend storage
+    """
+    mock_taskcluster_config.secrets = {
+        "backend": {
+            "url": "http://code-review-backend.test",
+            "username": "tester",
+            "password": "test1234",
+        }
+    }
+
+
 @pytest.fixture
 def mock_workflow(mock_phabricator, mock_taskcluster_config):
     """
@@ -365,6 +380,7 @@ def mock_workflow(mock_phabricator, mock_taskcluster_config):
             self.index_service = mock_taskcluster_config.get_service("index")
             self.queue_service = mock_taskcluster_config.get_service("queue")
             self.zero_coverage_enabled = True
+            self.backend_api = BackendAPI()
 
         def setup_mock_tasks(self, tasks):
             """
@@ -439,8 +455,8 @@ def mock_hgmo():
     )
 
 
-@pytest.fixture
-def mock_backend():
+@pytest.fixture(scope="function")
+def mock_backend(mock_backend_secret):
     """
     Mock the code review backend endpoints
     """
@@ -454,7 +470,7 @@ def mock_backend():
         """Get a revision when available in db"""
         revision_id = int(request.path_url.split("/")[3])
         if revision_id in revisions:
-            return (200, {}, revisions[revision_id])
+            return (200, {}, json.dumps(revisions[revision_id]))
         return (404, {}, "")
 
     def post_revision(request):
@@ -472,9 +488,9 @@ def mock_backend():
 
     def get_diff(request):
         """Get a diff when available in db"""
-        diff_id = int(request.path_url.split("/")[3])
+        diff_id = int(request.path_url.split("/")[5])
         if diff_id in diffs:
-            return (200, {}, diffs[diff_id])
+            return (200, {}, json.dumps(diffs[diff_id]))
         return (404, {}, "")
 
     def post_diff(request):
