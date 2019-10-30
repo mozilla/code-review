@@ -43,15 +43,14 @@ class BackendReporter(Reporter):
         }
         backend_revision = self.create("/v1/revision/", data)
 
-        # Create diff on backend
+        # Create diff attached to revision on backend
         data = {
             "id": revision.diff_id,
             "phid": revision.diff_phid,
-            "revision": backend_revision["id"],
             "review_task_id": settings.taskcluster.task_id,
             "mercurial_hash": revision.mercurial_revision,
         }
-        backend_diff = self.create("/v1/diff/", data)
+        backend_diff = self.create(backend_revision["diffs_url"], data)
 
         # Publish each issue on the backend
         for issue in issues:

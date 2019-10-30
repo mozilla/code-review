@@ -39,6 +39,7 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
         "phid": "PHID-DREV-zzzzz",
         "repository": "test",
         "title": "Static Analysis tests",
+        "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
     }
 
     # Check the diff in the backend
@@ -50,7 +51,6 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
         "mercurial_hash": "deadbeef1234",
         "phid": "PHID-DIFF-test",
         "review_task_id": "local instance",
-        "revision": 51,
     }
 
     # Check the issues in the backend
@@ -129,4 +129,5 @@ def test_missing_bugzilla_id(
         "phid": "PHID-DREV-zzzzz",
         "repository": "test",
         "title": "Static Analysis tests",
+        "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
     }

@@ -21,7 +21,7 @@ class RepositorySerializer(serializers.ModelSerializer):
         fields = ("id", "phid", "slug", "url")
 
 
-class RevisionSerializer(serializers.HyperlinkedModelSerializer):
+class RevisionSerializer(serializers.ModelSerializer):
     """
     Serialize a Revision in a Repository
     """
@@ -29,21 +29,41 @@ class RevisionSerializer(serializers.HyperlinkedModelSerializer):
     repository = serializers.SlugRelatedField(
         queryset=Repository.objects.all(), slug_field="slug"
     )
+    diffs_url = serializers.HyperlinkedIdentityField(
+        view_name="revision-diffs-list", lookup_url_kwarg="revision_id"
+    )
 
     class Meta:
         model = Revision
-        fields = ("id", "repository", "phid", "title", "bugzilla_id")
+        fields = ("id", "repository", "phid", "title", "bugzilla_id", "diffs_url")
 
 
-class DiffSerializer(serializers.HyperlinkedModelSerializer):
+class DiffSerializer(serializers.ModelSerializer):
     """
     Serialize a Diff in a Revision
+    Used for full management
     """
 
-    revision = serializers.PrimaryKeyRelatedField(queryset=Revision.objects.all())
     issues_url = serializers.HyperlinkedIdentityField(
         view_name="issues-list", lookup_url_kwarg="diff_id"
     )
+
+    class Meta:
+        model = Diff
+        fields = ("id", "phid", "review_task_id", "mercurial_hash", "issues_url")
+
+
+class DiffFullSerializer(serializers.ModelSerializer):
+    """
+    Serialize a Diff with revision details
+    This is used in a read only context
+    """
+
+    revision = RevisionSerializer(read_only=True)
+    issues_url = serializers.HyperlinkedIdentityField(
+        view_name="issues-list", lookup_url_kwarg="diff_id"
+    )
+    nb_issues = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Diff
@@ -54,10 +74,11 @@ class DiffSerializer(serializers.HyperlinkedModelSerializer):
             "review_task_id",
             "mercurial_hash",
             "issues_url",
+            "nb_issues",
         )
 
 
-class IssueSerializer(serializers.HyperlinkedModelSerializer):
+class IssueSerializer(serializers.ModelSerializer):
     """
     Serialize an Issue in a Diff
     """

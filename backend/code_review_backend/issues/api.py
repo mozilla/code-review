@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.db.models import Count
+from django.shortcuts import get_object_or_404
 from django.urls import path
 from rest_framework import generics
 from rest_framework import mixins
@@ -14,6 +15,7 @@ from code_review_backend.issues.models import Diff
 from code_review_backend.issues.models import Issue
 from code_review_backend.issues.models import Repository
 from code_review_backend.issues.models import Revision
+from code_review_backend.issues.serializers import DiffFullSerializer
 from code_review_backend.issues.serializers import DiffSerializer
 from code_review_backend.issues.serializers import IssueCheckSerializer
 from code_review_backend.issues.serializers import IssueSerializer
@@ -39,24 +41,53 @@ class RepositoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class RevisionViewSet(CreateListRetrieveViewSet):
+    """
+    Manages revisions
+    """
+
     queryset = Revision.objects.all()
     serializer_class = RevisionSerializer
 
 
-class DiffViewSet(CreateListRetrieveViewSet):
-    queryset = Diff.objects.all()
+class RevisionDiffViewSet(CreateListRetrieveViewSet):
+    """
+    Manages diffs in a revision (allow creation)
+    """
+
     serializer_class = DiffSerializer
+
+    def get_queryset(self):
+        return Diff.objects.filter(revision_id=self.kwargs["revision_id"])
+
+    def perform_create(self, serializer):
+        # Attach revision to diff created
+        revision = get_object_or_404(Revision, id=self.kwargs["revision_id"])
+        serializer.save(revision=revision)
+
+
+class DiffViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    List and retrieve diffs with detailed revision information
+    """
+
+    serializer_class = DiffFullSerializer
+    queryset = (
+        Diff.objects.all()
+        .annotate(nb_issues=Count("issues"))
+        .prefetch_related("issues")
+    )
 
 
 class IssueViewSet(CreateListRetrieveViewSet):
     serializer_class = IssueSerializer
 
     def get_queryset(self):
-        return Issue.objects.filter(diff_id=self.kwargs["diff_id"])
+        return Issue.objects.filter(diff_id=Diff.objects.get(pk=self.kwargs["diff_id"]))
 
     def perform_create(self, serializer):
         # Attach diff to issue created
-        serializer.save(diff=Diff.objects.get(pk=self.kwargs["diff_id"]))
+        diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
+        serializer.save(diff=diff)
 
 
 class IssueCheckStats(generics.ListAPIView):
@@ -77,7 +108,12 @@ class IssueCheckStats(generics.ListAPIView):
 router = routers.DefaultRouter()
 router.register(r"repository", RepositoryViewSet)
 router.register(r"revision", RevisionViewSet)
-router.register(r"diff", DiffViewSet)
+router.register(
+    r"revision/(?P<revision_id>\d+)/diffs",
+    RevisionDiffViewSet,
+    basename="revision-diffs",
+)
+router.register(r"diff", DiffViewSet, basename="diffs")
 router.register(r"diff/(?P<diff_id>\d+)/issues", IssueViewSet, basename="issues")
 urls = router.urls + [
     path("check/stats/", IssueCheckStats.as_view(), name="issue-checks-stats")
