@@ -1,6 +1,10 @@
 FROM python:3.7-slim
 
+ADD tools /src/tools
 ADD backend /src/backend
+
+# Setup tools
+RUN cd /src/tools && pip install --disable-pip-version-check --no-cache-dir --quiet .
 
 WORKDIR /src/backend
 
