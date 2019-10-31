@@ -147,7 +147,7 @@ export default new Vuex.Store({
       if (state.stats !== null && report.issues) {
         // Calc stats for this report
         state.stats.checks = report.issues.reduce((stats, issue) => {
-          var key = issue.analyzer + '.' + issue.check
+          let key = issue.analyzer + '.' + issue.check
           if (stats[key] === undefined) {
             stats[key] = {
               analyzer: issue.analyzer,
