@@ -85,9 +85,6 @@ class Workflow(object):
         # Analyze revision patch to get files/lines data
         revision.analyze_patch()
 
-        # Store the revision in the backend
-        self.backend_api.publish_revision(revision)
-
         # Find issues on remote tasks
         issues = self.find_issues(revision)
         if not issues:
@@ -220,6 +217,10 @@ class Workflow(object):
 
         # Update the local revision with tasks
         revision.setup_try(tasks)
+
+        # Store the revision in the backend
+        # It needs to be after setup_try to have a repository value
+        self.backend_api.publish_revision(revision)
 
         # Load task description
         task = tasks.get(settings.try_task_id)
