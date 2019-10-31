@@ -37,6 +37,7 @@ class DiffAPITestCase(APITestCase):
                 phid=f"PHID-DIFF-{i+1}",
                 revision_id=(i % 2) + 1,
                 review_task_id=f"task-{i}",
+                analyzers_group_id=f"group-{i}",
                 mercurial_hash=hashlib.sha1(f"hg {i}".encode("utf-8")).hexdigest(),
             )
 
@@ -65,6 +66,7 @@ class DiffAPITestCase(APITestCase):
                         },
                         "phid": "PHID-DIFF-1",
                         "review_task_id": "task-0",
+                        "analyzers_group_id": "group-0",
                         "mercurial_hash": "a2ac78b7d12d6e55b9b15c1c2048a16c58c6c803",
                         "issues_url": "http://testserver/v1/diff/1/issues/",
                         "nb_issues": 0,
@@ -81,6 +83,7 @@ class DiffAPITestCase(APITestCase):
                         },
                         "phid": "PHID-DIFF-2",
                         "review_task_id": "task-1",
+                        "analyzers_group_id": "group-1",
                         "mercurial_hash": "32d2a594cfef74fcb524028d1521d0d4bd98bd35",
                         "issues_url": "http://testserver/v1/diff/2/issues/",
                         "nb_issues": 0,
@@ -97,6 +100,7 @@ class DiffAPITestCase(APITestCase):
                         },
                         "phid": "PHID-DIFF-3",
                         "review_task_id": "task-2",
+                        "analyzers_group_id": "group-2",
                         "mercurial_hash": "30b501affc4d3b9c670fc297ab903b406afd5f04",
                         "issues_url": "http://testserver/v1/diff/3/issues/",
                         "nb_issues": 0,

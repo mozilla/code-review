@@ -54,6 +54,7 @@ class Diff(PhabricatorModel):
     )
 
     review_task_id = models.CharField(max_length=30, unique=True)
+    analyzers_group_id = models.CharField(max_length=30, unique=True, null=True)
     mercurial_hash = models.CharField(max_length=40)
 
     def __str__(self):

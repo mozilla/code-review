@@ -50,7 +50,14 @@ class DiffSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Diff
-        fields = ("id", "phid", "review_task_id", "mercurial_hash", "issues_url")
+        fields = (
+            "id",
+            "phid",
+            "review_task_id",
+            "analyzers_group_id",
+            "mercurial_hash",
+            "issues_url",
+        )
 
 
 class DiffFullSerializer(serializers.ModelSerializer):
@@ -72,6 +79,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
             "revision",
             "phid",
             "review_task_id",
+            "analyzers_group_id",
             "mercurial_hash",
             "issues_url",
             "nb_issues",

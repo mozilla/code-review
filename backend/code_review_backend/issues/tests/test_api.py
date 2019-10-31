@@ -59,6 +59,7 @@ class CreationAPITestCase(APITestCase):
             "id": 1234,
             "phid": "PHID-DIFF-xxx",
             "review_task_id": "deadbeef123",
+            "analyzers_group_id": "bigGroupId",
             "mercurial_hash": "coffee12345",
         }
 
@@ -97,6 +98,8 @@ class CreationAPITestCase(APITestCase):
         diff = Diff.objects.get(pk=1234)
         self.assertEqual(diff.mercurial_hash, "coffee12345")
         self.assertEqual(diff.revision, revision)
+        self.assertEqual(diff.analyzers_group_id, "bigGroupId")
+        self.assertEqual(diff.review_task_id, "deadbeef123")
 
     def test_create_issue(self):
         """
