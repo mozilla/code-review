@@ -46,6 +46,7 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
         "mercurial_hash": "deadbeef1234",
         "phid": "PHID-DIFF-test",
         "review_task_id": "local instance",
+        "analyzers_group_id": "remoteTryGroup",
     }
 
     # No issues at that point
