@@ -147,31 +147,13 @@ export default new Vuex.Store({
       if (state.stats !== null && report.issues) {
         // Calc stats for this report
         state.stats.checks = report.issues.reduce((stats, issue) => {
-          var analyzer = issue.analyzer + (issue.analyzer === 'mozlint' ? '.' + issue.linter : '')
-          var check = null
-          if (issue.analyzer === 'clang-tidy') {
-            check = issue.check
-          } else if (issue.analyzer === 'clang-format') {
-            check = 'lint' // No check information on clang-format
-          } else if (issue.analyzer === 'infer') {
-            check = issue.bug_type
-          } else if (issue.analyzer === 'mozlint') {
-            check = issue.rule
-          } else if (issue.analyzer === 'Coverity') {
-            check = issue.kind
-          } else if (issue.analyzer === 'coverage') {
-            check = 'zero coverage'
-          } else {
-            console.warn('Unsupported analyzer', issue.analyzer)
-            return
-          }
-          var key = analyzer + '.' + check
+          var key = issue.analyzer + '.' + issue.check
           if (stats[key] === undefined) {
             stats[key] = {
-              analyzer: analyzer,
+              analyzer: issue.analyzer,
               key: key,
               message: issue.message,
-              check: check,
+              check: issue.check,
               publishable: 0,
               issues: [],
               total: 0
