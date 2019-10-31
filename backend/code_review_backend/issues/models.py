@@ -3,8 +3,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import urllib.parse
 import uuid
 
+from django.conf import settings
 from django.db import models
 
 LEVEL_WARNING = "warning"
@@ -46,6 +48,10 @@ class Revision(PhabricatorModel):
 
     def __str__(self):
         return f"D{self.id} - {self.title}"
+
+    @property
+    def phabricator_url(self):
+        return urllib.parse.urljoin(settings.PHABRICATOR_HOST, f"D{self.id}")
 
 
 class Diff(PhabricatorModel):

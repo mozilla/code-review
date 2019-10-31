@@ -170,6 +170,9 @@ LOGGING = {
 # Cors open by default in dev
 CORS_ORIGIN_ALLOW_ALL = True
 
+# Use production Phabricator instance by default
+PHABRICATOR_HOST = "https://phabricator.services.mozilla.com"
+
 # Heroku settings override to run the web app in production mode
 if "DYNO" in os.environ:
     logger.info("Setting up Heroku environment")
@@ -214,6 +217,10 @@ if "DYNO" in os.environ:
 
         # Setup Cors allowed domains
         CORS_ORIGIN_WHITELIST = taskcluster.secrets.get("cors-domains", [])
+
+        # Override Phabricator instance
+        if "PHABRICATOR" in taskcluster.secrets:
+            PHABRICATOR_HOST = taskcluster.secrets["PHABRICATOR"]["url"]
 
     else:
         logger.info("Skipping taskcluster configuration")

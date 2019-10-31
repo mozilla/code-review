@@ -32,10 +32,19 @@ class RevisionSerializer(serializers.ModelSerializer):
     diffs_url = serializers.HyperlinkedIdentityField(
         view_name="revision-diffs-list", lookup_url_kwarg="revision_id"
     )
+    phabricator_url = serializers.URLField(read_only=True)
 
     class Meta:
         model = Revision
-        fields = ("id", "repository", "phid", "title", "bugzilla_id", "diffs_url")
+        fields = (
+            "id",
+            "repository",
+            "phid",
+            "title",
+            "bugzilla_id",
+            "diffs_url",
+            "phabricator_url",
+        )
 
 
 class DiffSerializer(serializers.ModelSerializer):
