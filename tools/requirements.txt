@@ -1,6 +1,6 @@
 Logbook==1.5.3
 structlog==19.2.0
-taskcluster==21.2.0
+taskcluster==21.3.0
 toml==0.10.0
 raven==6.10.0
 
