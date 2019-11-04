@@ -57,7 +57,6 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
-    "debug_toolbar",
     "rest_framework",
     "code_review_backend.issues",
 ]
@@ -71,7 +70,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "debug_toolbar.middleware.DebugToolbarMiddleware",
 ]
 
 ROOT_URLCONF = "code_review_backend.app.urls"
@@ -159,6 +157,9 @@ if "DJANGO_DOCKER" in os.environ:
     # Enable GZip and cache, and build a manifest during collectstatic
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+    # Collect static in production mode
+    DEBUG = False
+
 
 # Internal logging setup
 LOGGING = {
@@ -228,3 +229,8 @@ if "DYNO" in os.environ:
 
     else:
         logger.info("Skipping taskcluster configuration")
+
+# Activate django debug toolbar on debug only
+if DEBUG:
+    INSTALLED_APPS.append("debug_toolbar")
+    MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
