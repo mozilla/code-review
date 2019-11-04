@@ -142,6 +142,8 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
 }
 
+# Internal Ips where django debug toolbar is enabled
+INTERNAL_IPS = ["127.0.0.1"]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
@@ -154,6 +156,9 @@ if "DJANGO_DOCKER" in os.environ:
 
     # Enable GZip and cache, and build a manifest during collectstatic
     STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+
+    # Collect static in production mode
+    DEBUG = False
 
 
 # Internal logging setup
@@ -224,3 +229,8 @@ if "DYNO" in os.environ:
 
     else:
         logger.info("Skipping taskcluster configuration")
+
+# Activate django debug toolbar on debug only
+if DEBUG:
+    INSTALLED_APPS.append("debug_toolbar")
+    MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
