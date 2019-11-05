@@ -63,7 +63,7 @@ export default {
   },
   filters: {
     name: function (choice) {
-      return typeof choice === 'string' ? choice : choice.name
+      return typeof choice === 'string' ? choice : (choice.slug || choice.name)
     }
   }
 }

@@ -3,6 +3,8 @@ import Vuex from 'vuex'
 import axios from 'axios'
 Vue.use(Vuex)
 
+const TASKCLUSTER_DIFF_INDEX = 'https://index.taskcluster.net/v1/task/project.relman.production.code-review.phabricator.diff.'
+
 export default new Vuex.Store({
   state: {
     backend_url: process.env.BACKEND_URL,
@@ -10,7 +12,7 @@ export default new Vuex.Store({
     stats: null,
     total_stats: 0, // Used to track download progress
     states: null,
-    repositories: new Set(),
+    repositories: null,
     diff: null
   },
   mutations: {
@@ -27,6 +29,11 @@ export default new Vuex.Store({
     use_diffs (state, diffs) {
       // Simply store diffs & their current pagination
       state.diffs = diffs
+    },
+
+    use_repositories (state, repositories) {
+      // Simply store repositories directly
+      state.repositories = repositories
     },
 
     // Store a new diff to display
@@ -108,6 +115,22 @@ export default new Vuex.Store({
         // Load next stats
         state.dispatch('load_stats', resp.data.next)
       })
+    },
+
+    load_repositories (state, payload) {
+      let url = this.state.backend_url + '/v1/repository/'
+
+      return axios.get(url).then(resp => {
+        // Assume we only have one page here
+        state.commit('use_repositories', resp.data.results)
+      })
+    },
+
+    // Retrieve diff data stored in Taskcluster index
+    // Do not persist that data in our store
+    load_taskcluster_diff (state, payload) {
+      let url = TASKCLUSTER_DIFF_INDEX + payload.id
+      return axios.get(url)
     }
   }
 })

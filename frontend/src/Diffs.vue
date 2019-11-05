@@ -7,6 +7,9 @@ export default {
   mounted () {
     // Load new tasks at startup
     this.load_diffs()
+
+    // Load repositories at startup
+    this.$store.dispatch('load_repositories')
   },
   watch: {
     '$route' (to, from, next) {
@@ -53,7 +56,7 @@ export default {
           },
           {
             name: 'Publishable issues',
-            func: t => t.data.issues_publishable && t.data.issues_publishable > 0
+            func: t => t.data.nb_issues_new_for_revision && t.data.nb_issues_new_for_revision > 0
           }
         ]
       }
@@ -100,13 +103,14 @@ export default {
       return this.$store.state.states
     },
     repositories () {
-      // Convert repositories set to an array
-      return [...this.$store.state.repositories].map(url => {
-        if (url.startsWith('https://hg.mozilla.org/')) {
-          return url.substring(23)
-        }
-        return url
-      })
+      return this.$store.state.repositories
+    }
+  },
+  filters: {
+    treeherder_url (diff) {
+      let rev = diff.mercurial_hash
+      let tryRepo = diff.revision.repo === 'nss' ? 'nss-try' : 'try'
+      return `https://treeherder.mozilla.org/#/jobs?repo=${tryRepo}&revision=${rev}`
     }
   }
 }
@@ -184,10 +188,10 @@ export default {
             <span class="tag is-black" v-else>Unknown</span>
           </td>
 
-          <td :class="{'has-text-success': diff.issues_publishable > 0}">
+          <td :class="{'has-text-success': diff.nb_issues_new_for_revision > 0}">
 
-            <span v-if="diff.issues_publishable > 0">{{ diff.issues_publishable }}</span>
-            <span v-else-if="diff.issues_publishable == 0">{{ diff.issues_publishable }}</span>
+            <span v-if="diff.nb_issues_new_for_revision > 0">{{ diff.nb_issues_new_for_revision }}</span>
+            <span v-else-if="diff.nb_issues_new_for_revision == 0">{{ diff.nb_issues_new_for_revision }}</span>
             <span v-else>-</span>
             / {{ diff.nb_issues }}
           </td>
@@ -196,17 +200,10 @@ export default {
             <span :title="diff.indexed">{{ diff.indexed|since }} ago</span>
           </td>
           <td>
-<<<<<<< HEAD
-            <a class="button is-link" :href="task.data.url" target="_blank">Phabricator</a>
-            <a v-if="task.data.bugzilla_id" class="button is-dark" :href="'https://bugzil.la/' + task.data.bugzilla_id" target="_blank">Bugzilla</a>
-            <a class="button is-primary" :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + task.data.try_group_id" target="_blank">Try Tasks</a>
-            <router-link v-if="task.data.issues > 0" :to="{ name: 'task', params: { taskId : task.taskId }}" class="button is-primary">Issues</router-link>
-=======
-            <a class="button is-link" :href="diff.url" target="_blank">Phabricator</a>
+            <a class="button is-link" :href="diff.revision.phabricator_url" target="_blank">Phabricator</a>
             <a v-if="diff.revision.bugzilla_id" class="button is-dark" :href="'https://bugzil.la/' + diff.revision.bugzilla_id" target="_blank">Bugzilla</a>
-            <a class="button is-primary" :href="'https://tools.taskcluster.net/tasks/' + diff.try_group_id" target="_blank">Try Tasks</a>
+            <a class="button is-primary" :href="diff | treeherder_url" target="_blank">Treeherder</a>
             <router-link v-if="diff.nb_issues > 0" :to="{ name: 'diff', params: { diffId: diff.id }}" class="button is-primary">Issues</router-link>
->>>>>>> frontend: load diffs on home page
           </td>
         </tr>
       </tbody>
