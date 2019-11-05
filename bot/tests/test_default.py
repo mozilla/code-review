@@ -107,7 +107,6 @@ A random issue happened here
         "column": 51,
         "hash": "006f9f3481aec88ed3de11bc8de2eff6",
         "in_patch": False,
-        "is_new": False,
         "level": "error",
         "line": 42,
         "message": "A random issue happened here",

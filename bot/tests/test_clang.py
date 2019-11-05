@@ -110,7 +110,6 @@ def test_as_dict(mock_revision, mock_hgmo):
         "level": "error",
         "message": "dummy message withUppercaseChars",
         "in_patch": False,
-        "is_new": False,
         "validates": True,
         "publishable": False,
         "hash": "f94457942070fa51a52230f35a488be0",
@@ -148,7 +147,6 @@ def test_as_markdown(mock_revision):
 - **Publishable check**: yes
 - **Expanded Macro**: no
 - **Publishable **: no
-- **Is new**: no
 - **Checker reliability **: high (false positive risk)
 
 

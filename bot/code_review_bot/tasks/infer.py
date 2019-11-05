@@ -19,7 +19,6 @@ ISSUE_MARKDOWN = """
 - **In patch**: {in_patch}
 - **Infer check**: {check}
 - **Publishable **: {publishable}
-- **Is new**: {is_new}
 """
 
 INFER_SETUP_CMD = [
@@ -78,7 +77,6 @@ class InferIssue(Issue):
             location="{}:{}:{}".format(self.path, self.line, self.column),
             in_patch="yes" if self.revision.contains(self) else "no",
             publishable="yes" if self.is_publishable() else "no",
-            is_new="yes" if self.is_new else "no",
         )
 
     def as_phabricator_lint(self):

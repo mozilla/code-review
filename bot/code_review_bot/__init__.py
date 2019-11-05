@@ -200,7 +200,6 @@ class Issue(abc.ABC):
             "level": self.level,
             "message": self.message,
             "in_patch": self.revision.contains(self),
-            "is_new": self.is_new,
             "validates": self.validates(),
             "publishable": self.is_publishable(),
             "hash": self.build_hash(),

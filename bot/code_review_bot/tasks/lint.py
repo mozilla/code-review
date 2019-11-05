@@ -15,7 +15,6 @@ ISSUE_MARKDOWN = """
 - **Line**: {line}
 - **Disabled check**: {disabled_check}
 - **Publishable**: {publishable}
-- **Is new**: {is_new}
 
 ```
 {message}
@@ -97,7 +96,6 @@ class MozLintIssue(Issue):
             message=self.message,
             publishable=self.is_publishable() and "yes" or "no",
             disabled_check=self.is_disabled_check() and "yes" or "no",
-            is_new=self.is_new and "yes" or "no",
         )
 
     def as_phabricator_lint(self):
