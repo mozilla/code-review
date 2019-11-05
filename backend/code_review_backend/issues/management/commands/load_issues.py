@@ -13,6 +13,7 @@ from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.db import transaction
 
+from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import Issue
 from code_review_backend.issues.models import Repository
 
@@ -90,6 +91,9 @@ class Command(BaseCommand):
                 message=i.get("message"),
                 analyzer=i["analyzer"],
                 hash=i["hash"],
+                new_for_revision=detect_new_for_revision(
+                    diff, path=i["path"], hash=i["hash"]
+                ),
             )
             for i in issues
         )
