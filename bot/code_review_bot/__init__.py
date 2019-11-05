@@ -45,7 +45,6 @@ class Issue(abc.ABC):
     Common reported issue interface
     """
 
-    is_new = False
     revision = None
 
     def __init__(
@@ -80,6 +79,9 @@ class Issue(abc.ABC):
         self.message = message
         self.level = level
 
+        # Reserved payload for backend
+        self.on_backend = None
+
     def __str__(self):
         return f"{self.analyzer} issue {self.check}@{self.level} {self.path} line {self.line}"
 
@@ -105,10 +107,17 @@ class Issue(abc.ABC):
             return self.revision.contains(self)
 
         if settings.publication == Publication.BEFORE_AFTER:
-            # Simply use marker set on workflow
+            # Simply use marker set by backend
             # and check the revision contains the file
             # as Phabricator only support inline comments on modified files
-            return self.revision.has_file(self.path) and self.is_new
+            if self.on_backend is None:
+                # Fallback to IN_PATCH when backend data is not available
+                return self.revision.contains(self)
+
+            return (
+                self.revision.has_file(self.path)
+                and self.on_backend["new_for_revision"]
+            )
 
         raise Exception("Unsupported publication mode {}".format(settings.publication))
 
