@@ -1,11 +1,9 @@
 <script>
-import Vue from 'vue'
-
 export default {
   mounted () {
     this.$store.dispatch('load_revision', { id: this.$route.params.revisionId })
-      .then(resp => { Vue.set(this, 'state', 'loaded') })
-      .catch(err => { Vue.set(this, 'state', err) })
+      .then(resp => { this.$set(this, 'state', 'loaded') })
+      .catch(err => { this.$set(this, 'state', err) })
   },
   data () {
     return {
@@ -35,7 +33,7 @@ export default {
       </p>
 
       <div v-for="diff in revision.diffs">
-        <pre>{{ diff }}</pre>
+        <router-link :to="{ name: 'diff', params: { diffId: diff.id }}" class="button is-primary">Diff {{ diff.id }}</router-link>
       </div>
     </div>
     <div class="notification is-danger" v-else>

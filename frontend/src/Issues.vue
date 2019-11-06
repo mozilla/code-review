@@ -9,19 +9,19 @@ export default {
     return {
       state: 'loading',
       filters: {
-        publishable: null,
+        new_for_revision: null,
         analyzer: null,
         path: null
       },
       choices: {
-        publishable: [
+        new_for_revision: [
           {
-            name: 'Publishable',
-            func: i => i.publishable
+            name: 'New for revision',
+            func: i => i.new_for_revision
           },
           {
-            name: 'Non publishable',
-            func: i => !i.publishable
+            name: 'Aready present in revision',
+            func: i => !i.new_for_revision
           }
         ]
       }
@@ -33,8 +33,8 @@ export default {
   },
   mounted () {
     // Update filters from query string
-    let publishable = parseInt(this.$route.query.issue)
-    this.filters.publishable = isNaN(publishable) ? null : this.choices.publishable[publishable]
+    let newForRevision = parseInt(this.$route.query.issue)
+    this.filters.new_for_revision = isNaN(newForRevision) ? null : this.choices.new_for_revision[newForRevision]
     this.filters.path = this.$route.query.path || null
     this.filters.analyzer = this.$route.query.analyzer || null
 
@@ -67,18 +67,18 @@ export default {
       // List sorted unique analyzers as choices
       return _.sortBy(_.uniq(_.map(this.diff.issues, 'analyzer')))
     },
-    nb_publishable () {
+    nb_new_for_revision () {
       if (!this.diff || !this.diff.issues) {
         return 0
       }
-      return this.diff.issues.filter(i => i.publishable).length
+      return this.diff.issues.filter(i => i.new_for_revision).length
     },
     issues () {
       let issues = this.diff ? this.diff.issues : []
 
-      // Filter by publishable
-      if (this.filters.publishable !== null) {
-        issues = _.filter(issues, this.filters.publishable.func)
+      // Filter by new_for_revision
+      if (this.filters.new_for_revision !== null) {
+        issues = _.filter(issues, this.filters.new_for_revision.func)
       }
 
       // Filter by path
@@ -114,8 +114,8 @@ export default {
       <nav class="level" v-if="diff && diff.id">
         <div class="level-item has-text-centered">
           <div>
-            <p class="heading">Publishable</p>
-            <p class="title">{{ nb_publishable }}</p>
+            <p class="heading">new_for_revision</p>
+            <p class="title">{{ nb_new_for_revision }}</p>
           </div>
         </div>
         <div class="level-item has-text-centered">
@@ -145,7 +145,7 @@ export default {
             <td><Choice :choices="analyzers" name="analyzer" v-on:new-choice="filters.analyzer = $event"/></td>
             <td><Choice :choices="paths" name="path" v-on:new-choice="filters.path = $event"/></td>
             <td>Lines</td>
-            <td><Choice :choices="choices.publishable" name="issue" v-on:new-choice="filters.publishable = $event"/></td>
+            <td><Choice :choices="choices.new_for_revision" name="issue" v-on:new-choice="filters.new_for_revision = $event"/></td>
             <td>Check</td>
             <td>Level</td>
             <td>Message</td>
@@ -153,7 +153,7 @@ export default {
         </thead>
 
         <tbody>
-          <tr v-for="issue in issues" :class="{'publishable': issue.publishable}">
+          <tr v-for="issue in issues" :class="{'new_for_revision': issue.new_for_revision}">
             <td><samp>{{ issue.hash.substring(0, 12) }}</samp></td>
             <td>
               <span>{{ issue.analyzer }}</span>
@@ -161,12 +161,7 @@ export default {
             <td class="path">{{ issue.path }}</td>
             <td>{{ issue.line }} <span v-if="issue.nb_lines > 1">&rarr; {{ issue.line - 1 + issue.nb_lines }}</span></td>
             <td>
-              <Bool :value="issue.publishable" name="Publishable" />
-              <ul>
-                <li><Bool :value="issue.in_patch" name="In patch" /></li>
-                <li><Bool :value="issue.validates" name="Validated" /></li>
-                <li><Bool :value="issue.publishable" name="New issue" /></li>
-              </ul>
+              <Bool :value="issue.new_for_revision" name="New for revision" />
             </td>
 
             <td>
@@ -193,7 +188,7 @@ export default {
 </template>
 
 <style scoped>
-tr.publishable {
+tr.new_for_revision {
   background: #e6ffcc;
 }
 
