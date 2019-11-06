@@ -38,8 +38,8 @@ tasks:
     python_version: "3.7"
   in:
     - taskId: {$eval: as_slugid("check_lint")}
-      provisionerId: aws-provisioner-v1
-      workerType: github-worker
+      provisionerId: proj-relman
+      workerType: ci
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
       payload:
@@ -58,8 +58,8 @@ tasks:
         source: https://github.com/mozilla/code-review
 
     - taskId: {$eval: as_slugid("bot_check_tests")}
-      provisionerId: aws-provisioner-v1
-      workerType: github-worker
+      provisionerId: proj-relman
+      workerType: ci
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
       payload:
@@ -80,8 +80,8 @@ tasks:
         source: https://github.com/mozilla/code-review
 
     - taskId: {$eval: as_slugid("events_check_tests")}
-      provisionerId: aws-provisioner-v1
-      workerType: github-worker
+      provisionerId: proj-relman
+      workerType: ci
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
       payload:
@@ -101,8 +101,8 @@ tasks:
         source: https://github.com/mozilla/code-review
 
     - taskId: {$eval: as_slugid("backend_check_tests")}
-      provisionerId: aws-provisioner-v1
-      workerType: github-worker
+      provisionerId: proj-relman
+      workerType: ci
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
       payload:
@@ -122,8 +122,8 @@ tasks:
         source: https://github.com/mozilla/code-review
 
     - taskId: {$eval: as_slugid("frontend_build")}
-      provisionerId: aws-provisioner-v1
-      workerType: github-worker
+      provisionerId: proj-relman
+      workerType: ci
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
       payload:
@@ -149,8 +149,8 @@ tasks:
     - taskId: {$eval: as_slugid("bot_build")}
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
-      provisionerId: aws-provisioner-v1
-      workerType: relman-svc
+      provisionerId: proj-relman
+      workerType: ci
       dependencies:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("bot_check_tests")}
@@ -190,8 +190,8 @@ tasks:
     - taskId: {$eval: as_slugid("events_build")}
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
-      provisionerId: aws-provisioner-v1
-      workerType: releng-svc
+      provisionerId: proj-relman
+      workerType: ci
       dependencies:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("events_check_tests")}
@@ -231,8 +231,8 @@ tasks:
     - taskId: {$eval: as_slugid("backend_build")}
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
-      provisionerId: aws-provisioner-v1
-      workerType: releng-svc
+      provisionerId: proj-relman
+      workerType: ci
       dependencies:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("backend_check_tests")}
@@ -274,8 +274,8 @@ tasks:
         taskId: {$eval: as_slugid("frontend_deploy")}
         created: {$fromNow: ''}
         deadline: {$fromNow: '1 hour'}
-        provisionerId: aws-provisioner-v1
-        workerType: github-worker
+        provisionerId: proj-relman
+        workerType: ci
         dependencies:
           - {$eval: as_slugid("frontend_build")}
         payload:
@@ -306,8 +306,8 @@ tasks:
         taskId: {$eval: as_slugid("bot_deploy")}
         created: {$fromNow: ''}
         deadline: {$fromNow: '1 hour'}
-        provisionerId: aws-provisioner-v1
-        workerType: github-worker
+        provisionerId: proj-relman
+        workerType: ci
         dependencies:
           - {$eval: as_slugid("bot_build")}
         payload:
@@ -339,8 +339,8 @@ tasks:
           - "hooks:modify-hook:project-relman/code-review-${channel}"
         created: {$fromNow: ''}
         deadline: {$fromNow: '5 hours'}
-        provisionerId: aws-provisioner-v1
-        workerType: github-worker
+        provisionerId: proj-relman
+        workerType: ci
         payload:
           features:
             # Needed for access to hook api
@@ -366,8 +366,8 @@ tasks:
         taskId: {$eval: as_slugid("events_deploy")}
         created: {$fromNow: ''}
         deadline: {$fromNow: '1 hour'}
-        provisionerId: aws-provisioner-v1
-        workerType: github-worker
+        provisionerId: proj-relman
+        workerType: ci
         dependencies:
           - {$eval: as_slugid("events_build")}
         payload:
@@ -396,8 +396,8 @@ tasks:
         taskId: {$eval: as_slugid("backend_deploy")}
         created: {$fromNow: ''}
         deadline: {$fromNow: '1 hour'}
-        provisionerId: aws-provisioner-v1
-        workerType: github-worker
+        provisionerId: proj-relman
+        workerType: ci
         dependencies:
           - {$eval: as_slugid("backend_build")}
         payload:
