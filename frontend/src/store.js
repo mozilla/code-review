@@ -13,7 +13,8 @@ export default new Vuex.Store({
     total_stats: 0, // Used to track download progress
     states: null,
     repositories: null,
-    diff: null
+    diff: null,
+    revision: null
   },
   mutations: {
     reset (state) {
@@ -34,6 +35,10 @@ export default new Vuex.Store({
     use_repositories (state, repositories) {
       // Simply store repositories directly
       state.repositories = repositories
+    },
+
+    use_revision (state, payload) {
+      state.revision = Object.assign(payload.revision, { 'diffs': payload.diffs })
     },
 
     // Store a new diff to display
@@ -131,6 +136,19 @@ export default new Vuex.Store({
     load_taskcluster_diff (state, payload) {
       let url = TASKCLUSTER_DIFF_INDEX + payload.id
       return axios.get(url)
+    },
+
+    // Load a specific revision and its diffs
+    load_revision (state, payload) {
+      return Promise.all([
+        axios.get(this.state.backend_url + '/v1/revision/' + payload.id),
+        axios.get(this.state.backend_url + '/v1/revision/' + payload.id + '/diffs/')
+      ]).then(([respRevision, respDiffs]) => {
+        state.commit('use_revision', {
+          revision: respRevision.data,
+          diffs: respDiffs.data.results
+        })
+      })
     }
   }
 })

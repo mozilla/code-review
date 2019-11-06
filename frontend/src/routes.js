@@ -1,7 +1,8 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import Diffs from './Diffs.vue'
-import Diff from './Diff.vue'
+import Revision from './Revision.vue'
+import Issues from './Issues.vue'
 import Stats from './Stats.vue'
 import Check from './Check.vue'
 
@@ -15,14 +16,14 @@ export default new VueRouter({
       component: Diffs
     },
     {
-      path: '/rev/:revision',
+      path: '/D:revisionId',
       name: 'revision',
-      component: Diffs
+      component: Revision
     },
     {
       path: '/diff/:diffId',
       name: 'diff',
-      component: Diff
+      component: Issues
     },
     {
       path: '/stats',

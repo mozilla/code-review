@@ -6,32 +6,11 @@ import Choice from './Choice.vue'
 export default {
   mounted () {
     // Load new tasks at startup
-    this.load_diffs()
+    this.$store.commit('reset')
+    this.$store.dispatch('load_diffs', {})
 
     // Load repositories at startup
     this.$store.dispatch('load_repositories')
-  },
-  watch: {
-    '$route' (to, from, next) {
-      // Load new tasks when route change
-      if (to.path !== from.path) {
-        this.load_diffs()
-      }
-    }
-  },
-  methods: {
-    load_diffs () {
-      var payload = {}
-
-      // Reset state
-      this.$store.commit('reset')
-
-      // Load a specific revision only
-      if (this.$route.params.revision) {
-        payload['revision'] = this.$route.params.revision
-      }
-      this.$store.dispatch('load_diffs', payload)
-    }
   },
   components: {
     Choice: Choice
@@ -163,7 +142,7 @@ export default {
             <p v-if="diff.revision.title">{{ diff.revision.title }}</p>
             <p class="has-text-danger" v-else>No title</p>
             <p>
-              <small class="mono has-text-grey-light">{{ diff.revision.phid}}</small> - <router-link :to="{ name: 'revision', params: { revision: diff.revision.id }}">rev {{ diff.revision.id }}</router-link>
+              Revision <router-link :to="{ name: 'revision', params: { revisionId: diff.revision.id }}">D{{ diff.revision.id }}</router-link>
             </p>
           </td>
 
