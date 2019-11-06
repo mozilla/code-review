@@ -44,6 +44,26 @@ export default {
   mixins: [
     mixins.date
   ],
+  methods: {
+    load_next_diffs () {
+      if (!this.has_next) {
+        return
+      }
+
+      this.$store.dispatch('load_diffs', {
+        url: this.$store.state.diffs.next
+      })
+    },
+    load_previous_diffs () {
+      if (!this.has_previous) {
+        return
+      }
+
+      this.$store.dispatch('load_diffs', {
+        url: this.$store.state.diffs.previous
+      })
+    }
+  },
   computed: {
     diffs () {
       let diffs = this.$store.state.diffs.results
@@ -75,14 +95,22 @@ export default {
 
       return diffs
     },
-    diffs_total () {
-      return this.$store.state.diffs.count
-    },
     states () {
       return this.$store.state.states
     },
     repositories () {
       return this.$store.state.repositories
+    },
+
+    // Pagination helper
+    total () {
+      return this.$store.state.diffs.count
+    },
+    has_next () {
+      return this.$store.state.diffs.next !== null
+    },
+    has_previous () {
+      return this.$store.state.diffs.previous !== null
     }
   },
   filters: {
@@ -108,6 +136,11 @@ export default {
         </div>
       </div>
     </div>
+
+    <nav class="pagination" v-if="total > 0">
+      <button class="pagination-previous" :disabled="!has_previous" v-on:click="load_previous_diffs">Newer diffs</button>
+      <button class="pagination-next" :disabled="!has_next" v-on:click="load_next_diffs">Older diffs</button>
+    </nav>
 
     <table class="table is-fullwidth">
       <thead>
