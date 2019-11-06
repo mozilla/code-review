@@ -13,6 +13,24 @@ export default {
   computed: {
     revision () {
       return this.$store.state.revision
+    },
+    paths () {
+      // Load all issues
+      let paths = new Set()
+      for (let diff of this.revision.diffs) {
+        let issues = this.$store.state.issues[diff.id] || []
+        for (let issue of issues) {
+          paths.add(issue.path)
+        }
+      }
+
+      return [...paths].sort()
+    }
+  },
+  methods: {
+    path_issues (diffId, path) {
+      let issues = this.$store.state.issues[diffId] || []
+      return issues.filter(issue => issue.path === path)
     }
   }
 }
@@ -32,9 +50,43 @@ export default {
         </span>
       </p>
 
-      <div v-for="diff in revision.diffs">
-        <router-link :to="{ name: 'diff', params: { diffId: diff.id }}" class="button is-primary">Diff {{ diff.id }}</router-link>
-      </div>
+      <nav class="panel" v-for="path in paths">
+        <p class="panel-heading">
+          {{ path }}
+        </p>
+        <div class="panel-block">
+          <div class="columns">
+            <div class="column" v-for="diff in revision.diffs">
+              <p>
+                <router-link :to="{ name: 'diff', params: { diffId: diff.id }}">Diff {{ diff.id }}</router-link>
+              </p>
+
+              <table class="table">
+                <tr>
+                  <th>New</th>
+                  <th>Line</th>
+                  <th>Char</th>
+                  <th>Analyzer</th>
+                  <th>Check</th>
+                  <th>Hash</th>
+                </tr>
+                <tr v-for="issue in path_issues(diff.id, path)" :class="{new_for_revision: issue.new_for_revision}">
+                  <td>
+                    <span v-if="issue.new_for_revision">✔</span>
+                    <span v-else>❌</span>
+                  </td>
+                  <td>{{ issue.line }}</td>
+                  <td>{{ issue.char }}</td>
+                  <td>{{ issue.analyzer }}</td>
+                  <td>{{ issue.check }}</td>
+                  <td><samp>{{ issue.hash.substring(0, 8) }}</samp></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </nav>
+
     </div>
     <div class="notification is-danger" v-else>
       <h4 class="title">Error</h4>
@@ -42,3 +94,9 @@ export default {
     </div>
   </section>
 </template>
+
+<style>
+tr.new_for_revision {
+  background: #e6ffcc;
+}
+</style>

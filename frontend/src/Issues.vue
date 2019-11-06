@@ -4,7 +4,7 @@ import _ from 'lodash'
 import Choice from './Choice.vue'
 
 export default {
-  name: 'Diff',
+  name: 'Issues',
   data () {
     return {
       state: 'loading',
@@ -71,10 +71,13 @@ export default {
       if (!this.diff || !this.diff.issues) {
         return 0
       }
-      return this.diff.issues.filter(i => i.new_for_revision).length
+      return this.all_issues.filter(i => i.new_for_revision).length
+    },
+    all_issues () {
+      return this.diff ? (this.$store.state.issues[this.diff.id] || []) : []
     },
     issues () {
-      let issues = this.diff ? this.diff.issues : []
+      let issues = this.all_issues
 
       // Filter by new_for_revision
       if (this.filters.new_for_revision !== null) {
@@ -121,7 +124,7 @@ export default {
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">Issues</p>
-            <p class="title">{{ diff.issues.length }}</p>
+            <p class="title">{{ all_issues.length }}</p>
           </div>
         </div>
         <div class="level-item has-text-centered">

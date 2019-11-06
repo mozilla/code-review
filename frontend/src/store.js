@@ -14,6 +14,7 @@ export default new Vuex.Store({
     states: null,
     repositories: null,
     diff: null,
+    issues: {},
     revision: null
   },
   mutations: {
@@ -49,12 +50,12 @@ export default new Vuex.Store({
       }
     },
 
-    // Add issues to the currently stored diff
-    add_issues (state, issues) {
-      if (!state.diff) {
-        return null
-      }
-      state.diff = Object.assign({}, state.diff, { 'issues': state.diff.issues.concat(issues) })
+    // Add issues to a diff
+    add_issues (state, payload) {
+      let update = {}
+      let issues = state.issues[payload.diffId] || []
+      update[payload.diffId] = issues.concat(payload.issues)
+      state.issues = Object.assign({}, state.issues, update)
     },
 
     // Add stats to the store
@@ -82,26 +83,30 @@ export default new Vuex.Store({
         state.commit('use_diff', resp.data)
 
         // Load all issues in that diff
-        state.dispatch('load_issues', resp.data.issues_url)
+        state.dispatch('load_issues', {
+          diffId: diffId,
+          url: resp.data.issues_url
+        })
       }).catch(err => {
         state.commit('use_diff', err)
       })
     },
 
-    load_issues (state, issuesUrl) {
-      if (issuesUrl === null) {
+    load_issues (state, payload) {
+      if (payload.url === null) {
         return
       }
-      if (this.state.diff === null) {
-        throw new Error('Cannot load issues without a diff')
-      }
 
-      axios.get(issuesUrl).then(resp => {
+      axios.get(payload.url).then(resp => {
         // Store new issues
-        state.commit('add_issues', resp.data.results)
+        state.commit('add_issues', {
+          diffId: payload.diffId,
+          issues: resp.data.results
+        })
 
         // Load next issues
-        state.dispatch('load_issues', resp.data.next)
+        payload.url = resp.data.next
+        state.dispatch('load_issues', payload)
       })
     },
 
@@ -144,10 +149,19 @@ export default new Vuex.Store({
         axios.get(this.state.backend_url + '/v1/revision/' + payload.id),
         axios.get(this.state.backend_url + '/v1/revision/' + payload.id + '/diffs/')
       ]).then(([respRevision, respDiffs]) => {
+        // Store revision & diffs data
         state.commit('use_revision', {
           revision: respRevision.data,
           diffs: respDiffs.data.results
         })
+
+        // Start loading issues for each diff
+        for (let diff of respDiffs.data.results) {
+          state.dispatch('load_issues', {
+            diffId: diff.id,
+            url: diff.issues_url
+          })
+        }
       })
     }
   }
