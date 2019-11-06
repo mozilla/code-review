@@ -134,6 +134,26 @@ class CreationAPITestCase(APITestCase):
         response = self.client.post("/v1/diff/1234/issues/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+        # Do not check the content of issue created as it's a random UUID
+        issue_data = response.json()
+        self.assertTrue("id" in issue_data)
+        del issue_data["id"]
+        self.assertDictEqual(
+            issue_data,
+            {
+                "analyzer": "remote-flake8",
+                "char": None,
+                "check": None,
+                "hash": "somemd5hash",
+                "level": "error",
+                "line": 1,
+                "message": None,
+                "nb_lines": None,
+                "new_for_revision": True,
+                "path": "path/to/file.py",
+            },
+        )
+
         # Check a revision has been created
         self.assertEqual(Diff.objects.count(), 1)
         issue = Issue.objects.first()
@@ -141,6 +161,7 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(issue.line, 1)
         self.assertEqual(issue.diff, diff)
         self.assertEqual(issue.diff.revision, revision)
+        self.assertTrue(issue.new_for_revision)
 
         # The diff now counts an issue
         response = self.client.get("/v1/diff/1234/")

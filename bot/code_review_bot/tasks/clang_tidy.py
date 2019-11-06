@@ -26,7 +26,6 @@ ISSUE_MARKDOWN = """
 - **Publishable check**: {publishable_check}
 - **Expanded Macro**: {expanded_macro}
 - **Publishable **: {publishable}
-- **Is new**: {is_new}
 - **Checker reliability **: {reliability} (false positive risk)
 
 {notes}
@@ -145,7 +144,6 @@ class ClangTidyIssue(Issue):
             publishable_check="yes" if self.has_publishable_check() else "no",
             publishable="yes" if self.is_publishable() else "no",
             expanded_macro="yes" if self.is_expanded_macro() else "no",
-            is_new="yes" if self.is_new else "no",
             reliability=self.reliability.value,
             notes="\n".join(
                 [

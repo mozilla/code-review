@@ -110,7 +110,6 @@ The path that leads to this defect is:
     assert issue.as_dict() == {
         "analyzer": "mock-coverity",
         "in_patch": False,
-        "is_new": False,
         "check": "NULL_RETURNS",
         "column": None,
         "level": "error",

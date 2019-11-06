@@ -77,7 +77,7 @@ class BackendAPI(object):
 
         assert revision.issues_url is not None, "Missing issues_url on revision"
         for issue in issues:
-            self.create(revision.issues_url, issue.as_dict())
+            issue.on_backend = self.create(revision.issues_url, issue.as_dict())
 
         logger.info("Published all issues on backend")
 

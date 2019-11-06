@@ -96,8 +96,6 @@ class Workflow(object):
         # Publish issues on backend to retrieve their comparison state
         self.backend_api.publish_issues(issues, revision)
 
-        # TODO: load issues detected as new by the backend
-
         # Publish all issues
         self.publish(revision, issues)
 

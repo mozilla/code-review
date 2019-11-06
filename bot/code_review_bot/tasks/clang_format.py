@@ -13,7 +13,6 @@ ISSUE_MARKDOWN = """
 
 - **Path**: {path}
 - **Lines**: from {line}, on {nb_lines} lines
-- **Is new**: {is_new}
 """
 
 
@@ -35,7 +34,6 @@ class ClangFormatIssue(Issue):
             column=column,
             level="warning",
         )
-        self.is_new = True
         self.patch = patch
 
     def validates(self):
@@ -56,10 +54,7 @@ class ClangFormatIssue(Issue):
         Build the Markdown content for debug email
         """
         return ISSUE_MARKDOWN.format(
-            path=self.path,
-            line=self.line,
-            nb_lines=self.nb_lines,
-            is_new="yes" if self.is_new else "no",
+            path=self.path, line=self.line, nb_lines=self.nb_lines
         )
 
     def as_phabricator_lint(self):

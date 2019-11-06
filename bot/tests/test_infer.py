@@ -47,7 +47,6 @@ def test_as_dict(mock_revision, mock_hgmo):
         "check": "SOMETYPE",
         "column": -1,
         "in_patch": False,
-        "is_new": False,
         "level": "SomeKindOfBug",
         "line": 3,
         "message": "Error on this line",
@@ -84,7 +83,6 @@ def test_as_markdown(mock_revision):
 - **In patch**: no
 - **Infer check**: SOMETYPE
 - **Publishable **: no
-- **Is new**: no
 """
     )
 

@@ -90,6 +90,10 @@ class Issue(models.Model):
     # Calculated hash identifying issue
     hash = models.CharField(max_length=32)
 
+    # Is this issue new for this revision ?
+    # Can be null (not set by API) when a revision is not linked to a diff
+    new_for_revision = models.BooleanField(null=True)
+
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

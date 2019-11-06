@@ -124,7 +124,6 @@ def test_full_file(mock_revision, mock_hgmo):
         "column": 0,
         "hash": "76a76ba6e023d933acba9e07ae2897f6",
         "in_patch": False,
-        "is_new": False,
         "level": "error",
         "line": None,
         "message": "Some issue found on a file",

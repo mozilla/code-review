@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.db.models import Count
+from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.urls import path
 from rest_framework import generics
@@ -11,6 +12,7 @@ from rest_framework import mixins
 from rest_framework import routers
 from rest_framework import viewsets
 
+from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import Diff
 from code_review_backend.issues.models import Issue
 from code_review_backend.issues.models import Repository
@@ -73,8 +75,13 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = DiffFullSerializer
     queryset = (
         Diff.objects.all()
+        .prefetch_related("issues", "revision", "revision__repository")
         .annotate(nb_issues=Count("issues"))
-        .prefetch_related("issues")
+        .annotate(
+            nb_issues_new_for_revision=Count(
+                "issues", filter=Q(issues__new_for_revision=True)
+            )
+        )
     )
 
 
@@ -86,8 +93,16 @@ class IssueViewSet(CreateListRetrieveViewSet):
 
     def perform_create(self, serializer):
         # Attach diff to issue created
+        # and detect if the issue is new for the revision
         diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
-        serializer.save(diff=diff)
+        serializer.save(
+            diff=diff,
+            new_for_revision=detect_new_for_revision(
+                diff,
+                path=serializer.validated_data["path"],
+                hash=serializer.validated_data["hash"],
+            ),
+        )
 
 
 class IssueCheckStats(generics.ListAPIView):
