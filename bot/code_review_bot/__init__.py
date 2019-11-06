@@ -114,6 +114,8 @@ class Issue(abc.ABC):
                 # Fallback to IN_PATCH when backend data is not available
                 return self.revision.contains(self)
 
+            # TODO: this is a naive implementation that only checks if an issue
+            # is new for the revision. All first seen issues will be published !
             return (
                 self.revision.has_file(self.path)
                 and self.on_backend["new_for_revision"]

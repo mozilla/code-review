@@ -7,7 +7,10 @@ from code_review_backend.issues.models import Issue
 
 
 def detect_new_for_revision(diff: Diff, path: str, hash: str) -> bool:
-    """Detect if an issue identified by its path and hash are new for a revision, from its diff"""
+    """
+    Detect if an issue identified by its path and hash are new for a revision, from its diff
+    This function ignores pre-existing issues outside of that revision !
+    """
     assert diff is not None, "Missing diff"
     return not Issue.objects.filter(
         diff__revision_id=diff.revision_id, diff_id__lt=diff.id, path=path, hash=hash
