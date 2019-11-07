@@ -21,11 +21,16 @@
 </template>
 
 <script>
+import mixins from './mixins.js'
+
 export default {
   props: {
     'name': String,
     'choices': Array
   },
+  mixins: [
+    mixins.query
+  ],
   data: function () {
     return {
       current: null
@@ -47,18 +52,12 @@ export default {
       this.$emit('new-choice', choice)
 
       // Set value in the url for sharing
-      var query = Object.assign({}, this.$route.query)
-      if (choice !== null) {
-        query[this.name] = typeof choice === 'string' ? choice : this.choices.indexOf(choice)
-      } else if (this.name in query) {
-        delete query[this.name]
-      }
-      this.$router.push({ 'query': query })
+      // this.update_query(this.name, typeof choice === 'string' ? choice : this.choices.indexOf(choice))
     }
   },
   computed: {
     default_choice_name: function () {
-      return 'All ' + this.name + 's'
+      return 'Filter by ' + this.name
     }
   },
   filters: {

@@ -1,13 +1,18 @@
 <script>
 import mixins from './mixins.js'
-import _ from 'lodash'
 import Choice from './Choice.vue'
 
 export default {
   mounted () {
+    // Use parameters from url as initial query
+    if (this.$route.query) {
+      this.$set(this, 'filters', this.$route.query)
+      this.$set(this, 'search', this.filters.search)
+    }
+
     // Load new tasks at startup
     this.$store.commit('reset')
-    this.$store.dispatch('load_diffs', {})
+    this.$store.dispatch('load_diffs', { filters: this.filters })
 
     // Load repositories at startup
     this.$store.dispatch('load_repositories')
@@ -17,32 +22,29 @@ export default {
   },
   data: function () {
     return {
-      filters: {
-        state: null,
-        issues: null,
-        revision: null,
-        repository: null
-      },
+      search: null,
+      filters: {},
       choices: {
         issues: [
           {
             name: 'No issues',
-            func: t => t.data.issues === undefined || t.data.issues === 0
+            filter: 'no_issues'
           },
           {
             name: 'Has issues',
-            func: t => t.data.issues && t.data.issues > 0
+            filter: 'has_issues'
           },
           {
-            name: 'Publishable issues',
-            func: t => t.data.nb_issues_new_for_revision && t.data.nb_issues_new_for_revision > 0
+            name: 'New issues',
+            filter: 'new_issues'
           }
         ]
       }
     }
   },
   mixins: [
-    mixins.date
+    mixins.date,
+    mixins.query
   ],
   methods: {
     load_next_diffs () {
@@ -62,44 +64,38 @@ export default {
       this.$store.dispatch('load_diffs', {
         url: this.$store.state.diffs.previous
       })
+    },
+    use_filter (name, value) {
+      // Filter current diffs query
+      if (value) {
+        this.filters[name] = value
+      } else if (name in this.filters) {
+        delete this.filters[name]
+      }
+      this.$set(this, 'filters', this.filters)
+      this.$store.dispatch('load_diffs', { filters: this.filters })
+
+      this.$router.push({ query: this.filters })
+    },
+    use_search (evt) {
+      // Only submit on Enter key pressed
+      if (evt.keyCode !== 13) {
+        return
+      }
+
+      this.use_filter('search', this.search)
     }
   },
   computed: {
     diffs () {
-      let diffs = this.$store.state.diffs.results
-
-      // TODO: implement those filters on the backend
-
-      // Filter by repository
-      if (this.filters.repository !== null) {
-        diffs = _.filter(diffs, t => t.revision.repository === this.filters.repository)
-      }
-
-      // Filter by states
-      if (this.filters.state !== null) {
-        diffs = _.filter(diffs, t => t.state_full === this.filters.state.key)
-      }
-
-      // Filter by issues
-      if (this.filters.issues !== null) {
-        diffs = _.filter(diffs, this.filters.issues.func)
-      }
-
-      // Filter by revision
-      if (this.filters.revision !== null) {
-        diffs = _.filter(diffs, t => {
-          let payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid + t.data.id + t.data.diff_id
-          return payload.toLowerCase().indexOf(this.filters.revision.toLowerCase()) !== -1
-        })
-      }
-
-      return diffs
+      return this.$store.state.diffs.results
     },
     states () {
       return this.$store.state.states
     },
     repositories () {
-      return this.$store.state.repositories
+      let repos = this.$store.state.repositories || []
+      return repos.map(r => r.slug)
     },
 
     // Pagination helper
@@ -125,6 +121,7 @@ export default {
 
 <template>
   <section>
+  <pre>{{ filters }}</pre>
 
     <div class="states" >
       <div class="state columns" v-for="state in states">
@@ -147,16 +144,18 @@ export default {
         <tr>
           <td>#</td>
           <td>
-            <input class="input" type="text" v-model="filters.revision" placeholder="Filter using phabricator, bugzilla Id or word, ..."/>
+            <input class="input" type="text" v-on:keyup="use_search($event)" v-model="search" placeholder="Filter using phabricator, bugzilla Id or word, ..."/>
           </td>
           <td>
-            <Choice :choices="repositories" name="repo" v-on:new-choice="filters.repository = $event"/>
+            <Choice :choices="repositories" name="repository" v-on:new-choice="use_filter('repository', $event)"/>
           </td>
+          <!--
           <td>
-            <Choice :choices="states" name="state" v-on:new-choice="filters.state = $event"/>
+            <Choice :choices="states" name="state" v-on:new-choice="use_filter('state', $event)"/>
           </td>
+          -->
           <td>
-            <Choice :choices="choices.issues" name="issue" v-on:new-choice="filters.issues = $event"/>
+            <Choice :choices="choices.issues" name="issue" v-on:new-choice="use_filter('issues', $event.filter)"/>
           </td>
           <td>Created</td>
           <td>Actions</td>
@@ -185,6 +184,7 @@ export default {
             <span class="tag is-dark" v-else>{{ task.data.repository || 'Unknown'}}</span>
           </td>
 
+          <!--
           <td>
             <span class="tag is-light" v-if="diff.state == 'started'">Started</span>
             <span class="tag is-info" v-else-if="diff.state == 'cloned'">Cloned</span>
@@ -199,6 +199,7 @@ export default {
             <span class="tag is-success" v-else-if="diff.state == 'done'">Done</span>
             <span class="tag is-black" v-else>Unknown</span>
           </td>
+          -->
 
           <td :class="{'has-text-success': diff.nb_issues_new_for_revision > 0}">
 

@@ -70,7 +70,8 @@ export default new Vuex.Store({
     load_diffs (state, payload) {
       let url = payload.url || this.state.backend_url + '/v1/diff/'
 
-      return axios.get(url).then(resp => {
+      let params = payload.filters || {}
+      return axios.get(url, { params: params }).then(resp => {
         state.commit('use_diffs', resp.data)
       })
     },

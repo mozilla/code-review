@@ -1,4 +1,20 @@
 export default {
+  query: {
+    methods: {
+      update_query (name, value) {
+        console.log('update query', name, value)
+        var query = Object.assign({}, this.$route.query)
+        if (value !== null && value !== '') {
+          query[name] = value
+        } else if (name in query) {
+          delete query[name]
+        }
+        if (this.$router) {
+          this.$router.push({ 'query': query })
+        }
+      }
+    }
+  },
   stats: {
     computed: {
       stats () {
