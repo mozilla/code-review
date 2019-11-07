@@ -143,7 +143,7 @@ export default {
       <tbody>
         <tr v-for="task in tasks">
           <td>
-            <a class="mono" :href="'https://tools.taskcluster.net/task-inspector/#' + task.taskId" target="_blank">{{ task.taskId }}</a>
+            <a class="mono" :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + task.taskId" target="_blank">{{ task.taskId }}</a>
           </td>
 
           <td>
@@ -192,7 +192,7 @@ export default {
           <td>
             <a class="button is-link" :href="task.data.url" target="_blank">Phabricator</a>
             <a v-if="task.data.bugzilla_id" class="button is-dark" :href="'https://bugzil.la/' + task.data.bugzilla_id" target="_blank">Bugzilla</a>
-            <a class="button is-primary" :href="'https://tools.taskcluster.net/tasks/' + task.data.try_group_id" target="_blank">Try Tasks</a>
+            <a class="button is-primary" :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + task.data.try_group_id" target="_blank">Try Tasks</a>
             <router-link v-if="task.data.issues > 0" :to="{ name: 'task', params: { taskId : task.taskId }}" class="button is-primary">Issues</router-link>
           </td>
         </tr>

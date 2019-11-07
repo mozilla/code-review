@@ -30,7 +30,7 @@ code-review-bot --taskcluster-secret=path/to/secret
 Configuration
 -------------
 
-The code review bot is configured through the [Taskcluster secrets service](https://tools.taskcluster.net/secrets)
+The code review bot is configured through the [Taskcluster secrets service](https://community-tc.services.mozilla.com/secrets)
 
 The following configuration variables are currently supported:
 

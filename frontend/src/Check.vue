@@ -44,7 +44,7 @@ export default {
         <tbody>
           <tr v-for="issue in check.issues">
             <td>
-              <a class="mono" :href="'https://tools.taskcluster.net/task-inspector/#' + issue.taskId" target="_blank">{{ issue.taskId }}</a>
+              <a class="mono" :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + issue.taskId" target="_blank">{{ issue.taskId }}</a>
             </td>
             <td>
               <a :href="issue.revision.url" target="_blank">D{{ issue.revision.id }}</a>

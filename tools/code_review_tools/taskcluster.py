@@ -86,7 +86,7 @@ class TaskclusterConfig(object):
                 "clientId": client_id,
                 "accessToken": access_token,
             }
-            self.options["rootUrl"] = "https://taskcluster.net"
+            self.options["rootUrl"] = "https://community-tc.services.mozilla.com"
 
         else:
             # Get taskcluster proxy host
@@ -185,4 +185,4 @@ def create_blob_artifact(
     )
 
     # Build the absolute url
-    return f"https://queue.taskcluster.net/v1/task/{task_id}/runs/{run_id}/artifacts/{path}"
+    return f"https://community-tc.services.mozilla.com/api/queue/v1/task/{task_id}/runs/{run_id}/artifacts/{path}"
