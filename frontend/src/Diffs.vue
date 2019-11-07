@@ -158,7 +158,7 @@ export default {
           <td>
             <Choice :choices="choices.issues" name="issue" v-on:new-choice="filters.issues = $event"/>
           </td>
-          <td>Indexed</td>
+          <td>Created</td>
           <td>Actions</td>
         </tr>
       </thead>
@@ -209,7 +209,7 @@ export default {
           </td>
 
           <td>
-            <span :title="diff.indexed">{{ diff.indexed|since }} ago</span>
+            <span :title="diff.created">{{ diff.created|since }} ago</span>
           </td>
           <td>
             <a class="button is-link" :href="diff.revision.phabricator_url" target="_blank">Phabricator</a>
