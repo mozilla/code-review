@@ -100,8 +100,12 @@ class Command(BaseCommand):
 
     def load_tasks(self, environment, chunk=200):
         # Direct unauthenticated usage
-        index = taskcluster.Index({"rootUrl": "https://firefox-ci-tc.services.mozilla.com/"})
-        queue = taskcluster.Queue({"rootUrl": "https://firefox-ci-tc.services.mozilla.com/"})
+        index = taskcluster.Index(
+            {"rootUrl": "https://firefox-ci-tc.services.mozilla.com/"}
+        )
+        queue = taskcluster.Queue(
+            {"rootUrl": "https://firefox-ci-tc.services.mozilla.com/"}
+        )
 
         token = None
         while True:

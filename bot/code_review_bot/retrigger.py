@@ -7,9 +7,7 @@ import requests
 
 from code_review_bot import taskcluster
 
-TC_INDEX_URL = (
-    "https://firefox-ci-tc.services.mozilla.com/api/index/v1/tasks/project.relman.{}.code-review.phabricator"
-)
+TC_INDEX_URL = "https://firefox-ci-tc.services.mozilla.com/api/index/v1/tasks/project.relman.{}.code-review.phabricator"
 
 
 def list_tasks(env):
