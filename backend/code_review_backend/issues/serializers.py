@@ -86,6 +86,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
             "issues_url",
             "nb_issues",
             "nb_issues_new_for_revision",
+            "created",
         )
 
 
