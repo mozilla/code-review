@@ -183,6 +183,6 @@ def mock_taskcluster():
 
     responses.add(
         responses.GET,
-        "https://queue.taskcluster.net/v1/task-group/aGroup/list",
+        "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task-group/aGroup/list",
         json={"taskGroupId": "aGroup", "tasks": []},
     )

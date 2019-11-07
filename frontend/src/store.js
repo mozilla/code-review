@@ -5,8 +5,7 @@ import router from './routes'
 Vue.use(Vuex)
 
 const PREFERENCES_KEY = 'mozilla-sa-dashboard'
-const TASKCLUSTER_INDEX = 'https://index.taskcluster.net/v1'
-const TASKCLUSTER_QUEUE = 'https://queue.taskcluster.net/v1'
+const TASKCLUSTER_ROOT_URL = 'https://firefox-ci-tc.services.mozilla.com/'
 const TASKS_SLICE = 10
 const FINAL_STATES = ['done', 'error']
 
@@ -192,7 +191,7 @@ export default new Vuex.Store({
 
     // Load Phabricator indexed tasks summary from Taskcluster
     load_index (state, payload) {
-      let url = TASKCLUSTER_INDEX + '/tasks/project.relman.' + this.state.channel + '.code-review.phabricator.'
+      let url = TASKCLUSTER_ROOT_URL + 'api/index/v1/tasks/project.relman.' + this.state.channel + '.code-review.phabricator.'
       if (payload && payload.revision) {
         // Remove potential leading 'D' from phabricator revision
         url += !Number.isInteger(payload.revision) && payload.revision.startsWith('D') ? payload.revision.substring(1) : payload.revision
@@ -223,7 +222,7 @@ export default new Vuex.Store({
 
     // Load the report for a given task
     load_report (state, taskId) {
-      let url = TASKCLUSTER_QUEUE + '/task/' + taskId + '/artifacts/public/results/report.json'
+      let url = TASKCLUSTER_ROOT_URL + 'api/queue/v1/task/' + taskId + '/artifacts/public/results/report.json'
       state.commit('use_report', null)
       return axios.get(url).then(resp => {
         state.commit('use_report', Object.assign({ taskId }, resp.data))

@@ -105,7 +105,7 @@ export default {
 
 <template>
   <div>
-    <h1 class="title">Task <a :href="'https://tools.taskcluster.net/task-inspector/#' + $route.params.taskId" target="_blank">{{ $route.params.taskId }}</a></h1>
+    <h1 class="title">Task <a :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + $route.params.taskId" target="_blank">{{ $route.params.taskId }}</a></h1>
 
     <div class="notification is-info" v-if="state == 'loading'">Loading report...</div>
     <div class="notification is-warning" v-else-if="state == 'missing'">No report, so no issues !</div>
