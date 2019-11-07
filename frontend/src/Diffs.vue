@@ -116,7 +116,7 @@ export default {
   filters: {
     treeherder_url (diff) {
       let rev = diff.mercurial_hash
-      let tryRepo = diff.revision.repo === 'nss' ? 'nss-try' : 'try'
+      let tryRepo = diff.revision.repository === 'nss' ? 'nss-try' : 'try'
       return `https://treeherder.mozilla.org/#/jobs?repo=${tryRepo}&revision=${rev}`
     }
   }
