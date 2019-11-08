@@ -130,7 +130,7 @@ class DiffAPITestCase(APITestCase):
         response = self.client.get("/v1/diff/?repository=myrepo")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["count"], 3)
-        self.assertEqual([d["id"] for d in response.json()["results"]], [1, 2, 3])
+        self.assertEqual([d["id"] for d in response.json()["results"]], [3, 2, 1])
 
         # Missing repo
         response = self.client.get("/v1/diff/?repository=missing")
@@ -152,7 +152,7 @@ class DiffAPITestCase(APITestCase):
         response = self.client.get("/v1/diff/?search=revision 1")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["count"], 2)
-        self.assertEqual([d["id"] for d in response.json()["results"]], [1, 3])
+        self.assertEqual([d["id"] for d in response.json()["results"]], [3, 1])
 
     def test_filter_issues(self):
         """
@@ -163,7 +163,7 @@ class DiffAPITestCase(APITestCase):
         response = self.client.get("/v1/diff/?issues=no")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.json()["count"], 3)
-        self.assertEqual([d["id"] for d in response.json()["results"]], [1, 2, 3])
+        self.assertEqual([d["id"] for d in response.json()["results"]], [3, 2, 1])
 
         # Any issues
         response = self.client.get("/v1/diff/?issues=any")
