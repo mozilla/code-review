@@ -73,17 +73,46 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
     """
 
     serializer_class = DiffFullSerializer
-    queryset = (
-        Diff.objects.all()
-        .prefetch_related("issues", "revision", "revision__repository")
-        .annotate(nb_issues=Count("issues"))
-        .annotate(
-            nb_issues_new_for_revision=Count(
-                "issues", filter=Q(issues__new_for_revision=True)
+
+    def get_queryset(self):
+        diffs = (
+            Diff.objects.all()
+            .prefetch_related("issues", "revision", "revision__repository")
+            .annotate(nb_issues=Count("issues"))
+            .annotate(
+                nb_issues_new_for_revision=Count(
+                    "issues", filter=Q(issues__new_for_revision=True)
+                )
             )
+            .order_by("-id")
         )
-        .order_by("-id")
-    )
+
+        # Filter by repository
+        repository = self.request.query_params.get("repository")
+        if repository is not None:
+            diffs = diffs.filter(revision__repository__slug=repository)
+
+        # Filter by text search query
+        query = self.request.query_params.get("search")
+        if query is not None:
+            search_query = (
+                Q(id__icontains=query)
+                | Q(revision__id__icontains=query)
+                | Q(revision__bugzilla_id__icontains=query)
+                | Q(revision__title__icontains=query)
+            )
+            diffs = diffs.filter(search_query)
+
+        # Filter by issues types
+        issues = self.request.query_params.get("issues")
+        if issues == "any":
+            diffs = diffs.filter(nb_issues__gt=0)
+        elif issues == "new":
+            diffs = diffs.filter(nb_issues_new_for_revision__gt=0)
+        elif issues == "no":
+            diffs = diffs.filter(nb_issues=0)
+
+        return diffs
 
 
 class IssueViewSet(CreateListRetrieveViewSet):
