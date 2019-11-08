@@ -1,6 +1,5 @@
 <script>
 import Bool from './Bool.vue'
-import _ from 'lodash'
 import Choice from './Choice.vue'
 
 export default {
@@ -54,18 +53,14 @@ export default {
       return this.$store.state.diff
     },
     paths () {
-      if (!this.diff) {
-        return null
-      }
       // List sorted unique paths as choices
-      return _.sortBy(_.uniq(_.map(this.diff.issues, 'path')))
+      let uniquePaths = new Set(this.all_issues.map(i => i.path))
+      return [...uniquePaths].sort()
     },
     analyzers () {
-      if (!this.diff) {
-        return null
-      }
       // List sorted unique analyzers as choices
-      return _.sortBy(_.uniq(_.map(this.diff.issues, 'analyzer')))
+      let uniqueAnalyzers = new Set(this.all_issues.map(i => i.analyzer))
+      return [...uniqueAnalyzers].sort()
     },
     nb_new_for_revision () {
       if (!this.diff || !this.diff.issues) {
@@ -81,17 +76,17 @@ export default {
 
       // Filter by new_for_revision
       if (this.filters.new_for_revision !== null) {
-        issues = _.filter(issues, this.filters.new_for_revision.func)
+        issues = issues.filter(this.filters.new_for_revision.func)
       }
 
       // Filter by path
       if (this.filters.path !== null) {
-        issues = _.filter(issues, i => i.path === this.filters.path)
+        issues = issues.filter(i => i.path === this.filters.path)
       }
 
       // Filter by analyzer
       if (this.filters.analyzer !== null) {
-        issues = _.filter(issues, i => i.analyzer === this.filters.analyzer)
+        issues = issues.filter(i => i.analyzer === this.filters.analyzer)
       }
 
       return issues
