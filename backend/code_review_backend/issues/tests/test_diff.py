@@ -51,7 +51,6 @@ class DiffAPITestCase(APITestCase):
         """
         Check we can list all diffs with their revision
         """
-        self.maxDiff = None
         response = self.client.get("/v1/diff/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(
