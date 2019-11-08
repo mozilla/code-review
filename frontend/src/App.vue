@@ -15,7 +15,9 @@ export default {
       <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
         <div class="container is-fluid">
           <div class="navbar-brand">
-            <div class="navbar-item">Code Review Bot</div>
+            <router-link to="/" v-slot="{ href, route, navigate, isActive, isExactActive }">
+              <a class="navbar-item" :href="href" v-on:click="navigate">🤖 Code Review Bot</a>
+            </router-link>
           </div>
           <div class="navbar-menu">
 
@@ -26,12 +28,12 @@ export default {
             </div>
 
             <div class="navbar-end">
-              <div class="navbar-item" v-if="$route.name != 'stats'">
-                <router-link to="/stats" class="button is-link">All checks</router-link>
-              </div>
-              <div class="navbar-item" v-if="$route.name != 'diffs'">
-                <router-link to="/" class="button is-link">All diffs</router-link>
-              </div>
+              <router-link to="/stats" v-slot="{ href, route, navigate, isActive, isExactActive }">
+                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">☷ All checks</a>
+              </router-link>
+              <router-link to="/" v-slot="{ href, route, navigate, isActive, isExactActive }">
+                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">🔍 Browse diffs</a>
+              </router-link>
             </div>
           </div>
         </div>
