@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import hashlib
+from datetime import datetime
 
 from django.contrib.auth.models import User
 from rest_framework import status
@@ -40,6 +41,12 @@ class DiffAPITestCase(APITestCase):
                 mercurial_hash=hashlib.sha1(f"hg {i}".encode("utf-8")).hexdigest(),
             )
 
+        # Force created date update without using inner django trigger
+        # so that all diffs in the test have the same date to be able
+        # to compare the payload easily
+        self.now = datetime.utcnow().isoformat() + "Z"
+        Diff.objects.update(created=self.now)
+
     def test_list_diffs(self):
         """
         Check we can list all diffs with their revision
@@ -70,6 +77,7 @@ class DiffAPITestCase(APITestCase):
                         "issues_url": "http://testserver/v1/diff/3/issues/",
                         "nb_issues": 0,
                         "nb_issues_new_for_revision": 0,
+                        "created": self.now,
                     },
                     {
                         "id": 2,
@@ -88,6 +96,7 @@ class DiffAPITestCase(APITestCase):
                         "issues_url": "http://testserver/v1/diff/2/issues/",
                         "nb_issues": 0,
                         "nb_issues_new_for_revision": 0,
+                        "created": self.now,
                     },
                     {
                         "id": 1,
@@ -106,6 +115,7 @@ class DiffAPITestCase(APITestCase):
                         "issues_url": "http://testserver/v1/diff/1/issues/",
                         "nb_issues": 0,
                         "nb_issues_new_for_revision": 0,
+                        "created": self.now,
                     },
                 ],
             },

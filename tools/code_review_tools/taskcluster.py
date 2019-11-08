@@ -7,7 +7,6 @@ import copy
 import datetime
 import hashlib
 import os
-import re
 
 import requests
 import structlog
@@ -17,26 +16,6 @@ import toml
 logger = structlog.get_logger(__name__)
 
 TASKCLUSTER_DATE_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-
-
-def read_hosts():
-    """
-    Read /etc/hosts to get hostnames
-    on a Nix env (used for taskclusterProxy)
-    Only reads ipv4 entries to avoid duplicates
-    """
-    out = {}
-    regex = re.compile(r"([\w:\-\.]+)")
-    for line in open("/etc/hosts").readlines():
-        if ":" in line:  # only ipv4
-            continue
-        x = regex.findall(line)
-        if not x:
-            continue
-        ip, names = x[0], x[1:]
-        out.update(dict(zip(names, [ip] * len(names))))
-
-    return out
 
 
 class TaskclusterConfig(object):
@@ -89,18 +68,10 @@ class TaskclusterConfig(object):
             self.options["rootUrl"] = "https://firefox-ci-tc.services.mozilla.com"
 
         else:
-            # Get taskcluster proxy host
-            # as /etc/hosts is not used in the Nix image (?)
-            hosts = read_hosts()
-            if "taskcluster" not in hosts:
-                raise Exception("Missing taskcluster in /etc/hosts")
-
             # Load secrets from TC task context
             # with taskclusterProxy
-            root_url = f"http://{hosts['taskcluster']}"
-
-            logger.info("Taskcluster Proxy enabled", url=root_url)
-            self.options["rootUrl"] = root_url
+            logger.info("Taskcluster Proxy enabled")
+            self.options["rootUrl"] = "http://taskcluster"
 
     def get_service(self, service_name):
         """
