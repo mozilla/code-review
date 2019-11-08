@@ -65,7 +65,9 @@ class TaskclusterConfig(object):
                 "clientId": client_id,
                 "accessToken": access_token,
             }
-            self.options["rootUrl"] = "https://firefox-ci-tc.services.mozilla.com"
+            self.options["rootUrl"] = os.environ.get(
+                "TASKCLUSTER_ROOT_URL", "https://firefox-ci-tc.services.mozilla.com"
+            )
 
         else:
             # Load secrets from TC task context
