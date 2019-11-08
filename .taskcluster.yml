@@ -331,38 +331,6 @@ tasks:
 
     - $if: 'channel in ["testing", "production"]'
       then:
-        taskId: {$eval: as_slugid("bot_hook")}
-        dependencies:
-          - {$eval: as_slugid("bot_deploy")}
-        scopes:
-          - "assume:hook-id:project-relman/code-review-${channel}"
-          - "hooks:modify-hook:project-relman/code-review-${channel}"
-        created: {$fromNow: ''}
-        deadline: {$fromNow: '5 hours'}
-        provisionerId: proj-relman
-        workerType: ci
-        payload:
-          features:
-            # Needed for access to hook api
-            taskclusterProxy: true
-          maxRunTime: 3600
-          image: "${taskboot_image}"
-          command:
-            - "/bin/sh"
-            - "-lcxe"
-            - "git clone --quiet ${repository} &&
-               cd code-review &&
-               git checkout ${head_rev} &&
-               sed -i -e 's/CHANNEL/${channel}/g' -e 's/REVISION/${head_rev}/g' bot/taskcluster-hook.json &&
-               taskboot --target . build-hook bot/taskcluster-hook.json project-relman code-review-${channel}"
-        metadata:
-          name: "Code Review Bot hook update (${channel})"
-          description: Update Taskcluster hook triggering the code-review tasks
-          owner: bastien@mozilla.com
-          source: https://github.com/mozilla/code-review
-
-    - $if: 'channel in ["testing", "production"]'
-      then:
         taskId: {$eval: as_slugid("events_deploy")}
         created: {$fromNow: ''}
         deadline: {$fromNow: '1 hour'}
