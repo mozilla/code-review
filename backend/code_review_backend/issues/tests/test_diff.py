@@ -61,7 +61,7 @@ class DiffAPITestCase(APITestCase):
                 "previous": None,
                 "results": [
                     {
-                        "id": 1,
+                        "id": 3,
                         "revision": {
                             "id": 1,
                             "repository": "myrepo",
@@ -71,10 +71,10 @@ class DiffAPITestCase(APITestCase):
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
                             "phabricator_url": "https://phabricator.services.mozilla.com/D1",
                         },
-                        "phid": "PHID-DIFF-1",
-                        "review_task_id": "task-0",
-                        "mercurial_hash": "a2ac78b7d12d6e55b9b15c1c2048a16c58c6c803",
-                        "issues_url": "http://testserver/v1/diff/1/issues/",
+                        "phid": "PHID-DIFF-3",
+                        "review_task_id": "task-2",
+                        "mercurial_hash": "30b501affc4d3b9c670fc297ab903b406afd5f04",
+                        "issues_url": "http://testserver/v1/diff/3/issues/",
                         "nb_issues": 0,
                         "nb_issues_new_for_revision": 0,
                         "created": self.now,
@@ -99,7 +99,7 @@ class DiffAPITestCase(APITestCase):
                         "created": self.now,
                     },
                     {
-                        "id": 3,
+                        "id": 1,
                         "revision": {
                             "id": 1,
                             "repository": "myrepo",
@@ -109,10 +109,10 @@ class DiffAPITestCase(APITestCase):
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
                             "phabricator_url": "https://phabricator.services.mozilla.com/D1",
                         },
-                        "phid": "PHID-DIFF-3",
-                        "review_task_id": "task-2",
-                        "mercurial_hash": "30b501affc4d3b9c670fc297ab903b406afd5f04",
-                        "issues_url": "http://testserver/v1/diff/3/issues/",
+                        "phid": "PHID-DIFF-1",
+                        "review_task_id": "task-0",
+                        "mercurial_hash": "a2ac78b7d12d6e55b9b15c1c2048a16c58c6c803",
+                        "issues_url": "http://testserver/v1/diff/1/issues/",
                         "nb_issues": 0,
                         "nb_issues_new_for_revision": 0,
                         "created": self.now,

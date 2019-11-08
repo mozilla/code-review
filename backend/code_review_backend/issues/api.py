@@ -82,6 +82,7 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
                 "issues", filter=Q(issues__new_for_revision=True)
             )
         )
+        .order_by("-id")
     )
 
 
