@@ -120,3 +120,52 @@ class DiffAPITestCase(APITestCase):
                 ],
             },
         )
+
+    def test_filter_repo(self):
+        """
+        Check we can filter diffs by repo
+        """
+
+        # Exact repo
+        response = self.client.get("/v1/diff/?repository=myrepo")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["count"], 3)
+        self.assertEqual([d["id"] for d in response.json()["results"]], [3, 2, 1])
+
+        # Missing repo
+        response = self.client.get("/v1/diff/?repository=missing")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["count"], 0)
+
+    def test_search(self):
+        """
+        Check we can search across diffs
+        """
+
+        # In bugzilla id
+        response = self.client.get("/v1/diff/?search=10001")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["count"], 1)
+        self.assertEqual([d["id"] for d in response.json()["results"]], [2])
+
+        # In title
+        response = self.client.get("/v1/diff/?search=revision 1")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["count"], 2)
+        self.assertEqual([d["id"] for d in response.json()["results"]], [3, 1])
+
+    def test_filter_issues(self):
+        """
+        Check we can filter by issues present or not
+        """
+
+        # No issues at all
+        response = self.client.get("/v1/diff/?issues=no")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["count"], 3)
+        self.assertEqual([d["id"] for d in response.json()["results"]], [3, 2, 1])
+
+        # Any issues
+        response = self.client.get("/v1/diff/?issues=any")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["count"], 0)
