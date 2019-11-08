@@ -50,9 +50,6 @@ export default {
       // Save new choice
       this.current = choice
       this.$emit('new-choice', choice)
-
-      // Set value in the url for sharing
-      // this.update_query(this.name, typeof choice === 'string' ? choice : this.choices.indexOf(choice))
     }
   },
   computed: {

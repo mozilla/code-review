@@ -6,13 +6,12 @@ export default {
   mounted () {
     // Use parameters from url as initial query
     if (this.$route.query) {
-      this.$set(this, 'filters', this.$route.query)
-      this.$set(this, 'search', this.filters.search)
+      this.$set(this, 'query', Object.assign({}, this.$route.query))
     }
 
     // Load new tasks at startup
     this.$store.commit('reset')
-    this.$store.dispatch('load_diffs', { filters: this.filters })
+    this.$store.dispatch('load_diffs', { query: this.query })
 
     // Load repositories at startup
     this.$store.dispatch('load_repositories')
@@ -22,8 +21,7 @@ export default {
   },
   data: function () {
     return {
-      search: null,
-      filters: {},
+      query: {},
       choices: {
         issues: [
           {
@@ -68,30 +66,35 @@ export default {
     use_filter (name, value) {
       // Filter current diffs query
       if (value) {
-        this.filters[name] = value
-      } else if (name in this.filters) {
-        delete this.filters[name]
+        this.query[name] = value
+      } else if (name in this.query) {
+        delete this.query[name]
       }
-      this.$set(this, 'filters', this.filters)
-      this.$store.dispatch('load_diffs', { filters: this.filters })
+      this.$set(this, 'query', this.query)
+      this.$store.dispatch('load_diffs', { query: this.query })
 
-      this.$router.push({ query: this.filters })
+      // Update directly the router query with our filters
+      this.$router.push({ query: this.query })
     },
     use_search (evt) {
       // Only submit on Enter key pressed
       if (evt.keyCode !== 13) {
         return
       }
-
-      this.use_filter('search', this.search)
+      this.use_filter('search', this.query.search)
+    },
+    reset_query () {
+      this.$set(this, 'query', {})
+      this.$router.push({ query: {} })
+      this.$store.dispatch('load_diffs', {})
     }
   },
   computed: {
     diffs () {
+      if (!this.$store.state.diffs) {
+        return []
+      }
       return this.$store.state.diffs.results
-    },
-    states () {
-      return this.$store.state.states
     },
     repositories () {
       let repos = this.$store.state.repositories || []
@@ -101,6 +104,9 @@ export default {
     // Pagination helper
     total () {
       return this.$store.state.diffs.count
+    },
+    page_nb () {
+      return this.$store.state.diffs.results.length
     },
     has_next () {
       return this.$store.state.diffs.next !== null
@@ -121,22 +127,12 @@ export default {
 
 <template>
   <section>
-  <pre>{{ filters }}</pre>
-
-    <div class="states" >
-      <div class="state columns" v-for="state in states">
-        <div class="column is-one-third">
-          <progress class="progress" :class="{'is-danger': state.key.startsWith('error') || state.key === 'killed', 'is-success': state.key == 'done', 'is-info': state.key != 'done' && !state.key.startsWith('error')}" :value="state.percent" max="100">{{ state.percent }}%</progress>
-        </div>
-        <div class="column is-one-third">
-          <strong>{{ state.name }}</strong> - <span class="has-text-grey-light">{{ state.nb }}/{{ tasks_total }} tasks or {{ state.percent }}%</span>
-        </div>
+    <nav class="columns" v-if="total > 0">
+      <div class="column is-4 is-offset-8">
+        <button class="button is-pulled-right is-dark" :disabled="!has_next" v-on:click="load_next_diffs">Older diffs ↣</button>
+        <button class="button is-pulled-right is-dark" :disabled="!has_previous" v-on:click="load_previous_diffs">↞ Newer diffs</button>
+        <div class="is-text-dark is-pulled-right">Showing {{ page_nb }}/{{ total }} Diffs</div>
       </div>
-    </div>
-
-    <nav class="pagination" v-if="total > 0">
-      <button class="pagination-previous" :disabled="!has_previous" v-on:click="load_previous_diffs">Newer diffs</button>
-      <button class="pagination-next" :disabled="!has_next" v-on:click="load_next_diffs">Older diffs</button>
     </nav>
 
     <table class="table is-fullwidth">
@@ -144,16 +140,11 @@ export default {
         <tr>
           <td>#</td>
           <td>
-            <input class="input" type="text" v-on:keyup="use_search($event)" v-model="search" placeholder="Filter using phabricator, bugzilla Id or word, ..."/>
+            <input class="input" type="text" v-on:keyup="use_search($event)" v-model="query.search" placeholder="Filter using phabricator, bugzilla Id or word, ..."/>
           </td>
           <td>
             <Choice :choices="repositories" name="repository" v-on:new-choice="use_filter('repository', $event)"/>
           </td>
-          <!--
-          <td>
-            <Choice :choices="states" name="state" v-on:new-choice="use_filter('state', $event)"/>
-          </td>
-          -->
           <td>
             <Choice :choices="choices.issues" name="issue" v-on:new-choice="use_filter('issues', $event.filter)"/>
           </td>
@@ -184,27 +175,8 @@ export default {
             <span class="tag is-dark" v-else>{{ task.data.repository || 'Unknown'}}</span>
           </td>
 
-          <!--
-          <td>
-            <span class="tag is-light" v-if="diff.state == 'started'">Started</span>
-            <span class="tag is-info" v-else-if="diff.state == 'cloned'">Cloned</span>
-            <span class="tag is-info" v-else-if="diff.state == 'analyzing'">Analyzing</span>
-            <span class="tag is-primary" v-else-if="diff.state == 'analyzed'">Analyzed</span>
-            <span class="tag is-danger" v-else-if="diff.state == 'killed'">
-              Killed for timeout
-            </span>
-            <span class="tag is-danger" v-else-if="diff.state == 'error'" :title="diff.error_message">
-              Error: {{ diff.error_code || 'unknown' }}
-            </span>
-            <span class="tag is-success" v-else-if="diff.state == 'done'">Done</span>
-            <span class="tag is-black" v-else>Unknown</span>
-          </td>
-          -->
-
           <td :class="{'has-text-success': diff.nb_issues_new_for_revision > 0}">
-
-            <span v-if="diff.nb_issues_new_for_revision > 0">{{ diff.nb_issues_new_for_revision }}</span>
-            <span v-else-if="diff.nb_issues_new_for_revision == 0">{{ diff.nb_issues_new_for_revision }}</span>
+            <span v-if="diff.nb_issues_new_for_revision >= 0">{{ diff.nb_issues_new_for_revision }}</span>
             <span v-else>-</span>
             / {{ diff.nb_issues }}
           </td>
@@ -221,6 +193,11 @@ export default {
         </tr>
       </tbody>
     </table>
+
+    <div class="notification is-light" v-if="diffs && diffs.length == 0 && query">
+      <p class="is-inline-block has-text-weight-medium">Sorry, no diffs are available for your search terms !</p>
+      <button class="is-inline-block button is-success" v-on:click="reset_query()">Reset search</button>
+    </div>
   </section>
 </template>
 
@@ -229,17 +206,16 @@ export default {
   font-family: monospace;
 }
 
-div.states {
-  margin-top: 1rem;
-  margin-bottom: 2rem;
+nav.columns {
+  margin-top: 12px;
 }
 
-div.states div.column {
-  padding: 0.2rem;
+nav.columns * {
+  margin-left: 10px;
 }
 
-div.states div.column progress {
-  margin-top: 0.3rem;
+nav.columns div {
+  padding-top: 5px;
 }
 
 div.table input.input {
