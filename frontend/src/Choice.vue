@@ -12,7 +12,7 @@
           {{ default_choice_name }}
         </a>
         <hr class="dropdown-divider">
-        <a class="dropdown-item" v-for="choice in choices" v-on:click="select(choice, $event)" :class="{'is-active': current === choice }">
+        <a class="dropdown-item" v-for="choice in choices" v-on:click="select(choice, $event)" :class="{'is-active': current === choice  || current === choice.value}">
           {{ choice|name }}
         </a>
       </div>
@@ -31,16 +31,9 @@ export default {
   mixins: [
     mixins.query
   ],
-  data: function () {
+  data () {
     return {
-      current: null
-    }
-  },
-  mounted: function () {
-    let initial = this.$route.query[this.name]
-    if (initial && this.choices) {
-      this.current = isNaN(parseInt(initial)) ? initial : this.choices[initial]
-      this.$emit('new-choice', this.current)
+      choice: null
     }
   },
   methods: {
@@ -48,11 +41,22 @@ export default {
       evt.stopPropagation()
 
       // Save new choice
-      this.current = choice
+      this.$set(this, 'choice', choice)
       this.$emit('new-choice', choice)
     }
   },
   computed: {
+    current () {
+      let current = null
+      let choice = this.choice || this.$route.query[this.name]
+      if (choice && this.choices) {
+        current = this.choices.find(c => c === choice || c.value === choice)
+        if (!current) {
+          current = isNaN(parseInt(choice)) ? choice : this.choices[choice]
+        }
+      }
+      return current
+    },
     default_choice_name: function () {
       return 'Filter by ' + this.name
     }

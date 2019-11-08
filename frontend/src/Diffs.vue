@@ -24,18 +24,9 @@ export default {
       query: {},
       choices: {
         issues: [
-          {
-            name: 'No issues',
-            filter: 'no_issues'
-          },
-          {
-            name: 'Has issues',
-            filter: 'has_issues'
-          },
-          {
-            name: 'New issues',
-            filter: 'new_issues'
-          }
+          { name: 'No issues', value: 'no' },
+          { name: 'Has issues', value: 'any' },
+          { name: 'New issues', value: 'new' }
         ]
       }
     }
@@ -128,9 +119,10 @@ export default {
 <template>
   <section>
     <nav class="columns" v-if="total > 0">
-      <div class="column is-4 is-offset-8">
+      <div class="column is-6 is-offset-6">
         <button class="button is-pulled-right is-dark" :disabled="!has_next" v-on:click="load_next_diffs">Older diffs ↣</button>
         <button class="button is-pulled-right is-dark" :disabled="!has_previous" v-on:click="load_previous_diffs">↞ Newer diffs</button>
+        <button class="button is-pulled-right is-success" v-if="Object.keys(query).length > 0" v-on:click="reset_query()">Reset search</button>
         <div class="is-text-dark is-pulled-right">Showing {{ page_nb }}/{{ total }} Diffs</div>
       </div>
     </nav>
@@ -146,7 +138,7 @@ export default {
             <Choice :choices="repositories" name="repository" v-on:new-choice="use_filter('repository', $event)"/>
           </td>
           <td>
-            <Choice :choices="choices.issues" name="issue" v-on:new-choice="use_filter('issues', $event.filter)"/>
+            <Choice :choices="choices.issues" name="issues" v-on:new-choice="use_filter('issues', $event.value)"/>
           </td>
           <td>Created</td>
           <td>Actions</td>
