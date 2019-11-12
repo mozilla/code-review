@@ -5,7 +5,6 @@
 
 import copy
 import datetime
-import hashlib
 import os
 
 import requests
@@ -127,35 +126,28 @@ def create_blob_artifact(
     assert isinstance(content, str)
     assert isinstance(ttl, datetime.timedelta)
 
-    # Create artifact on Taskcluster
-    sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    # Create S3 artifact on Taskcluster
+    # blob artifact has issues on new workers
     resp = queue_service.createArtifact(
         task_id,
         run_id,
         path,
         {
-            "storageType": "blob",
+            "storageType": "s3",
             "expires": (datetime.datetime.utcnow() + ttl).strftime(
                 TASKCLUSTER_DATE_FORMAT
             ),
             "contentType": content_type,
-            "contentSha256": sha256,
-            "contentLength": len(content),
         },
     )
-    assert resp["storageType"] == "blob", "Not a blob storage"
-    assert len(resp["requests"]) == 1, "Should only get one request"
-    request = resp["requests"][0]
-    assert request["method"] == "PUT", "Should get a PUT request"
+    assert resp["storageType"] == "s3", "Not an s3 storage"
+    assert "putUrl" in resp, "Missing putUrl"
+    assert "contentType" in resp, "Missing contentType"
 
     # Push the artifact on storage service
-    push = requests.put(url=request["url"], headers=request["headers"], data=content)
+    headers = {"Content-Type": resp["contentType"]}
+    push = requests.put(url=resp["putUrl"], headers=headers, data=content)
     push.raise_for_status()
-
-    # Mark artifact as completed
-    queue_service.completeArtifact(
-        task_id, run_id, path, {"etags": [push.headers["ETag"]]}
-    )
 
     # Build the absolute url
     return f"https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/{task_id}/runs/{run_id}/artifacts/{path}"
