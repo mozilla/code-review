@@ -13,6 +13,7 @@ from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
 from libmozevent.utils import run_tasks
 from libmozevent.web import WebServer
+from taskcluster import Hooks
 
 from code_review_events import MONITORING_PERIOD
 from code_review_events import QUEUE_MERCURIAL
@@ -29,7 +30,14 @@ class CodeReview(PhabricatorActions):
     and pushing on Try repositories
     """
 
-    def __init__(self, publish=False, risk_analysis_reviewers=[], *args, **kwargs):
+    def __init__(
+        self,
+        publish=False,
+        risk_analysis_reviewers=[],
+        community_config=None,
+        *args,
+        **kwargs
+    ):
         super().__init__(*args, **kwargs)
         self.publish = publish
         logger.info(
@@ -38,7 +46,22 @@ class CodeReview(PhabricatorActions):
             )
         )
 
-        self.hooks = taskcluster_config.get_service("hooks")
+        # Setup Taskcluster community hooks for risk analysis
+        if community_config is not None:
+            self.community_hooks = Hooks(
+                {
+                    "rootUrl": "https://community-tc.services.mozilla.com",
+                    "credentials": {
+                        "clientId": community_config["client_id"],
+                        "accessToken": community_config["access_token"],
+                    },
+                }
+            )
+            logger.info("Risk analysis trigger is enabled")
+        else:
+            self.community_hooks = None
+            logger.info("No taskcluster_community in secret, risk analysis is disabled")
+
         self.risk_analysis_reviewers = risk_analysis_reviewers
 
     def register(self, bus):
@@ -164,7 +187,7 @@ class CodeReview(PhabricatorActions):
         assert build.state == PhabricatorBuildState.Public
         try:
             if self.should_run_risk_analysis(build):
-                task = self.hooks.triggerHook(
+                task = self.community_hooks.triggerHook(
                     "project-relman",
                     "bugbug-classify-patch",
                     {"DIFF_ID": build.diff_id},
@@ -185,6 +208,9 @@ class CodeReview(PhabricatorActions):
         Check if we should trigger a risk analysis for this revision:
         * when the revision is being reviewed by one of some specific reviewers
         """
+        if self.community_hooks is None:
+            return False
+
         usernames = set(
             [reviewer["fields"]["username"] for reviewer in build.reviewers]
         )
@@ -207,6 +233,7 @@ class Events(object):
             risk_analysis_reviewers=taskcluster_config.secrets.get(
                 "risk_analysis_reviewers", []
             ),
+            community_config=taskcluster_config.secrets.get("taskcluster_community"),
         )
         self.workflow.register(self.bus)
 

@@ -34,6 +34,7 @@ async def test_risk_analysis_should_trigger(PhabricatorMock, mock_taskcluster):
             risk_analysis_reviewers=["ehsan", "heycam"],
             url="http://phabricator.test/api/",
             api_key="fakekey",
+            community_config={"client_id": "xxx", "access_token": "yyy"},
         )
         client.register(bus)
 
@@ -60,6 +61,7 @@ async def test_risk_analysis_shouldnt_trigger(PhabricatorMock, mock_taskcluster)
             risk_analysis_reviewers=["ehsan"],
             url="http://phabricator.test/api/",
             api_key="fakekey",
+            community_config={"client_id": "xxx", "access_token": "yyy"},
         )
         client.register(bus)
 
