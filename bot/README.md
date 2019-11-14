@@ -19,7 +19,7 @@ flake8
 pytest
 ```
 
-If those tests are OK, you can run the bot locally, by specifying a Taskcluster secret with your configuration, and a task reference to analyze.
+If those tests are OK, you can run the bot locally, by using a local configuration file with your Phabricator API token (see details at the end of this READMe), and a task reference to analyze.
 
 ```
 export TRY_TASK_ID=XXX
