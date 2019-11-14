@@ -30,7 +30,7 @@ code-review-bot --configuration=path/to/config.yaml
 Configuration
 -------------
 
-The code review bot is configured through the [Taskcluster secrets service](https://firefox-ci-tc.services.mozilla.com/secrets) or a local YAML configuration file (the later is preferred for new contributors as it's easier to setup)
+The code review bot is configured through the [Taskcluster secrets service](https://firefox-ci-tc.services.mozilla.com/secrets) or a local YAML configuration file (the latter is preferred for new contributors as it's easier to setup)
 
 The following configuration variables are currently supported:
 
