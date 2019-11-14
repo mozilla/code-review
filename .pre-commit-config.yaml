@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/asottile/seed-isort-config
-    rev: v1.9.2
+    rev: v1.9.3
     hooks:
       - id: seed-isort-config
   - repo: https://github.com/pre-commit/mirrors-isort
@@ -12,7 +12,7 @@ repos:
     hooks:
     - id: black
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.8
+    rev: 3.7.9
     hooks:
       - id: flake8
         additional_dependencies:
@@ -21,7 +21,7 @@ repos:
           - 'flake8-debugger==3.1.0'
           - 'flake8-mypy==17.8.0'
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.2.3
+    rev: v2.4.0
     hooks:
       - id: trailing-whitespace
       - id: check-yaml
@@ -30,12 +30,12 @@ repos:
         args: ['--django']
       - id: check-json
   - repo: https://github.com/codespell-project/codespell
-    rev: v1.15.0
+    rev: v1.16.0
     hooks:
       - id: codespell
         args: ['--exclude-file=frontend/package-lock.json']
   - repo: https://github.com/marco-c/taskcluster_yml_validator
-    rev: v0.0.2
+    rev: v0.0.3
     hooks:
       - id: taskcluster_yml
   - repo: meta
