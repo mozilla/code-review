@@ -30,6 +30,12 @@ def parse_cli():
     """
     parser = argparse.ArgumentParser(description="Mozilla Code Review Bot")
     parser.add_argument(
+        "-c",
+        "--configuration",
+        help="Local configuration file replacing Taskcluster secrets",
+        type=open,
+    )
+    parser.add_argument(
         "--taskcluster-secret",
         help="Taskcluster Secret path",
         default=os.environ.get("TASKCLUSTER_SECRET"),
@@ -55,6 +61,7 @@ def main():
             "ZERO_COVERAGE_ENABLED": True,
             "ALLOWED_PATHS": ["*"],
         },
+        local_source=args.configuration,
     )
 
     init_logger(
