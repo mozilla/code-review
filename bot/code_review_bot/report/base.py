@@ -9,6 +9,7 @@ import urllib.parse
 from code_review_bot.tasks.clang_format import ClangFormatIssue
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 from code_review_bot.tasks.coverity import CoverityIssue
+from code_review_bot.tasks.default import DefaultIssue
 from code_review_bot.tasks.infer import InferIssue
 from code_review_bot.tasks.lint import MozLintIssue
 
@@ -30,6 +31,7 @@ COMMENT_PARTS = {
         "defect": " - {nb} found by mozlint",
         "analyzer": " - `./mach lint --warnings path/to/file` (JS/Python/etc)",
     },
+    DefaultIssue: {"defect": " - {nb} found by a generic analyzer"},
 }
 COMMENT_FAILURE = """
 Code analysis found {defects_total} in the diff {diff_id}{extras_comments}:

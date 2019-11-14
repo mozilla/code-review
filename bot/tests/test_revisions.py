@@ -78,6 +78,7 @@ def test_analyze_patch(mock_revision):
     issue_in_existing_file_not_changed_line = MyIssue("modified.txt", 1)
     issue_in_existing_file_added_line = MyIssue("added.txt", 4)
     issue_in_not_changed_file = MyIssue("notexisting.txt", 1)
+    issue_full_file = MyIssue("new.txt", None)
 
     mock_revision.patch = """
 diff --git a/new.txt b/new.txt
@@ -131,3 +132,4 @@ index 83db48f8..84275f99 100644
     assert not mock_revision.contains(issue_in_existing_file_not_changed_line)
     assert mock_revision.contains(issue_in_existing_file_added_line)
     assert not mock_revision.contains(issue_in_not_changed_file)
+    assert mock_revision.contains(issue_full_file)

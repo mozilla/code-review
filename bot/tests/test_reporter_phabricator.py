@@ -44,6 +44,13 @@ Should they have tests, or are they dead code ?
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """  # noqa
 
+VALID_DEFAULT_MESSAGE = """
+Code analysis found 1 defect in the diff 42:
+ - 1 defect found by a generic analyzer
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+"""  # noqa
+
 
 def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     """
@@ -682,3 +689,106 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
         # Only check the last call
         print(responses.calls[-1].request.url)
         assert responses.calls[-1].response.headers.get("unittest") == "coverity"
+
+
+def test_full_file(mock_config, mock_phabricator, mock_try_task):
+    """
+    Test Phabricator reporter supports an issue on a full file
+    """
+    from code_review_bot.report.phabricator import PhabricatorReporter
+    from code_review_bot.revisions import Revision
+    from code_review_bot.tasks.default import DefaultIssue
+
+    def _check_comment(request):
+        # Check the Phabricator main comment is well formed
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+        details = json.loads(payload["params"][0])
+        assert details["message"] == VALID_DEFAULT_MESSAGE.format(
+            results=mock_config.taskcluster.results_dir
+        )
+
+        # Outputs dummy empty response
+        resp = {"error_code": None, "result": None}
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "full-file-comment"},
+            json.dumps(resp),
+        )
+
+    def _check_inline(request):
+        # Check the inline does not have a null value for line
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+        details = json.loads(payload["params"][0])
+
+        assert details == {
+            "__conduit__": {"token": "deadbeef"},
+            "content": "Error: Something bad happened on the whole file ! [a-huge-issue]",
+            "diffID": 42,
+            "filePath": "xx.cpp",
+            "isNewFile": 1,
+            "lineLength": -1,
+            # Cannot be null for a full file as it's not supported by phabricator
+            "lineNumber": 1,
+        }
+
+        # Outputs dummy empty response
+        resp = {"error_code": None, "result": {"id": "PHID-XXXX-YYYYY"}}
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "full-file-inline"},
+            json.dumps(resp),
+        )
+
+    responses.add_callback(
+        responses.POST,
+        "http://phabricator.test/api/differential.createinline",
+        callback=_check_inline,
+    )
+    responses.add_callback(
+        responses.POST,
+        "http://phabricator.test/api/differential.createcomment",
+        callback=_check_comment,
+    )
+
+    with mock_phabricator as api:
+        revision = Revision(api, mock_try_task)
+        revision.lines = {
+            # Add dummy lines diff
+            "xx.cpp": [123, 124, 125]
+        }
+        revision.files = list(revision.lines.keys())
+        reporter = PhabricatorReporter(api=api)
+
+    issue = DefaultIssue(
+        analyzer="full-file-analyzer",
+        revision=revision,
+        path="xx.cpp",
+        line=-1,
+        nb_lines=0,
+        check="a-huge-issue",
+        message="Something bad happened on the whole file !",
+    )
+    assert issue.line is None  # check auto conversion
+    assert str(issue) == "full-file-analyzer issue a-huge-issue@error xx.cpp full file"
+    assert issue.is_publishable()
+    assert revision.has_file(issue.path)
+    assert revision.contains(issue)
+
+    issues, patches = reporter.publish([issue], revision)
+    assert len(issues) == 1
+    assert len(patches) == 0
+
+    # Check the comment callback has been used
+    assert len(responses.calls) > 0
+    call = responses.calls[-1]
+    assert call.request.url == "http://phabricator.test/api/differential.createcomment"
+    assert call.response.headers.get("unittest") == "full-file-comment"
+
+    # Check the inline callback has been used
+    call = responses.calls[-2]
+    assert call.request.url == "http://phabricator.test/api/differential.createinline"
+    assert call.response.headers.get("unittest") == "full-file-inline"
