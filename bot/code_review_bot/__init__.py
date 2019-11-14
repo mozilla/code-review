@@ -83,7 +83,8 @@ class Issue(abc.ABC):
         self.on_backend = None
 
     def __str__(self):
-        return f"{self.analyzer} issue {self.check}@{self.level} {self.path} line {self.line}"
+        line = f"line {self.line}" if self.line is not None else "full file"
+        return f"{self.analyzer} issue {self.check}@{self.level} {self.path} {line}"
 
     def build_extra_identifiers(self):
         """

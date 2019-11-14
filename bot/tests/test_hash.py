@@ -110,7 +110,7 @@ def test_full_file(mock_revision, mock_hgmo):
     )
     assert (
         str(issue)
-        == "mock-analyzer-fullfile issue EXXX@error path/to/afile.py line None"
+        == "mock-analyzer-fullfile issue EXXX@error path/to/afile.py full file"
     )
     assert issue.line is None
 

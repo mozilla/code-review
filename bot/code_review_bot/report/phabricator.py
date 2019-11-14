@@ -191,7 +191,9 @@ class PhabricatorReporter(Reporter):
         comment = {
             "diffID": revision.diff_id,
             "filePath": issue.path,
-            "lineNumber": issue.line,
+            "lineNumber": issue.line
+            if issue.line is not None
+            else 1,  # support full file
             "lineLength": issue.nb_lines - 1,
             "content": issue.as_text(),
         }
