@@ -19,18 +19,18 @@ flake8
 pytest
 ```
 
-If those tests are OK, you can run the bot locally, by specifying a Taskcluster secret with your configuration, and a task reference to analyze.
+If those tests are OK, you can run the bot locally, by using a local configuration file with your Phabricator API token (see details at the end of this README), and a task reference to analyze.
 
 ```
 export TRY_TASK_ID=XXX
 export TRY_TASK_GROUP_ID=XXX
-code-review-bot --taskcluster-secret=path/to/secret
+code-review-bot --configuration=path/to/config.yaml
 ```
 
 Configuration
 -------------
 
-The code review bot is configured through the [Taskcluster secrets service](https://firefox-ci-tc.services.mozilla.com/secrets)
+The code review bot is configured through the [Taskcluster secrets service](https://firefox-ci-tc.services.mozilla.com/secrets) or a local YAML configuration file (the latter is preferred for new contributors as it's easier to setup)
 
 The following configuration variables are currently supported:
 
@@ -76,38 +76,22 @@ Key `reporter` is `phabricator`
 
 Configuration:
 
- * `analyzers` : The analyzers that will be published on Phabricator. Possible values are: mozlint, clang-tidy, clang-format, coverity, infer, coverage.
+ * `analyzers_skipped` : The analyzers that will **not** be published on Phabricator.
 
 This reporter will send detailed information about every **publishable** issue.
 
 Example configuration
 ---------------------
 
-```json
-{
-  "common": {
-    "APP_CHANNEL": "staging",
-    "PAPERTRAIL_HOST": "XXXX.papertrail.net",
-    "PAPERTRAIL_PORT": 12345,
-    "PHABRICATOR": {
-      "url": "https://dev.phabricator.mozilla.com",
-      "api_key": "deadbeef123456"
-    }
-  },
-  "code-review-bot": {
-    "REPORTERS": [
-      {
-        "reporter": "mail",
-        "emails": [
-          "xxx@mozilla.com",
-          "yyy@mozilla.com"
-        ]
-      },
-      {
-        "reporter": "phabricator",
-        "analyzers": ["clang-tidy", "mozlint"]
-      }
-    ]
-  }
-}
+```yaml
+---
+common:
+  APP_CHANNEL: development
+  PHABRICATOR:
+    url: https://dev.phabricator.mozilla.com
+    api_key: deadbeef123456
+
+code-review-bot:
+  REPORTERS:
+  - reporter: phabricator
 ```
