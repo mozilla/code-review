@@ -74,6 +74,11 @@ class Issue(abc.ABC):
         self.nb_lines = positive_int("nb_lines", nb_lines)
         self.check = check
 
+        # Support line 0, with a Sentry warning
+        if self.line == 0:
+            logger.warning("Line 0 is not supported, falling back to full file issue")
+            self.line = None
+
         # Optional common fields
         self.column = column
         self.message = message

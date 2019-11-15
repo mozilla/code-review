@@ -130,7 +130,7 @@ def test_baseline(mock_config, mock_revision, mock_workflow, mock_backend, mock_
     assert isinstance(issue, CoverageIssue)
     assert issue.path == "test.cpp"
     assert issue.message == "This file is uncovered"
-    assert issue.line == 0
+    assert issue.line is None
     assert issue.validates()
 
     assert check_stats(
