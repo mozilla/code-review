@@ -355,7 +355,7 @@ class Revision(object):
     def bugzilla_id(self):
         try:
             return int(self.revision["fields"].get("bugzilla.bug-id"))
-        except ValueError:
+        except (TypeError, ValueError):
             logger.info("No bugzilla id available for this revision")
             return None
 
