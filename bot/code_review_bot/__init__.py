@@ -20,13 +20,13 @@ from code_review_tools.taskcluster import TaskclusterConfig
 logger = structlog.get_logger(__name__)
 
 
-def positive_int(name, x):
+def positive_int(name, x, minimum=0):
     """Helper to get a positive integer or None"""
     if isinstance(x, int):
-        if x >= 0:
+        if x >= minimum:
             return x
         else:
-            logger.warning(f"Negative {name} value found, defaults to None", value=x)
+            logger.debug(f"Incompatible {name} value found, defaults to None", value=x)
     return None
 
 
@@ -70,7 +70,7 @@ class Issue(abc.ABC):
         self.analyzer = analyzer
         self.check = check
         self.path = path
-        self.line = positive_int("line", line)
+        self.line = positive_int("line", line, minimum=1)
         self.nb_lines = positive_int("nb_lines", nb_lines)
         self.check = check
 
