@@ -27,7 +27,7 @@ class CoverageIssue(Issue):
             "coverage",
             revision,
             path,
-            line=lineno and int(lineno) or 0,
+            line=lineno and int(lineno) or None,
             nb_lines=1,
             check="no-coverage",
             level="warning",
