@@ -72,7 +72,8 @@ class CoverageIssue(Issue):
             "code": "coverage",
             "severity": "warning",
             "path": self.path,
-            "line": self.line,
+            # Report full file issues on line 1
+            "line": self.line if self.line is not None else 1,
         }
 
 

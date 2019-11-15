@@ -135,7 +135,7 @@ def test_licence_payload(mock_revision, mock_hgmo):
     issue = issues.pop()
     assert (
         str(issue)
-        == "source-test-mozlint-license issue source-test-mozlint-license@error intl/locale/rust/unic-langid-ffi/src/lib.rs line 0"
+        == "source-test-mozlint-license issue source-test-mozlint-license@error intl/locale/rust/unic-langid-ffi/src/lib.rs full file"
     )
     assert issue.check == issue.analyzer == "source-test-mozlint-license"
-    assert issue.build_hash() == "6e2ff91aa6dcd1bf0622d9556478722c"
+    assert issue.build_hash() == "0809d81e1e24ee94039c0e2733321a39"
