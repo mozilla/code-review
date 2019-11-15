@@ -133,3 +133,22 @@ index 83db48f8..84275f99 100644
     assert mock_revision.contains(issue_in_existing_file_added_line)
     assert not mock_revision.contains(issue_in_not_changed_file)
     assert mock_revision.contains(issue_full_file)
+
+
+def test_bugzilla_id(mock_revision):
+    """Test the bugzilla id parsing from phabricator data"""
+
+    # Default value from mock
+    assert mock_revision.bugzilla_id == 1234567
+
+    # Update phabricator data on revision
+    mock_revision.revision["fields"]["bugzilla.bug-id"] = "456789"
+    assert mock_revision.bugzilla_id == 456789
+
+    # On bad data fallback gracefully
+    mock_revision.revision["fields"]["bugzilla.bug-id"] = "notaBZid"
+    assert mock_revision.bugzilla_id is None
+
+    # On missing data fallback gracefully
+    del mock_revision.revision["fields"]["bugzilla.bug-id"]
+    assert mock_revision.bugzilla_id is None
