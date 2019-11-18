@@ -86,6 +86,9 @@ class ZeroCoverageTask(AnalysisTask):
     route = "project.releng.services.project.production.code_coverage_bot.latest"
     artifacts = ["public/zero_coverage_report.json"]
 
+    # Do not send any warning when this task does not find any issues
+    is_allowed_empty = True
+
     def parse_issues(self, artifacts, revision):
         zero_coverage_files = {
             file_info["name"]

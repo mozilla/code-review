@@ -18,6 +18,10 @@ class AnalysisTask(object):
     valid_states = ("completed", "failed")
     skipped_states = ()
 
+    # Some tasks may need to run and NOT report any issues
+    # like zero code coverage reporting
+    is_allowed_empty = False
+
     def __init__(self, task_id, task_status):
         self.id = task_id
         assert "task" in task_status, "No task data for {}".format(self.id)

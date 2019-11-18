@@ -46,7 +46,7 @@ class PhabricatorReporter(Reporter):
         self.api = api
         logger.info("Phabricator reporter enabled")
 
-    def publish(self, issues, revision):
+    def publish(self, issues, revision, task_failures):
         """
         Publish inline comments for each issues
         """
@@ -74,7 +74,7 @@ class PhabricatorReporter(Reporter):
 
         if issues_only or build_errors:
             if self.mode == MODE_COMMENT:
-                self.publish_comment(revision, issues_only, patches)
+                self.publish_comment(revision, issues_only, patches, task_failures)
             elif self.mode == MODE_HARBORMASTER:
                 self.publish_harbormaster(revision, issues_only)
             else:
@@ -100,7 +100,7 @@ class PhabricatorReporter(Reporter):
             unit=[issue.as_phabricator_unitresult() for issue in issues],
         )
 
-    def publish_comment(self, revision, issues, patches):
+    def publish_comment(self, revision, issues, patches, task_failures):
         """
         Publish issues through Phabricator comment
         """
@@ -146,6 +146,7 @@ class PhabricatorReporter(Reporter):
                     issues=non_coverage_issues,
                     patches=patches,
                     bug_report_url=BUG_REPORT_URL,
+                    task_failures=task_failures,
                 ),
             )
 
