@@ -37,4 +37,14 @@ Here is an example of an analysis using this format:
 }
 ```
 
+We have built a validation tool, available in this repository as `bot/tools/validator.py`. It has no extra dependencies, and can run using any Python 3 version. You can download it directly on your computer to troubleshoot your payloads:
+
+```
+wget https://raw.githubusercontent.com/mozilla/code-review/master/bot/tools/validator.py
+python validator.py path/to/issues.json
+```
+
+If your format is valid, no error should be displayed and the exit status should be `0`. If you encounter an error, you can get more information by adding the `--verbose` (or `-v`) flag to the command line.
+
+
 To have more information about Mozlint, please see the [mozlint documentation](https://firefox-source-docs.mozilla.org/tools/lint/index.html)
