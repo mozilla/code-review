@@ -107,7 +107,7 @@ def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
     list(
         map(lambda p: p.write(), mock_revision.improvement_patches)
     )  # trigger local write
-    r.publish(mock_issues, mock_revision)
+    r.publish(mock_issues, mock_revision, [])
 
     # Check stats
     mock_cls = mock_issues[0].__class__
@@ -144,6 +144,6 @@ def test_mail_builderrors(
     conf = {"emails": ["test@mozilla.com"]}
     r = BuildErrorsReporter(conf)
 
-    r.publish(mock_coverity_issues, mock_revision)
+    r.publish(mock_coverity_issues, mock_revision, [])
 
     assert log.has("Send build error email", to="test@mozilla.com")

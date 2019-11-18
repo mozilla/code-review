@@ -51,6 +51,16 @@ Code analysis found 1 defect in the diff 42:
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """  # noqa
 
+VALID_TASK_FAILURES_MESSAGE = """
+Code analysis found 0 defects in the diff 42:
+
+
+The analysis task [mock-infer](https://firefox-ci-tc.services.mozilla.com/tasks/erroneousTaskId) failed, but we could not detect any issue.
+Please check this task manually.
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+"""  # noqa
+
 
 def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     """
@@ -110,7 +120,7 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     )
     assert issue.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision)
+    issues, patches = reporter.publish([issue], revision, [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -170,7 +180,7 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     ]
     list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
-    issues, patches = reporter.publish([issue], revision)
+    issues, patches = reporter.publish([issue], revision, [])
     assert len(issues) == 1
     assert len(patches) == 1
 
@@ -224,7 +234,7 @@ def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
     issue = CoverageIssue("path/to/test.cpp", 0, "This file is uncovered", revision)
     assert issue.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision)
+    issues, patches = reporter.publish([issue], revision, [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -325,7 +335,7 @@ def test_phabricator_clang_tidy_and_coverage(
     )
     assert issue_coverage.is_publishable()
 
-    issues, patches = reporter.publish([issue_clang_tidy, issue_coverage], revision)
+    issues, patches = reporter.publish([issue_clang_tidy, issue_coverage], revision, [])
     assert len(issues) == 2
     assert len(patches) == 0
 
@@ -413,7 +423,7 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
             map(lambda p: p.write(), revision.improvement_patches)
         )  # trigger local write
 
-        return reporter.publish(issues, revision)
+        return reporter.publish(issues, revision, [])
 
     # Use same instance of api
     with mock_phabricator as api:
@@ -544,7 +554,7 @@ def test_phabricator_harbormaster(mock_phabricator, mock_try_task):
     )
     assert issue.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision)
+    issues, patches = reporter.publish([issue], revision, [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -679,7 +689,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
         issue = CoverityIssue("mock-coverity", revision, issue_dict, "test.cpp")
         assert issue.is_publishable()
 
-        issues, patches = reporter.publish([issue], revision)
+        issues, patches = reporter.publish([issue], revision, [])
         assert len(issues) == 1
         assert len(patches) == 0
 
@@ -778,7 +788,7 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
     assert revision.has_file(issue.path)
     assert revision.contains(issue)
 
-    issues, patches = reporter.publish([issue], revision)
+    issues, patches = reporter.publish([issue], revision, [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -792,3 +802,57 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
     call = responses.calls[-2]
     assert call.request.url == "http://phabricator.test/api/differential.createinline"
     assert call.response.headers.get("unittest") == "full-file-inline"
+
+
+def test_task_failures(mock_phabricator, mock_try_task):
+    """
+    Test Phabricator reporter publication with some task failures
+    """
+    from code_review_bot.report.phabricator import PhabricatorReporter
+    from code_review_bot.revisions import Revision
+    from code_review_bot.tasks.clang_tidy import ClangTidyTask
+
+    def _check_comment(request):
+        # Check the Phabricator main comment is well formed
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+        details = json.loads(payload["params"][0])
+        assert details == {
+            "revision_id": 51,
+            "message": VALID_TASK_FAILURES_MESSAGE,
+            "attach_inlines": 1,
+            "__conduit__": {"token": "deadbeef"},
+        }
+
+        # Outputs dummy empty response
+        resp = {"error_code": None, "result": None}
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "task-failure"},
+            json.dumps(resp),
+        )
+
+    responses.add_callback(
+        responses.POST,
+        "http://phabricator.test/api/differential.createcomment",
+        callback=_check_comment,
+    )
+
+    with mock_phabricator as api:
+        revision = Revision(api, mock_try_task)
+        reporter = PhabricatorReporter(
+            {"analyzers": ["clang-tidy"], "modes": ("comment")}, api=api
+        )
+
+    status = {"task": {"metadata": {"name": "mock-infer"}}, "status": {}}
+    task = ClangTidyTask("erroneousTaskId", status)
+    issues, patches = reporter.publish([], revision, [task])
+    assert len(issues) == 0
+    assert len(patches) == 0
+
+    # Check the callback has been used
+    assert len(responses.calls) > 0
+    call = responses.calls[-1]
+    assert call.request.url == "http://phabricator.test/api/differential.createcomment"
+    assert call.response.headers.get("unittest") == "task-failure"

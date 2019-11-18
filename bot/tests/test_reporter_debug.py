@@ -5,6 +5,8 @@
 import json
 import os.path
 
+from code_review_bot.tasks.infer import InferTask
+
 
 def test_publication(tmpdir, mock_issues, mock_revision):
     """
@@ -35,8 +37,11 @@ def test_publication(tmpdir, mock_issues, mock_revision):
     report_path = os.path.join(report_dir, "report.json")
     assert not os.path.exists(report_path)
 
+    status = {"task": {"metadata": {"name": "mock-infer"}}, "status": {}}
+    task = InferTask("someTaskId", status)
+
     r = DebugReporter(report_dir)
-    r.publish(mock_issues, mock_revision)
+    r.publish(mock_issues, mock_revision, [task])
 
     assert os.path.exists(report_path)
     with open(report_path) as f:
@@ -59,6 +64,9 @@ def test_publication(tmpdir, mock_issues, mock_revision):
         "target_repository": "mozilla-central",
         "mercurial_revision": "deadc0ffee",
     }
+
+    assert "task_failures" in report
+    assert report["task_failures"] == [{"id": "someTaskId", "name": "mock-infer"}]
 
     assert "time" in report
     assert isinstance(report["time"], float)

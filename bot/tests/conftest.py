@@ -373,6 +373,9 @@ def mock_workflow(mock_phabricator, mock_taskcluster_config):
     # Reset stats on new workflow
     stats.metrics = []
 
+    # Default empty secrets
+    mock_taskcluster_config.secrets = {}
+
     class MockWorkflow(Workflow):
         def __init__(self):
             self.reporters = {}
