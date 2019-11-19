@@ -11,6 +11,7 @@ from libmozevent.monitoring import Monitoring
 from libmozevent.phabricator import PhabricatorActions
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
+from libmozevent.pulse import PulseListener
 from libmozevent.utils import run_tasks
 from libmozevent.web import WebServer
 from taskcluster import Hooks
@@ -19,6 +20,7 @@ from code_review_events import MONITORING_PERIOD
 from code_review_events import QUEUE_MERCURIAL
 from code_review_events import QUEUE_MONITORING
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
+from code_review_events import QUEUE_PULSE
 from code_review_events import QUEUE_WEB_BUILDS
 
 logger = structlog.get_logger(__name__)
@@ -179,6 +181,9 @@ class CodeReview(PhabricatorActions):
 
         return True
 
+    def parse_pulse(self, payload):
+        assert self.publish is True, "Publication disabled"
+
     async def start_risk_analysis(self, build):
         """
         Run risk analysis by triggering a Taskcluster hook
@@ -257,6 +262,16 @@ class Events(object):
         )
         self.monitoring.register(self.bus)
 
+        # Create pulse listener for unit test failures
+        self.pulse = PulseListener(
+            QUEUE_PULSE,
+            "exchange/taskcluster-queue/v1/task-completed",
+            "*.*.gecko-level-3._",
+            taskcluster_config.secrets["pulse_user"],
+            taskcluster_config.secrets["pulse_password"],
+        )
+        self.pulse.register(self.bus)
+
     def run(self):
         consumers = [
             # Code review main workflow
@@ -265,6 +280,8 @@ class Events(object):
             self.mercurial.run(),
             # Add monitoring task
             self.monitoring.run(),
+            # Add pulse task
+            self.pulse.run(),
         ]
 
         # Publish results on Phabricator
@@ -272,6 +289,8 @@ class Events(object):
             consumers.append(
                 self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS)
             )
+
+            consumers.append(self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE))
 
         # Start the web server in its own process
         self.webserver.start()
