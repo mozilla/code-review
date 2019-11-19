@@ -4,6 +4,7 @@ import os
 import tempfile
 
 import structlog
+import yaml
 from libmozevent import taskcluster_config
 
 from code_review_events.workflow import Events
@@ -17,6 +18,12 @@ def parse_cli():
     Setup CLI options parser
     """
     parser = argparse.ArgumentParser(description="Mozilla Code Review Bot")
+    parser.add_argument(
+        "-c",
+        "--configuration",
+        help="Local configuration file replacing Taskcluster secrets",
+        type=open,
+    )
     parser.add_argument(
         "--cache-root",
         help="Cache root, used to pull changesets",
@@ -42,6 +49,9 @@ def main():
         existing=dict(
             admins=["babadie@mozilla.com", "mcastelluccio@mozilla.com"], repositories=[]
         ),
+        local_secrets=yaml.safe_load(args.configuration)
+        if args.configuration
+        else None,
     )
 
     init_logger(
