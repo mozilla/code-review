@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import random
+
 import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import UnitResult
@@ -125,6 +127,9 @@ class CodeReview(PhabricatorActions):
                 # Start risk analysis
                 await self.start_risk_analysis(build)
 
+                # Start test selection
+                await self.start_test_selection(build)
+
             elif build.state == PhabricatorBuildState.Queued:
                 # Requeue when nothing changed for now
                 await self.bus.send(QUEUE_WEB_BUILDS, build)
@@ -220,6 +225,39 @@ class CodeReview(PhabricatorActions):
             [reviewer["fields"]["username"] for reviewer in build.reviewers]
         )
         return len(usernames.intersection(self.risk_analysis_reviewers)) > 0
+
+    def should_run_test_selection(self, build):
+        """
+        Check if we should trigger a test selection for this revision:
+        * randomly for a subset of revisions
+        """
+        if self.community_hooks is None:
+            return False
+
+        return random.random() < taskcluster_config.secrets.get(
+            "test_selection_share", 0.0
+        )
+
+    async def start_test_selection(self, build):
+        """
+        Run test selection by triggering a Taskcluster hook
+        """
+        assert isinstance(build, PhabricatorBuild)
+        assert build.state == PhabricatorBuildState.Public
+        try:
+            if self.should_run_test_selection(build):
+                task = self.community_hooks.triggerHook(
+                    "project-relman", "bugbug-test-select", {"DIFF_ID": build.diff_id},
+                )
+                task_id = task["status"]["taskId"]
+                logger.info("Triggered a new test selection task", id=task_id)
+
+                # Send task to monitoring
+                await self.bus.send(
+                    QUEUE_MONITORING, ("project-relman", "bugbug-test-select", task_id),
+                )
+        except Exception as e:
+            logger.error("Failed to trigger test selection task", error=str(e))
 
 
 class Events(object):
