@@ -11,11 +11,11 @@ import os
 
 import requests
 import structlog
+from taskcluster.helper import TaskclusterConfig
 
 from code_review_bot.config import Publication
 from code_review_bot.config import settings
 from code_review_bot.stats import InfluxDb
-from code_review_tools.taskcluster import TaskclusterConfig
 
 logger = structlog.get_logger(__name__)
 
@@ -265,4 +265,4 @@ class Reliability(enum.Enum):
 stats = InfluxDb()
 
 # Create common taskcluster config
-taskcluster = TaskclusterConfig()
+taskcluster = TaskclusterConfig("https://firefox-ci-tc.services.mozilla.com")
