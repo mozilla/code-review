@@ -207,12 +207,10 @@ if "DYNO" in os.environ:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
     # Load taskcluster secrets on Heroku
-    taskcluster_client_id = os.getenv("TASKCLUSTER_CLIENT_ID")
-    taskcluster_access_token = os.getenv("TASKCLUSTER_ACCESS_TOKEN")
     taskcluster_secret = os.getenv("TASKCLUSTER_SECRET")
-    if taskcluster_client_id and taskcluster_access_token and taskcluster_secret:
-        taskcluster.auth(taskcluster_client_id, taskcluster_access_token)
-        taskcluster.load_secrets(taskcluster_secret, "backend")
+    if taskcluster_secret:
+        taskcluster.auth()
+        taskcluster.load_secrets(taskcluster_secret, prefixes=["common", "backend"])
 
         # Setup Sentry
         if "SENTRY_DSN" in taskcluster.secrets:

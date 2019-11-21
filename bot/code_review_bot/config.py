@@ -15,7 +15,6 @@ import tempfile
 
 import structlog
 
-
 logger = structlog.get_logger(__name__)
 
 TaskCluster = collections.namedtuple(
