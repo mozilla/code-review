@@ -1,5 +1,3 @@
 -e ../tools #egg=code-review-tools
 libmozevent==1.0.5
-
-# Use updated libmozdata with search_users
-https://github.com/mozilla/libmozdata/archive/9923f1a6e8aa20a6f042f8808a380eb0f5c87b49.zip #egg=libmozdata
+libmozdata>=0.1.63
