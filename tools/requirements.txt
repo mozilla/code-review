@@ -5,5 +5,5 @@ taskcluster==23.0.0
 toml==0.10.0
 raven==6.10.0
 
-# limit async-timeout version to avoid using the alpha 4.0.0a0
-async-timeout<4.0,>=3.0
+# limit multidict to avoid building with gcc on alpine
+multidict<4.6.0
