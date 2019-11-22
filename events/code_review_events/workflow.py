@@ -71,15 +71,15 @@ class CodeReview(PhabricatorActions):
 
         # Load the blacklisted users
         if user_blacklist:
-            self.user_blacklist = self.api.search_users(
-                constraints={"usernames": user_blacklist}
-            )
-            logger.info(
-                "Blacklisted users",
-                names=[u["fields"]["username"] for u in self.user_blacklist],
-            )
+            self.user_blacklist = {
+                user["phid"]: user["fields"]["username"]
+                for user in self.api.search_users(
+                    constraints={"usernames": user_blacklist}
+                )
+            }
+            logger.info("Blacklisted users", names=self.user_blacklist.values())
         else:
-            self.user_blacklist = []
+            self.user_blacklist = {}
             logger.info("No blacklisted user")
 
     def register(self, bus):
@@ -155,18 +155,12 @@ class CodeReview(PhabricatorActions):
 
     def is_blacklisted(self, revision: dict):
         """Check if the revision author is in blacklisted"""
-        author_phid = revision["fields"]["authorPHID"]
-        author = next(
-            iter([user for user in self.user_blacklist if user["phid"] == author_phid]),
-            None,
-        )
+        author = self.user_blacklist.get(revision["fields"]["authorPHID"])
         if author is None:
             return False
 
         logger.info(
-            "Revision from a blacklisted user",
-            revision=revision["id"],
-            author=author["fields"]["username"],
+            "Revision from a blacklisted user", revision=revision["id"], author=author
         )
         return True
 

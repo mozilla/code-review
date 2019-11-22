@@ -92,22 +92,7 @@ async def test_blacklist(PhabricatorMock, mock_taskcluster):
         )
         client.register(bus)
 
-        assert client.user_blacklist == [
-            {
-                "attachments": {},
-                "fields": {
-                    "dateCreated": 1574083856,
-                    "dateModified": 1574083857,
-                    "policy": {"edit": "admin", "view": "public"},
-                    "realName": "Bad boy de Mars.",
-                    "roles": ["bot", "verified", "approved", "activated"],
-                    "username": "baduser123",
-                },
-                "id": 1460,
-                "phid": "PHID-USER-baduser123",
-                "type": "USER",
-            }
-        ]
+        assert client.user_blacklist == {"PHID-USER-baduser123": "baduser123"}
 
         phab.update_state(build)
 
