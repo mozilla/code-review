@@ -282,11 +282,7 @@ class Workflow(object):
 
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
-                    if (
-                        not task.is_allowed_empty
-                        and not task_issues
-                        and not task_patches
-                    ):
+                    if task.state == "failed" and not task_issues and not task_patches:
                         logger.warning(
                             "An erroneous task processed some artifacts and found no issues or patches",
                             task=task.name,
