@@ -83,7 +83,7 @@ class ZeroCoverageTask(AnalysisTask):
     Uses the most recent data from the code coverage bot
     """
 
-    route = "project.releng.services.project.production.code_coverage_bot.latest"
+    route = "project.relman.code-coverage.production.cron.latest"
     artifacts = ["public/zero_coverage_report.json"]
 
     def parse_issues(self, artifacts, revision):

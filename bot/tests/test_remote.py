@@ -104,7 +104,7 @@ def test_baseline(mock_config, mock_revision, mock_workflow, mock_backend, mock_
             "analyzer-B": {},
             "extra-task": {},
             "zero-cov": {
-                "route": "project.releng.services.project.production.code_coverage_bot.latest",
+                "route": "project.relman.code-coverage.production.cron.latest",
                 "artifacts": {
                     "public/zero_coverage_report.json": {
                         "files": [{"uncovered": True, "name": "test.cpp"}]
@@ -804,7 +804,7 @@ def test_zero_coverage_option(mock_config, mock_revision, mock_workflow, mock_ba
             },
             "remoteTryTask": {"dependencies": ["xxx"]},
             "zero-cov": {
-                "route": "project.releng.services.project.production.code_coverage_bot.latest",
+                "route": "project.relman.code-coverage.production.cron.latest",
                 "artifacts": {
                     "public/zero_coverage_report.json": {
                         "files": [{"uncovered": True, "name": "test.cpp"}]
