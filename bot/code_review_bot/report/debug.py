@@ -24,7 +24,7 @@ class DebugReporter(Reporter):
         assert os.path.isdir(output_dir), "Invalid output dir"
         self.report_path = os.path.join(output_dir, "report.json")
 
-    def publish(self, issues, revision):
+    def publish(self, issues, revision, task_failures):
         """
         Display issues choices
         """
@@ -37,6 +37,8 @@ class DebugReporter(Reporter):
                 ),
                 issue=str(issue),
             )
+        for task in task_failures:
+            logger.info("Task failure detected", name=task.name, task=task.id)
         for patch in revision.improvement_patches:
             logger.info("Patch {}".format(patch))
 
@@ -49,6 +51,9 @@ class DebugReporter(Reporter):
                 patch.analyzer: patch.url or patch.path
                 for patch in revision.improvement_patches
             },
+            "task_failures": [
+                {"name": task.name, "id": task.id} for task in task_failures
+            ],
         }
         with open(self.report_path, "w") as f:
             json.dump(report, f)

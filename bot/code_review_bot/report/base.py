@@ -56,6 +56,10 @@ If you see a problem in this automated review, [please report it here]({bug_repo
 COMMENT_DIFF_DOWNLOAD = """
 For your convenience, [here is a patch]({url}) that fixes all the {analyzer} defects (use it in your repository with `hg import` or `git apply -p0`).
 """
+COMMENT_TASK_FAILURE = """
+The analysis task [{name}](https://firefox-ci-tc.services.mozilla.com/tasks/{task_id}) failed, but we could not detect any issue.
+Please check this task manually.
+"""
 
 
 class Reporter(object):
@@ -116,7 +120,9 @@ class Reporter(object):
 
         return OrderedDict([(cls, stats(items)) for cls, items in groups])
 
-    def build_comment(self, revision, issues, bug_report_url, patches=[]):
+    def build_comment(
+        self, revision, issues, bug_report_url, patches=[], task_failures=[]
+    ):
         """
         Build a Markdown comment about published issues
         """
@@ -162,6 +168,10 @@ class Reporter(object):
             comment += COMMENT_DIFF_DOWNLOAD.format(
                 analyzer=patch.analyzer, url=patch.url or patch.path
             )
+
+        for task in task_failures:
+            comment += COMMENT_TASK_FAILURE.format(name=task.name, task_id=task.id)
+
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
         return comment
