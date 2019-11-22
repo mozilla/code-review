@@ -101,8 +101,15 @@ def PhabricatorMock():
     def _user_search(request):
         params = _phab_params(request)
         assert "constraints" in params
-        assert "phids" in params["constraints"]
-        mock_name = "user-search-{}".format(params["constraints"]["phids"][0])
+        if "phids" in params["constraints"]:
+            mock_name = "user-search-{}".format(params["constraints"]["phids"][0])
+        elif "usernames" in params["constraints"]:
+            mock_name = "user-search-{}".format(
+                "-".join(sorted(params["constraints"]["usernames"]))
+            )
+        else:
+            raise Exception("Unsupported user search")
+
         return (200, json_headers, _response(mock_name))
 
     with responses.RequestsMock(assert_all_requests_are_fired=False) as resp:
