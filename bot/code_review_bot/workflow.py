@@ -86,8 +86,8 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues = self.find_issues(revision)
-        if not issues:
+        issues, task_failures = self.find_issues(revision)
+        if not issues and not task_failures:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
             revision.update_status(BuildState.Pass)
@@ -97,11 +97,11 @@ class Workflow(object):
         self.backend_api.publish_issues(issues, revision)
 
         # Publish all issues
-        self.publish(revision, issues)
+        self.publish(revision, issues, task_failures)
 
         return issues
 
-    def publish(self, revision, issues):
+    def publish(self, revision, issues, task_failures):
         """
         Publish issues on selected reporters
         """
@@ -127,7 +127,7 @@ class Workflow(object):
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
-                reporter.publish(issues, revision)
+                reporter.publish(issues, revision, task_failures)
 
         self.index(
             revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
@@ -246,7 +246,7 @@ class Workflow(object):
             task = tasks[dependencies[0]]
             if task["task"]["metadata"]["name"] == "Gecko Decision Task":
                 logger.warn("Only dependency is a Decision Task, skipping analysis")
-                return []
+                return [], []
 
         # Add zero-coverage task
         if self.zero_coverage_enabled:
@@ -254,6 +254,7 @@ class Workflow(object):
 
         # Find issues and patches in dependencies
         issues = []
+        task_failures = []
         for dep in dependencies:
             try:
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
@@ -275,8 +276,19 @@ class Workflow(object):
                     stats.report_task(task, task_issues)
                     issues += task_issues
 
-                    for patch in task.build_patches(artifacts):
+                    task_patches = task.build_patches(artifacts)
+                    for patch in task_patches:
                         revision.add_improvement_patch(task.name, patch)
+
+                    # Report a problem when tasks in erroneous state are found
+                    # but no issue or patch has been processed by the bot
+                    if task.state == "failed" and not task_issues and not task_patches:
+                        logger.warning(
+                            "An erroneous task processed some artifacts and found no issues or patches",
+                            task=task.name,
+                            id=task.id,
+                        )
+                        task_failures.append(task)
             except Exception as e:
                 logger.warn(
                     "Failure during task analysis",
@@ -285,7 +297,7 @@ class Workflow(object):
                 )
                 raise
 
-        return issues
+        return issues, task_failures
 
     def build_task(self, task_id, task_status):
         """

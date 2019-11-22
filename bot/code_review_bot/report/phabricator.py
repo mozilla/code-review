@@ -46,7 +46,7 @@ class PhabricatorReporter(Reporter):
         self.api = api
         logger.info("Phabricator reporter enabled")
 
-    def publish(self, issues, revision):
+    def publish(self, issues, revision, task_failures):
         """
         Publish inline comments for each issues
         """
@@ -72,9 +72,9 @@ class PhabricatorReporter(Reporter):
         issues_only = [issue for issue in issues if not issue.is_build_error()]
         build_errors = [issue for issue in issues if issue.is_build_error()]
 
-        if issues_only or build_errors:
+        if issues_only or build_errors or task_failures:
             if self.mode == MODE_COMMENT:
-                self.publish_comment(revision, issues_only, patches)
+                self.publish_comment(revision, issues_only, patches, task_failures)
             elif self.mode == MODE_HARBORMASTER:
                 self.publish_harbormaster(revision, issues_only)
             else:
@@ -100,7 +100,7 @@ class PhabricatorReporter(Reporter):
             unit=[issue.as_phabricator_unitresult() for issue in issues],
         )
 
-    def publish_comment(self, revision, issues, patches):
+    def publish_comment(self, revision, issues, patches, task_failures):
         """
         Publish issues through Phabricator comment
         """
@@ -132,13 +132,13 @@ class PhabricatorReporter(Reporter):
                 ],
             )
         )
-        if not inlines and not patches and not coverage_issues:
+        if not inlines and not patches and not coverage_issues and not task_failures:
             logger.info("No new comments found, skipping Phabricator publication")
             return
         logger.info("Added inline comments", ids=[i["id"] for i in inlines])
 
         # Then publish top comment
-        if len(non_coverage_issues):
+        if len(non_coverage_issues) or task_failures:
             self.api.comment(
                 revision.id,
                 self.build_comment(
@@ -146,6 +146,7 @@ class PhabricatorReporter(Reporter):
                     issues=non_coverage_issues,
                     patches=patches,
                     bug_report_url=BUG_REPORT_URL,
+                    task_failures=task_failures,
                 ),
             )
 

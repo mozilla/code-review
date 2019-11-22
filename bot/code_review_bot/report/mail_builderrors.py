@@ -29,7 +29,7 @@ class BuildErrorsReporter(Reporter):
 
         logger.info("BuildErrorsReporter report enabled.")
 
-    def publish(self, issues, revision):
+    def publish(self, issues, revision, task_failures):
         """
         Send an email to the author of the revision
         """
