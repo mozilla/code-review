@@ -319,8 +319,6 @@ class Events(object):
             self.mercurial.run(),
             # Add monitoring task
             self.monitoring.run(),
-            # Add pulse task
-            self.pulse.run(),
         ]
 
         # Publish results on Phabricator
@@ -329,6 +327,7 @@ class Events(object):
                 self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS)
             )
 
+            consumers.append(self.pulse.run())
             consumers.append(self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE))
 
         # Start the web server in its own process
