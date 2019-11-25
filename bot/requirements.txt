@@ -1,5 +1,5 @@
 -e ../tools #egg=code-review-tools
 influxdb==5.2.3
-libmozdata==0.1.62
+libmozdata==0.1.63
 parsepatch==0.1.3
 toml==0.10.0
