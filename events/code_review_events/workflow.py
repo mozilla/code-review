@@ -332,14 +332,15 @@ class Events(object):
         self.monitoring.register(self.bus)
 
         # Create pulse listener for unit test failures
-        self.pulse = PulseListener(
-            QUEUE_PULSE,
-            "exchange/taskcluster-queue/v1/task-completed",
-            "*.*.gecko-level-3._",
-            taskcluster_config.secrets["pulse_user"],
-            taskcluster_config.secrets["pulse_password"],
-        )
-        self.pulse.register(self.bus)
+        if self.workflow.publish:
+            self.pulse = PulseListener(
+                QUEUE_PULSE,
+                "exchange/taskcluster-queue/v1/task-completed",
+                "*.*.gecko-level-3._",
+                taskcluster_config.secrets["pulse_user"],
+                taskcluster_config.secrets["pulse_password"],
+            )
+            self.pulse.register(self.bus)
 
     def run(self):
         consumers = [
@@ -349,8 +350,6 @@ class Events(object):
             self.mercurial.run(),
             # Add monitoring task
             self.monitoring.run(),
-            # Add pulse task
-            self.pulse.run(),
         ]
 
         # Publish results on Phabricator
@@ -359,6 +358,7 @@ class Events(object):
                 self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS)
             )
 
+            consumers.append(self.pulse.run())
             consumers.append(self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE))
 
         # Start the web server in its own process
