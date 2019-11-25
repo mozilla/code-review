@@ -301,14 +301,15 @@ class Events(object):
         self.monitoring.register(self.bus)
 
         # Create pulse listener for unit test failures
-        self.pulse = PulseListener(
-            QUEUE_PULSE,
-            "exchange/taskcluster-queue/v1/task-completed",
-            "*.*.gecko-level-3._",
-            taskcluster_config.secrets["pulse_user"],
-            taskcluster_config.secrets["pulse_password"],
-        )
-        self.pulse.register(self.bus)
+        if self.workflow.publish:
+            self.pulse = PulseListener(
+                QUEUE_PULSE,
+                "exchange/taskcluster-queue/v1/task-completed",
+                "*.*.gecko-level-3._",
+                taskcluster_config.secrets["pulse_user"],
+                taskcluster_config.secrets["pulse_password"],
+            )
+            self.pulse.register(self.bus)
 
     def run(self):
         consumers = [
