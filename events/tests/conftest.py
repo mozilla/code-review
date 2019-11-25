@@ -188,8 +188,15 @@ def mock_taskcluster():
     """
     taskcluster_config.options = {"rootUrl": "http://taskcluster.test"}
 
+    def _response(name):
+        path = os.path.join(FIXTURES_DIR, "taskcluster", name)
+        assert os.path.exists(path), "Missing mock {}".format(path)
+        return open(path).read()
+
     responses.add(
         responses.GET,
         "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task-group/aGroup/list",
         json={"taskGroupId": "aGroup", "tasks": []},
     )
+
+    return _response

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import random
 
 import structlog
 from libmozdata.phabricator import BuildState
@@ -17,20 +16,26 @@ from libmozevent.phabricator import PhabricatorBuildState
 from libmozevent.pulse import PulseListener
 from libmozevent.utils import run_tasks
 from libmozevent.web import WebServer
-from taskcluster import Hooks
 
 from code_review_events import MONITORING_PERIOD
+from code_review_events import QUEUE_BUGBUG
+from code_review_events import QUEUE_BUGBUG_TRY_PUSH
 from code_review_events import QUEUE_MERCURIAL
+from code_review_events import QUEUE_MERCURIAL_APPLIED
 from code_review_events import QUEUE_MONITORING
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
 from code_review_events import QUEUE_PULSE
+from code_review_events import QUEUE_PULSE_BUGBUG_TEST_SELECT
+from code_review_events import QUEUE_PULSE_TRY_TASK_END
 from code_review_events import QUEUE_WEB_BUILDS
+from code_review_events.bugbug_utils import BugbugUtils
 from code_review_tools import heroku
 
 logger = structlog.get_logger(__name__)
 
 PULSE_TASK_GROUP_RESOLVED = "exchange/taskcluster-queue/v1/task-group-resolved"
 PULSE_TASK_COMPLETED = "exchange/taskcluster-queue/v1/task-completed"
+PULSE_TASK_FAILED = "exchange/taskcluster-queue/v1/task-failed"
 
 
 class CodeReview(PhabricatorActions):
@@ -39,15 +44,7 @@ class CodeReview(PhabricatorActions):
     and pushing on Try repositories
     """
 
-    def __init__(
-        self,
-        publish=False,
-        risk_analysis_reviewers=[],
-        community_config=None,
-        user_blacklist=[],
-        *args,
-        **kwargs,
-    ):
+    def __init__(self, publish=False, user_blacklist=[], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.publish = publish
         logger.info(
@@ -55,24 +52,6 @@ class CodeReview(PhabricatorActions):
                 self.publish and "enabled" or "disabled"
             )
         )
-
-        # Setup Taskcluster community hooks for risk analysis
-        if community_config is not None:
-            self.community_hooks = Hooks(
-                {
-                    "rootUrl": "https://community-tc.services.mozilla.com",
-                    "credentials": {
-                        "clientId": community_config["client_id"],
-                        "accessToken": community_config["access_token"],
-                    },
-                }
-            )
-            logger.info("Risk analysis trigger is enabled")
-        else:
-            self.community_hooks = None
-            logger.info("No taskcluster_community in secret, risk analysis is disabled")
-
-        self.risk_analysis_reviewers = risk_analysis_reviewers
 
         # Load the blacklisted users
         if user_blacklist:
@@ -90,6 +69,7 @@ class CodeReview(PhabricatorActions):
     def register(self, bus):
         self.bus = bus
         self.bus.add_queue(QUEUE_PHABRICATOR_RESULTS)
+        self.bus.add_queue(QUEUE_MERCURIAL_APPLIED)
 
     def get_repositories(self, repositories, cache_root):
         """
@@ -148,11 +128,8 @@ class CodeReview(PhabricatorActions):
                 # Report public bug as 'working' (in progress)
                 await self.bus.send(QUEUE_PHABRICATOR_RESULTS, ("work", build, {}))
 
-                # Start risk analysis
-                await self.start_risk_analysis(build)
-
-                # Start test selection
-                await self.start_test_selection(build)
+                # Send to bugbug workflow
+                await self.bus.send(QUEUE_BUGBUG, build)
 
             elif build.state == PhabricatorBuildState.Queued:
                 # Requeue when nothing changed for now
@@ -168,6 +145,13 @@ class CodeReview(PhabricatorActions):
             "Revision from a blacklisted user", revision=revision["id"], author=author
         )
         return True
+
+    async def dispatch_mercurial_applied(self, payload):
+        # Send to phabricator results publication for normal processing
+        await self.bus.send(QUEUE_PHABRICATOR_RESULTS, payload)
+
+        # Send to bugbug for further analysis
+        await self.bus.send(QUEUE_BUGBUG_TRY_PUSH, payload)
 
     def publish_results(self, payload):
         if not self.publish:
@@ -207,6 +191,14 @@ class CodeReview(PhabricatorActions):
                 build.target_phid, BuildState.Fail, unit=[failure]
             )
 
+        elif mode == "test_result":
+            result = UnitResult(
+                namespace="code-review", name=extras["name"], result=extras["result"]
+            )
+            self.api.update_build_target(
+                build.target_phid, BuildState.Work, unit=[result]
+            )
+
         elif mode == "success":
             self.api.create_harbormaster_uri(
                 build.target_phid,
@@ -224,20 +216,23 @@ class CodeReview(PhabricatorActions):
 
         return True
 
-    def parse_pulse(self, payload):
+    async def parse_pulse(self):
 
-        routing = payload["routing"]
+        while True:
+            payload = await self.bus.receive(QUEUE_PULSE)
+            routing = payload["routing"]
 
-        # Process autoland payloads
-        if routing["exchange"] == PULSE_TASK_GROUP_RESOLVED:
-            try:
-                self.trigger_autoland(payload["body"])
-            except Exception as e:
-                logger.warn(
-                    "Autoland trigger failure", key=routing["key"], error=str(e)
-                )
-        else:
-            logger.debug("Skipping pulse message", key=routing["key"])
+            # Process autoland payloads
+            if routing["exchange"] == PULSE_TASK_GROUP_RESOLVED:
+                try:
+                    self.trigger_autoland(payload["body"])
+                except Exception as e:
+                    logger.warn(
+                        "Autoland trigger failure", key=routing["key"], error=str(e)
+                    )
+            else:
+                # Send to bugbug
+                await self.bus.send(QUEUE_PULSE_TRY_TASK_END, payload)
 
     def trigger_autoland(self, body: dict):
         """
@@ -264,76 +259,6 @@ class CodeReview(PhabricatorActions):
         )
         task_id = task["status"]["taskId"]
         logger.info("Triggered a new autoland ingestion task", id=task_id)
-
-    async def start_risk_analysis(self, build):
-        """
-        Run risk analysis by triggering a Taskcluster hook
-        """
-        assert isinstance(build, PhabricatorBuild)
-        assert build.state == PhabricatorBuildState.Public
-        try:
-            if self.should_run_risk_analysis(build):
-                task = self.community_hooks.triggerHook(
-                    "project-relman",
-                    "bugbug-classify-patch",
-                    {"DIFF_ID": build.diff_id},
-                )
-                task_id = task["status"]["taskId"]
-                logger.info("Triggered a new risk analysis task", id=task_id)
-
-                # Send task to monitoring
-                await self.bus.send(
-                    QUEUE_MONITORING,
-                    ("project-relman", "bugbug-classify-patch", task_id),
-                )
-        except Exception as e:
-            logger.error("Failed to trigger risk analysis task", error=str(e))
-
-    def should_run_risk_analysis(self, build):
-        """
-        Check if we should trigger a risk analysis for this revision:
-        * when the revision is being reviewed by one of some specific reviewers
-        """
-        if self.community_hooks is None:
-            return False
-
-        usernames = set(
-            [reviewer["fields"]["username"] for reviewer in build.reviewers]
-        )
-        return len(usernames.intersection(self.risk_analysis_reviewers)) > 0
-
-    def should_run_test_selection(self, build):
-        """
-        Check if we should trigger a test selection for this revision:
-        * randomly for a subset of revisions
-        """
-        if self.community_hooks is None:
-            return False
-
-        return random.random() < taskcluster_config.secrets.get(
-            "test_selection_share", 0.0
-        )
-
-    async def start_test_selection(self, build):
-        """
-        Run test selection by triggering a Taskcluster hook
-        """
-        assert isinstance(build, PhabricatorBuild)
-        assert build.state == PhabricatorBuildState.Public
-        try:
-            if self.should_run_test_selection(build):
-                task = self.community_hooks.triggerHook(
-                    "project-relman", "bugbug-test-select", {"DIFF_ID": build.diff_id}
-                )
-                task_id = task["status"]["taskId"]
-                logger.info("Triggered a new test selection task", id=task_id)
-
-                # Send task to monitoring
-                await self.bus.send(
-                    QUEUE_MONITORING, ("project-relman", "bugbug-test-select", task_id)
-                )
-        except Exception as e:
-            logger.error("Failed to trigger test selection task", error=str(e))
 
 
 class Events(object):
@@ -364,11 +289,46 @@ class Events(object):
                 logger.info("Autoland ingestion is enabled")
                 exchanges += [
                     # autoland ingestion
-                    (PULSE_TASK_GROUP_RESOLVED, "#.gecko-level-3.#")
+                    (PULSE_TASK_GROUP_RESOLVED, ["#.gecko-level-3.#"])
                 ]
             if publish:
                 # unit test failures
                 exchanges += [(PULSE_TASK_COMPLETED, ["*.*.gecko-level-3._"])]
+
+            # Create pulse listeners for bugbug test selection task and unit test failures.
+            community_config = taskcluster_config.secrets.get("taskcluster_community")
+            test_selection_enabled = taskcluster_config.secrets.get(
+                "test_selection_enabled", False
+            )
+            if community_config is not None and test_selection_enabled:
+                exchanges += [
+                    (PULSE_TASK_COMPLETED, ["#.gecko-level-1.#"]),
+                    (PULSE_TASK_FAILED, ["#.gecko-level-1.#"]),
+                    # https://bugzilla.mozilla.org/show_bug.cgi?id=1599863
+                    # (
+                    #    "exchange/taskcluster-queue/v1/task-exception",
+                    #    ["#.gecko-level-1.#"],
+                    # ),
+                ]
+
+                self.community_pulse = PulseListener(
+                    QUEUE_PULSE_BUGBUG_TEST_SELECT,
+                    [
+                        (
+                            "exchange/taskcluster-queue/v1/task-completed",
+                            ["route.project.relman.bugbug.test_select"],
+                        )
+                    ],
+                    taskcluster_config.secrets["communitytc_pulse_user"],
+                    taskcluster_config.secrets["communitytc_pulse_password"],
+                    "communitytc",
+                )
+                # Manually register to set queue as redis
+                self.community_pulse.bus = self.bus
+            else:
+                self.community_pulse = None
+            self.bus.add_queue(QUEUE_PULSE_BUGBUG_TEST_SELECT, redis=True)
+            self.bus.add_queue(QUEUE_PULSE_TRY_TASK_END, redis=True)
 
             if exchanges:
                 self.pulse = PulseListener(
@@ -377,19 +337,23 @@ class Events(object):
                     taskcluster_config.secrets["pulse_user"],
                     taskcluster_config.secrets["pulse_password"],
                 )
-
                 # Manually register to set queue as redis
                 self.pulse.bus = self.bus
             else:
                 self.pulse = None
             self.bus.add_queue(QUEUE_PULSE, redis=True)
+
         else:
+            self.bugbug_utils = None
             self.webserver = None
             self.pulse = None
-            logger.info("Skipping webserver & pulse consumers")
+            self.community_pulse = None
+            logger.info("Skipping webserver, bugbug and pulse consumers")
 
             # Register queues for workers
             self.bus.add_queue(QUEUE_PULSE, redis=True)
+            self.bus.add_queue(QUEUE_PULSE_BUGBUG_TEST_SELECT, redis=True)
+            self.bus.add_queue(QUEUE_PULSE_TRY_TASK_END, redis=True)
             self.bus.add_queue(QUEUE_WEB_BUILDS, redis=True)
 
         # Run work processes on worker dyno or single instance
@@ -398,12 +362,6 @@ class Events(object):
                 api_key=taskcluster_config.secrets["PHABRICATOR"]["api_key"],
                 url=taskcluster_config.secrets["PHABRICATOR"]["url"],
                 publish=publish,
-                risk_analysis_reviewers=taskcluster_config.secrets.get(
-                    "risk_analysis_reviewers", []
-                ),
-                community_config=taskcluster_config.secrets.get(
-                    "taskcluster_community"
-                ),
                 user_blacklist=taskcluster_config.secrets["user_blacklist"],
             )
             self.workflow.register(self.bus)
@@ -411,7 +369,7 @@ class Events(object):
             # Build mercurial worker and queue
             self.mercurial = MercurialWorker(
                 QUEUE_MERCURIAL,
-                QUEUE_PHABRICATOR_RESULTS,
+                QUEUE_MERCURIAL_APPLIED,
                 repositories=self.workflow.get_repositories(
                     taskcluster_config.secrets["repositories"], cache_root
                 ),
@@ -425,10 +383,14 @@ class Events(object):
                 MONITORING_PERIOD,
             )
             self.monitoring.register(self.bus)
+
+            self.bugbug_utils = BugbugUtils()
+            self.bugbug_utils.register(self.bus)
         else:
             self.workflow = None
             self.mercurial = None
             self.monitoring = None
+            self.bugbug_utils = None
             logger.info("Skipping workers consumers")
 
     def run(self):
@@ -441,7 +403,34 @@ class Events(object):
                 # Publish results on Phabricator
                 self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS),
                 # Parse and redirect pulse messages
-                self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE),
+                self.workflow.parse_pulse(),
+                self.bus.run(
+                    self.workflow.dispatch_mercurial_applied, QUEUE_MERCURIAL_APPLIED
+                ),
+            ]
+
+            # Publish results on Phabricator
+            if self.workflow.publish:
+                consumers.append(
+                    self.bus.run(
+                        self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS
+                    )
+                )
+
+        if self.bugbug_utils:
+            consumers += [
+                self.bugbug_utils.run(),
+                self.bus.run(self.bugbug_utils.process_push, QUEUE_BUGBUG_TRY_PUSH),
+                self.bus.run(
+                    self.bugbug_utils.got_try_task_end,
+                    QUEUE_PULSE_TRY_TASK_END,
+                    sequential=False,
+                ),
+                self.bus.run(
+                    self.bugbug_utils.got_bugbug_test_select_end,
+                    QUEUE_PULSE_BUGBUG_TEST_SELECT,
+                    sequential=False,
+                ),
             ]
 
         # Add mercurial task
@@ -452,9 +441,13 @@ class Events(object):
         if self.monitoring:
             consumers.append(self.monitoring.run())
 
-        # Add pulse listener
+        # Add pulse listener for task results.
         if self.pulse:
             consumers.append(self.pulse.run())
+
+        # Add communitytc pulse listener for test selection results.
+        if self.community_pulse:
+            consumers.append(self.community_pulse.run())
 
         # Start the web server in its own process
         if self.webserver:
