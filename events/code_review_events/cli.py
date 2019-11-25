@@ -47,7 +47,9 @@ def main():
         "events",
         required=("admins", "PHABRICATOR", "repositories"),
         existing=dict(
-            admins=["babadie@mozilla.com", "mcastelluccio@mozilla.com"], repositories=[]
+            admins=["babadie@mozilla.com", "mcastelluccio@mozilla.com"],
+            repositories=[],
+            user_blacklist=[],
         ),
         local_secrets=yaml.safe_load(args.configuration)
         if args.configuration

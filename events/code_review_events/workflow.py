@@ -39,6 +39,7 @@ class CodeReview(PhabricatorActions):
         publish=False,
         risk_analysis_reviewers=[],
         community_config=None,
+        user_blacklist=[],
         *args,
         **kwargs
     ):
@@ -67,6 +68,19 @@ class CodeReview(PhabricatorActions):
             logger.info("No taskcluster_community in secret, risk analysis is disabled")
 
         self.risk_analysis_reviewers = risk_analysis_reviewers
+
+        # Load the blacklisted users
+        if user_blacklist:
+            self.user_blacklist = {
+                user["phid"]: user["fields"]["username"]
+                for user in self.api.search_users(
+                    constraints={"usernames": user_blacklist}
+                )
+            }
+            logger.info("Blacklisted users", names=self.user_blacklist.values())
+        else:
+            self.user_blacklist = {}
+            logger.info("No blacklisted user")
 
     def register(self, bus):
         self.bus = bus
@@ -104,6 +118,11 @@ class CodeReview(PhabricatorActions):
             self.update_state(build)
 
             if build.state == PhabricatorBuildState.Public:
+
+                # Check if the author is not blacklisted
+                if self.is_blacklisted(build.revision):
+                    continue
+
                 # When the build is public, load needed details
                 try:
                     self.load_patches_stack(build)
@@ -133,6 +152,17 @@ class CodeReview(PhabricatorActions):
             elif build.state == PhabricatorBuildState.Queued:
                 # Requeue when nothing changed for now
                 await self.bus.send(QUEUE_WEB_BUILDS, build)
+
+    def is_blacklisted(self, revision: dict):
+        """Check if the revision author is in blacklisted"""
+        author = self.user_blacklist.get(revision["fields"]["authorPHID"])
+        if author is None:
+            return False
+
+        logger.info(
+            "Revision from a blacklisted user", revision=revision["id"], author=author
+        )
+        return True
 
     def publish_results(self, payload):
         assert self.publish is True, "Publication disabled"
@@ -247,14 +277,14 @@ class CodeReview(PhabricatorActions):
         try:
             if self.should_run_test_selection(build):
                 task = self.community_hooks.triggerHook(
-                    "project-relman", "bugbug-test-select", {"DIFF_ID": build.diff_id},
+                    "project-relman", "bugbug-test-select", {"DIFF_ID": build.diff_id}
                 )
                 task_id = task["status"]["taskId"]
                 logger.info("Triggered a new test selection task", id=task_id)
 
                 # Send task to monitoring
                 await self.bus.send(
-                    QUEUE_MONITORING, ("project-relman", "bugbug-test-select", task_id),
+                    QUEUE_MONITORING, ("project-relman", "bugbug-test-select", task_id)
                 )
         except Exception as e:
             logger.error("Failed to trigger test selection task", error=str(e))
@@ -277,6 +307,7 @@ class Events(object):
                 "risk_analysis_reviewers", []
             ),
             community_config=taskcluster_config.secrets.get("taskcluster_community"),
+            user_blacklist=taskcluster_config.secrets["user_blacklist"],
         )
         self.workflow.register(self.bus)
 
