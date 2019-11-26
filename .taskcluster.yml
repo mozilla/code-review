@@ -155,30 +155,22 @@ tasks:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("bot_check_tests")}
       payload:
-        capabilities:
-          privileged: true
         maxRunTime: 3600
-        image: "${taskboot_image}"
+        image: 'mozillareleases/taskgraph:image_builder-3dcd9dec75e660a8a7df3f68d36b37364c4bcbcae081954fe8954de87060ee83@sha256:dc4cc7c1f129834b624e67cae320294661dfc657cc11c03cfcd255a61f3f8d99'
+        'artifacts':
+            'public/image.tar.zst': {
+                expires: {$fromNow: '2 weeks'},
+                'type': 'file',
+                'path': '/builds/worker/workspace/artifacts/image.tar.zst',
+                }
+        features: {dind: true}
         env:
-          GIT_REPOSITORY: ${repository}
-          GIT_REVISION: ${head_rev}
-        command:
-          - taskboot
-          - build
-          - --image
-          - mozilla/code-review
-          - --tag
-          - "${channel}"
-          - --tag
-          - "${head_rev}"
-          - --write
-          - /bot.tar
-          - bot/docker/Dockerfile
-        artifacts:
-          public/code-review-bot.tar:
-            expires: {$fromNow: '2 weeks'}
-            path: /bot.tar
-            type: file
+            PROJECT: code-review
+            IMAGE_NAME: bot
+            HASH: FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF
+            VCS_HEAD_REV: ${head_rev}
+            VCS_HEAD_REPOSITORY: ${repository}
+            VCS_REPOSITORY_TYPE: git
       scopes:
         - docker-worker:capability:privileged
       metadata:
