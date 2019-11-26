@@ -12,6 +12,7 @@ from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import stats
 from code_review_bot.backend import BackendAPI
+from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
@@ -48,8 +49,6 @@ class Workflow(object):
         zero_coverage_enabled=True,
         update_build=True,
     ):
-        assert settings.try_task_id is not None, "Cannot run without Try task id"
-        assert settings.try_group_id is not None, "Cannot run without Try task id"
         self.zero_coverage_enabled = zero_coverage_enabled
         self.update_build = update_build
 
@@ -88,7 +87,7 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures = self.find_issues(revision)
+        issues, task_failures = self.find_issues(revision, settings.try_group_id)
         if not issues and not task_failures:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
@@ -102,6 +101,35 @@ class Workflow(object):
         self.publish(revision, issues, task_failures)
 
         return issues
+
+    def ingest_autoland(self, revision):
+        """
+        Simpler workflow to ingest autoland revision
+        """
+        assert revision.repository == REPO_AUTOLAND, "Need an autoland revision"
+
+        tasks = self.queue_service.listTaskGroup(settings.autoland_group_id)
+
+        issues = []
+        for task_status in tasks["tasks"]:
+            task = self.build_task(task_status, skip_unknown=True)
+
+            if task is None:
+                continue
+
+            artifacts = task.load_artifacts(self.queue_service)
+            if artifacts is not None:
+                task_issues = task.parse_issues(artifacts, revision)
+                logger.info(
+                    "Found {} issues".format(len(task_issues)),
+                    task=task.name,
+                    id=task.id,
+                )
+                issues += task_issues
+
+        # TODO: publish on backend according to state (issues or not issues)
+
+        return
 
     def publish(self, revision, issues, task_failures):
         """
@@ -202,12 +230,12 @@ class Workflow(object):
                 },
             )
 
-    def find_issues(self, revision):
+    def find_issues(self, revision, group_id):
         """
         Find all issues on remote Taskcluster task group
         """
         # Load all tasks in task group
-        tasks = self.queue_service.listTaskGroup(settings.try_group_id)
+        tasks = self.queue_service.listTaskGroup(group_id)
         assert "tasks" in tasks
         tasks = {task["status"]["taskId"]: task for task in tasks["tasks"]}
         assert len(tasks) > 0
@@ -264,7 +292,7 @@ class Workflow(object):
                     task = dep.build_from_route(self.index_service, self.queue_service)
                 else:
                     # Use a task from its id & description
-                    task = self.build_task(dep, tasks[dep])
+                    task = self.build_task(tasks[dep])
                 if task is None:
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
@@ -301,10 +329,14 @@ class Workflow(object):
 
         return issues, task_failures
 
-    def build_task(self, task_id, task_status):
+    def build_task(self, task_status, skip_unknown=False):
         """
         Create a specific implementation of AnalysisTask according to the task name
         """
+        try:
+            task_id = task_status["status"]["taskId"]
+        except KeyError:
+            raise Exception("Cannot read task name {}".format(task_id))
         try:
             name = task_status["task"]["metadata"]["name"]
         except KeyError:
@@ -325,6 +357,8 @@ class Workflow(object):
             return InferTask(task_id, task_status)
         elif name.startswith("source-test-"):
             logger.error(f"Unsupported {name} task: will need a local implementation")
+        elif skip_unknown is True:
+            logger.info("Skipping unknown task", id=task_id, name=name)
         else:
             raise Exception("Unsupported task {}".format(name))
 

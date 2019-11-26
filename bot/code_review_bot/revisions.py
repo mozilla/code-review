@@ -14,6 +14,8 @@ from parsepatch.patch import Patch
 
 from code_review_bot import Issue
 from code_review_bot import stats
+from code_review_bot.config import REGEX_PHABRICATOR_COMMIT
+from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import settings
 from code_review_tools.taskcluster import create_blob_artifact
 
@@ -178,6 +180,36 @@ class Revision(object):
             diff=diff,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
             patch=patch,
+        )
+
+    @staticmethod
+    def from_autoland(autoland_task: dict):
+
+        # TODO: check the payload
+
+        # Load mercurial revision
+        mercurial_revision = autoland_task["payload"]["env"]["GECKO_HEAD_REV"]
+
+        # Search phabricator revision from commit message
+        commit_url = (
+            f"https://hg.mozilla.org/integration/autoland/json-rev/{mercurial_revision}"
+        )
+        response = requests.get(commit_url)
+        response.raise_for_status()
+        description = response.json()["desc"]
+        match = REGEX_PHABRICATOR_COMMIT.search(description)
+        if match is not None:
+            url, revision_id = match.groups()
+            revision_id = int(revision_id)
+            logger.info("Found phabricator revision", id=revision_id, url=url)
+        else:
+            raise Exception(f"No phabricator revision found in commit {commit_url}")
+
+        return Revision(
+            id=revision_id,
+            mercurial_revision=mercurial_revision,
+            repository=REPO_AUTOLAND,
+            url=url,
         )
 
     def analyze_patch(self):
@@ -370,6 +402,8 @@ class Revision(object):
 
     @property
     def bugzilla_id(self):
+        if self.revision is None:
+            return None
         try:
             return int(self.revision["fields"].get("bugzilla.bug-id"))
         except (TypeError, ValueError):
@@ -378,6 +412,8 @@ class Revision(object):
 
     @property
     def title(self):
+        if self.revision is None:
+            return None
         return self.revision["fields"].get("title")
 
     def as_dict(self):
