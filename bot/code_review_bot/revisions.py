@@ -9,7 +9,6 @@ from datetime import timedelta
 
 import requests
 import structlog
-from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 from parsepatch.patch import Patch
 
@@ -73,7 +72,7 @@ class Revision(object):
     A Phabricator revision to analyze and report on
     """
 
-    def __init__(self, api, try_task, update_build=True):
+    def __init__(self, api, try_task):
         assert isinstance(api, PhabricatorAPI)
         assert isinstance(try_task, dict)
         self.repository = None  # a try repo where the revision is stored
@@ -86,7 +85,6 @@ class Revision(object):
         self.build_target_phid = None
         self.api = api
         self.mercurial_revision = None
-        self.update_build = update_build
         self.issues_url = None
         self.load_phabricator(try_task)
 
@@ -293,27 +291,6 @@ class Revision(object):
         * improvement patches
         """
         self.improvement_patches = []
-
-    def update_status(self, state, lint_issues=[]):
-        """
-        Update build status on HarborMaster
-        """
-        assert isinstance(state, BuildState)
-        assert isinstance(lint_issues, list)
-        if not self.build_target_phid:
-            logger.info(
-                "No build target found, skipping HarborMaster update", state=state.value
-            )
-            return
-
-        if not self.update_build:
-            logger.info(
-                "Update build disabled, skipping HarborMaster update", state=state.value
-            )
-            return
-
-        self.api.update_build_target(self.build_target_phid, state, lint=lint_issues)
-        logger.info("Updated HarborMaster status", state=state)
 
     def setup_try(self, tasks):
         """

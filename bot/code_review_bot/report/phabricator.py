@@ -167,9 +167,10 @@ class PhabricatorReporter(Reporter):
         """
         Publish issues through HarborMaster
         """
-        revision.update_status(
+        self.api.update_build_target(
+            revision.build_target_phid,
             state=BuildState.Work,
-            lint_issues=[issue.as_phabricator_lint() for issue in issues],
+            lint=[issue.as_phabricator_lint() for issue in issues],
         )
 
     def comment_inline(self, revision, issue, existing_comments=[]):
