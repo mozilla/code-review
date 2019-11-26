@@ -209,7 +209,7 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        return Revision(api, mock_try_task)
+        return Revision.from_try(mock_try_task, api)
 
 
 class MockQueue(object):

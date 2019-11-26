@@ -98,7 +98,7 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision(api, mock_try_task)
+        revision = Revision.from_try(mock_try_task, api)
         revision.lines = {
             # Add dummy lines diff
             "another_test.cpp": [41, 42, 43]
@@ -164,7 +164,7 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision(api, mock_try_task)
+        revision = Revision.from_try(mock_try_task, api)
         revision.lines = {
             # Add dummy lines diff
             "test.cpp": [41, 42, 43],
@@ -222,7 +222,7 @@ def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision(api, mock_try_task)
+        revision = Revision.from_try(mock_try_task, api)
         revision.lines = {
             # Add dummy lines diff
             "test.txt": [0],
@@ -306,7 +306,7 @@ def test_phabricator_clang_tidy_and_coverage(
     )
 
     with mock_phabricator as api:
-        revision = Revision(api, mock_try_task)
+        revision = Revision.from_try(mock_try_task, api)
         revision.lines = {
             # Add dummy lines diff
             "test.txt": [0],
@@ -366,7 +366,7 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
 
     def _test_reporter(api, analyzers_skipped):
         # Always use the same setup, only varies the analyzers
-        revision = Revision(api, mock_try_task)
+        revision = Revision.from_try(mock_try_task, api)
         revision.lines = {"test.cpp": [0, 41, 42, 43], "dom/test.cpp": [42]}
         reporter = PhabricatorReporter(
             {"analyzers_skipped": analyzers_skipped}, api=api
@@ -532,7 +532,7 @@ def test_phabricator_harbormaster(mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision(api, mock_try_task)
+        revision = Revision.from_try(mock_try_task, api)
         revision.lines = {
             # Add dummy lines diff
             "test.cpp": [41, 42, 43]
@@ -640,7 +640,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision(api, mock_try_task)
+        revision = Revision.from_try(mock_try_task, api)
         revision.lines = {
             # Add dummy lines diff
             "test.cpp": [41, 42, 43]
@@ -765,7 +765,7 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision(api, mock_try_task)
+        revision = Revision.from_try(mock_try_task, api)
         revision.lines = {
             # Add dummy lines diff
             "xx.cpp": [123, 124, 125]
@@ -840,7 +840,7 @@ def test_task_failures(mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision(api, mock_try_task)
+        revision = Revision.from_try(mock_try_task, api)
         reporter = PhabricatorReporter(
             {"analyzers": ["clang-tidy"], "modes": ("comment")}, api=api
         )

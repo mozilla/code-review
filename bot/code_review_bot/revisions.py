@@ -72,21 +72,49 @@ class Revision(object):
     A Phabricator revision to analyze and report on
     """
 
-    def __init__(self, api, try_task):
-        assert isinstance(api, PhabricatorAPI)
-        assert isinstance(try_task, dict)
-        self.repository = None  # a try repo where the revision is stored
-        self.target_repository = None  # the target repo where the patch may land
+    def __init__(
+        self,
+        id,
+        phid=None,
+        diff_id=None,
+        diff_phid=None,
+        revision=None,
+        diff=None,
+        build_target_phid=None,
+        mercurial_revision=None,
+        repository=None,
+        target_repository=None,
+        url=None,
+        patch=None,
+    ):
+
+        # Identification
+        self.id = id
+        self.phid = phid
+        self.diff_id = diff_id
+        self.diff_phid = diff_phid
+        self.build_target_phid = build_target_phid
+        self.mercurial_revision = mercurial_revision
+        self.revision = revision
+        self.diff = diff
+        self.url = url
+
+        # a try repo where the revision is stored
+        self.repository = repository
+
+        # the target repo where the patch may land
+        self.target_repository = target_repository
+
+        # Backend data
+        self.issues_url = None
+
+        # Patches built later on
+        self.improvement_patches = []
+
+        # Patch analysis
+        self.patch = patch
         self.files = []
         self.lines = {}
-        self.patch = None
-        self.improvement_patches = []
-        self.diff_phid = None
-        self.build_target_phid = None
-        self.api = api
-        self.mercurial_revision = None
-        self.issues_url = None
-        self.load_phabricator(try_task)
 
     @property
     def namespaces(self):
@@ -103,45 +131,58 @@ class Revision(object):
     def __str__(self):
         return "Phabricator #{} - {}".format(self.diff_id, self.diff_phid)
 
-    @property
-    def url(self):
-        return "https://{}/D{}".format(self.api.hostname, self.id)
-
-    def load_phabricator(self, try_task):
+    @staticmethod
+    def from_try(try_task, phabricator):
         """
         Load identifiers from Phabricator, using the remote task description
         """
+        assert isinstance(phabricator, PhabricatorAPI)
+        assert isinstance(try_task, dict)
+
         # Load build target phid from the task env
         code_review = try_task["extra"]["code-review"]
-        self.build_target_phid = code_review.get("phabricator-diff") or code_review.get(
+        build_target_phid = code_review.get("phabricator-diff") or code_review.get(
             "phabricator-build-target"
         )
         assert (
-            self.build_target_phid is not None
+            build_target_phid is not None
         ), "Missing phabricator-build-target or phabricator-diff declaration"
-        assert self.build_target_phid.startswith("PHID-HMBT-")
+        assert build_target_phid.startswith("PHID-HMBT-")
 
         # And get the diff from the phabricator api
-        buildable = self.api.find_target_buildable(self.build_target_phid)
-        self.diff_phid = buildable["fields"]["objectPHID"]
-        assert self.diff_phid.startswith("PHID-DIFF-")
+        buildable = phabricator.find_target_buildable(build_target_phid)
+        diff_phid = buildable["fields"]["objectPHID"]
+        assert diff_phid.startswith("PHID-DIFF-")
 
         # Load diff details to get the diff revision
         # We also load the commits list in order to get the email of the author of the
         # patch for sending email if builds are failing.
-        diffs = self.api.search_diffs(
-            diff_phid=self.diff_phid, attachments={"commits": True}
+        diffs = phabricator.search_diffs(
+            diff_phid=diff_phid, attachments={"commits": True}
         )
-        assert len(diffs) == 1, "No diff available for {}".format(self.diff_phid)
-        self.diff = diffs[0]
-        self.diff_id = self.diff["id"]
-        self.phid = self.diff["revisionPHID"]
+        assert len(diffs) == 1, "No diff available for {}".format(diff_phid)
+        diff = diffs[0]
+        diff_id = diff["id"]
+        phid = diff["revisionPHID"]
 
-        self.revision = self.api.load_revision(self.phid)
-        self.id = self.revision["id"]
+        revision = phabricator.load_revision(phid)
 
         # Load target patch from Phabricator for Try mode
-        self.patch = self.api.load_raw_diff(self.diff_id)
+        patch = phabricator.load_raw_diff(diff_id)
+
+        # Build a revision without repositories as they are retrieved later
+        # when analyzing the full task group
+        return Revision(
+            id=revision["id"],
+            phid=phid,
+            diff_id=diff_id,
+            diff_phid=diff_phid,
+            build_target_phid=build_target_phid,
+            revision=revision,
+            diff=diff,
+            url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
+            patch=patch,
+        )
 
     def analyze_patch(self):
         """
