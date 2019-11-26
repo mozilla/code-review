@@ -151,9 +151,9 @@ tasks:
       deadline: {$fromNow: '1 hour'}
       provisionerId: proj-relman
       workerType: ci
-      dependencies:
-        - {$eval: as_slugid("check_lint")}
-        - {$eval: as_slugid("bot_check_tests")}
+      dependencies: []
+      #- {$eval: as_slugid("check_lint")}
+      #  - {$eval: as_slugid("bot_check_tests")}
       payload:
         maxRunTime: 3600
         image: 'mozillareleases/taskgraph:image_builder-3dcd9dec75e660a8a7df3f68d36b37364c4bcbcae081954fe8954de87060ee83@sha256:dc4cc7c1f129834b624e67cae320294661dfc657cc11c03cfcd255a61f3f8d99'
