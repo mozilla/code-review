@@ -209,7 +209,7 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        return Revision(api, mock_try_task, update_build=False)
+        return Revision.from_try(mock_try_task, api)
 
 
 class MockQueue(object):
@@ -384,6 +384,7 @@ def mock_workflow(mock_phabricator, mock_taskcluster_config):
             self.queue_service = mock_taskcluster_config.get_service("queue")
             self.zero_coverage_enabled = True
             self.backend_api = BackendAPI()
+            self.update_build = False
 
         def setup_mock_tasks(self, tasks):
             """

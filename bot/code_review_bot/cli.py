@@ -101,11 +101,8 @@ def main():
 
     # Load unique revision
     try:
-        revision = Revision(
-            phabricator_api,
-            try_task=queue_service.task(settings.try_task_id),
-            # Update build status only when phabricator reporting is enabled
-            update_build=phabricator_reporting_enabled,
+        revision = Revision.from_try(
+            queue_service.task(settings.try_task_id), phabricator_api
         )
     except Exception as e:
         # Report revision loading failure on production only

@@ -46,10 +46,12 @@ class Workflow(object):
         queue_service,
         phabricator_api,
         zero_coverage_enabled=True,
+        update_build=True,
     ):
         assert settings.try_task_id is not None, "Cannot run without Try task id"
         assert settings.try_group_id is not None, "Cannot run without Try task id"
         self.zero_coverage_enabled = zero_coverage_enabled
+        self.update_build = update_build
 
         # Use share phabricator API client
         assert isinstance(phabricator_api, PhabricatorAPI)
@@ -80,7 +82,7 @@ class Workflow(object):
         self.index(revision, state="started")
 
         # Set the Phabricator build as running
-        revision.update_status(state=BuildState.Work)
+        self.update_status(revision, state=BuildState.Work)
 
         # Analyze revision patch to get files/lines data
         revision.analyze_patch()
@@ -90,7 +92,7 @@ class Workflow(object):
         if not issues and not task_failures:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
-            revision.update_status(BuildState.Pass)
+            self.update_status(revision, BuildState.Pass)
             return []
 
         # Publish issues on backend to retrieve their comparison state
@@ -134,8 +136,8 @@ class Workflow(object):
         )
 
         # Publish final HarborMaster state
-        revision.update_status(
-            nb_publishable > 0 and BuildState.Fail or BuildState.Pass
+        self.update_status(
+            revision, nb_publishable > 0 and BuildState.Fail or BuildState.Pass
         )
 
     def index(self, revision, **kwargs):
@@ -325,3 +327,23 @@ class Workflow(object):
             logger.error(f"Unsupported {name} task: will need a local implementation")
         else:
             raise Exception("Unsupported task {}".format(name))
+
+    def update_status(self, revision, state):
+        """
+        Update build status on HarborMaster
+        """
+        assert isinstance(state, BuildState)
+        if not revision.build_target_phid:
+            logger.info(
+                "No build target found, skipping HarborMaster update", state=state.value
+            )
+            return
+
+        if not self.update_build:
+            logger.info(
+                "Update build disabled, skipping HarborMaster update", state=state.value
+            )
+            return
+
+        self.phabricator.update_build_target(revision.build_target_phid, state)
+        logger.info("Updated HarborMaster status", state=state, revision=revision)
