@@ -132,12 +132,10 @@ class Revision(object):
         return "Phabricator #{} - {}".format(self.diff_id, self.diff_phid)
 
     @staticmethod
-    def from_try(try_task, phabricator):
+    def from_try(try_task: dict, phabricator: PhabricatorAPI):
         """
         Load identifiers from Phabricator, using the remote task description
         """
-        assert isinstance(phabricator, PhabricatorAPI)
-        assert isinstance(try_task, dict)
 
         # Load build target phid from the task env
         code_review = try_task["extra"]["code-review"]
