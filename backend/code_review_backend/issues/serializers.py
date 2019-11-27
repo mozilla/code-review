@@ -53,13 +53,23 @@ class DiffSerializer(serializers.ModelSerializer):
     Used for full management
     """
 
+    repository = serializers.SlugRelatedField(
+        queryset=Repository.objects.all(), slug_field="slug"
+    )
     issues_url = serializers.HyperlinkedIdentityField(
         view_name="issues-list", lookup_url_kwarg="diff_id"
     )
 
     class Meta:
         model = Diff
-        fields = ("id", "phid", "review_task_id", "mercurial_hash", "issues_url")
+        fields = (
+            "id",
+            "phid",
+            "review_task_id",
+            "repository",
+            "mercurial_hash",
+            "issues_url",
+        )
 
 
 class DiffFullSerializer(serializers.ModelSerializer):
@@ -69,6 +79,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
     """
 
     revision = RevisionSerializer(read_only=True)
+    repository = RepositorySerializer(read_only=True)
     issues_url = serializers.HyperlinkedIdentityField(
         view_name="issues-list", lookup_url_kwarg="diff_id"
     )
@@ -82,6 +93,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
             "revision",
             "phid",
             "review_task_id",
+            "repository",
             "mercurial_hash",
             "issues_url",
             "nb_issues",

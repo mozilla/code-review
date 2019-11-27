@@ -21,9 +21,12 @@ class CompareAPITestCase(APITestCase):
         # Create a user
         self.user = User.objects.create(username="crash_user")
 
-        # Create a repo
+        # Create a repo & its try counterpart
         self.repo = Repository.objects.create(
             id=1, phid="PHID-REPO-xxx", slug="myrepo", url="http://repo.test/myrepo"
+        )
+        self.repo_try = Repository.objects.create(
+            id=2, slug="myrepo-try", url="http://repo.test/try"
         )
 
         # Create a simple stack with 2 diffs
@@ -36,6 +39,7 @@ class CompareAPITestCase(APITestCase):
                 phid=f"PHID-DIFF-{i+1}",
                 review_task_id=f"task-{i}",
                 mercurial_hash=hashlib.sha1(f"hg {i}".encode("utf-8")).hexdigest(),
+                repository=self.repo_try,
             )
 
         # Add 3 issues on first diff

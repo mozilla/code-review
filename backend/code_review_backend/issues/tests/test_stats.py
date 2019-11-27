@@ -20,9 +20,12 @@ class StatsAPITestCase(APITestCase):
         # Create a user
         self.user = User.objects.create(username="crash_user")
 
-        # Create a repo
+        # Create a repo & its try
         self.repo = Repository.objects.create(
             id=1, phid="PHID-REPO-xxx", slug="myrepo", url="http://repo.test/myrepo"
+        )
+        self.repo_try = Repository.objects.create(
+            id=2, slug="myrepo-try", url="http://repo.test/myrepo-try"
         )
 
         # Create a revision
@@ -37,6 +40,7 @@ class StatsAPITestCase(APITestCase):
                 phid=f"PHID-DIFF-{i+1}",
                 review_task_id=f"task-{i}",
                 mercurial_hash=hashlib.sha1(f"hg {i}".encode("utf-8")).hexdigest(),
+                repository=self.repo_try,
             )
 
         # Create lots of issues randomly affected on diffs

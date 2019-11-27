@@ -27,6 +27,8 @@ class PhabricatorModel(models.Model):
 
 
 class Repository(PhabricatorModel):
+    # Not all repositories are available on Phabricator (Try ones)
+    phid = models.CharField(max_length=40, unique=False, null=True)
 
     slug = models.SlugField(unique=True)
     url = models.URLField(unique=True)
@@ -39,6 +41,7 @@ class Repository(PhabricatorModel):
 
 
 class Revision(PhabricatorModel):
+    # The target repository where the revision will land in the end
     repository = models.ForeignKey(
         Repository, related_name="revisions", on_delete=models.CASCADE
     )
@@ -60,7 +63,13 @@ class Diff(PhabricatorModel):
     )
 
     review_task_id = models.CharField(max_length=30, unique=True)
+
     mercurial_hash = models.CharField(max_length=40)
+
+    # The repository hosting this specific mercurial revision (try, autoland, ...)
+    repository = models.ForeignKey(
+        Repository, related_name="diffs", on_delete=models.CASCADE
+    )
 
     def __str__(self):
         return f"Diff {self.id}"
