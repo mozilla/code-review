@@ -16,6 +16,8 @@ from code_review_bot import Issue
 from code_review_bot import stats
 from code_review_bot.config import REGEX_PHABRICATOR_COMMIT
 from code_review_bot.config import REPO_AUTOLAND
+from code_review_bot.config import REPO_MOZILLA_CENTRAL
+from code_review_bot.config import REPO_NSS
 from code_review_bot.config import settings
 from code_review_tools.taskcluster import create_blob_artifact
 
@@ -183,7 +185,7 @@ class Revision(object):
         )
 
     @staticmethod
-    def from_autoland(autoland_task: dict):
+    def from_autoland(autoland_task: dict, phabricator: PhabricatorAPI):
 
         # TODO: check the payload
 
@@ -205,10 +207,34 @@ class Revision(object):
         else:
             raise Exception(f"No phabricator revision found in commit {commit_url}")
 
+        # Lookup the Phabricator revision to get details (phid, title, bugzilla_id, ...)
+        revision = phabricator.load_revision(rev_id=revision_id)
+
+        # Search the Phabricator diff with same commit identifier
+        diffs = phabricator.search_diffs(
+            revision_phid=revision["phid"], attachments={"commits": True}
+        )
+        diff = next(
+            iter(
+                d
+                for d in diffs
+                if d["attachments"]["commits"]["commits"][0]["identifier"]
+                == mercurial_revision
+            ),
+            None,
+        )
+        logger.info("Found phabricator diff", id=diff["id"])
+
         return Revision(
             id=revision_id,
+            phid=revision["phid"],
+            diff_id=diff["id"],
+            diff_phid=diff["phid"],
             mercurial_revision=mercurial_revision,
             repository=REPO_AUTOLAND,
+            target_repository=REPO_MOZILLA_CENTRAL,
+            revision=revision,
+            diff=diff,
             url=url,
         )
 
@@ -384,14 +410,14 @@ class Revision(object):
             self.repository = decision_env["GECKO_HEAD_REPOSITORY"]
             # mozilla-unified is used in the Decision task payload
             # but that is not the "real" target repository
-            self.target_repository = "https://hg.mozilla.org/mozilla-central"
+            self.target_repository = REPO_MOZILLA_CENTRAL
 
         elif "NSS_HEAD_REPOSITORY" in decision_env:
             # NSS Try
             self.mercurial_revision = decision_env.get("NSS_HEAD_REVISION")
             self.repository = decision_env["NSS_HEAD_REPOSITORY"]
             # Unfortunately the NSS decision task does not expose the target repository
-            self.target_repository = "https://hg.mozilla.org/projects/nss"
+            self.target_repository = REPO_NSS
 
         else:
             raise Exception("Unsupported decision task")

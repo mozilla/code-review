@@ -107,9 +107,17 @@ class Workflow(object):
         Simpler workflow to ingest autoland revision
         """
         assert revision.repository == REPO_AUTOLAND, "Need an autoland revision"
+        logger.info(
+            "Starting autoland ingestion",
+            revision=revision.id,
+            bugzilla=revision.bugzilla_id,
+            title=revision.title,
+            mercurial_revision=revision.mercurial_revision,
+        )
 
+        # Find potential issues in the autoland task group
+        # There should be no issues, so the build is OK
         tasks = self.queue_service.listTaskGroup(settings.autoland_group_id)
-
         issues = []
         for task_status in tasks["tasks"]:
             task = self.build_task(task_status, skip_unknown=True)
@@ -127,9 +135,9 @@ class Workflow(object):
                 )
                 issues += task_issues
 
-        # TODO: publish on backend according to state (issues or not issues)
-
-        return
+        # Store the revision & diff in the backend
+        # TODO: publish state (issues or not issues)
+        self.backend_api.publish_revision(revision)
 
     def publish(self, revision, issues, task_failures):
         """

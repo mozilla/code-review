@@ -107,7 +107,7 @@ def main():
     try:
         if settings.autoland_group_id:
             revision = Revision.from_autoland(
-                queue_service.task(settings.autoland_group_id)
+                queue_service.task(settings.autoland_group_id), phabricator_api
             )
         else:
             revision = Revision.from_try(

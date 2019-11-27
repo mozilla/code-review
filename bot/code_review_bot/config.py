@@ -16,6 +16,8 @@ import tempfile
 
 import structlog
 
+REPO_MOZILLA_CENTRAL = "https://hg.mozilla.org/mozilla-central"
+REPO_NSS = "https://hg.mozilla.org/projects/nss"
 REPO_AUTOLAND = "https://hg.mozilla.org/integration/autoland"
 REGEX_PHABRICATOR_COMMIT = re.compile(
     r"^Differential Revision: (https://[\w\-\.]+/D(\d+))$", re.MULTILINE
