@@ -114,7 +114,7 @@ class ClangFormatTask(AnalysisTask):
 
         assert isinstance(artifact, bytes), "clang-format.diff should be bytes"
         patch = artifact.decode("utf-8")
-        if patch == "":
+        if patch.strip() == "":
             logger.info("Empty patch in clang-format.diff")
             return []
 
