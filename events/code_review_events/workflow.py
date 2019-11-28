@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import random
 
 import structlog
@@ -24,6 +25,7 @@ from code_review_events import QUEUE_MONITORING
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
 from code_review_events import QUEUE_PULSE
 from code_review_events import QUEUE_WEB_BUILDS
+from code_review_tools import heroku
 
 logger = structlog.get_logger(__name__)
 
@@ -299,73 +301,121 @@ class Events(object):
         # Create message bus shared amongst processes
         self.bus = MessageBus()
 
-        self.workflow = CodeReview(
-            api_key=taskcluster_config.secrets["PHABRICATOR"]["api_key"],
-            url=taskcluster_config.secrets["PHABRICATOR"]["url"],
-            publish=taskcluster_config.secrets["PHABRICATOR"].get("publish", False),
-            risk_analysis_reviewers=taskcluster_config.secrets.get(
-                "risk_analysis_reviewers", []
-            ),
-            community_config=taskcluster_config.secrets.get("taskcluster_community"),
-            user_blacklist=taskcluster_config.secrets["user_blacklist"],
-        )
-        self.workflow.register(self.bus)
+        publish = taskcluster_config.secrets["PHABRICATOR"].get("publish", False)
 
-        # Build mercurial worker and queue
-        self.mercurial = MercurialWorker(
-            QUEUE_MERCURIAL,
-            QUEUE_PHABRICATOR_RESULTS,
-            repositories=self.workflow.get_repositories(
-                taskcluster_config.secrets["repositories"], cache_root
-            ),
-        )
-        self.mercurial.register(self.bus)
+        # Check the redis support is enabled on Heroku
+        if heroku.in_dyno():
+            assert self.bus.redis_enabled is True, "Need Redis on Heroku"
 
-        # Create web server
-        self.webserver = WebServer(QUEUE_WEB_BUILDS)
-        self.webserver.register(self.bus)
+        # Run webserver & pulse on web dyno or single instance
+        if not heroku.in_dyno() or heroku.in_web_dyno():
 
-        # Setup monitoring for newly created tasks
-        self.monitoring = Monitoring(
-            QUEUE_MONITORING, taskcluster_config.secrets["admins"], MONITORING_PERIOD
-        )
-        self.monitoring.register(self.bus)
+            # Create web server
+            self.webserver = WebServer(QUEUE_WEB_BUILDS)
+            self.webserver.register(self.bus)
 
-        # Create pulse listener for unit test failures
-        if self.workflow.publish:
-            self.pulse = PulseListener(
-                QUEUE_PULSE,
-                "exchange/taskcluster-queue/v1/task-completed",
-                "*.*.gecko-level-3._",
-                taskcluster_config.secrets["pulse_user"],
-                taskcluster_config.secrets["pulse_password"],
+            # Create pulse listener for unit test failures
+            if publish:
+                self.pulse = PulseListener(
+                    QUEUE_PULSE,
+                    "exchange/taskcluster-queue/v1/task-completed",
+                    "*.*.gecko-level-3._",
+                    taskcluster_config.secrets["pulse_user"],
+                    taskcluster_config.secrets["pulse_password"],
+                )
+
+                # Manually register to set queue as redis
+                self.pulse.bus = self.bus
+                self.bus.add_queue(QUEUE_PULSE, redis=True)
+            else:
+                self.pulse = None
+        else:
+            self.webserver = None
+            self.pulse = None
+            logger.info("Skipping webserver & pulse consumers")
+
+            # Register queues for workers
+            self.bus.add_queue(QUEUE_PULSE, redis=True)
+            self.bus.add_queue(QUEUE_WEB_BUILDS, redis=True)
+
+        # Run work processes on worker dyno or single instance
+        if not heroku.in_dyno() or heroku.in_worker_dyno():
+            self.workflow = CodeReview(
+                api_key=taskcluster_config.secrets["PHABRICATOR"]["api_key"],
+                url=taskcluster_config.secrets["PHABRICATOR"]["url"],
+                publish=publish,
+                risk_analysis_reviewers=taskcluster_config.secrets.get(
+                    "risk_analysis_reviewers", []
+                ),
+                community_config=taskcluster_config.secrets.get(
+                    "taskcluster_community"
+                ),
+                user_blacklist=taskcluster_config.secrets["user_blacklist"],
             )
-            self.pulse.register(self.bus)
+            self.workflow.register(self.bus)
+
+            # Build mercurial worker and queue
+            self.mercurial = MercurialWorker(
+                QUEUE_MERCURIAL,
+                QUEUE_PHABRICATOR_RESULTS,
+                repositories=self.workflow.get_repositories(
+                    taskcluster_config.secrets["repositories"], cache_root
+                ),
+            )
+            self.mercurial.register(self.bus)
+
+            # Setup monitoring for newly created tasks
+            self.monitoring = Monitoring(
+                QUEUE_MONITORING,
+                taskcluster_config.secrets["admins"],
+                MONITORING_PERIOD,
+            )
+            self.monitoring.register(self.bus)
+        else:
+            self.workflow = None
+            self.mercurial = None
+            self.monitoring = None
+            logger.info("Skipping workers consumers")
 
     def run(self):
-        consumers = [
-            # Code review main workflow
-            self.workflow.run(),
-            # Add mercurial task
-            self.mercurial.run(),
-            # Add monitoring task
-            self.monitoring.run(),
-        ]
+        consumers = []
 
-        # Publish results on Phabricator
-        if self.workflow.publish:
-            consumers.append(
-                self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS)
-            )
+        # Code review main workflow
+        if self.workflow:
+            consumers.append(self.workflow.run())
 
+            # Publish results on Phabricator
+            if self.workflow.publish:
+                consumers += [
+                    self.bus.run(
+                        self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS
+                    ),
+                    self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE),
+                ]
+
+        # Add mercurial task
+        if self.mercurial:
+            consumers.append(self.mercurial.run())
+
+        # Add monitoring task
+        if self.monitoring:
+            consumers.append(self.monitoring.run())
+
+        # Add pulse listener
+        if self.pulse:
             consumers.append(self.pulse.run())
-            consumers.append(self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE))
 
         # Start the web server in its own process
-        self.webserver.start()
+        if self.webserver:
+            self.webserver.start()
 
-        # Run all tasks concurrently
-        run_tasks(consumers)
+        if consumers:
+            # Run all tasks concurrently
+            run_tasks(consumers)
+        else:
+            # Keep the web server process running
+            asyncio.get_event_loop().run_forever()
 
         # Stop the webserver when other async processes are stopped
-        self.webserver.stop()
+        if self.webserver:
+            self.webserver.stop()
