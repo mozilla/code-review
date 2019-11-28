@@ -174,6 +174,8 @@ class Reporter(object):
         for task in task_failures:
             comment += COMMENT_TASK_FAILURE.format(name=task.name, task_id=task.id)
 
+        assert comment != "", "Empty comment"
+
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
         return comment
