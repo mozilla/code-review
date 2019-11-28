@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import random
 
 import structlog
@@ -314,17 +315,20 @@ class Events(object):
             self.webserver.register(self.bus)
 
             # Create pulse listener for unit test failures
-            self.pulse = PulseListener(
-                QUEUE_PULSE,
-                "exchange/taskcluster-queue/v1/task-completed",
-                "*.*.gecko-level-3._",
-                taskcluster_config.secrets["pulse_user"],
-                taskcluster_config.secrets["pulse_password"],
-            )
+            if publish:
+                self.pulse = PulseListener(
+                    QUEUE_PULSE,
+                    "exchange/taskcluster-queue/v1/task-completed",
+                    "*.*.gecko-level-3._",
+                    taskcluster_config.secrets["pulse_user"],
+                    taskcluster_config.secrets["pulse_password"],
+                )
 
-            # Manually register to set queue as redis
-            self.pulse.bus = self.bus
-            self.bus.add_queue(QUEUE_PULSE, redis=True)
+                # Manually register to set queue as redis
+                self.pulse.bus = self.bus
+                self.bus.add_queue(QUEUE_PULSE, redis=True)
+            else:
+                self.pulse = None
         else:
             self.webserver = None
             self.pulse = None
@@ -405,8 +409,12 @@ class Events(object):
         if self.webserver:
             self.webserver.start()
 
-        # Run all tasks concurrently
-        run_tasks(consumers)
+        if consumers:
+            # Run all tasks concurrently
+            run_tasks(consumers)
+        else:
+            # Keep the web server process running
+            asyncio.get_event_loop().run_forever()
 
         # Stop the webserver when other async processes are stopped
         if self.webserver:
