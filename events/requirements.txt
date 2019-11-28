@@ -1,3 +1,3 @@
 -e ../tools #egg=code-review-tools
-libmozevent==1.0.8
+libmozevent==1.0.9
 libmozdata>=0.1.63
