@@ -77,7 +77,9 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
     def get_queryset(self):
         diffs = (
             Diff.objects.all()
-            .prefetch_related("issues", "revision", "revision__repository")
+            .prefetch_related(
+                "issues", "revision", "revision__repository", "repository"
+            )
             .annotate(nb_issues=Count("issues"))
             .annotate(
                 nb_issues_new_for_revision=Count(

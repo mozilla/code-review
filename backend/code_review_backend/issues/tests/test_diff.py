@@ -19,9 +19,12 @@ class DiffAPITestCase(APITestCase):
         # Create a user
         self.user = User.objects.create(username="crash_user")
 
-        # Create a repo
+        # Create a repo & its try counterpart
         self.repo = Repository.objects.create(
             id=1, phid="PHID-REPO-xxx", slug="myrepo", url="http://repo.test/myrepo"
+        )
+        self.repo_try = Repository.objects.create(
+            id=2, slug="myrepo-try", url="http://repo.test/try"
         )
 
         # Create a stack with 2 revisions & 3 diffs
@@ -39,6 +42,7 @@ class DiffAPITestCase(APITestCase):
                 revision_id=(i % 2) + 1,
                 review_task_id=f"task-{i}",
                 mercurial_hash=hashlib.sha1(f"hg {i}".encode("utf-8")).hexdigest(),
+                repository=self.repo_try,
             )
 
         # Force created date update without using inner django trigger
@@ -71,6 +75,12 @@ class DiffAPITestCase(APITestCase):
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
                             "phabricator_url": "https://phabricator.services.mozilla.com/D1",
                         },
+                        "repository": {
+                            "id": 2,
+                            "phid": None,
+                            "slug": "myrepo-try",
+                            "url": "http://repo.test/try",
+                        },
                         "phid": "PHID-DIFF-3",
                         "review_task_id": "task-2",
                         "mercurial_hash": "30b501affc4d3b9c670fc297ab903b406afd5f04",
@@ -90,6 +100,12 @@ class DiffAPITestCase(APITestCase):
                             "diffs_url": "http://testserver/v1/revision/2/diffs/",
                             "phabricator_url": "https://phabricator.services.mozilla.com/D2",
                         },
+                        "repository": {
+                            "id": 2,
+                            "phid": None,
+                            "slug": "myrepo-try",
+                            "url": "http://repo.test/try",
+                        },
                         "phid": "PHID-DIFF-2",
                         "review_task_id": "task-1",
                         "mercurial_hash": "32d2a594cfef74fcb524028d1521d0d4bd98bd35",
@@ -108,6 +124,12 @@ class DiffAPITestCase(APITestCase):
                             "bugzilla_id": 10000,
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
                             "phabricator_url": "https://phabricator.services.mozilla.com/D1",
+                        },
+                        "repository": {
+                            "id": 2,
+                            "phid": None,
+                            "slug": "myrepo-try",
+                            "url": "http://repo.test/try",
                         },
                         "phid": "PHID-DIFF-1",
                         "review_task_id": "task-0",

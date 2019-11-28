@@ -17,12 +17,12 @@ class RepositoryAPITestCase(APITestCase):
         Check we can list all repositories in database
         """
         response = self.client.get("/v1/repository/")
-        self.assertEqual(Repository.objects.count(), 2)
+        self.assertEqual(Repository.objects.count(), 4)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(
             response.json(),
             {
-                "count": 2,
+                "count": 4,
                 "next": None,
                 "previous": None,
                 "results": [
@@ -37,6 +37,18 @@ class RepositoryAPITestCase(APITestCase):
                         "phid": "PHID-REPO-3lrloqw4qf6fluy2a5ni",
                         "slug": "nss",
                         "url": "https://hg.mozilla.org/projects/nss",
+                    },
+                    {
+                        "id": 101,
+                        "phid": None,
+                        "slug": "nss-try",
+                        "url": "https://hg.mozilla.org/projects/nss-try",
+                    },
+                    {
+                        "id": 100,
+                        "phid": None,
+                        "slug": "try",
+                        "url": "https://hg.mozilla.org/try",
                     },
                 ],
             },

@@ -61,6 +61,7 @@ class BackendAPI(object):
             "phid": revision.diff_phid,
             "review_task_id": settings.taskcluster.task_id,
             "mercurial_hash": revision.mercurial_revision,
+            "repository": revision.repository,
         }
         backend_diff = self.create(backend_revision["diffs_url"], data)
 

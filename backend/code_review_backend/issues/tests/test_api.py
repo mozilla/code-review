@@ -18,9 +18,12 @@ class CreationAPITestCase(APITestCase):
         # Create a user
         self.user = User.objects.create(username="crash_user")
 
-        # Create a repo
+        # Create a repo & its try counterpart
         self.repo = Repository.objects.create(
             id=1, phid="PHID-REPO-xxx", slug="myrepo", url="http://repo.test/myrepo"
+        )
+        self.repo_try = Repository.objects.create(
+            id=2, slug="myrepo-try", url="http://repo.test/try"
         )
 
     def test_create_revision(self):
@@ -60,6 +63,7 @@ class CreationAPITestCase(APITestCase):
             "phid": "PHID-DIFF-xxx",
             "review_task_id": "deadbeef123",
             "mercurial_hash": "coffee12345",
+            "repository": "try",
         }
 
         # No auth will give a permission denied
@@ -114,6 +118,7 @@ class CreationAPITestCase(APITestCase):
             phid="PHID-DIFF-xxx",
             review_task_id="deadbeef123",
             mercurial_hash="coffee12345",
+            repository=self.repo_try,
         )
 
         data = {
