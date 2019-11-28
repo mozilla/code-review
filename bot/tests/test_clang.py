@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import pytest
+
+from code_review_bot.tasks.clang_format import ClangFormatTask
 
 
 def test_expanded_macros(mock_revision):
@@ -177,3 +180,19 @@ def test_settings(mock_config):
     assert mock_config.java_extensions == frozenset([".java"])
     assert mock_config.idl_extensions == frozenset([".idl"])
     assert mock_config.js_extensions == frozenset([".js", ".jsm"])
+
+
+@pytest.mark.parametrize("patch", [b"", b"    ", b"\n", b"  \n  "])
+def test_empty_patch(patch):
+    """
+    Test clang format task detect empty patches
+    """
+    task_status = {
+        "task": {"metadata": {"name": "source-test-clang-format"}},
+        "status": {},
+    }
+    task = ClangFormatTask("someTaskId", task_status)
+    patches = task.build_patches(
+        {"public/live.log": "some lines", "public/code-review/clang-format.diff": patch}
+    )
+    assert patches == []
