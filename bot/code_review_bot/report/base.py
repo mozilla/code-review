@@ -34,8 +34,7 @@ COMMENT_PARTS = {
     DefaultIssue: {"defect": " - {nb} found by a generic analyzer"},
 }
 COMMENT_FAILURE = """
-Code analysis found {defects_total} in the diff {diff_id}{extras_comments}:
-{defects}
+Code analysis found {defects_total} in the diff {diff_id}:
 """
 COMMENT_RUN_ANALYZERS = """
 You can run this analysis locally with:
@@ -152,14 +151,17 @@ class Reporter(object):
 
         # Build top comment
         nb = len(issues)
-        extras = ""
 
-        comment = COMMENT_FAILURE.format(
-            extras_comments=extras,
-            defects_total=pluralize("defect", nb),
-            diff_id=revision.diff_id,
-            defects="\n".join(defects),
-        )
+        if nb > 0:
+            comment = COMMENT_FAILURE.format(
+                defects_total=pluralize("defect", nb), diff_id=revision.diff_id
+            )
+        else:
+            comment = ""
+
+        # Add defects
+        if defects:
+            comment += "\n".join(defects) + "\n"
 
         if analyzers:
             comment += COMMENT_RUN_ANALYZERS.format(analyzers="\n".join(analyzers))
