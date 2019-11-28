@@ -52,9 +52,6 @@ If you see a problem in this automated review, [please report it here](https://b
 """  # noqa
 
 VALID_TASK_FAILURES_MESSAGE = """
-Code analysis found 0 defects in the diff 42:
-
-
 The analysis task [mock-infer](https://firefox-ci-tc.services.mozilla.com/tasks/erroneousTaskId) failed, but we could not detect any issue.
 Please check this task manually.
 
