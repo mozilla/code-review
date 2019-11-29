@@ -249,7 +249,8 @@ class CodeReview(PhabricatorActions):
         task_group_id = body["taskGroupId"]
         logger.info("Checking autoland task", task_group_id=task_group_id)
         task = queue.task(task_group_id)
-        if "index.gecko.v2.autoland.latest.firefox.decision" not in task["routes"]:
+        repo = task["payload"]["env"].get("GECKO_HEAD_REPOSITORY")
+        if repo != "https://hg.mozilla.org/integration/autoland":
             logger.info("Not an autoland task", task=task_group_id)
             return
 
