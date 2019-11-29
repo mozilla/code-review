@@ -47,9 +47,11 @@ def main():
         "events",
         required=("admins", "PHABRICATOR", "repositories"),
         existing=dict(
+            APP_CHANNEL="development",
             admins=["babadie@mozilla.com", "mcastelluccio@mozilla.com"],
             repositories=[],
             user_blacklist=[],
+            autoland_enabled=False,
         ),
         local_secrets=yaml.safe_load(args.configuration)
         if args.configuration
