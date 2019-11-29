@@ -363,7 +363,7 @@ class Events(object):
                 logger.info("Autoland ingestion is enabled")
                 exchanges += [
                     # autoland ingestion
-                    (PULSE_TASK_GROUP_RESOLVED, "#")
+                    (PULSE_TASK_GROUP_RESOLVED, "#.gecko-level-3.#")
                 ]
             if publish:
                 # unit test failures
