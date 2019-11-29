@@ -318,8 +318,12 @@ class Events(object):
             if publish:
                 self.pulse = PulseListener(
                     QUEUE_PULSE,
-                    "exchange/taskcluster-queue/v1/task-completed",
-                    "*.*.gecko-level-3._",
+                    [
+                        (
+                            "exchange/taskcluster-queue/v1/task-completed",
+                            ["*.*.gecko-level-3._"],
+                        )
+                    ],
                     taskcluster_config.secrets["pulse_user"],
                     taskcluster_config.secrets["pulse_password"],
                 )
