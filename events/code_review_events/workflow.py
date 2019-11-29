@@ -409,14 +409,6 @@ class Events(object):
                 ),
             ]
 
-            # Publish results on Phabricator
-            if self.workflow.publish:
-                consumers.append(
-                    self.bus.run(
-                        self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS
-                    )
-                )
-
         if self.bugbug_utils:
             consumers += [
                 self.bugbug_utils.run(),
