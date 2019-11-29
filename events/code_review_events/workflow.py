@@ -237,7 +237,7 @@ class CodeReview(PhabricatorActions):
                     "Autoland trigger failure", key=routing["key"], error=str(e)
                 )
         else:
-            logger.info("Skipping pulse message", key=routing["key"])
+            logger.debug("Skipping pulse message", key=routing["key"])
 
     def trigger_autoland(self, body: dict):
         """
