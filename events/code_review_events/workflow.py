@@ -216,23 +216,20 @@ class CodeReview(PhabricatorActions):
 
         return True
 
-    async def parse_pulse(self):
+    async def parse_pulse(self, payload):
+        routing = payload["routing"]
 
-        while True:
-            payload = await self.bus.receive(QUEUE_PULSE)
-            routing = payload["routing"]
-
-            # Process autoland payloads
-            if routing["exchange"] == PULSE_TASK_GROUP_RESOLVED:
-                try:
-                    self.trigger_autoland(payload["body"])
-                except Exception as e:
-                    logger.warn(
-                        "Autoland trigger failure", key=routing["key"], error=str(e)
-                    )
-            else:
-                # Send to bugbug
-                await self.bus.send(QUEUE_PULSE_TRY_TASK_END, payload)
+        # Process autoland payloads
+        if routing["exchange"] == PULSE_TASK_GROUP_RESOLVED:
+            try:
+                self.trigger_autoland(payload["body"])
+            except Exception as e:
+                logger.warn(
+                    "Autoland trigger failure", key=routing["key"], error=str(e)
+                )
+        else:
+            # Send to bugbug
+            await self.bus.send(QUEUE_PULSE_TRY_TASK_END, payload)
 
     def trigger_autoland(self, body: dict):
         """
@@ -403,7 +400,7 @@ class Events(object):
                 # Publish results on Phabricator
                 self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS),
                 # Parse and redirect pulse messages
-                self.workflow.parse_pulse(),
+                self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE),
                 self.bus.run(
                     self.workflow.dispatch_mercurial_applied, QUEUE_MERCURIAL_APPLIED
                 ),
