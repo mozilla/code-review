@@ -9,5 +9,6 @@ raven==6.10.0
 # still breaking the events build
 async-timeout<4.0,>=3.0
 
-# limit multidict to avoid building with gcc on alpine
+# limits to avoid building with gcc on alpine
 multidict<4.6.0
+yarl<1.4.0
