@@ -358,23 +358,29 @@ class Events(object):
             self.webserver.register(self.bus)
 
             # Create pulse listener
-            exchanges = [
-                # autoland ingestion
-                (PULSE_TASK_GROUP_RESOLVED, "#")
-            ]
+            exchanges = []
+            if taskcluster_config.secrets["autoland_enabled"]:
+                logger.info("Autoland ingestion is enabled")
+                exchanges += [
+                    # autoland ingestion
+                    (PULSE_TASK_GROUP_RESOLVED, "#")
+                ]
             if publish:
                 # unit test failures
                 exchanges += [(PULSE_TASK_COMPLETED, ["*.*.gecko-level-3._"])]
 
-            self.pulse = PulseListener(
-                QUEUE_PULSE,
-                exchanges,
-                taskcluster_config.secrets["pulse_user"],
-                taskcluster_config.secrets["pulse_password"],
-            )
+            if exchanges:
+                self.pulse = PulseListener(
+                    QUEUE_PULSE,
+                    exchanges,
+                    taskcluster_config.secrets["pulse_user"],
+                    taskcluster_config.secrets["pulse_password"],
+                )
 
-            # Manually register to set queue as redis
-            self.pulse.bus = self.bus
+                # Manually register to set queue as redis
+                self.pulse.bus = self.bus
+            else:
+                self.pulse = None
             self.bus.add_queue(QUEUE_PULSE, redis=True)
         else:
             self.webserver = None
