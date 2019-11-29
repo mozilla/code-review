@@ -29,6 +29,9 @@ from code_review_tools import heroku
 
 logger = structlog.get_logger(__name__)
 
+PULSE_TASK_GROUP_RESOLVED = "exchange/taskcluster-queue/v1/task-group-resolved"
+PULSE_TASK_COMPLETED = "exchange/taskcluster-queue/v1/task-completed"
+
 
 class CodeReview(PhabricatorActions):
     """
@@ -43,7 +46,7 @@ class CodeReview(PhabricatorActions):
         community_config=None,
         user_blacklist=[],
         *args,
-        **kwargs
+        **kwargs,
     ):
         super().__init__(*args, **kwargs)
         self.publish = publish
@@ -167,7 +170,10 @@ class CodeReview(PhabricatorActions):
         return True
 
     def publish_results(self, payload):
-        assert self.publish is True, "Publication disabled"
+        if not self.publish:
+            logger.debug("Skipping Phabricator publication")
+            return
+
         mode, build, extras = payload
         logger.debug("Publishing a Phabricator build update", mode=mode, build=build)
 
@@ -219,7 +225,44 @@ class CodeReview(PhabricatorActions):
         return True
 
     def parse_pulse(self, payload):
-        assert self.publish is True, "Publication disabled"
+
+        routing = payload["routing"]
+
+        # Process autoland payloads
+        if routing["exchange"] == PULSE_TASK_GROUP_RESOLVED:
+            try:
+                self.trigger_autoland(payload["body"])
+            except Exception as e:
+                logger.warn(
+                    "Autoland trigger failure", key=routing["key"], error=str(e)
+                )
+        else:
+            logger.info("Skipping pulse message", key=routing["key"])
+
+    def trigger_autoland(self, body: dict):
+        """
+        Trigger a code review autoland ingestion task
+        If the task is an autoland decision task
+        """
+        # Load first task in task group, check if it's an autoland
+        queue = taskcluster_config.get_service("queue")
+        task_group_id = body["taskGroupId"]
+        logger.info("Checking autoland task", task_group_id=task_group_id)
+        task = queue.task(task_group_id)
+        if "index.gecko.v2.autoland.latest.firefox.decision" not in task["routes"]:
+            logger.info("Not an autoland task", task=task_group_id)
+            return
+
+        # Trigger the autoland ingestion task
+        env = taskcluster_config.secrets["APP_CHANNEL"]
+        hooks = taskcluster_config.get_service("hooks")
+        task = hooks.triggerHook(
+            "project-relman",
+            f"code-review-{env}",
+            {"AUTOLAND_TASK_GROUP_ID": task_group_id},
+        )
+        task_id = task["status"]["taskId"]
+        logger.info("Triggered a new autoland ingestion task", id=task_id)
 
     async def start_risk_analysis(self, build):
         """
@@ -314,25 +357,25 @@ class Events(object):
             self.webserver = WebServer(QUEUE_WEB_BUILDS)
             self.webserver.register(self.bus)
 
-            # Create pulse listener for unit test failures
+            # Create pulse listener
+            exchanges = [
+                # autoland ingestion
+                (PULSE_TASK_GROUP_RESOLVED, "#")
+            ]
             if publish:
-                self.pulse = PulseListener(
-                    QUEUE_PULSE,
-                    [
-                        (
-                            "exchange/taskcluster-queue/v1/task-completed",
-                            ["*.*.gecko-level-3._"],
-                        )
-                    ],
-                    taskcluster_config.secrets["pulse_user"],
-                    taskcluster_config.secrets["pulse_password"],
-                )
+                # unit test failures
+                exchanges += [(PULSE_TASK_COMPLETED, ["*.*.gecko-level-3._"])]
 
-                # Manually register to set queue as redis
-                self.pulse.bus = self.bus
-                self.bus.add_queue(QUEUE_PULSE, redis=True)
-            else:
-                self.pulse = None
+            self.pulse = PulseListener(
+                QUEUE_PULSE,
+                exchanges,
+                taskcluster_config.secrets["pulse_user"],
+                taskcluster_config.secrets["pulse_password"],
+            )
+
+            # Manually register to set queue as redis
+            self.pulse.bus = self.bus
+            self.bus.add_queue(QUEUE_PULSE, redis=True)
         else:
             self.webserver = None
             self.pulse = None
@@ -386,16 +429,13 @@ class Events(object):
 
         # Code review main workflow
         if self.workflow:
-            consumers.append(self.workflow.run())
-
-            # Publish results on Phabricator
-            if self.workflow.publish:
-                consumers += [
-                    self.bus.run(
-                        self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS
-                    ),
-                    self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE),
-                ]
+            consumers += [
+                self.workflow.run(),
+                # Publish results on Phabricator
+                self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS),
+                # Parse and redirect pulse messages
+                self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE),
+            ]
 
         # Add mercurial task
         if self.mercurial:

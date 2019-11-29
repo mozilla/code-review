@@ -47,6 +47,7 @@ def main():
         "events",
         required=("admins", "PHABRICATOR", "repositories"),
         existing=dict(
+            APP_CHANNEL="development",
             admins=["babadie@mozilla.com", "mcastelluccio@mozilla.com"],
             repositories=[],
             user_blacklist=[],
