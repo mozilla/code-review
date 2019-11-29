@@ -11,4 +11,4 @@ async-timeout<4.0,>=3.0
 
 # limits to avoid building with gcc on alpine
 multidict<4.6.0
-yarl<1.4.0
+yarl<1.5.0
