@@ -325,10 +325,10 @@ class Events(object):
                 )
                 # Manually register to set queue as redis
                 self.community_pulse.bus = self.bus
+                self.bus.add_queue(QUEUE_PULSE_BUGBUG_TEST_SELECT, redis=True)
+                self.bus.add_queue(QUEUE_PULSE_TRY_TASK_END, redis=True)
             else:
                 self.community_pulse = None
-            self.bus.add_queue(QUEUE_PULSE_BUGBUG_TEST_SELECT, redis=True)
-            self.bus.add_queue(QUEUE_PULSE_TRY_TASK_END, redis=True)
 
             if exchanges:
                 self.pulse = PulseListener(
@@ -339,9 +339,9 @@ class Events(object):
                 )
                 # Manually register to set queue as redis
                 self.pulse.bus = self.bus
+                self.bus.add_queue(QUEUE_PULSE, redis=True)
             else:
                 self.pulse = None
-            self.bus.add_queue(QUEUE_PULSE, redis=True)
 
         else:
             self.bugbug_utils = None
