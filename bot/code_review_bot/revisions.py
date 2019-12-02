@@ -186,8 +186,12 @@ class Revision(object):
 
     @staticmethod
     def from_autoland(autoland_task: dict, phabricator: PhabricatorAPI):
-
-        # TODO: check the payload
+        """
+        Build a revision from a Mozilla autoland decision task
+        """
+        assert (
+            autoland_task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] == REPO_AUTOLAND
+        ), "Not an autoland decision task"
 
         # Load mercurial revision
         mercurial_revision = autoland_task["payload"]["env"]["GECKO_HEAD_REV"]
@@ -223,6 +227,9 @@ class Revision(object):
             ),
             None,
         )
+        assert (
+            diff is not None
+        ), f"No Phabricator diff found for D{revision_id} and mercurial revision {mercurial_revision}"
         logger.info("Found phabricator diff", id=diff["id"])
 
         return Revision(
