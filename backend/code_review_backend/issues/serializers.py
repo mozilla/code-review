@@ -27,7 +27,7 @@ class RevisionSerializer(serializers.ModelSerializer):
     """
 
     repository = serializers.SlugRelatedField(
-        queryset=Repository.objects.all(), slug_field="slug"
+        queryset=Repository.objects.all(), slug_field="url"
     )
     diffs_url = serializers.HyperlinkedIdentityField(
         view_name="revision-diffs-list", lookup_url_kwarg="revision_id"
@@ -54,7 +54,7 @@ class DiffSerializer(serializers.ModelSerializer):
     """
 
     repository = serializers.SlugRelatedField(
-        queryset=Repository.objects.all(), slug_field="slug"
+        queryset=Repository.objects.all(), slug_field="url"
     )
     issues_url = serializers.HyperlinkedIdentityField(
         view_name="issues-list", lookup_url_kwarg="diff_id"

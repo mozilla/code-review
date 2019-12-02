@@ -68,7 +68,7 @@ class DiffAPITestCase(APITestCase):
                         "id": 3,
                         "revision": {
                             "id": 1,
-                            "repository": "myrepo",
+                            "repository": "http://repo.test/myrepo",
                             "phid": "PHID-DREV-1",
                             "title": "Revision 1",
                             "bugzilla_id": 10000,
@@ -93,7 +93,7 @@ class DiffAPITestCase(APITestCase):
                         "id": 2,
                         "revision": {
                             "id": 2,
-                            "repository": "myrepo",
+                            "repository": "http://repo.test/myrepo",
                             "phid": "PHID-DREV-2",
                             "title": "Revision 2",
                             "bugzilla_id": 10001,
@@ -118,7 +118,7 @@ class DiffAPITestCase(APITestCase):
                         "id": 1,
                         "revision": {
                             "id": 1,
-                            "repository": "myrepo",
+                            "repository": "http://repo.test/myrepo",
                             "phid": "PHID-DREV-1",
                             "title": "Revision 1",
                             "bugzilla_id": 10000,

@@ -35,7 +35,7 @@ class CreationAPITestCase(APITestCase):
             "phid": "PHID-REV-xxx",
             "title": "Bug XXX - Some bug",
             "bugzilla_id": 123456,
-            "repository": "myrepo",
+            "repository": "http://repo.test/myrepo",
         }
 
         # No auth will give a permission denied
@@ -63,7 +63,7 @@ class CreationAPITestCase(APITestCase):
             "phid": "PHID-DIFF-xxx",
             "review_task_id": "deadbeef123",
             "mercurial_hash": "coffee12345",
-            "repository": "try",
+            "repository": "http://repo.test/try",
         }
 
         # No auth will give a permission denied
