@@ -156,7 +156,7 @@ def main():
         w.index(revision, state="error", **extras)
 
         # Update Harbormaster status
-        revision.update_status(state=BuildState.Fail)
+        w.update_status(revision, state=BuildState.Fail)
 
         # Then raise to mark task as erroneous
         raise

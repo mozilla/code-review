@@ -115,6 +115,10 @@ class Workflow(object):
             mercurial_revision=revision.mercurial_revision,
         )
 
+        assert (
+            self.backend_api.enabled
+        ), "Backend storage is disabled, no autoland ingestion possible"
+
         # Find potential issues in the autoland task group
         # There should be no issues, so the build is OK
         tasks = self.queue_service.listTaskGroup(settings.autoland_group_id)
