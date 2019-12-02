@@ -14,8 +14,6 @@ from parsepatch.patch import Patch
 
 from code_review_bot import Issue
 from code_review_bot import stats
-from code_review_bot.config import REPO_GECKO_TRY
-from code_review_bot.config import REPO_NSS_TRY
 from code_review_bot.config import settings
 from code_review_tools.taskcluster import create_blob_artifact
 
@@ -348,17 +346,20 @@ class Revision(object):
 
         # Use mercurial infos for local revision
         decision_env = decision_task["task"]["payload"]["env"]
-        if decision_env.get("GECKO_HEAD_REPOSITORY") == REPO_GECKO_TRY:
+        if "GECKO_HEAD_REPOSITORY" in decision_env:
             # Mozilla-Central Try
             self.mercurial_revision = decision_env.get("GECKO_HEAD_REV")
-            self.repository = "try"
-            self.target_repository = "mozilla-central"
+            self.repository = decision_env["GECKO_HEAD_REPOSITORY"]
+            # mozilla-unified is used in the Decision task payload
+            # but that is not the "real" target repository
+            self.target_repository = "https://hg.mozilla.org/mozilla-central"
 
-        elif decision_env.get("NSS_HEAD_REPOSITORY") == REPO_NSS_TRY:
+        elif "NSS_HEAD_REPOSITORY" in decision_env:
             # NSS Try
             self.mercurial_revision = decision_env.get("NSS_HEAD_REVISION")
-            self.repository = "nss-try"
-            self.target_repository = "nss"
+            self.repository = decision_env["NSS_HEAD_REPOSITORY"]
+            # Unfortunately the NSS decision task does not expose the target repository
+            self.target_repository = "https://hg.mozilla.org/projects/nss"
 
         else:
             raise Exception("Unsupported decision task")

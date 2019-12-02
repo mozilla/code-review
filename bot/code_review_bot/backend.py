@@ -45,6 +45,12 @@ class BackendAPI(object):
             logger.warn("Skipping revision publication on backend")
             return
 
+        # Check the repositories are urls
+        for url in (revision.target_repository, revision.repository):
+            assert isinstance(url, str), "Repository must be a string"
+            res = urllib.parse.urlparse(url)
+            assert res.scheme and res.netloc, f"Repository {url} is not an url"
+
         # Create revision on backend if it does not exists
         data = {
             "id": revision.id,

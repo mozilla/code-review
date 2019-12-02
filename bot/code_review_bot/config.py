@@ -16,9 +16,6 @@ import tempfile
 import structlog
 
 PROJECT_NAME = "code-review-bot"
-REPO_GECKO_TRY = "https://hg.mozilla.org/try"
-REPO_NSS_TRY = "https://hg.mozilla.org/projects/nss-try"
-RAW_FILE_URL = "https://hg.mozilla.org/mozilla-central/raw-file/tip/{}"
 
 logger = structlog.get_logger(__name__)
 

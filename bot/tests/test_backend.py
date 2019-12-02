@@ -3,6 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import pytest
+
 from code_review_bot.backend import BackendAPI
 
 
@@ -15,8 +17,8 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
     assert not revisions and not diffs and not issues
 
     # Hardcode revision & repo
-    mock_revision.repository = "test-try"
-    mock_revision.target_repository = "test"
+    mock_revision.repository = "http://hgmo/test-try"
+    mock_revision.target_repository = "https://hgmo/test"
     mock_revision.mercurial_revision = "deadbeef1234"
 
     assert mock_revision.bugzilla_id == 1234567
@@ -32,7 +34,7 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
         "bugzilla_id": 1234567,
         "id": 51,
         "phid": "PHID-DREV-zzzzz",
-        "repository": "test",
+        "repository": "https://hgmo/test",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
     }
@@ -46,7 +48,7 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
         "mercurial_hash": "deadbeef1234",
         "phid": "PHID-DIFF-test",
         "review_task_id": "local instance",
-        "repository": "test-try",
+        "repository": "http://hgmo/test-try",
     }
 
     # No issues at that point
@@ -102,8 +104,8 @@ def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
     assert not revisions and not diffs and not issues
 
     # Hardcode revision & repo
-    mock_revision.repository = "test-try"
-    mock_revision.target_repository = "test"
+    mock_revision.repository = "http://hgmo/test-try"
+    mock_revision.target_repository = "https://hgmo/test"
     mock_revision.mercurial_revision = "deadbeef1234"
 
     # Set bugzilla id as empty string
@@ -119,7 +121,30 @@ def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
         "bugzilla_id": None,
         "id": 51,
         "phid": "PHID-DREV-zzzzz",
-        "repository": "test",
+        "repository": "https://hgmo/test",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
     }
+
+
+def test_repo_url(mock_coverity_issues, mock_revision, mock_backend, mock_hgmo):
+    """
+    Check that the backend client verifies repositories are URLs
+    """
+    mock_revision.mercurial_revision = "deadbeef1234"
+
+    r = BackendAPI()
+    assert r.enabled is True
+
+    # Invalid target repo
+    mock_revision.target_repository = "test"
+    with pytest.raises(AssertionError) as e:
+        r.publish_revision(mock_revision)
+    assert str(e.value) == "Repository test is not an url"
+
+    # Invalid repo
+    mock_revision.target_repository = "http://xxx/test"
+    mock_revision.repository = "somewhere/test-try"
+    with pytest.raises(AssertionError) as e:
+        r.publish_revision(mock_revision)
+    assert str(e.value) == "Repository somewhere/test-try is not an url"
