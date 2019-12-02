@@ -60,8 +60,8 @@ def test_publication(tmpdir, mock_issues, mock_revision):
         "phid": "PHID-DREV-zzzzz",
         "title": "Static Analysis tests",
         "has_clang_files": False,
-        "repository": "try",
-        "target_repository": "mozilla-central",
+        "repository": "https://hg.mozilla.org/try",
+        "target_repository": "https://hg.mozilla.org/mozilla-central",
         "mercurial_revision": "deadc0ffee",
     }
 

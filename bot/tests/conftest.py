@@ -454,7 +454,7 @@ def mock_hgmo():
 
     responses.add_callback(
         responses.GET,
-        re.compile(r"^https://hg.mozilla.org/[\w-]+/raw-file/.*"),
+        re.compile(r"^https?://(hgmo|hg\.mozilla\.org)/[\w-]+/raw-file/.*"),
         callback=fake_raw_file,
     )
 
