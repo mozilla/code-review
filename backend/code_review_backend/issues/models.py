@@ -28,7 +28,7 @@ class PhabricatorModel(models.Model):
 
 class Repository(PhabricatorModel):
     # Not all repositories are available on Phabricator (Try ones)
-    phid = models.CharField(max_length=40, unique=False, null=True)
+    phid = models.CharField(max_length=40, unique=False, null=True, blank=True)
 
     slug = models.SlugField(unique=True)
     url = models.URLField(unique=True)
