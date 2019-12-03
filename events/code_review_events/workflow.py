@@ -395,11 +395,21 @@ class Events(object):
         if self.workflow:
             consumers += [
                 # Process Phabricator build received from webserver
-                self.bus.run(self.workflow.process_build, QUEUE_WEB_BUILDS),
+                self.bus.run(
+                    self.workflow.process_build, QUEUE_WEB_BUILDS, sequential=False
+                ),
                 # Publish results on Phabricator
-                self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS),
+                self.bus.run(
+                    self.workflow.publish_results,
+                    QUEUE_PHABRICATOR_RESULTS,
+                    sequential=False,
+                ),
                 # Trigger autoland tasks
-                self.bus.run(self.workflow.trigger_autoland, QUEUE_PULSE_AUTOLAND),
+                self.bus.run(
+                    self.workflow.trigger_autoland,
+                    QUEUE_PULSE_AUTOLAND,
+                    sequential=False,
+                ),
                 # Send to phabricator results publication for normal processing and to bugbug for further analysis
                 self.bus.dispatch(
                     QUEUE_MERCURIAL_APPLIED,
@@ -412,7 +422,11 @@ class Events(object):
                 self.bus.run(
                     self.bugbug_utils.process_build, QUEUE_BUGBUG, sequential=False
                 ),
-                self.bus.run(self.bugbug_utils.process_push, QUEUE_BUGBUG_TRY_PUSH),
+                self.bus.run(
+                    self.bugbug_utils.process_push,
+                    QUEUE_BUGBUG_TRY_PUSH,
+                    sequential=False,
+                ),
                 self.bus.run(
                     self.bugbug_utils.got_try_task_end,
                     QUEUE_PULSE_TRY_TASK_END,
