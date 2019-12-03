@@ -233,20 +233,20 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select",
             body=mock_taskcluster("task-bugbug-test-select.json"),
             content_type="application/json",
         )
 
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select/artifacts/public%2Ffailure_risk",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select/artifacts/public%2Ffailure_risk",
             body=mock_taskcluster("artifact-bugbug-test-select-failure-risk"),
         )
 
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select/artifacts/public%2Fselected_tasks",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select/artifacts/public%2Fselected_tasks",
             body=mock_taskcluster("artifact-bugbug-test-select-selected-tasks"),
         )
 
@@ -258,14 +258,14 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select",
             body=mock_taskcluster("task-bugbug-test-select.json"),
             content_type="application/json",
         )
 
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select/artifacts/public%2Ffailure_risk",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select/artifacts/public%2Ffailure_risk",
             body=mock_taskcluster("artifact-bugbug-test-select-failure-risk-0"),
         )
 
@@ -277,20 +277,20 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select",
             body=mock_taskcluster("task-bugbug-test-select.json"),
             content_type="application/json",
         )
 
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select/artifacts/public%2Ffailure_risk",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select/artifacts/public%2Ffailure_risk",
             body=mock_taskcluster("artifact-bugbug-test-select-failure-risk"),
         )
 
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select/artifacts/public%2Fselected_tasks",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select/artifacts/public%2Fselected_tasks",
             body=mock_taskcluster("artifact-bugbug-test-select-selected-tasks-none"),
         )
 
@@ -302,20 +302,20 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select",
             body=mock_taskcluster("task-bugbug-test-select.json"),
             content_type="application/json",
         )
 
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select/artifacts/public%2Ffailure_risk",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select/artifacts/public%2Ffailure_risk",
             body=mock_taskcluster("artifact-bugbug-test-select-failure-risk"),
         )
 
         rsps.add(
             responses.GET,
-            "https://community-tc.services.mozilla.com/api/queue/v1/task/bugbug-test-select/artifacts/public%2Fselected_tasks",
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select/artifacts/public%2Fselected_tasks",
             body=mock_taskcluster("artifact-bugbug-test-select-selected-tasks"),
         )
 
