@@ -82,17 +82,15 @@ class BugbugUtils:
             "build": build,
         }
 
-    async def run(self):
-        while True:
-            build = await self.bus.receive(QUEUE_BUGBUG)
-            assert build is not None, "Invalid payload"
-            assert isinstance(build, PhabricatorBuild)
+    async def process_build(self, build):
+        assert build is not None, "Invalid payload"
+        assert isinstance(build, PhabricatorBuild)
 
-            # Start risk analysis
-            await self.start_risk_analysis(build)
+        # Start risk analysis
+        await self.start_risk_analysis(build)
 
-            # Start test selection
-            await self.start_test_selection(build)
+        # Start test selection
+        await self.start_test_selection(build)
 
     def should_run_risk_analysis(self, build):
         """
