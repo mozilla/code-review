@@ -4,11 +4,11 @@ import json
 import pytest
 import responses
 from libmozdata.phabricator import UnitResultState
-from libmozevent import taskcluster_config
 from libmozevent.bus import MessageBus
 from libmozevent.phabricator import PhabricatorBuild
 
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
+from code_review_events import taskcluster_config
 from code_review_events.bugbug_utils import BugbugUtils
 
 

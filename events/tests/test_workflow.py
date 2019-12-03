@@ -2,12 +2,12 @@
 import pytest
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import UnitResultState
-from libmozevent import taskcluster_config
 from libmozevent.bus import MessageBus
 from libmozevent.phabricator import PhabricatorBuild
 
 from code_review_events import QUEUE_BUGBUG_TRY_PUSH
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
+from code_review_events import taskcluster_config
 from code_review_events.bugbug_utils import BugbugUtils
 from code_review_events.workflow import CodeReview
 
