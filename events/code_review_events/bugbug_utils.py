@@ -26,6 +26,9 @@ class BugbugUtils:
         self.test_selection_share = taskcluster_config.secrets.get(
             "test_selection_share", 0.0
         )
+        self.test_selection_notify_addresses = taskcluster_config.secrets.get(
+            "test_selection_notify_addresses", []
+        )
         self.risk_analysis_reviewers = taskcluster_config.secrets.get(
             "risk_analysis_reviewers", []
         )
@@ -61,6 +64,7 @@ class BugbugUtils:
                 "No taskcluster_community in secret, risk analysis and test selection triggers are disabled"
             )
 
+        self.notify_service = taskcluster_config.get_service("notify", use_async=True)
         self.index_service = taskcluster_config.get_service("index")
         self.hooks_service = taskcluster_config.get_service("hooks")
         self.queue_service = taskcluster_config.get_service("queue")
@@ -283,6 +287,18 @@ class BugbugUtils:
         # Store the task group ID and a link to the Phabricator build, so we can upload
         # results to Phabricator when we get a task completion/failure notification.
         self.task_group_to_build[decision_task_id] = push["build"]
+
+        for email in self.test_selection_notify_addresses:
+            await self.notify_service.email(
+                {
+                    "address": email,
+                    "subject": "Test selection triggered for {}".format(
+                        push["revision"]
+                    ),
+                    "content": push["treeherder_url"],
+                    "template": "fullscreen",
+                }
+            )
 
     async def got_try_task_end(self, payload):
         assert self.test_selection_enabled, "Test selection disabled"
