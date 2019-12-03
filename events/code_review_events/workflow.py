@@ -5,7 +5,6 @@ import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import UnitResult
 from libmozdata.phabricator import UnitResultState
-from libmozevent import taskcluster_config
 from libmozevent.bus import MessageBus
 from libmozevent.mercurial import MercurialWorker
 from libmozevent.mercurial import Repository
@@ -24,10 +23,11 @@ from code_review_events import QUEUE_MERCURIAL
 from code_review_events import QUEUE_MERCURIAL_APPLIED
 from code_review_events import QUEUE_MONITORING
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
-from code_review_events import QUEUE_PULSE
+from code_review_events import QUEUE_PULSE_AUTOLAND
 from code_review_events import QUEUE_PULSE_BUGBUG_TEST_SELECT
 from code_review_events import QUEUE_PULSE_TRY_TASK_END
 from code_review_events import QUEUE_WEB_BUILDS
+from code_review_events import taskcluster_config
 from code_review_events.bugbug_utils import BugbugUtils
 from code_review_tools import heroku
 
@@ -212,46 +212,41 @@ class CodeReview(PhabricatorActions):
 
         return True
 
-    async def parse_pulse(self, payload):
-        routing = payload["routing"]
-
-        # Process autoland payloads
-        if routing["exchange"] == PULSE_TASK_GROUP_RESOLVED:
-            try:
-                self.trigger_autoland(payload["body"])
-            except Exception as e:
-                logger.warn(
-                    "Autoland trigger failure", key=routing["key"], error=str(e)
-                )
-        else:
-            # Send to bugbug
-            await self.bus.send(QUEUE_PULSE_TRY_TASK_END, payload)
-
-    def trigger_autoland(self, body: dict):
+    async def trigger_autoland(self, payload: dict):
         """
         Trigger a code review autoland ingestion task
         If the task is an autoland decision task
         """
-        # Load first task in task group, check if it's an autoland
-        queue = taskcluster_config.get_service("queue")
-        task_group_id = body["taskGroupId"]
-        logger.info("Checking autoland task", task_group_id=task_group_id)
-        task = queue.task(task_group_id)
-        repo = task["payload"]["env"].get("GECKO_HEAD_REPOSITORY")
-        if repo != "https://hg.mozilla.org/integration/autoland":
-            logger.info("Not an autoland task", task=task_group_id)
-            return
+        assert (
+            payload["routing"]["exchange"] == PULSE_TASK_GROUP_RESOLVED
+        ), "Not an autoland message"
 
-        # Trigger the autoland ingestion task
-        env = taskcluster_config.secrets["APP_CHANNEL"]
-        hooks = taskcluster_config.get_service("hooks")
-        task = hooks.triggerHook(
-            "project-relman",
-            f"code-review-{env}",
-            {"AUTOLAND_TASK_GROUP_ID": task_group_id},
-        )
-        task_id = task["status"]["taskId"]
-        logger.info("Triggered a new autoland ingestion task", id=task_id)
+        try:
+
+            # Load first task in task group, check if it's an autoland
+            queue = taskcluster_config.get_service("queue")
+            task_group_id = payload["body"]["taskGroupId"]
+            logger.info("Checking autoland task", task_group_id=task_group_id)
+            task = queue.task(task_group_id)
+            repo = task["payload"]["env"].get("GECKO_HEAD_REPOSITORY")
+            if repo != "https://hg.mozilla.org/integration/autoland":
+                logger.info("Not an autoland task", task=task_group_id)
+                return
+
+            # Trigger the autoland ingestion task
+            env = taskcluster_config.secrets["APP_CHANNEL"]
+            hooks = taskcluster_config.get_service("hooks")
+            task = hooks.triggerHook(
+                "project-relman",
+                f"code-review-{env}",
+                {"AUTOLAND_TASK_GROUP_ID": task_group_id},
+            )
+            task_id = task["status"]["taskId"]
+            logger.info("Triggered a new autoland ingestion task", id=task_id)
+        except Exception as e:
+            logger.warn(
+                "Autoland trigger failure", key=payload["routing"]["key"], error=str(e)
+            )
 
 
 class Events(object):
@@ -277,16 +272,13 @@ class Events(object):
             self.webserver.register(self.bus)
 
             # Create pulse listener
-            exchanges = []
+            exchanges = {}
             if taskcluster_config.secrets["autoland_enabled"]:
                 logger.info("Autoland ingestion is enabled")
-                exchanges += [
-                    # autoland ingestion
+                # autoland ingestion
+                exchanges[QUEUE_PULSE_AUTOLAND] = [
                     (PULSE_TASK_GROUP_RESOLVED, ["#.gecko-level-3.#"])
                 ]
-            if publish:
-                # unit test failures
-                exchanges += [(PULSE_TASK_COMPLETED, ["*.*.gecko-level-3._"])]
 
             # Create pulse listeners for bugbug test selection task and unit test failures.
             community_config = taskcluster_config.secrets.get("taskcluster_community")
@@ -294,7 +286,7 @@ class Events(object):
                 "test_selection_enabled", False
             )
             if community_config is not None and test_selection_enabled:
-                exchanges += [
+                exchanges[QUEUE_PULSE_TRY_TASK_END] = [
                     (PULSE_TASK_COMPLETED, ["#.gecko-level-1.#"]),
                     (PULSE_TASK_FAILED, ["#.gecko-level-1.#"]),
                     # https://bugzilla.mozilla.org/show_bug.cgi?id=1599863
@@ -305,13 +297,14 @@ class Events(object):
                 ]
 
                 self.community_pulse = PulseListener(
-                    QUEUE_PULSE_BUGBUG_TEST_SELECT,
-                    [
-                        (
-                            "exchange/taskcluster-queue/v1/task-completed",
-                            ["route.project.relman.bugbug.test_select"],
-                        )
-                    ],
+                    {
+                        QUEUE_PULSE_BUGBUG_TEST_SELECT: [
+                            (
+                                "exchange/taskcluster-queue/v1/task-completed",
+                                ["route.project.relman.bugbug.test_select"],
+                            )
+                        ]
+                    },
                     taskcluster_config.secrets["communitytc_pulse_user"],
                     taskcluster_config.secrets["communitytc_pulse_password"],
                     "communitytc",
@@ -325,14 +318,13 @@ class Events(object):
 
             if exchanges:
                 self.pulse = PulseListener(
-                    QUEUE_PULSE,
                     exchanges,
                     taskcluster_config.secrets["pulse_user"],
                     taskcluster_config.secrets["pulse_password"],
                 )
                 # Manually register to set queue as redis
                 self.pulse.bus = self.bus
-                self.bus.add_queue(QUEUE_PULSE, redis=True)
+                self.bus.add_queue(QUEUE_PULSE_AUTOLAND, redis=True)
             else:
                 self.pulse = None
 
@@ -344,7 +336,7 @@ class Events(object):
             logger.info("Skipping webserver, bugbug and pulse consumers")
 
             # Register queues for workers
-            self.bus.add_queue(QUEUE_PULSE, redis=True)
+            self.bus.add_queue(QUEUE_PULSE_AUTOLAND, redis=True)
             self.bus.add_queue(QUEUE_PULSE_BUGBUG_TEST_SELECT, redis=True)
             self.bus.add_queue(QUEUE_PULSE_TRY_TASK_END, redis=True)
             self.bus.add_queue(QUEUE_WEB_BUILDS, redis=True)
@@ -371,6 +363,7 @@ class Events(object):
 
             # Setup monitoring for newly created tasks
             self.monitoring = Monitoring(
+                taskcluster_config,
                 QUEUE_MONITORING,
                 taskcluster_config.secrets["admins"],
                 MONITORING_PERIOD,
@@ -396,8 +389,8 @@ class Events(object):
                 self.bus.run(self.workflow.process_build, QUEUE_WEB_BUILDS),
                 # Publish results on Phabricator
                 self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS),
-                # Parse and redirect pulse messages
-                self.bus.run(self.workflow.parse_pulse, QUEUE_PULSE),
+                # Trigger autoland tasks
+                self.bus.run(self.workflow.trigger_autoland, QUEUE_PULSE_AUTOLAND),
                 self.bus.run(
                     self.workflow.dispatch_mercurial_applied, QUEUE_MERCURIAL_APPLIED
                 ),

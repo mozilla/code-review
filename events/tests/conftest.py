@@ -10,8 +10,9 @@ from contextlib import contextmanager
 
 import pytest
 import responses
-from libmozevent import taskcluster_config
 from libmozevent.phabricator import PhabricatorActions
+
+from code_review_events import taskcluster_config
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 

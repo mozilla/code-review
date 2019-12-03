@@ -5,7 +5,6 @@ import jsone
 import jsonschema
 import structlog
 from libmozdata.phabricator import UnitResultState
-from libmozevent import taskcluster_config
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
 from taskcluster.helper import TaskclusterConfig
@@ -14,6 +13,7 @@ from code_review_events import QUEUE_BUGBUG
 from code_review_events import QUEUE_BUGBUG_TRY_PUSH
 from code_review_events import QUEUE_MONITORING
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
+from code_review_events import taskcluster_config
 
 logger = structlog.get_logger(__name__)
 
