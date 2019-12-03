@@ -7,12 +7,12 @@ import structlog
 from libmozdata.phabricator import UnitResultState
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
-from taskcluster.helper import TaskclusterConfig
 
 from code_review_events import QUEUE_BUGBUG
 from code_review_events import QUEUE_BUGBUG_TRY_PUSH
-from code_review_events import QUEUE_MONITORING
+from code_review_events import QUEUE_MONITORING_COMMUNITY
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
+from code_review_events import community_taskcluster_config
 from code_review_events import taskcluster_config
 
 logger = structlog.get_logger(__name__)
@@ -41,12 +41,6 @@ class BugbugUtils:
         # Setup Taskcluster community hooks for risk analysis
         community_config = taskcluster_config.secrets.get("taskcluster_community")
         if community_config is not None:
-            community_taskcluster_config = TaskclusterConfig(
-                "https://community-tc.services.mozilla.com"
-            )
-            community_taskcluster_config.auth(
-                community_config["client_id"], community_config["access_token"]
-            )
             self.community_tc = {
                 "hooks": community_taskcluster_config.get_service("hooks"),
                 "queue": community_taskcluster_config.get_service("queue"),
@@ -126,7 +120,8 @@ class BugbugUtils:
 
             # Send task to monitoring
             await self.bus.send(
-                QUEUE_MONITORING, ("project-relman", "bugbug-classify-patch", task_id)
+                QUEUE_MONITORING_COMMUNITY,
+                ("project-relman", "bugbug-classify-patch", task_id),
             )
         except Exception as e:
             logger.error("Failed to trigger risk analysis task", error=str(e))
@@ -158,7 +153,8 @@ class BugbugUtils:
 
             # Send task to monitoring
             await self.bus.send(
-                QUEUE_MONITORING, ("project-relman", "bugbug-test-select", task_id)
+                QUEUE_MONITORING_COMMUNITY,
+                ("project-relman", "bugbug-test-select", task_id),
             )
         except Exception as e:
             logger.error("Failed to trigger test selection task", error=str(e))

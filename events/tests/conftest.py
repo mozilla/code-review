@@ -12,6 +12,7 @@ import pytest
 import responses
 from libmozevent.phabricator import PhabricatorActions
 
+from code_review_events import community_taskcluster_config
 from code_review_events import taskcluster_config
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -188,6 +189,9 @@ def mock_taskcluster():
     Mock Tasklcuster authentication
     """
     taskcluster_config.options = {"rootUrl": "http://taskcluster.test"}
+    community_taskcluster_config.options = {
+        "rootUrl": "http://community_taskcluster.test"
+    }
 
     def _response(name):
         path = os.path.join(FIXTURES_DIR, "taskcluster", name)
