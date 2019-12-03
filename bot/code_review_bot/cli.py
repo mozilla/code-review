@@ -8,11 +8,11 @@ import os
 import sys
 
 import structlog
+import yaml
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import AnalysisException
-from code_review_bot import config
 from code_review_bot import stats
 from code_review_bot import taskcluster
 from code_review_bot.config import settings
@@ -50,9 +50,10 @@ def main():
 
     args = parse_cli()
     taskcluster.auth(args.taskcluster_client_id, args.taskcluster_access_token)
+
     taskcluster.load_secrets(
-        name=args.taskcluster_secret,
-        project_name=config.PROJECT_NAME,
+        args.taskcluster_secret,
+        prefixes=["common", "code-review-bot", "bot"],
         required=("APP_CHANNEL", "REPORTERS", "PHABRICATOR", "ALLOWED_PATHS"),
         existing={
             "APP_CHANNEL": "development",
@@ -61,7 +62,9 @@ def main():
             "ZERO_COVERAGE_ENABLED": True,
             "ALLOWED_PATHS": ["*"],
         },
-        local_source=args.configuration,
+        local_secrets=yaml.safe_load(args.configuration)
+        if args.configuration
+        else None,
     )
 
     init_logger(

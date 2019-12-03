@@ -15,8 +15,6 @@ import tempfile
 
 import structlog
 
-PROJECT_NAME = "code-review-bot"
-
 logger = structlog.get_logger(__name__)
 
 TaskCluster = collections.namedtuple(

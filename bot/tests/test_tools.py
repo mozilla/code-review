@@ -4,16 +4,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import pytest
-
-from code_review_tools.taskcluster import TaskclusterConfig
+from taskcluster.helper import TaskclusterConfig
 
 
 def test_taskcluster_service():
     """
     Test taskcluster service loader
     """
-    taskcluster = TaskclusterConfig()
-    taskcluster.options = {"rootUrl": "http://tc.test"}
+    taskcluster = TaskclusterConfig("http://tc.test")
 
     assert taskcluster.get_service("secrets") is not None
     assert taskcluster.get_service("hooks") is not None
