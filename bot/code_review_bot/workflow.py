@@ -140,8 +140,13 @@ class Workflow(object):
                 issues += task_issues
 
         # Store the revision & diff in the backend
-        # TODO: publish state (issues or not issues)
         self.backend_api.publish_revision(revision)
+
+        # Publish issues when there are some
+        if issues:
+            self.backend_api.publish_issues(issues, revision)
+        else:
+            logger.info("No issues for that autoland revision")
 
     def publish(self, revision, issues, task_failures):
         """
