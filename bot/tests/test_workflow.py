@@ -141,7 +141,7 @@ def test_monitoring_restart(mock_config, mock_workflow):
         ("source-test-coverity-coverity", CoverityTask),
         ("source-test-infer-infer", InferTask),
         ("source-test-unsupported", None),
-        ("totally-unsupported", Exception),
+        ("totally-unsupported", None),
     ],
 )
 def test_build_task(task_name, result, mock_workflow):
