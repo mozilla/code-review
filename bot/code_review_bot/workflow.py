@@ -119,16 +119,27 @@ class Workflow(object):
             self.backend_api.enabled
         ), "Backend storage is disabled, no autoland ingestion possible"
 
+        supported_tasks = []
+
+        def _build_tasks(tasks):
+            for task_status in tasks["tasks"]:
+                task = self.build_task(task_status)
+                if task is not None:
+                    supported_tasks.append(task)
+
         # Find potential issues in the autoland task group
-        # There should be no issues, so the build is OK
-        tasks = self.queue_service.listTaskGroup(settings.autoland_group_id)
+        self.queue_service.listTaskGroup(
+            settings.autoland_group_id, paginationHandler=_build_tasks
+        )
+        logger.info(
+            "Loaded all supported tasks in autoland group",
+            group_id=settings.autoland_group_id,
+            nb=len(supported_tasks),
+        )
+
+        # Load all the artifacts and potential issues
         issues = []
-        for task_status in tasks["tasks"]:
-            task = self.build_task(task_status)
-
-            if task is None:
-                continue
-
+        for task in supported_tasks:
             artifacts = task.load_artifacts(self.queue_service)
             if artifacts is not None:
                 task_issues = task.parse_issues(artifacts, revision)
