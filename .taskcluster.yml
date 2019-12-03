@@ -292,7 +292,7 @@ tasks:
             - --artifact-folder
             - public/frontend
             - --bucket
-            - "release-services-staticanalysis-frontend-${channel}"
+            - "relman-${channel}-code-review-${channel}-static-website"
         scopes:
           - "secrets:get:project/relman/code-review/deploy-${channel}"
         metadata:
