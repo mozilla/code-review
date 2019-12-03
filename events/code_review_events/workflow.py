@@ -393,7 +393,9 @@ class Events(object):
 
         if self.bugbug_utils:
             consumers += [
-                self.bugbug_utils.run(),
+                self.bus.run(
+                    self.bugbug_utils.process_build, QUEUE_BUGBUG, sequential=False
+                ),
                 self.bus.run(self.bugbug_utils.process_push, QUEUE_BUGBUG_TRY_PUSH),
                 self.bus.run(
                     self.bugbug_utils.got_try_task_end,
