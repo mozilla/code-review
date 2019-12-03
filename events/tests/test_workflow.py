@@ -5,10 +5,6 @@ from libmozdata.phabricator import UnitResultState
 from libmozevent.bus import MessageBus
 from libmozevent.phabricator import PhabricatorBuild
 
-from code_review_events import QUEUE_BUGBUG_TRY_PUSH
-from code_review_events import QUEUE_PHABRICATOR_RESULTS
-from code_review_events import taskcluster_config
-from code_review_events.bugbug_utils import BugbugUtils
 from code_review_events.workflow import CodeReview
 
 
@@ -49,63 +45,6 @@ async def test_blacklist(PhabricatorMock, mock_taskcluster):
         assert build.revision["fields"]["authorPHID"] == "PHID-USER-baduser123"
 
     assert client.is_blacklisted(build.revision)
-
-
-@pytest.mark.asyncio
-async def test_dispatch_mercurial_applied(PhabricatorMock, mock_taskcluster):
-    bus = MessageBus()
-    build = PhabricatorBuild(
-        MockRequest(
-            diff="125397",
-            repo="PHID-REPO-saax4qdxlbbhahhp2kg5",
-            revision="36474",
-            target="PHID-HMBT-icusvlfibcebizyd33op",
-        )
-    )
-
-    taskcluster_config.secrets = {
-        "test_selection_enabled": True,
-        "test_selection_share": 0.1,
-        "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-    }
-
-    with PhabricatorMock as phab:
-        client = CodeReview(
-            publish=True, url="http://phabricator.test/api/", api_key="fakekey"
-        )
-        client.register(bus)
-
-        bugbug_utils = BugbugUtils()
-        bugbug_utils.register(bus)
-
-        phab.update_state(build)
-
-        assert bus.queues[QUEUE_PHABRICATOR_RESULTS].empty()
-        assert bus.queues[QUEUE_BUGBUG_TRY_PUSH].empty()
-
-        await client.dispatch_mercurial_applied(
-            (
-                "success",
-                build,
-                {"treeherder_url": "https://treeherder.org/", "revision": "123"},
-            )
-        )
-
-        mode, build_, extras = await bus.receive(QUEUE_PHABRICATOR_RESULTS)
-        assert mode == "success"
-        assert build_ == build
-        assert extras == {
-            "treeherder_url": "https://treeherder.org/",
-            "revision": "123",
-        }
-
-        mode, build_, extras = await bus.receive(QUEUE_BUGBUG_TRY_PUSH)
-        assert mode == "success"
-        assert build_ == build
-        assert extras == {
-            "treeherder_url": "https://treeherder.org/",
-            "revision": "123",
-        }
 
 
 @pytest.mark.asyncio

@@ -142,13 +142,6 @@ class CodeReview(PhabricatorActions):
         )
         return True
 
-    async def dispatch_mercurial_applied(self, payload):
-        # Send to phabricator results publication for normal processing
-        await self.bus.send(QUEUE_PHABRICATOR_RESULTS, payload)
-
-        # Send to bugbug for further analysis
-        await self.bus.send(QUEUE_BUGBUG_TRY_PUSH, payload)
-
     def publish_results(self, payload):
         if not self.publish:
             logger.debug("Skipping Phabricator publication")
@@ -391,8 +384,10 @@ class Events(object):
                 self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS),
                 # Trigger autoland tasks
                 self.bus.run(self.workflow.trigger_autoland, QUEUE_PULSE_AUTOLAND),
-                self.bus.run(
-                    self.workflow.dispatch_mercurial_applied, QUEUE_MERCURIAL_APPLIED
+                # Send to phabricator results publication for normal processing and to bugbug for further analysis
+                self.bus.dispatch(
+                    QUEUE_MERCURIAL_APPLIED,
+                    [QUEUE_PHABRICATOR_RESULTS, QUEUE_BUGBUG_TRY_PUSH],
                 ),
             ]
 
