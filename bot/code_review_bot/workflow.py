@@ -124,7 +124,7 @@ class Workflow(object):
         tasks = self.queue_service.listTaskGroup(settings.autoland_group_id)
         issues = []
         for task_status in tasks["tasks"]:
-            task = self.build_task(task_status, skip_unknown=True)
+            task = self.build_task(task_status)
 
             if task is None:
                 continue
@@ -346,7 +346,7 @@ class Workflow(object):
 
         return issues, task_failures
 
-    def build_task(self, task_status, skip_unknown=False):
+    def build_task(self, task_status):
         """
         Create a specific implementation of AnalysisTask according to the task name
         """
@@ -374,10 +374,14 @@ class Workflow(object):
             return InferTask(task_id, task_status)
         elif name.startswith("source-test-"):
             logger.error(f"Unsupported {name} task: will need a local implementation")
-        elif skip_unknown is True:
-            logger.info("Skipping unknown task", id=task_id, name=name)
         else:
-            raise Exception("Unsupported task {}".format(name))
+            # Log cleanly for autoland, but send a warning on try
+            log = (
+                logger.info
+                if settings.autoland_group_id is not None
+                else logger.warning
+            )
+            log("Skipping unknown task", id=task_id, name=name)
 
     def update_status(self, revision, state):
         """
