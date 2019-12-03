@@ -7,8 +7,7 @@ import structlog
 from libmozdata.phabricator import UnitResultState
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
-from taskcluster import Hooks
-from taskcluster import Queue
+from taskcluster.helper import TaskclusterConfig
 
 from code_review_events import QUEUE_BUGBUG
 from code_review_events import QUEUE_BUGBUG_TRY_PUSH
@@ -39,25 +38,15 @@ class BugbugUtils:
         # Setup Taskcluster community hooks for risk analysis
         community_config = taskcluster_config.secrets.get("taskcluster_community")
         if community_config is not None:
+            community_taskcluster_config = TaskclusterConfig(
+                "https://community-tc.services.mozilla.com"
+            )
+            community_taskcluster_config.auth(
+                community_config["client_id"], community_config["access_token"]
+            )
             self.community_tc = {
-                "hooks": Hooks(
-                    {
-                        "rootUrl": "https://community-tc.services.mozilla.com",
-                        "credentials": {
-                            "clientId": community_config["client_id"],
-                            "accessToken": community_config["access_token"],
-                        },
-                    }
-                ),
-                "queue": Queue(
-                    {
-                        "rootUrl": "https://community-tc.services.mozilla.com",
-                        "credentials": {
-                            "clientId": community_config["client_id"],
-                            "accessToken": community_config["access_token"],
-                        },
-                    }
-                ),
+                "hooks": community_taskcluster_config.get_service("hooks"),
+                "queue": community_taskcluster_config.get_service("queue"),
             }
 
             if self.test_selection_enabled:
