@@ -280,18 +280,13 @@ class Events(object):
                     (PULSE_TASK_GROUP_RESOLVED, ["#.gecko-level-3.#"])
                 ]
 
-            # unit test failures
-            exchanges[QUEUE_PULSE_TRY_TASK_END] = [
-                (PULSE_TASK_COMPLETED, ["*.*.gecko-level-3._"])
-            ]
-
             # Create pulse listeners for bugbug test selection task and unit test failures.
             community_config = taskcluster_config.secrets.get("taskcluster_community")
             test_selection_enabled = taskcluster_config.secrets.get(
                 "test_selection_enabled", False
             )
             if community_config is not None and test_selection_enabled:
-                exchanges[QUEUE_PULSE_TRY_TASK_END] += [
+                exchanges[QUEUE_PULSE_TRY_TASK_END] = [
                     (PULSE_TASK_COMPLETED, ["#.gecko-level-1.#"]),
                     (PULSE_TASK_FAILED, ["#.gecko-level-1.#"]),
                     # https://bugzilla.mozilla.org/show_bug.cgi?id=1599863
