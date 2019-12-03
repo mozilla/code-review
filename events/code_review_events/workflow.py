@@ -22,11 +22,13 @@ from code_review_events import QUEUE_BUGBUG_TRY_PUSH
 from code_review_events import QUEUE_MERCURIAL
 from code_review_events import QUEUE_MERCURIAL_APPLIED
 from code_review_events import QUEUE_MONITORING
+from code_review_events import QUEUE_MONITORING_COMMUNITY
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
 from code_review_events import QUEUE_PULSE_AUTOLAND
 from code_review_events import QUEUE_PULSE_BUGBUG_TEST_SELECT
 from code_review_events import QUEUE_PULSE_TRY_TASK_END
 from code_review_events import QUEUE_WEB_BUILDS
+from code_review_events import community_taskcluster_config
 from code_review_events import taskcluster_config
 from code_review_events.bugbug_utils import BugbugUtils
 from code_review_tools import heroku
@@ -363,12 +365,25 @@ class Events(object):
             )
             self.monitoring.register(self.bus)
 
+            # Setup monitoring for newly created community tasks
+            if community_config is not None:
+                self.community_monitoring = Monitoring(
+                    community_taskcluster_config,
+                    QUEUE_MONITORING_COMMUNITY,
+                    taskcluster_config.secrets["admins"],
+                    MONITORING_PERIOD,
+                )
+                self.community_monitoring.register(self.bus)
+            else:
+                self.community_monitoring = None
+
             self.bugbug_utils = BugbugUtils()
             self.bugbug_utils.register(self.bus)
         else:
             self.workflow = None
             self.mercurial = None
             self.monitoring = None
+            self.community_monitoring = None
             self.bugbug_utils = None
             logger.info("Skipping workers consumers")
 
@@ -416,6 +431,10 @@ class Events(object):
         # Add monitoring task
         if self.monitoring:
             consumers.append(self.monitoring.run())
+
+        # Add community monitoring task
+        if self.community_monitoring:
+            consumers.append(self.community_monitoring.run())
 
         # Add pulse listener for task results.
         if self.pulse:
