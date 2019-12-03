@@ -5,8 +5,8 @@ import tempfile
 
 import structlog
 import yaml
-from libmozevent import taskcluster_config
 
+from code_review_events import taskcluster_config
 from code_review_events.workflow import Events
 from code_review_tools.log import init_logger
 
@@ -44,7 +44,7 @@ def main():
     taskcluster_config.auth(args.taskcluster_client_id, args.taskcluster_access_token)
     taskcluster_config.load_secrets(
         args.taskcluster_secret,
-        "events",
+        prefixes=["common", "events"],
         required=("admins", "PHABRICATOR", "repositories"),
         existing=dict(
             APP_CHANNEL="development",
