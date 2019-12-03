@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import collections
 
 import structlog
 from libmozdata.phabricator import BuildState
@@ -273,18 +272,18 @@ class Events(object):
             self.webserver.register(self.bus)
 
             # Create pulse listener
-            exchanges = collections.defaultdict(list)
+            exchanges = {}
             if taskcluster_config.secrets["autoland_enabled"]:
                 logger.info("Autoland ingestion is enabled")
                 # autoland ingestion
                 exchanges[QUEUE_PULSE_AUTOLAND] = [
                     (PULSE_TASK_GROUP_RESOLVED, ["#.gecko-level-3.#"])
                 ]
-            if publish:
-                # unit test failures
-                exchanges[QUEUE_PULSE_TRY_TASK_END] = [
-                    (PULSE_TASK_COMPLETED, ["*.*.gecko-level-3._"])
-                ]
+
+            # unit test failures
+            exchanges[QUEUE_PULSE_TRY_TASK_END] = [
+                (PULSE_TASK_COMPLETED, ["*.*.gecko-level-3._"])
+            ]
 
             # Create pulse listeners for bugbug test selection task and unit test failures.
             community_config = taskcluster_config.secrets.get("taskcluster_community")
