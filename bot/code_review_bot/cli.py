@@ -15,6 +15,7 @@ from libmozdata.phabricator import PhabricatorAPI
 from code_review_bot import AnalysisException
 from code_review_bot import stats
 from code_review_bot import taskcluster
+from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision
@@ -61,6 +62,7 @@ def main():
             "PUBLICATION": "IN_PATCH",
             "ZERO_COVERAGE_ENABLED": True,
             "ALLOWED_PATHS": ["*"],
+            "task_failures_ignored": [],
         },
         local_secrets=yaml.safe_load(args.configuration)
         if args.configuration
@@ -104,9 +106,14 @@ def main():
 
     # Load unique revision
     try:
-        revision = Revision.from_try(
-            queue_service.task(settings.try_task_id), phabricator_api
-        )
+        if settings.autoland_group_id:
+            revision = Revision.from_autoland(
+                queue_service.task(settings.autoland_group_id), phabricator_api
+            )
+        else:
+            revision = Revision.from_try(
+                queue_service.task(settings.try_task_id), phabricator_api
+            )
     except Exception as e:
         # Report revision loading failure on production only
         # On testing or dev instances, we can use different Phabricator
@@ -130,9 +137,15 @@ def main():
         queue_service,
         phabricator_api,
         taskcluster.secrets["ZERO_COVERAGE_ENABLED"],
+        # Update build status only when phabricator reporting is enabled
+        update_build=phabricator_reporting_enabled,
+        task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
     )
     try:
-        w.run(revision)
+        if revision.repository == REPO_AUTOLAND:
+            w.ingest_autoland(revision)
+        else:
+            w.run(revision)
     except Exception as e:
         # Log errors to papertrail
         logger.error("Static analysis failure", revision=revision, error=e)
@@ -145,7 +158,7 @@ def main():
         w.index(revision, state="error", **extras)
 
         # Update Harbormaster status
-        revision.update_status(state=BuildState.Fail)
+        w.update_status(revision, state=BuildState.Fail)
 
         # Then raise to mark task as erroneous
         raise

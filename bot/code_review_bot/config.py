@@ -10,10 +10,18 @@ import collections
 import enum
 import fnmatch
 import os
+import re
 import shutil
 import tempfile
 
 import structlog
+
+REPO_MOZILLA_CENTRAL = "https://hg.mozilla.org/mozilla-central"
+REPO_NSS = "https://hg.mozilla.org/projects/nss"
+REPO_AUTOLAND = "https://hg.mozilla.org/integration/autoland"
+REGEX_PHABRICATOR_COMMIT = re.compile(
+    r"^Differential Revision: (https://[\w\-\.]+/D(\d+))$", re.MULTILINE
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -46,6 +54,7 @@ class Settings(object):
         self.taskcluster = None
         self.try_task_id = None
         self.try_group_id = None
+        self.autoland_group_id = None
         self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
 
         # Always cleanup at the end of the execution
@@ -56,6 +65,8 @@ class Settings(object):
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
             self.try_task_id = os.environ["TRY_TASK_ID"]
             self.try_group_id = os.environ["TRY_TASK_GROUP_ID"]
+        elif "AUTOLAND_TASK_GROUP_ID" in os.environ:
+            self.autoland_group_id = os.environ["AUTOLAND_TASK_GROUP_ID"]
         else:
             raise Exception("Only TRY mode is supported")
 

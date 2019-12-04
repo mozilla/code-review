@@ -14,6 +14,10 @@ from parsepatch.patch import Patch
 
 from code_review_bot import Issue
 from code_review_bot import stats
+from code_review_bot.config import REGEX_PHABRICATOR_COMMIT
+from code_review_bot.config import REPO_AUTOLAND
+from code_review_bot.config import REPO_MOZILLA_CENTRAL
+from code_review_bot.config import REPO_NSS
 from code_review_bot.config import settings
 from code_review_tools.taskcluster import create_blob_artifact
 
@@ -178,6 +182,67 @@ class Revision(object):
             diff=diff,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
             patch=patch,
+        )
+
+    @staticmethod
+    def from_autoland(autoland_task: dict, phabricator: PhabricatorAPI):
+        """
+        Build a revision from a Mozilla autoland decision task
+        """
+        assert (
+            autoland_task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] == REPO_AUTOLAND
+        ), "Not an autoland decision task"
+
+        # Load mercurial revision
+        mercurial_revision = autoland_task["payload"]["env"]["GECKO_HEAD_REV"]
+
+        # Search phabricator revision from commit message
+        commit_url = (
+            f"https://hg.mozilla.org/integration/autoland/json-rev/{mercurial_revision}"
+        )
+        response = requests.get(commit_url)
+        response.raise_for_status()
+        description = response.json()["desc"]
+        match = REGEX_PHABRICATOR_COMMIT.search(description)
+        if match is not None:
+            url, revision_id = match.groups()
+            revision_id = int(revision_id)
+            logger.info("Found phabricator revision", id=revision_id, url=url)
+        else:
+            raise Exception(f"No phabricator revision found in commit {commit_url}")
+
+        # Lookup the Phabricator revision to get details (phid, title, bugzilla_id, ...)
+        revision = phabricator.load_revision(rev_id=revision_id)
+
+        # Search the Phabricator diff with same commit identifier
+        diffs = phabricator.search_diffs(
+            revision_phid=revision["phid"], attachments={"commits": True}
+        )
+        diff = next(
+            iter(
+                d
+                for d in diffs
+                if d["attachments"]["commits"]["commits"][0]["identifier"]
+                == mercurial_revision
+            ),
+            None,
+        )
+        assert (
+            diff is not None
+        ), f"No Phabricator diff found for D{revision_id} and mercurial revision {mercurial_revision}"
+        logger.info("Found phabricator diff", id=diff["id"])
+
+        return Revision(
+            id=revision_id,
+            phid=revision["phid"],
+            diff_id=diff["id"],
+            diff_phid=diff["phid"],
+            mercurial_revision=mercurial_revision,
+            repository=REPO_AUTOLAND,
+            target_repository=REPO_MOZILLA_CENTRAL,
+            revision=revision,
+            diff=diff,
+            url=url,
         )
 
     def analyze_patch(self):
@@ -352,14 +417,14 @@ class Revision(object):
             self.repository = decision_env["GECKO_HEAD_REPOSITORY"]
             # mozilla-unified is used in the Decision task payload
             # but that is not the "real" target repository
-            self.target_repository = "https://hg.mozilla.org/mozilla-central"
+            self.target_repository = REPO_MOZILLA_CENTRAL
 
         elif "NSS_HEAD_REPOSITORY" in decision_env:
             # NSS Try
             self.mercurial_revision = decision_env.get("NSS_HEAD_REVISION")
             self.repository = decision_env["NSS_HEAD_REPOSITORY"]
             # Unfortunately the NSS decision task does not expose the target repository
-            self.target_repository = "https://hg.mozilla.org/projects/nss"
+            self.target_repository = REPO_NSS
 
         else:
             raise Exception("Unsupported decision task")
@@ -370,6 +435,8 @@ class Revision(object):
 
     @property
     def bugzilla_id(self):
+        if self.revision is None:
+            return None
         try:
             return int(self.revision["fields"].get("bugzilla.bug-id"))
         except (TypeError, ValueError):
@@ -378,6 +445,8 @@ class Revision(object):
 
     @property
     def title(self):
+        if self.revision is None:
+            return None
         return self.revision["fields"].get("title")
 
     def as_dict(self):

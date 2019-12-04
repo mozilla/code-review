@@ -12,6 +12,7 @@ from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import stats
 from code_review_bot.backend import BackendAPI
+from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
@@ -47,11 +48,12 @@ class Workflow(object):
         phabricator_api,
         zero_coverage_enabled=True,
         update_build=True,
+        task_failures_ignored=[],
     ):
-        assert settings.try_task_id is not None, "Cannot run without Try task id"
-        assert settings.try_group_id is not None, "Cannot run without Try task id"
         self.zero_coverage_enabled = zero_coverage_enabled
         self.update_build = update_build
+        self.task_failures_ignored = task_failures_ignored
+        logger.info("Will ignore task failures", names=self.task_failures_ignored)
 
         # Use share phabricator API client
         assert isinstance(phabricator_api, PhabricatorAPI)
@@ -88,7 +90,7 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures = self.find_issues(revision)
+        issues, task_failures = self.find_issues(revision, settings.try_group_id)
         if not issues and not task_failures:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
@@ -102,6 +104,63 @@ class Workflow(object):
         self.publish(revision, issues, task_failures)
 
         return issues
+
+    def ingest_autoland(self, revision):
+        """
+        Simpler workflow to ingest autoland revision
+        """
+        assert revision.repository == REPO_AUTOLAND, "Need an autoland revision"
+        logger.info(
+            "Starting autoland ingestion",
+            revision=revision.id,
+            bugzilla=revision.bugzilla_id,
+            title=revision.title,
+            mercurial_revision=revision.mercurial_revision,
+        )
+
+        assert (
+            self.backend_api.enabled
+        ), "Backend storage is disabled, no autoland ingestion possible"
+
+        supported_tasks = []
+
+        def _build_tasks(tasks):
+            for task_status in tasks["tasks"]:
+                task = self.build_task(task_status)
+                if task is not None:
+                    supported_tasks.append(task)
+
+        # Find potential issues in the autoland task group
+        self.queue_service.listTaskGroup(
+            settings.autoland_group_id, paginationHandler=_build_tasks
+        )
+        logger.info(
+            "Loaded all supported tasks in autoland group",
+            group_id=settings.autoland_group_id,
+            nb=len(supported_tasks),
+        )
+
+        # Load all the artifacts and potential issues
+        issues = []
+        for task in supported_tasks:
+            artifacts = task.load_artifacts(self.queue_service)
+            if artifacts is not None:
+                task_issues = task.parse_issues(artifacts, revision)
+                logger.info(
+                    "Found {} issues".format(len(task_issues)),
+                    task=task.name,
+                    id=task.id,
+                )
+                issues += task_issues
+
+        # Store the revision & diff in the backend
+        self.backend_api.publish_revision(revision)
+
+        # Publish issues when there are some
+        if issues:
+            self.backend_api.publish_issues(issues, revision)
+        else:
+            logger.info("No issues for that autoland revision")
 
     def publish(self, revision, issues, task_failures):
         """
@@ -137,7 +196,8 @@ class Workflow(object):
 
         # Publish final HarborMaster state
         self.update_status(
-            revision, nb_publishable > 0 and BuildState.Fail or BuildState.Pass
+            revision,
+            BuildState.Fail if nb_publishable > 0 or task_failures else BuildState.Pass,
         )
 
     def index(self, revision, **kwargs):
@@ -202,12 +262,12 @@ class Workflow(object):
                 },
             )
 
-    def find_issues(self, revision):
+    def find_issues(self, revision, group_id):
         """
         Find all issues on remote Taskcluster task group
         """
         # Load all tasks in task group
-        tasks = self.queue_service.listTaskGroup(settings.try_group_id)
+        tasks = self.queue_service.listTaskGroup(group_id)
         assert "tasks" in tasks
         tasks = {task["status"]["taskId"]: task for task in tasks["tasks"]}
         assert len(tasks) > 0
@@ -264,7 +324,7 @@ class Workflow(object):
                     task = dep.build_from_route(self.index_service, self.queue_service)
                 else:
                     # Use a task from its id & description
-                    task = self.build_task(dep, tasks[dep])
+                    task = self.build_task(tasks[dep])
                 if task is None:
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
@@ -285,6 +345,16 @@ class Workflow(object):
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
                     if task.state == "failed" and not task_issues and not task_patches:
+
+                        # Skip task that are listed as ignorable (we try to avoid unnecessary spam)
+                        if task.name in self.task_failures_ignored:
+                            logger.warning(
+                                "Ignoring task failure as configured",
+                                task=task.name,
+                                id=task.id,
+                            )
+                            continue
+
                         logger.warning(
                             "An erroneous task processed some artifacts and found no issues or patches",
                             task=task.name,
@@ -301,10 +371,14 @@ class Workflow(object):
 
         return issues, task_failures
 
-    def build_task(self, task_id, task_status):
+    def build_task(self, task_status):
         """
         Create a specific implementation of AnalysisTask according to the task name
         """
+        try:
+            task_id = task_status["status"]["taskId"]
+        except KeyError:
+            raise Exception("Cannot read task name {}".format(task_id))
         try:
             name = task_status["task"]["metadata"]["name"]
         except KeyError:
@@ -326,7 +400,13 @@ class Workflow(object):
         elif name.startswith("source-test-"):
             logger.error(f"Unsupported {name} task: will need a local implementation")
         else:
-            raise Exception("Unsupported task {}".format(name))
+            # Log cleanly for autoland, but send a warning on try
+            log = (
+                logger.info
+                if settings.autoland_group_id is not None
+                else logger.warning
+            )
+            log("Skipping unknown task", id=task_id, name=name)
 
     def update_status(self, revision, state):
         """

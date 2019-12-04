@@ -1,0 +1,24 @@
+{
+    "node": "deadbeef123",
+    "date": [
+        1575279254.0,
+        0
+    ],
+    "desc": "Bug XXYYZZ - Demo bug\nDifferential Revision: https://phabricator.services.mozilla.com/D123",
+    "backedoutby": "",
+    "branch": "default",
+    "bookmarks": [],
+    "tags": [],
+    "user": "John Doe <john@doe.com>",
+    "parents": [
+        "7e66846136d8871b7c0620cd7b5314e7c8d76a18"
+    ],
+    "phase": "public",
+    "pushid": 112233,
+    "pushdate": [
+        1575284673,
+        0
+    ],
+    "pushuser": "john@doe.com",
+    "landingsystem": "lando"
+}
