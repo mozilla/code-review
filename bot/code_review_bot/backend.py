@@ -85,8 +85,15 @@ class BackendAPI(object):
         assert revision.issues_url is not None, "Missing issues_url on revision"
         published = 0
         for issue in issues:
+            payload = issue.as_dict()
+            if payload["hash"] is None:
+                logger.warning(
+                    "Missing issue hash, cannot publish on backend", issue=str(issue)
+                )
+                continue
+
             try:
-                issue.on_backend = self.create(revision.issues_url, issue.as_dict())
+                issue.on_backend = self.create(revision.issues_url, payload)
                 published += 1
             except Exception as e:
                 logger.warn(
