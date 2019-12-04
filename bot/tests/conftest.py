@@ -426,7 +426,6 @@ def mock_workflow(mock_phabricator, mock_taskcluster_config):
 
         def update_status(self, revision, state):
             # Store last known state on revision
-            print("STATE", state)
             revision._state = state
 
     return MockWorkflow()
