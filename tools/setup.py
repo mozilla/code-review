@@ -29,7 +29,7 @@ def read_requirements(file_):
 
 setuptools.setup(
     name="code-review-tools",
-    version="0.1.0",
+    version="0.2.0",
     description="Support tools for Mozilla code review",
     author="Mozilla Release Management",
     author_email="release-mgmt-analysis@mozilla.com",
