@@ -259,6 +259,11 @@ class Events(object):
         if heroku.in_dyno():
             assert self.bus.redis_enabled is True, "Need Redis on Heroku"
 
+        community_config = taskcluster_config.secrets.get("taskcluster_community")
+        test_selection_enabled = taskcluster_config.secrets.get(
+            "test_selection_enabled", False
+        )
+
         # Run webserver & pulse on web dyno or single instance
         if not heroku.in_dyno() or heroku.in_web_dyno():
 
@@ -276,10 +281,6 @@ class Events(object):
                 ]
 
             # Create pulse listeners for bugbug test selection task and unit test failures.
-            community_config = taskcluster_config.secrets.get("taskcluster_community")
-            test_selection_enabled = taskcluster_config.secrets.get(
-                "test_selection_enabled", False
-            )
             if community_config is not None and test_selection_enabled:
                 exchanges[QUEUE_PULSE_TRY_TASK_END] = [
                     (PULSE_TASK_COMPLETED, ["#.gecko-level-1.#"]),
