@@ -62,6 +62,7 @@ def main():
             "PUBLICATION": "IN_PATCH",
             "ZERO_COVERAGE_ENABLED": True,
             "ALLOWED_PATHS": ["*"],
+            "task_failures_ignored": [],
         },
         local_secrets=yaml.safe_load(args.configuration)
         if args.configuration
@@ -138,6 +139,7 @@ def main():
         taskcluster.secrets["ZERO_COVERAGE_ENABLED"],
         # Update build status only when phabricator reporting is enabled
         update_build=phabricator_reporting_enabled,
+        task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
     )
     try:
         if revision.repository == REPO_AUTOLAND:

@@ -415,6 +415,7 @@ def mock_workflow(mock_phabricator, mock_taskcluster_config):
             self.zero_coverage_enabled = True
             self.backend_api = BackendAPI()
             self.update_build = False
+            self.task_failures_ignored = []
 
         def setup_mock_tasks(self, tasks):
             """
@@ -422,6 +423,11 @@ def mock_workflow(mock_phabricator, mock_taskcluster_config):
             """
             self.index_service.configure(tasks)
             self.queue_service.configure(tasks)
+
+        def update_status(self, revision, state):
+            # Store last known state on revision
+            print("STATE", state)
+            revision._state = state
 
     return MockWorkflow()
 

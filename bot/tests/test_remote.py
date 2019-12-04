@@ -5,6 +5,7 @@
 
 import pytest
 import responses
+from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import UnitResult
 from libmozdata.phabricator import UnitResultState
 
@@ -203,6 +204,13 @@ def test_no_issues(mock_config, mock_revision, mock_workflow, mock_backend):
     )
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 0
+    assert mock_revision._state == BuildState.Fail
+
+    # Now mark that task failure as ignorable
+    mock_workflow.task_failures_ignored = ["source-test-mozlint-flake8"]
+    issues = mock_workflow.run(mock_revision)
+    assert len(issues) == 0
+    assert mock_revision._state == BuildState.Pass
 
 
 def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_backend):

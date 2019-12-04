@@ -48,9 +48,12 @@ class Workflow(object):
         phabricator_api,
         zero_coverage_enabled=True,
         update_build=True,
+        task_failures_ignored=[],
     ):
         self.zero_coverage_enabled = zero_coverage_enabled
         self.update_build = update_build
+        self.task_failures_ignored = task_failures_ignored
+        logger.info("Will ignore task failures", names=self.task_failures_ignored)
 
         # Use share phabricator API client
         assert isinstance(phabricator_api, PhabricatorAPI)
@@ -193,7 +196,8 @@ class Workflow(object):
 
         # Publish final HarborMaster state
         self.update_status(
-            revision, nb_publishable > 0 and BuildState.Fail or BuildState.Pass
+            revision,
+            BuildState.Fail if nb_publishable > 0 or task_failures else BuildState.Pass,
         )
 
     def index(self, revision, **kwargs):
@@ -341,6 +345,16 @@ class Workflow(object):
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
                     if task.state == "failed" and not task_issues and not task_patches:
+
+                        # Skip task that are listed as ignorable (we try to avoid unnecessary spam)
+                        if task.name in self.task_failures_ignored:
+                            logger.warning(
+                                "Ignoring task failure as configured",
+                                task=task.name,
+                                id=task.id,
+                            )
+                            continue
+
                         logger.warning(
                             "An erroneous task processed some artifacts and found no issues or patches",
                             task=task.name,
