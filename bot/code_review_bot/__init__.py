@@ -207,6 +207,12 @@ class Issue(abc.ABC):
         Build the serializable dict representation of the issue
         Used by debugging tools
         """
+        try:
+            issue_hash = self.build_hash()
+        except Exception as e:
+            logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
+            issue_hash = None
+
         return {
             "analyzer": self.analyzer,
             "path": self.path,
@@ -219,7 +225,7 @@ class Issue(abc.ABC):
             "in_patch": self.revision.contains(self),
             "validates": self.validates(),
             "publishable": self.is_publishable(),
-            "hash": self.build_hash(),
+            "hash": issue_hash,
         }
 
     @abc.abstractmethod
