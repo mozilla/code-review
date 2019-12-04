@@ -99,7 +99,12 @@ export default {
     },
     repositories () {
       // Convert repositories set to an array
-      return [...this.$store.state.repositories]
+      return [...this.$store.state.repositories].map(url => {
+        if (url.startsWith('https://hg.mozilla.org/')) {
+          return url.substring(23)
+        }
+        return url
+      })
     }
   }
 }
@@ -158,8 +163,8 @@ export default {
           </td>
 
           <td>
-            <span class="tag is-primary" v-if="task.data.repository == 'mozilla-central'">Mozilla Central</span>
-            <span class="tag is-info" v-else-if="task.data.repository == 'nss'">NSS</span>
+            <span class="tag is-primary" v-if="task.data.repository == 'https://hg.mozilla.org/mozilla-central'">Mozilla Central</span>
+            <span class="tag is-info" v-else-if="task.data.repository == 'https://hg.mozilla.org/projects/nss'">NSS</span>
             <span class="tag is-dark" v-else>{{ task.data.repository || 'Unknown'}}</span>
           </td>
 
