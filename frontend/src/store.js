@@ -87,6 +87,13 @@ export default new Vuex.Store({
           task.state_full = 'killed'
         }
 
+        // Use full urls for old style slugs
+        if (task.data.repository === 'mozilla-central') {
+          task.data.repository = 'https://hg.mozilla.org/mozilla-central'
+        } else if (task.data.repository === 'nss') {
+          task.data.repository = 'https://hg.mozilla.org/projects/nss'
+        }
+
         return task
       })
 
