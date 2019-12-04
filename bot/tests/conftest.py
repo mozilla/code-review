@@ -6,6 +6,7 @@
 import json
 import os.path
 import re
+import urllib.parse
 import uuid
 from collections import defaultdict
 from collections import namedtuple
@@ -106,6 +107,19 @@ def mock_phabricator(mock_config):
         assert os.path.exists(path)
         return open(path).read()
 
+    def diff_search(request):
+        payload = dict(urllib.parse.parse_qsl(request.body))
+        assert "params" in payload
+        params = json.loads(payload["params"])
+
+        name = ["diff_search"]
+        for values in params.get("constraints", {}).values():
+            name += values
+
+        content = _response("_".join(name))
+
+        return (200, {"Content-Type": "application/json"}, content)
+
     responses.add(
         responses.POST,
         "http://phabricator.test/api/user.whoami",
@@ -113,11 +127,10 @@ def mock_phabricator(mock_config):
         content_type="application/json",
     )
 
-    responses.add(
+    responses.add_callback(
         responses.POST,
         "http://phabricator.test/api/differential.diff.search",
-        body=_response("diff_search"),
-        content_type="application/json",
+        callback=diff_search,
     )
 
     responses.add(
@@ -199,6 +212,23 @@ def mock_try_task():
     Mock a remote Try task definition
     """
     return {"extra": {"code-review": {"phabricator-diff": "PHID-HMBT-test"}}}
+
+
+@pytest.fixture
+def mock_autoland_task():
+    """
+    Mock a remote Autoland decision task definition
+    """
+    return {
+        "payload": {
+            "env": {
+                "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-unified",
+                "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/integration/autoland",
+                "GECKO_HEAD_REF": "deadbeef123",
+                "GECKO_HEAD_REV": "deadbeef123",
+            }
+        }
+    }
 
 
 @pytest.fixture
@@ -452,10 +482,24 @@ def mock_hgmo():
 
         return (200, {}, content)
 
+    def fake_json_rev(request):
+        *repo, _, revision = request.path_url[1:].split("/")
+        repo = "-".join(repo)
+
+        mock_path = os.path.join(MOCK_DIR, f"hgmo_{repo}_{revision}.json")
+        content = open(mock_path).read()
+
+        return (200, {"Content-Type": "application/json"}, content)
+
     responses.add_callback(
         responses.GET,
         re.compile(r"^https?://(hgmo|hg\.mozilla\.org)/[\w-]+/raw-file/.*"),
         callback=fake_raw_file,
+    )
+    responses.add_callback(
+        responses.GET,
+        re.compile(r"^https?://(hgmo|hg\.mozilla\.org)/[\w\-\/]+/json-rev/(\w+)"),
+        callback=fake_json_rev,
     )
 
 

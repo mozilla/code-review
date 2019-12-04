@@ -47,7 +47,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="repository",
             name="phid",
-            field=models.CharField(max_length=40, null=True),
+            field=models.CharField(blank=True, max_length=40, null=True),
         ),
         migrations.AddField(
             model_name="diff",

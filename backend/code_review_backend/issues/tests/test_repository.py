@@ -17,15 +17,21 @@ class RepositoryAPITestCase(APITestCase):
         Check we can list all repositories in database
         """
         response = self.client.get("/v1/repository/")
-        self.assertEqual(Repository.objects.count(), 4)
+        self.assertEqual(Repository.objects.count(), 5)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(
             response.json(),
             {
-                "count": 4,
+                "count": 5,
                 "next": None,
                 "previous": None,
                 "results": [
+                    {
+                        "id": 102,
+                        "phid": None,
+                        "slug": "autoland",
+                        "url": "https://hg.mozilla.org/integration/autoland",
+                    },
                     {
                         "id": 1,
                         "phid": "PHID-REPO-saax4qdxlbbhahhp2kg5",

@@ -141,24 +141,27 @@ def test_monitoring_restart(mock_config, mock_workflow):
         ("source-test-coverity-coverity", CoverityTask),
         ("source-test-infer-infer", InferTask),
         ("source-test-unsupported", None),
-        ("totally-unsupported", Exception),
+        ("totally-unsupported", None),
     ],
 )
 def test_build_task(task_name, result, mock_workflow):
     """
     Test the build_task method with different task payloads
     """
-    task_status = {"task": {"metadata": {"name": task_name}}, "status": {}}
+    task_status = {
+        "task": {"metadata": {"name": task_name}},
+        "status": {"taskId": "someTaskId"},
+    }
 
     # Check exceptions thrown
     if result is Exception:
         with pytest.raises(Exception) as e:
-            mock_workflow.build_task("someTaskId", task_status)
+            mock_workflow.build_task(task_status)
         assert str(e.value) == f"Unsupported task {task_name}"
         return
 
     # Normal cases
-    task = mock_workflow.build_task("someTaskId", task_status)
+    task = mock_workflow.build_task(task_status)
     if result is None:
         assert task is None
     else:
