@@ -8,6 +8,7 @@ const TASKCLUSTER_DIFF_INDEX = 'https://index.taskcluster.net/v1/task/project.re
 export default new Vuex.Store({
   state: {
     backend_url: process.env.BACKEND_URL,
+    tasks: [],
     diffs: [],
     stats: null,
     total_stats: 0, // Used to track download progress
@@ -19,6 +20,7 @@ export default new Vuex.Store({
   },
   mutations: {
     reset (state) {
+      state.tasks = []
       state.diffs = []
       state.diff = null
     },
@@ -26,6 +28,10 @@ export default new Vuex.Store({
     reset_stats (state) {
       state.stats = []
       state.total_stats = 0
+    },
+
+    use_tasks (state, tasks) {
+      state.tasks = state.tasks.concat(tasks['tasks'])
     },
 
     use_diffs (state, diffs) {
@@ -161,6 +167,29 @@ export default new Vuex.Store({
           state.dispatch('load_issues', {
             diffId: diff.id,
             url: diff.issues_url
+          })
+        }
+      })
+    },
+
+    // Load Phabricator indexed tasks summary from Taskcluster
+    load_index (state, payload) {
+      let channel = payload.channel || 'production'
+      let url = `https://firefox-ci-tc.services.mozilla.com/api/index/v1/tasks/project.relman.${channel}.code-review.phabricator.diff?limit=200`
+      if (payload && payload.continuationToken) {
+        url += '&continuationToken=' + payload.continuationToken
+      }
+      return axios.get(url).then(resp => {
+        state.commit('use_tasks', {
+          tasks: resp.data.tasks,
+          url: url
+        })
+
+        // Continue loading available tasks
+        if (resp.data.continuationToken) {
+          state.dispatch('load_index', {
+            channel,
+            continuationToken: resp.data.continuationToken
           })
         }
       })
