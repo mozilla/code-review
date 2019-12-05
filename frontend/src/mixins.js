@@ -32,14 +32,21 @@ export default {
     filters: {
       // Display time since elapsed in a human format
       since (datetime) {
-        var dspStep = (t, name) => (Math.round(t) + ' ' + name + (Math.round(t) > 1 ? 's' : ''))
+        var dspStep = (t, name) => {
+          let x = Math.round(t)
+          if (x === 0) {
+            return ''
+          }
+          return x + ' ' + name + (x > 1 ? 's' : '')
+        }
 
         let diff = (new Date() - new Date(datetime)) / 1000
         let steps = [
           [60, 'second'],
           [60, 'minute'],
           [24, 'hour'],
-          [30, 'day']
+          [30, 'day'],
+          [12, 'month']
         ]
         var prev = ''
         for (let [t, name] of steps) {
