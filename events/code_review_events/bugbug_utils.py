@@ -77,6 +77,7 @@ class BugbugUtils:
         # selects tests to add.
         self.diff_to_push[int(build.diff_id)] = {
             "revision": extras["revision"],
+            "treeherder_url": extras["treeherder_url"],
             "build": build,
         }
 
