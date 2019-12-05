@@ -221,11 +221,11 @@ class CodeReview(PhabricatorActions):
             # Load first task in task group, check if it's an autoland
             queue = taskcluster_config.get_service("queue")
             task_group_id = payload["body"]["taskGroupId"]
-            logger.info("Checking autoland task", task_group_id=task_group_id)
+            logger.debug("Checking autoland task", task_group_id=task_group_id)
             task = queue.task(task_group_id)
             repo = task["payload"]["env"].get("GECKO_HEAD_REPOSITORY")
             if repo != "https://hg.mozilla.org/integration/autoland":
-                logger.info("Not an autoland task", task=task_group_id)
+                logger.debug("Not an autoland task", task=task_group_id)
                 return
 
             # Trigger the autoland ingestion task
