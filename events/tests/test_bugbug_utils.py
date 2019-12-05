@@ -148,13 +148,17 @@ async def test_process_push(mock_taskcluster):
         (
             "success",
             build,
-            {"treeherder_url": "https://treeherder.org/", "revision": "123"},
+            {
+                "treeherder_url": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123",
+                "revision": "123",
+            },
         )
     )
 
     assert len(bugbug_utils.diff_to_push) == 1
     assert bugbug_utils.diff_to_push[build.diff_id] == {
         "revision": "123",
+        "treeherder_url": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123",
         "build": build,
     }
 
