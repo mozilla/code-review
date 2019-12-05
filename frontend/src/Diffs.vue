@@ -162,9 +162,7 @@ export default {
           </td>
 
           <td>
-            <span class="tag is-primary" v-if="task.data.repository == 'https://hg.mozilla.org/mozilla-central'">Mozilla Central</span>
-            <span class="tag is-info" v-else-if="task.data.repository == 'https://hg.mozilla.org/projects/nss'">NSS</span>
-            <span class="tag is-dark" v-else>{{ task.data.repository || 'Unknown'}}</span>
+            <a :href="diff.repository.url + '/rev/' + diff.mercurial_hash" target="_blank">{{ diff.mercurial_hash.substring(0, 8) }} @ {{ diff.repository.slug }}</a>
           </td>
 
           <td :class="{'has-text-success': diff.nb_issues_new_for_revision > 0}">
@@ -177,10 +175,24 @@ export default {
             <span :title="diff.created">{{ diff.created|since }} ago</span>
           </td>
           <td>
-            <a class="button is-link" :href="diff.revision.phabricator_url" target="_blank">Phabricator</a>
-            <a v-if="diff.revision.bugzilla_id" class="button is-dark" :href="'https://bugzil.la/' + diff.revision.bugzilla_id" target="_blank">Bugzilla</a>
-            <a class="button is-primary" :href="diff | treeherder_url" target="_blank">Treeherder</a>
-            <router-link v-if="diff.nb_issues > 0" :to="{ name: 'diff', params: { diffId: diff.id }}" class="button is-primary">Issues</router-link>
+            <div class="buttons">
+              <router-link class="button is-primary is-small" v-if="diff.nb_issues > 0" :to="{ name: 'diff', params: { diffId: diff.id }}">➕ Issues</router-link>
+              <div class="dropdown is-hoverable">
+                <div class="dropdown-trigger">
+                  <button class="button is-dark is-small" aria-haspopup="true" aria-controls="dropdown-menu4">
+                    <span>🔩 Details</span>
+                  </button>
+                </div>
+                <div class="dropdown-menu" id="dropdown-menu4" role="menu">
+                  <div class="dropdown-content">
+                    <hr class="dropdown-divider">
+                    <a class="dropdown-item" :href="diff.revision.phabricator_url" target="_blank">Phabricator D{{ diff.revision.id }}</a>
+                    <a class="dropdown-item" v-if="diff.revision.bugzilla_id" :href="'https://bugzil.la/' + diff.revision.bugzilla_id" target="_blank">Bug {{ diff.revision.bugzilla_id }}</a>
+                    <a class="dropdown-item" :href="diff | treeherder_url" target="_blank">Treeherder tasks</a>
+                  </div>
+                </div>
+              </div>
+            </div>
           </td>
         </tr>
       </tbody>
