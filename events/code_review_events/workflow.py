@@ -389,6 +389,7 @@ class Events(object):
             logger.info("Skipping workers consumers")
 
     def run(self):
+        consumers_setup = []
         consumers = []
 
         # Code review main workflow
@@ -418,6 +419,7 @@ class Events(object):
             ]
 
         if self.bugbug_utils:
+            consumers_setup.append(self.bugbug_utils.setup),
             consumers += [
                 self.bus.run(
                     self.bugbug_utils.process_build, QUEUE_BUGBUG, sequential=False
@@ -462,6 +464,9 @@ class Events(object):
         # Start the web server in its own process
         if self.webserver:
             self.webserver.start()
+
+        if consumers_setup:
+            run_tasks(consumers_setup)
 
         if consumers:
             # Run all tasks concurrently
