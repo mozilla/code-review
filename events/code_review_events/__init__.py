@@ -6,11 +6,6 @@ community_taskcluster_config = TaskclusterConfig(
     "https://community-tc.services.mozilla.com"
 )
 
-# Enforce the community TC url to avoid the environment variable preference
-# on Heroku workers
-community_taskcluster_config.default_url = "https://community-tc.services.mozilla.com"
-
-
 MONITORING_PERIOD = 7 * 3600
 
 QUEUE_MERCURIAL = "mercurial"
