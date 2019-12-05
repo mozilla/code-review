@@ -92,7 +92,10 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
         # Filter by repository
         repository = self.request.query_params.get("repository")
         if repository is not None:
-            diffs = diffs.filter(revision__repository__slug=repository)
+            diffs = diffs.filter(
+                Q(revision__repository__slug=repository)
+                | Q(repository__slug=repository)
+            )
 
         # Filter by text search query
         query = self.request.query_params.get("search")
