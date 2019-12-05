@@ -111,6 +111,12 @@ export default {
       let rev = diff.mercurial_hash
       let tryRepo = diff.revision.repository === 'nss' ? 'nss-try' : 'try'
       return `https://treeherder.mozilla.org/#/jobs?repo=${tryRepo}&revision=${rev}`
+    },
+    short_repo (url) {
+      if (url.startsWith('https://hg.mozilla.org/')) {
+        return url.substring(23)
+      }
+      return url
     }
   }
 }
@@ -157,7 +163,7 @@ export default {
             <p v-if="diff.revision.title">{{ diff.revision.title }}</p>
             <p class="has-text-danger" v-else>No title</p>
             <p>
-              Revision <router-link :to="{ name: 'revision', params: { revisionId: diff.revision.id }}">D{{ diff.revision.id }}</router-link>
+              Revision <router-link :to="{ name: 'revision', params: { revisionId: diff.revision.id }}">D{{ diff.revision.id }}</router-link> @ {{ diff.revision.repository | short_repo }}
             </p>
           </td>
 
