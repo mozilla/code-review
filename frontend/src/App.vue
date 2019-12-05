@@ -29,10 +29,13 @@ export default {
 
             <div class="navbar-end">
               <router-link to="/stats" v-slot="{ href, route, navigate, isActive, isExactActive }">
-                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">☷ All checks</a>
+                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">💥 All checks</a>
               </router-link>
               <router-link to="/" v-slot="{ href, route, navigate, isActive, isExactActive }">
                 <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">🔍 Browse diffs</a>
+              </router-link>
+              <router-link to="/tasks" v-slot="{ href, route, navigate, isActive, isExactActive }">
+                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">📜 All tasks</a>
               </router-link>
             </div>
           </div>
