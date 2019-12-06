@@ -7,6 +7,7 @@ import structlog
 from libmozdata.phabricator import UnitResultState
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
+from libmozevent.storage import EphemeralStorage
 
 from code_review_events import QUEUE_BUGBUG
 from code_review_events import QUEUE_BUGBUG_TRY_PUSH
@@ -16,6 +17,10 @@ from code_review_events import community_taskcluster_config
 from code_review_events import taskcluster_config
 
 logger = structlog.get_logger(__name__)
+
+
+# If we triggered an analysis or tests more than 7 hours ago, we can forget about them.
+EPHEMERAL_STORAGE_EXPIRATION = 25200
 
 
 class BugbugUtils:
@@ -33,10 +38,11 @@ class BugbugUtils:
             "risk_analysis_reviewers", []
         )
 
+        # The following ephemeral storage handlers will be initialized in the setup method.
         # A map from try push task group to its linked Phabricator build.
-        self.task_group_to_build = {}
+        self.task_group_to_build = None
         # A map from build phid to try revision.
-        self.diff_to_push = {}
+        self.diff_to_push = None
 
         # Setup Taskcluster community hooks for risk analysis
         community_config = taskcluster_config.secrets.get("taskcluster_community")
@@ -63,23 +69,34 @@ class BugbugUtils:
         self.hooks_service = taskcluster_config.get_service("hooks")
         self.queue_service = taskcluster_config.get_service("queue")
 
+    async def setup(self):
+        self.task_group_to_build = await EphemeralStorage.create(
+            "bugbug:task_group_to_build", EPHEMERAL_STORAGE_EXPIRATION
+        )
+        self.diff_to_push = await EphemeralStorage.create(
+            "bugbug:diff_to_push", EPHEMERAL_STORAGE_EXPIRATION
+        )
+
     def register(self, bus):
         self.bus = bus
         self.bus.add_queue(QUEUE_BUGBUG)
         self.bus.add_queue(QUEUE_BUGBUG_TRY_PUSH)
 
-    def process_push(self, payload):
+    async def process_push(self, payload):
         mode, build, extras = payload
         if mode != "success":
             return
 
         # Store the push revision and build, so we can use it after bugbug
         # selects tests to add.
-        self.diff_to_push[int(build.diff_id)] = {
-            "revision": extras["revision"],
-            "treeherder_url": extras["treeherder_url"],
-            "build": build,
-        }
+        await self.diff_to_push.set(
+            str(build.diff_id),
+            {
+                "revision": extras["revision"],
+                "treeherder_url": extras["treeherder_url"],
+                "build": build,
+            },
+        )
 
     async def process_build(self, build):
         assert build is not None, "Invalid payload"
@@ -163,7 +180,7 @@ class BugbugUtils:
     async def get_test_selection_results(self, task_id):
         # Get the Phabricator diff ID from bugbug task definition.
         bugbug_task = self.community_tc["queue"].task(task_id)
-        diff_id = int(bugbug_task["extra"]["phabricator-diff-id"])
+        diff_id = str(bugbug_task["extra"]["phabricator-diff-id"])
 
         # Retrieve artifacts from bugbug test selection task.
         failure_risk = self.community_tc["queue"].getLatestArtifact(
@@ -255,7 +272,11 @@ class BugbugUtils:
             return
 
         # If this diff does not belong to a revision we pushed to try, return.
-        if diff_id not in self.diff_to_push:
+        try:
+            push = self.diff_to_push.get(diff_id)
+            # TODO: Trigger removal, but don't wait for it.
+            await self.diff_to_push.rem(diff_id)
+        except KeyError:
             logger.warning(
                 "bugbug test select notification for a revision we did not push to try",
                 payload=payload,
@@ -264,7 +285,6 @@ class BugbugUtils:
             )
             return
 
-        push = self.diff_to_push.pop(diff_id)
         try:
             decision_task_id = self.add_new_jobs(push["revision"], selected_tasks)
         except Exception as e:
@@ -281,7 +301,7 @@ class BugbugUtils:
 
         # Store the task group ID and a link to the Phabricator build, so we can upload
         # results to Phabricator when we get a task completion/failure notification.
-        self.task_group_to_build[decision_task_id] = push["build"]
+        await self.task_group_to_build.set(decision_task_id, push["build"])
 
         for email in self.test_selection_notify_addresses:
             await self.notify_service.email(
@@ -313,10 +333,10 @@ class BugbugUtils:
             # a task with that key (or get it from try_task_config.json on the try repo, using the
             # revision from the decision task).
             taskGroupId = status["taskGroupId"]
-            if taskGroupId not in self.task_group_to_build:
+            try:
+                build = self.task_group_to_build.get(taskGroupId)
+            except KeyError:
                 return
-
-            build = self.task_group_to_build[taskGroupId]
 
             name = task["tags"]["label"]
 

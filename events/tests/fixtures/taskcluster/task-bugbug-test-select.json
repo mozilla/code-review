@@ -9,7 +9,7 @@
     "notify.email.release-mgmt-analysis@mozilla.com.on-failed",
     "notify.irc-channel.#bugbug.on-failed",
     "index.project.relman.bugbug.test_select.latest",
-    "index.project.relman.bugbug.test_select.diff.196676"
+    "index.project.relman.bugbug.test_select.diff.125397"
   ],
   "priority": "lowest",
   "retries": 5,
@@ -38,7 +38,7 @@
       "bugbug-classify-commit",
       "testselect",
       "/cache",
-      "196676"
+      "125397"
     ],
     "env": {
       "TC_SECRET_ID": "project/relman/bugbug/production",
@@ -58,6 +58,6 @@
   },
   "tags": {},
   "extra": {
-      "phabricator-diff-id": 196676
+      "phabricator-diff-id": 125397
   }
 }

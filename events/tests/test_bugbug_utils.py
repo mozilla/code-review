@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import os
 
 import pytest
 import responses
@@ -39,10 +40,10 @@ async def test_risk_analysis_should_trigger(PhabricatorMock, mock_taskcluster):
         "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
     }
 
-    with PhabricatorMock as phab:
-        bugbug_utils = BugbugUtils()
-        bugbug_utils.register(bus)
+    bugbug_utils = BugbugUtils()
+    bugbug_utils.register(bus)
 
+    with PhabricatorMock as phab:
         phab.update_state(build)
         phab.load_reviewers(build)
 
@@ -66,10 +67,10 @@ async def test_risk_analysis_shouldnt_trigger(PhabricatorMock, mock_taskcluster)
         "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
     }
 
-    with PhabricatorMock as phab:
-        bugbug_utils = BugbugUtils()
-        bugbug_utils.register(bus)
+    bugbug_utils = BugbugUtils()
+    bugbug_utils.register(bus)
 
+    with PhabricatorMock as phab:
         phab.update_state(build)
         phab.load_reviewers(build)
 
@@ -141,10 +142,16 @@ async def test_process_push(mock_taskcluster):
     )
 
     bugbug_utils = BugbugUtils()
+    await bugbug_utils.setup()
 
-    assert bugbug_utils.diff_to_push == {}
+    try:
+        await bugbug_utils.diff_to_push.rem(str(build.diff_id))
+    except KeyError:
+        pass
 
-    bugbug_utils.process_push(
+    assert len(bugbug_utils.diff_to_push) == 0
+
+    await bugbug_utils.process_push(
         (
             "success",
             build,
@@ -156,11 +163,26 @@ async def test_process_push(mock_taskcluster):
     )
 
     assert len(bugbug_utils.diff_to_push) == 1
-    assert bugbug_utils.diff_to_push[build.diff_id] == {
+    assert bugbug_utils.diff_to_push.get(str(build.diff_id)) == {
         "revision": "123",
         "treeherder_url": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123",
         "build": build,
     }
+
+    if "REDIS_URL" in os.environ:
+        # Simulate a restart.
+        bugbug_utils = BugbugUtils()
+        await bugbug_utils.setup()
+
+        assert len(bugbug_utils.diff_to_push) == 1
+        stored_push = bugbug_utils.diff_to_push.get(str(build.diff_id))
+        assert stored_push["revision"] == "123"
+        assert (
+            stored_push["treeherder_url"]
+            == "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123"
+        )
+        assert stored_push["build"].diff_id == build.diff_id
+        assert stored_push["build"].target_phid == build.target_phid
 
 
 @pytest.mark.asyncio
@@ -183,7 +205,7 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
                 b"route.notify.email.release-mgmt-analysis@mozilla.com.on-failed",
                 b"route.notify.irc-channel.#bugbug.on-failed",
                 b"route.index.project.relman.bugbug.test_select.latest",
-                b"route.index.project.relman.bugbug.test_select.diff.196676",
+                b"route.index.project.relman.bugbug.test_select.diff.125397",
                 b"route.project.relman.bugbug.test_select",
             ],
         },
@@ -227,10 +249,21 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
         "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
     }
 
-    with PhabricatorMock as phab:
-        bugbug_utils = BugbugUtils()
-        bugbug_utils.register(bus)
+    bugbug_utils = BugbugUtils()
+    await bugbug_utils.setup()
+    bugbug_utils.register(bus)
 
+    try:
+        await bugbug_utils.diff_to_push.rem(str(build.diff_id))
+    except KeyError:
+        pass
+
+    try:
+        await bugbug_utils.task_group_to_build.rem("HDnvYOibTMS8h_5Qzv6fWg")
+    except KeyError:
+        pass
+
+    with PhabricatorMock as phab:
         phab.update_state(build)
 
     # Nothing happens when diff_to_push is empty.
@@ -254,9 +287,9 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
             body=mock_taskcluster("artifact-bugbug-test-select-selected-tasks"),
         )
 
-        assert bugbug_utils.diff_to_push == {}
+        assert len(bugbug_utils.diff_to_push) == 0
         await bugbug_utils.got_bugbug_test_select_end(payload)
-        assert bugbug_utils.task_group_to_build == {}
+        assert len(bugbug_utils.task_group_to_build) == 0
 
     # Nothing happens when the failure risk is low.
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -273,9 +306,11 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
             body=mock_taskcluster("artifact-bugbug-test-select-failure-risk-0"),
         )
 
-        bugbug_utils.diff_to_push[196676] = {"revision": "123", "build": build}
+        await bugbug_utils.diff_to_push.set(
+            "125397", {"revision": "123", "build": build}
+        )
         await bugbug_utils.got_bugbug_test_select_end(payload)
-        assert bugbug_utils.task_group_to_build == {}
+        assert len(bugbug_utils.task_group_to_build) == 0
 
     # Nothing happens when the failure risk is high but there are no selected tasks.
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -298,9 +333,11 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
             body=mock_taskcluster("artifact-bugbug-test-select-selected-tasks-none"),
         )
 
-        bugbug_utils.diff_to_push[196676] = {"revision": "123", "build": build}
+        await bugbug_utils.diff_to_push.set(
+            "125397", {"revision": "123", "build": build}
+        )
         await bugbug_utils.got_bugbug_test_select_end(payload)
-        assert bugbug_utils.task_group_to_build == {}
+        assert len(bugbug_utils.task_group_to_build) == 0
 
     # Stuff happens.
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -354,10 +391,12 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
             callback=trigger_hook_callback,
         )
 
-        bugbug_utils.diff_to_push[196676] = {"revision": "123", "build": build}
+        await bugbug_utils.diff_to_push.set(
+            "125397", {"revision": "123", "build": build}
+        )
         await bugbug_utils.got_bugbug_test_select_end(payload)
         assert len(bugbug_utils.task_group_to_build) == 1
-        assert bugbug_utils.task_group_to_build["HDnvYOibTMS8h_5Qzv6fWg"] == build
+        assert bugbug_utils.task_group_to_build.get("HDnvYOibTMS8h_5Qzv6fWg") == build
 
 
 @pytest.mark.asyncio
@@ -386,7 +425,7 @@ async def test_got_try_task_end(PhabricatorMock, mock_taskcluster):
                 "provisionerId": "gecko-t",
                 "workerType": "t-linux-xlarge",
                 "schedulerId": "gecko-level-1",
-                "taskGroupId": "aGroup",
+                "taskGroupId": "HDnvYOibTMS8h_5Qzv6fWg",
                 "deadline": "2019-11-23T14:04:41.581Z",
                 "expires": "2019-12-06T14:04:41.581Z",
                 "retriesLeft": 5,
@@ -429,9 +468,16 @@ async def test_got_try_task_end(PhabricatorMock, mock_taskcluster):
         "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
     }
 
+    bugbug_utils = BugbugUtils()
+    await bugbug_utils.setup()
+    bugbug_utils.register(bus)
+
+    try:
+        await bugbug_utils.task_group_to_build.rem("HDnvYOibTMS8h_5Qzv6fWg")
+    except KeyError:
+        pass
+
     with PhabricatorMock as phab:
-        bugbug_utils = BugbugUtils()
-        bugbug_utils.register(bus)
         bus.add_queue(QUEUE_PHABRICATOR_RESULTS)
 
         phab.update_state(build)
@@ -446,7 +492,7 @@ async def test_got_try_task_end(PhabricatorMock, mock_taskcluster):
         await bugbug_utils.got_try_task_end(payload)
         assert bus.queues[QUEUE_PHABRICATOR_RESULTS].empty()
 
-        bugbug_utils.task_group_to_build["aGroup"] = build
+        await bugbug_utils.task_group_to_build.set("HDnvYOibTMS8h_5Qzv6fWg", build)
 
         payload["body"]["status"]["state"] = "completed"
         await bugbug_utils.got_try_task_end(payload)
