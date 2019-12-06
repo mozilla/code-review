@@ -5,29 +5,13 @@ import Choice from './Choice.vue'
 
 export default {
   mounted () {
-    // Load new tasks at startup
-    this.load_tasks()
-  },
-  watch: {
-    '$route' (to, from, next) {
-      // Load new tasks when route change
-      if (to.path !== from.path) {
-        this.load_tasks()
-      }
-    }
+    this.load_tasks('production')
   },
   methods: {
-    load_tasks () {
-      var payload = {}
-
-      // Reset state
+    load_tasks (channel) {
+      this.$set(this, 'channel', channel)
       this.$store.commit('reset')
-
-      // Load a specific revision only
-      if (this.$route.params.revision) {
-        payload['revision'] = this.$route.params.revision
-      }
-      this.$store.dispatch('load_index', payload)
+      this.$store.dispatch('load_index', { channel })
     }
   },
   components: {
@@ -35,6 +19,7 @@ export default {
   },
   data: function () {
     return {
+      channel: 'production',
       filters: {
         state: null,
         issues: null,
@@ -73,7 +58,7 @@ export default {
 
       // Filter by states
       if (this.filters.state !== null) {
-        tasks = _.filter(tasks, t => t.state_full === this.filters.state.key)
+        tasks = _.filter(tasks, t => t.data.state === this.filters.state.key)
       }
 
       // Filter by issues
@@ -89,22 +74,37 @@ export default {
         })
       }
 
-      return tasks
+      // Sort by indexation date
+      return tasks.sort((x, y) => {
+        return new Date(y.data.indexed) - new Date(x.data.indexed)
+      })
     },
     tasks_total () {
       return this.$store.state.tasks ? this.$store.state.tasks.length : 0
     },
     states () {
-      return this.$store.state.states
+      let currentTasks = this.$store.state.tasks
+      const states = currentTasks.reduce((states, task) => {
+        if (states[task.data.state] === undefined) {
+          states[task.data.state] = 0
+        }
+        states[task.data.state] += 1
+        return states
+      }, {})
+
+      // Order states by their nb, and calc percents
+      return Object.keys(states).map(state => {
+        let nb = states[state]
+        return {
+          'key': state,
+          'name': state.startsWith('error.') ? 'error: ' + state.substring(6) : state,
+          'nb': nb,
+          'percent': currentTasks && currentTasks.length > 0 ? Math.round(nb * 100 / currentTasks.length) : 0
+        }
+      }).sort((x, y) => { return y.nb - x.nb })
     },
     repositories () {
-      // Convert repositories set to an array
-      return [...this.$store.state.repositories].map(url => {
-        if (url.startsWith('https://hg.mozilla.org/')) {
-          return url.substring(23)
-        }
-        return url
-      })
+      return []
     }
   }
 }
@@ -112,6 +112,10 @@ export default {
 
 <template>
   <section>
+    <div class="buttons has-addons is-pulled-right">
+      <button v-on:click="load_tasks('production')" class="button is-small" :class="{'is-primary': channel == 'production'}">Production tasks</button>
+      <button v-on:click="load_tasks('testing')" class="button is-small" :class="{'is-primary': channel == 'testing'}">Testing tasks</button>
+    </div>
 
     <div class="states" >
       <div class="state columns" v-for="state in states">
@@ -158,7 +162,7 @@ export default {
               <small class="mono has-text-grey-light">{{ task.data.diff_phid}}</small> - diff {{ task.data.diff_id || 'unknown'     }}
             </p>
             <p>
-              <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - <router-link :to="{ name: 'revision', params: { revision: task.data.id }}">rev {{ task.data.id }}</router-link>
+              <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - <router-link :to="{ name: 'revision', params: { revisionId: task.data.id }}">rev {{ task.data.id }}</router-link>
             </p>
           </td>
 
@@ -198,7 +202,7 @@ export default {
             <a class="button is-link" :href="task.data.url" target="_blank">Phabricator</a>
             <a v-if="task.data.bugzilla_id" class="button is-dark" :href="'https://bugzil.la/' + task.data.bugzilla_id" target="_blank">Bugzilla</a>
             <a class="button is-primary" :href="'https://firefox-ci-tc.services.mozilla.com/tasks/' + task.data.try_group_id" target="_blank">Try Tasks</a>
-            <router-link v-if="task.data.issues > 0" :to="{ name: 'task', params: { taskId : task.taskId }}" class="button is-primary">Issues</router-link>
+            <router-link v-if="task.data.issues > 0" :to="{ name: 'diff', params: { diffId : task.data.diff_id }}" class="button is-primary">Issues</router-link>
           </td>
         </tr>
       </tbody>
