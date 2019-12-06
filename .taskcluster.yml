@@ -282,6 +282,46 @@ tasks:
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
+    - taskId: {$eval: as_slugid("integration_build")}
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      provisionerId: proj-relman
+      workerType: ci
+      dependencies:
+        - {$eval: as_slugid("check_lint")}
+      payload:
+        capabilities:
+          privileged: true
+        maxRunTime: 3600
+        image: "${taskboot_image}"
+        env:
+          GIT_REPOSITORY: ${repository}
+          GIT_REVISION: ${head_rev}
+        command:
+          - taskboot
+          - build
+          - --image
+          - mozilla/code-review
+          - --tag
+          - "${channel}"
+          - --tag
+          - "${head_rev}"
+          - --write
+          - /integration.tar
+          - integration/docker/Dockerfile
+        artifacts:
+          public/code-review-integration.tar:
+            expires: {$fromNow: '2 weeks'}
+            path: /integration.tar
+            type: file
+      scopes:
+        - docker-worker:capability:privileged
+      metadata:
+        name: Code Review Integration docker build
+        description: Build docker image of code review integration tests
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
+
     - $if: 'channel in ["testing", "production"]'
       then:
         taskId: {$eval: as_slugid("frontend_deploy")}

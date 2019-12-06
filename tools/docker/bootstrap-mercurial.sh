@@ -12,7 +12,6 @@ python2 setup.py install
 # Setup mercurial with needed extensions
 hg clone -u cc7be0763bb7cb36e64b55b8cec6998741709776 https://hg.mozilla.org/hgcustom/version-control-tools /src/version-control-tools/
 mkdir -p /etc/mercurial/hgrc.d
-ln -s /src/events/docker/hgrc /etc/mercurial/hgrc.d/code-review.rc
 
 # Cleanup
 apt-get purge -y gcc curl python-dev
