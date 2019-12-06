@@ -32,6 +32,17 @@ tasks:
         else: 'dev'
       else: 'dev'
 
+    backend_url:
+      $if: 'tasks_for == "github-push"'
+      then:
+        $if: 'event.ref == "refs/heads/testing"'
+        then: 'https://api.code-review.testing.moz.tools'
+        else: 'https://api.code-review.moz.tools'
+      else:
+        $if: 'tasks_for == "github-pull-request"'
+        then: 'https://api.code-review.testing.moz.tools'
+        else: 'https://api.code-review.moz.tools'
+
     taskboot_image: "mozilla/taskboot:0.1.10"
 
     pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
@@ -129,6 +140,8 @@ tasks:
       payload:
         maxRunTime: 3600
         image: node:11-alpine
+        env:
+          BACKEND_URL: "${backend_url}"
         command:
           - sh
           - -lxce

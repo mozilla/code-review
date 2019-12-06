@@ -1,24 +1,9 @@
 <script>
-import Tasks from './Tasks.vue'
-
 export default {
   name: 'App',
-  components: {
-    Tasks
-  },
-  data () {
-    return {
-      channels: ['testing', 'production']
-    }
-  },
-  methods: {
-    switch_channel (channel) {
-      this.$store.dispatch('switch_channel', channel)
-    }
-  },
   computed: {
-    channel () {
-      return this.$store.state.channel
+    backend_url () {
+      return this.$store.state.backend_url
     }
   }
 }
@@ -30,28 +15,28 @@ export default {
       <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
         <div class="container is-fluid">
           <div class="navbar-brand">
-            <div class="navbar-item">Static analysis</div>
+            <router-link to="/" v-slot="{ href, route, navigate, isActive, isExactActive }">
+              <a class="navbar-item" :href="href" v-on:click="navigate">🤖 Code Review Bot</a>
+            </router-link>
           </div>
           <div class="navbar-menu">
 
             <div class="navbar-start">
-              <div class="navbar-item has-dropdown is-hoverable">
-                <span class="navbar-link">{{ channel }}</span>
-                <div class="navbar-dropdown is-boxed">
-                  <a class="dropdown-item" v-for="c in channels" :class="{'is-active': c == channel}" v-on:click="switch_channel(c)">
-                    {{ c }}
-                  </a>
-                </div>
+              <div class="navbar-item">
+                <span class="navbar-item">Connected to {{ backend_url }}</span>
               </div>
             </div>
 
             <div class="navbar-end">
-              <div class="navbar-item" v-if="$route.name != 'stats'">
-                <router-link to="/stats" class="button is-link">All checks</router-link>
-              </div>
-              <div class="navbar-item" v-if="$route.name != 'tasks'">
-                <router-link to="/" class="button is-link">All tasks</router-link>
-              </div>
+              <router-link to="/stats" v-slot="{ href, route, navigate, isActive, isExactActive }">
+                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">💥 All checks</a>
+              </router-link>
+              <router-link to="/" v-slot="{ href, route, navigate, isActive, isExactActive }">
+                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">🔍 Browse diffs</a>
+              </router-link>
+              <router-link to="/tasks" v-slot="{ href, route, navigate, isActive, isExactActive }">
+                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">📜 All tasks</a>
+              </router-link>
             </div>
           </div>
         </div>

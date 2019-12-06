@@ -2,6 +2,7 @@ fs = require('fs');
 
 const envs = {
   CONFIG: process.env.CONFIG || 'staging',
+  BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:8000',
 };
 const PORT = process.env.PORT || 8010;
 // HTTPS can be disabled by setting HTTPS_DISABLED environment variable to
@@ -26,7 +27,7 @@ module.exports = {
       '@neutrinojs/vue',
       {
         html: {
-          title: 'Mozilla Static Analysis'
+          title: 'Mozilla Code Review Bot'
         },
         devServer: {
           port: PORT,

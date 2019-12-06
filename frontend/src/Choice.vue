@@ -12,7 +12,7 @@
           {{ default_choice_name }}
         </a>
         <hr class="dropdown-divider">
-        <a class="dropdown-item" v-for="choice in choices" v-on:click="select(choice, $event)" :class="{'is-active': current === choice }">
+        <a class="dropdown-item" v-for="choice in choices" v-on:click="select(choice, $event)" :class="{'is-active': current === choice  || current === choice.value}">
           {{ choice|name }}
         </a>
       </div>
@@ -21,21 +21,19 @@
 </template>
 
 <script>
+import mixins from './mixins.js'
+
 export default {
   props: {
     'name': String,
     'choices': Array
   },
-  data: function () {
+  mixins: [
+    mixins.query
+  ],
+  data () {
     return {
-      current: null
-    }
-  },
-  mounted: function () {
-    let initial = this.$route.query[this.name]
-    if (initial && this.choices) {
-      this.current = isNaN(parseInt(initial)) ? initial : this.choices[initial]
-      this.$emit('new-choice', this.current)
+      choice: null
     }
   },
   methods: {
@@ -43,27 +41,29 @@ export default {
       evt.stopPropagation()
 
       // Save new choice
-      this.current = choice
+      this.$set(this, 'choice', choice)
       this.$emit('new-choice', choice)
-
-      // Set value in the url for sharing
-      var query = Object.assign({}, this.$route.query)
-      if (choice !== null) {
-        query[this.name] = typeof choice === 'string' ? choice : this.choices.indexOf(choice)
-      } else if (this.name in query) {
-        delete query[this.name]
-      }
-      this.$router.push({ 'query': query })
     }
   },
   computed: {
+    current () {
+      let current = null
+      let choice = this.choice || this.$route.query[this.name]
+      if (choice && this.choices) {
+        current = this.choices.find(c => c === choice || c.value === choice)
+        if (!current) {
+          current = isNaN(parseInt(choice)) ? choice : this.choices[choice]
+        }
+      }
+      return current
+    },
     default_choice_name: function () {
-      return 'All ' + this.name + 's'
+      return 'Filter by ' + this.name
     }
   },
   filters: {
     name: function (choice) {
-      return typeof choice === 'string' ? choice : choice.name
+      return typeof choice === 'string' ? choice : (choice.slug || choice.name)
     }
   }
 }
