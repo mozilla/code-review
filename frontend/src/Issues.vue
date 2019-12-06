@@ -15,7 +15,7 @@ export default {
       choices: {
         new_for_revision: [
           {
-            name: 'New for revision',
+            name: 'New in this revision',
             func: i => i.new_for_revision
           },
           {
@@ -143,7 +143,7 @@ export default {
             <td><Choice :choices="analyzers" name="analyzer" v-on:new-choice="filters.analyzer = $event"/></td>
             <td><Choice :choices="paths" name="path" v-on:new-choice="filters.path = $event"/></td>
             <td>Lines</td>
-            <td><Choice :choices="choices.new_for_revision" name="issue" v-on:new-choice="filters.new_for_revision = $event"/></td>
+            <td><Choice :choices="choices.new_for_revision" name="new issue" v-on:new-choice="filters.new_for_revision = $event"/></td>
             <td>Check</td>
             <td>Level</td>
             <td>Message</td>
@@ -159,7 +159,7 @@ export default {
             <td class="path">{{ issue.path }}</td>
             <td>{{ issue.line }} <span v-if="issue.nb_lines > 1">&rarr; {{ issue.line - 1 + issue.nb_lines }}</span></td>
             <td>
-              <Bool :value="issue.new_for_revision" name="New for revision" />
+              <Bool :value="issue.new_for_revision" name="New in this revision" />
             </td>
 
             <td>
