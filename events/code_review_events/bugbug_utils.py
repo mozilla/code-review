@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import asyncio
 import random
 
 import jsone
@@ -91,7 +90,7 @@ class BugbugUtils:
         # Store the push revision and build, so we can use it after bugbug
         # selects tests to add.
         await self.diff_to_push.set(
-            int(build.diff_id),
+            str(build.diff_id),
             {
                 "revision": extras["revision"],
                 "treeherder_url": extras["treeherder_url"],
@@ -181,7 +180,7 @@ class BugbugUtils:
     async def get_test_selection_results(self, task_id):
         # Get the Phabricator diff ID from bugbug task definition.
         bugbug_task = self.community_tc["queue"].task(task_id)
-        diff_id = int(bugbug_task["extra"]["phabricator-diff-id"])
+        diff_id = str(bugbug_task["extra"]["phabricator-diff-id"])
 
         # Retrieve artifacts from bugbug test selection task.
         failure_risk = self.community_tc["queue"].getLatestArtifact(
@@ -275,8 +274,8 @@ class BugbugUtils:
         # If this diff does not belong to a revision we pushed to try, return.
         try:
             push = self.diff_to_push.get(diff_id)
-            # Trigger removal, but don't wait for it.
-            asyncio.create_task(self.diff_to_push.rem(diff_id))
+            # TODO: Trigger removal, but don't wait for it.
+            await self.diff_to_push.rem(diff_id)
         except KeyError:
             logger.warning(
                 "bugbug test select notification for a revision we did not push to try",
