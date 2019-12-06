@@ -442,3 +442,63 @@ tasks:
           description: Deploy docker image on Heroku
           owner: bastien@mozilla.com
           source: https://github.com/mozilla/code-review
+
+    - $if: 'channel in ["testing", "production"]'
+      then:
+        taskId: {$eval: as_slugid("integration_deploy")}
+        created: {$fromNow: ''}
+        deadline: {$fromNow: '1 hour'}
+        provisionerId: proj-relman
+        workerType: ci
+        dependencies:
+          - {$eval: as_slugid("integration_build")}
+        payload:
+          features:
+            # Needed for access to secret
+            taskclusterProxy: true
+          maxRunTime: 3600
+          image: "${taskboot_image}"
+          env:
+            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
+          command:
+            - taskboot
+            - push-artifact
+        scopes:
+          - "secrets:get:project/relman/code-review/deploy-${channel}"
+        metadata:
+          name: "Code Review Integration test push (${channel})"
+          description: Push integration's docker image on repository
+          owner: bastien@mozilla.com
+          source: https://github.com/mozilla/code-review
+
+    - $if: 'channel in ["testing", "production"]'
+      then:
+        taskId: {$eval: as_slugid("integration_hook")}
+        dependencies:
+          - {$eval: as_slugid("integration_deploy")}
+        scopes:
+          - "assume:hook-id:project-relman/code-review-integration-${channel}"
+          - "hooks:modify-hook:project-relman/code-review-integration-${channel}"
+        created: {$fromNow: ''}
+        deadline: {$fromNow: '5 hours'}
+        provisionerId: proj-relman
+        workerType: ci
+        payload:
+          features:
+            # Needed for access to hook api
+            taskclusterProxy: true
+          maxRunTime: 3600
+          image: "${taskboot_image}"
+          command:
+            - "/bin/sh"
+            - "-lcxe"
+            - "git clone --quiet ${repository} &&
+               cd code-review &&
+               git checkout ${head_rev} &&
+               sed -i -e 's/CHANNEL/${channel}/g' -e 's/REVISION/${head_rev}/g' integration/taskcluster-hook.json &&
+               taskboot --target . build-hook integration/taskcluster-hook.json project-relman code-review-integration-${channel}"
+        metadata:
+          name: "Code Review Bot integration test hook update (${channel})"
+          description: Update Taskcluster hook triggering the code-review integration tests
+          owner: bastien@mozilla.com
+          source: https://github.com/mozilla/code-review
