@@ -52,6 +52,7 @@ def mock_issues():
         def __init__(self, nb):
             self.nb = nb
             self.path = "/path/to/file"
+            self.analyzer = "mock-analyzer"
 
         def as_markdown(self):
             return "This is the mock issue n°{}".format(self.nb)

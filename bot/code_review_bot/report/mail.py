@@ -12,7 +12,7 @@ from code_review_bot.report.base import Reporter
 logger = structlog.get_logger(__name__)
 
 
-EMAIL_STATS_LINE = "* **{source}**: {publishable} publishable ({total} total)"
+EMAIL_STATS_LINE = "* **{analyzer}**: {publishable} publishable ({total} total)"
 
 EMAIL_HEADER = """
 # Found {publishable} publishable issues ({total} total)
@@ -49,11 +49,11 @@ class MailReporter(Reporter):
         stats = "\n".join(
             [
                 EMAIL_STATS_LINE.format(
-                    source=str(cls.__name__),
+                    analyzer=stat["analyzer"],
                     total=stat["total"],
                     publishable=stat["publishable"],
                 )
-                for cls, stat in self.calc_stats(issues).items()
+                for stat in self.calc_stats(issues)
             ]
         )
 
