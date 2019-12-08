@@ -268,10 +268,6 @@ class BugbugUtils:
             )
             return
 
-        # If the failure risk is low, don't trigger tests.
-        if not failure_risk:
-            return
-
         # If this diff does not belong to a revision we pushed to try, return.
         try:
             push = self.diff_to_push.get(diff_id)
@@ -283,6 +279,10 @@ class BugbugUtils:
                 diff_id=diff_id,
                 bugbug_task_id=bugbug_task_id,
             )
+            return
+
+        # If the failure risk is low, don't trigger tests.
+        if not failure_risk:
             return
 
         try:
