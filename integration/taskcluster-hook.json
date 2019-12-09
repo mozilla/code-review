@@ -41,10 +41,10 @@
             "maxRunTime": 7200
         },
         "priority": "normal",
-        "provisionerId": "aws-provisioner-v1",
+        "provisionerId": "proj-relman",
         "retries": 1,
         "routes": [],
-        "schedulerId": "proj-relman",
+        "schedulerId": "-",
         "scopes": [
             "secrets:get:project/relman/code-review/integration-CHANNEL",
             "notify:email:*"
