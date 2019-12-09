@@ -419,7 +419,7 @@ class Events(object):
             ]
 
         if self.bugbug_utils:
-            consumers_setup.append(self.bugbug_utils.setup),
+            consumers_setup.append(self.bugbug_utils.setup()),
             consumers += [
                 self.bus.run(
                     self.bugbug_utils.process_build, QUEUE_BUGBUG, sequential=False
