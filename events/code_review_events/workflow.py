@@ -144,7 +144,7 @@ class CodeReview(PhabricatorActions):
         )
         return True
 
-    def publish_results(self, payload):
+    async def publish_results(self, payload):
         if not self.publish:
             logger.debug("Skipping Phabricator publication")
             return
