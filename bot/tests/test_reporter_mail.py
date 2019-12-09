@@ -110,10 +110,15 @@ def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
     r.publish(mock_issues, mock_revision, [])
 
     # Check stats
-    mock_cls = mock_issues[0].__class__
-    assert r.calc_stats(mock_issues) == {
-        mock_cls: {"total": 5, "publishable": 3, "publishable_paths": ["/path/to/file"]}
-    }
+    assert r.calc_stats(mock_issues) == [
+        {
+            "analyzer": "mock-analyzer",
+            "help": None,
+            "total": 5,
+            "publishable": 3,
+            "publishable_paths": ["/path/to/file"],
+        }
+    ]
 
 
 def test_mail_builderrors(

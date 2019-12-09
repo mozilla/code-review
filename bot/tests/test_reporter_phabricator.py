@@ -32,6 +32,17 @@ If you see a problem in this automated review, [please report it here](https://b
 """  # noqa
 
 
+VALID_FLAKE8_MESSAGE = """
+Code analysis found 1 defect in the diff 42:
+ - 1 defect found by mozlint-py-flake8
+
+You can run this analysis locally with:
+ - `./mach lint --warnings path/to/file` (JS/Python/etc)
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+"""  # noqa
+
+
 VALID_COVERAGE_MESSAGE = """
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
  - [path/to/test.cpp](https://coverage.moz.tools/#revision=latest&path=path%2Fto%2Ftest.cpp&view=file)
@@ -46,7 +57,7 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_DEFAULT_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
- - 1 defect found by a generic analyzer
+ - 1 defect found by full-file-analyzer
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """  # noqa
@@ -106,7 +117,7 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
         )
 
     issue = ClangTidyIssue(
-        "mock-clang-tidy",
+        "source-test-clang-tidy",
         revision,
         "another_test.cpp",
         "42",
@@ -169,7 +180,9 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
         }
         reporter = PhabricatorReporter({"analyzers": ["clang-format"]}, api=api)
 
-    issue = ClangFormatIssue("mock-clang-format", "dom/test.cpp", 42, 1, revision)
+    issue = ClangFormatIssue(
+        "source-test-clang-format", "dom/test.cpp", 42, 1, revision
+    )
     assert issue.is_publishable()
 
     revision.improvement_patches = [
@@ -186,6 +199,73 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     call = responses.calls[-1]
     assert call.request.url == "http://phabricator.test/api/differential.createcomment"
     assert call.response.headers.get("unittest") == "clang-format"
+
+
+def test_phabricator_mozlint(mock_config, mock_phabricator, mock_try_task):
+    """
+    Test Phabricator reporter publication on a mock mozlint issue
+    """
+    from code_review_bot.report.phabricator import PhabricatorReporter
+    from code_review_bot.revisions import Revision
+    from code_review_bot.tasks.lint import MozLintIssue
+
+    def _check_comment(request):
+        # Check the Phabricator main comment is well formed
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+        details = json.loads(payload["params"][0])
+        assert details["message"] == VALID_FLAKE8_MESSAGE.format(
+            results=mock_config.taskcluster.results_dir
+        )
+
+        # Outputs dummy empty response
+        resp = {"error_code": None, "result": None}
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "flake8"},
+            json.dumps(resp),
+        )
+
+    responses.add_callback(
+        responses.POST,
+        "http://phabricator.test/api/differential.createcomment",
+        callback=_check_comment,
+    )
+
+    with mock_phabricator as api:
+        revision = Revision.from_try(mock_try_task, api)
+        revision.lines = {
+            # Add dummy lines diff
+            "python/test.py": [41, 42, 43],
+            "dom/test.cpp": [42],
+        }
+        revision.files = revision.lines.keys()
+        reporter = PhabricatorReporter({"analyzers": ["clang-format"]}, api=api)
+
+    issue = MozLintIssue(
+        analyzer="source-test-mozlint-py-flake8",
+        path="python/test.py",
+        lineno=42,
+        column=1,
+        message="A bad bad error",
+        level="error",
+        revision=revision,
+        linter="flake8",
+        check="EXXX",
+    )
+    assert issue.is_publishable()
+
+    issues, patches = reporter.publish([issue], revision, [])
+    assert len(issues) == 1
+    assert len(patches) == 0
+
+    # Check the callback has been used
+    assert len(responses.calls) > 0
+    call = responses.calls[-1]
+    print(list(responses.calls))
+    assert call.request.url == "http://phabricator.test/api/differential.createcomment"
+    assert call.response.headers.get("unittest") == "flake8"
 
 
 def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
@@ -316,7 +396,7 @@ def test_phabricator_clang_tidy_and_coverage(
         )
 
     issue_clang_tidy = ClangTidyIssue(
-        "mock-clang-format",
+        "source-test-clang-tidy",
         revision,
         "another_test.cpp",
         "42",

@@ -4,34 +4,17 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import itertools
+import re
 import urllib.parse
+from typing import Pattern
 
-from code_review_bot.tasks.clang_format import ClangFormatIssue
-from code_review_bot.tasks.clang_tidy import ClangTidyIssue
-from code_review_bot.tasks.coverity import CoverityIssue
-from code_review_bot.tasks.default import DefaultIssue
-from code_review_bot.tasks.infer import InferIssue
-from code_review_bot.tasks.lint import MozLintIssue
-
-COMMENT_PARTS = {
-    ClangTidyIssue: {
-        "defect": " - {nb} found by clang-tidy",
-        "analyzer": " - `./mach static-analysis check {files}` (C/C++)",
-    },
-    InferIssue: {
-        "defect": " - {nb} found by infer",
-        "analyzer": " - `./mach static-analysis check-java path/to/file.java` (Java)",
-    },
-    CoverityIssue: {"defect": " - {nb} found by Coverity"},
-    ClangFormatIssue: {
-        "defect": " - {nb} found by clang-format",
-        "analyzer": " - `./mach clang-format -s -p {files}` (C/C++)",
-    },
-    MozLintIssue: {
-        "defect": " - {nb} found by mozlint",
-        "analyzer": " - `./mach lint --warnings path/to/file` (JS/Python/etc)",
-    },
-    DefaultIssue: {"defect": " - {nb} found by a generic analyzer"},
+HELP_COMMANDS = {
+    "source-test-clang-tidy": " - `./mach static-analysis check {files}` (C/C++)",
+    "source-test-infer-infer": " - `./mach static-analysis check-java path/to/file.java` (Java)",
+    "source-test-clang-format": " - `./mach clang-format -s -p {files}` (C/C++)",
+    re.compile(
+        "^source-test-mozlint-.*"
+    ): " - `./mach lint --warnings path/to/file` (JS/Python/etc)",
 }
 COMMENT_FAILURE = """
 Code analysis found {defects_total} in the diff {diff_id}:
@@ -97,17 +80,35 @@ class Reporter(object):
     def calc_stats(self, issues):
         """
         Calc stats about issues:
-        * group issues by class name
+        * group issues by analyzer
         * count their total number
         * count their publishable number
         """
+
         groups = itertools.groupby(
-            sorted(issues, key=lambda x: str(x.__class__)), lambda x: x.__class__
+            sorted(issues, key=lambda i: i.analyzer), lambda i: i.analyzer
         )
 
-        def stats(items):
+        def stats(analyzer, items):
             _items = list(items)
+
+            # Lookup the help message, supporting regexes
+            _help = HELP_COMMANDS.get(analyzer)
+            if _help is None:
+                for regex, help_value in HELP_COMMANDS.items():
+                    if isinstance(regex, Pattern) and regex.match(analyzer):
+                        assert (
+                            _help is None
+                        ), f"Duplicate help command found for {analyzer}"
+                        _help = help_value
+
+            # Strip source-test- to get cleaner names
+            if analyzer.startswith("source-test-"):
+                analyzer = analyzer[12:]
+
             return {
+                "analyzer": analyzer,
+                "help": _help,
                 "total": len(_items),
                 "publishable": sum([i.is_publishable() for i in _items]),
                 "publishable_paths": list(
@@ -115,9 +116,7 @@ class Reporter(object):
                 ),
             }
 
-        from collections import OrderedDict
-
-        return OrderedDict([(cls, stats(items)) for cls, items in groups])
+        return [stats(analyzer, items) for analyzer, items in groups]
 
     def build_comment(
         self, revision, issues, bug_report_url, patches=[], task_failures=[]
@@ -136,17 +135,17 @@ class Reporter(object):
 
         # Build parts depending on issues
         defects, analyzers = [], []
-        for cls, cls_stats in stats.items():
-            part = COMMENT_PARTS.get(cls)
-            assert part is not None, "Unsupported issue class {}".format(cls)
+        for stat in stats:
             defects.append(
-                part["defect"].format(nb=pluralize("defect", cls_stats["publishable"]))
+                " - {nb} found by {analyzer}".format(
+                    analyzer=stat["analyzer"],
+                    nb=pluralize("defect", stat["publishable"]),
+                )
             )
-            if "analyzer" in part:
+            _help = stat.get("help")
+            if _help is not None:
                 analyzers.append(
-                    part["analyzer"].format(
-                        files=" ".join(cls_stats["publishable_paths"])
-                    )
+                    _help.format(files=" ".join(stat["publishable_paths"]))
                 )
 
         # Build top comment
