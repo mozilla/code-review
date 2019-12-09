@@ -205,8 +205,6 @@ class CodeReview(PhabricatorActions):
         else:
             logger.warning("Unsupported publication", mode=mode, build=build)
 
-        return True
-
     async def trigger_autoland(self, payload: dict):
         """
         Trigger a code review autoland ingestion task
