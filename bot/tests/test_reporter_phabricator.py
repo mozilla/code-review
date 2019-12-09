@@ -11,7 +11,7 @@ import responses
 
 VALID_CLANG_TIDY_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
- - 1 defect found by source-test-clang-tidy
+ - 1 defect found by clang-tidy
 
 You can run this analysis locally with:
  - `./mach static-analysis check another_test.cpp` (C/C++)
@@ -21,7 +21,7 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_CLANG_FORMAT_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
- - 1 defect found by source-test-clang-format
+ - 1 defect found by clang-format
 
 You can run this analysis locally with:
  - `./mach clang-format -s -p dom/test.cpp` (C/C++)
@@ -34,7 +34,7 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_FLAKE8_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
- - 1 defect found by source-test-mozlint-py-flake8
+ - 1 defect found by mozlint-py-flake8
 
 You can run this analysis locally with:
  - `./mach lint --warnings path/to/file` (JS/Python/etc)

@@ -85,10 +85,9 @@ class Reporter(object):
         * count their publishable number
         """
 
-        def by_analyzer(i):
-            return i.analyzer
-
-        groups = itertools.groupby(sorted(issues, key=by_analyzer), by_analyzer)
+        groups = itertools.groupby(
+            sorted(issues, key=lambda i: i.analyzer), lambda i: i.analyzer
+        )
 
         def stats(analyzer, items):
             _items = list(items)
@@ -98,8 +97,14 @@ class Reporter(object):
             if _help is None:
                 for regex, help_value in HELP_COMMANDS.items():
                     if isinstance(regex, Pattern) and regex.match(analyzer):
+                        assert (
+                            _help is None
+                        ), f"Duplicate help command found for {analyzer}"
                         _help = help_value
-                        break
+
+            # Strip source-test- to get cleaner names
+            if analyzer.startswith("source-test-"):
+                analyzer = analyzer[12:]
 
             return {
                 "analyzer": analyzer,
