@@ -28,10 +28,12 @@
         },
         "payload": {
             "artifacts": {},
-            "cache": {},
+            "cache": {
+              "code-review-integration-CHANNEL": "/cache"
+            },
             "capabilities": {},
             "env": {
-                "CLONE_DIR": "/clone",
+                "CLONE_DIR": "/cache",
                 "TASKCLUSTER_SECRET": "project/relman/code-review/integration-CHANNEL"
             },
             "features": {
@@ -47,13 +49,14 @@
         "schedulerId": "-",
         "scopes": [
             "secrets:get:project/relman/code-review/integration-CHANNEL",
+            "docker-worker:cache:code-review-integration-CHANNEL",
             "notify:email:*"
         ],
         "tags": {},
         "workerType": "ci"
     },
     "triggerSchema": {
-        "additionalProperties": true,
+        "additionalProperties": false,
         "type": "object"
     }
 }
