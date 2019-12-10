@@ -1,3 +1,0 @@
-[extensions]
-robustcheckout = /src/version-control-tools/hgext/robustcheckout
-strip =
