@@ -282,6 +282,28 @@ tasks:
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
+    - taskId: {$eval: as_slugid("integration_check_tests")}
+      provisionerId: proj-relman
+      workerType: ci
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      payload:
+        maxRunTime: 3600
+        image: "python:${python_version}-alpine"
+        command:
+          - sh
+          - -lxce
+          - "apk add git --quiet &&
+            git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+            cd /src/tools && ${pip_install} . &&
+            cd /src/integration && ${pip_install} -r requirements.txt -r requirements-dev.txt &&
+            pytest -v"
+      metadata:
+        name: "Code Review Integration checks: unit tests"
+        description: Check python code with pytest
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
+
     - taskId: {$eval: as_slugid("integration_build")}
       created: {$fromNow: ''}
       deadline: {$fromNow: '1 hour'}
@@ -289,6 +311,7 @@ tasks:
       workerType: ci
       dependencies:
         - {$eval: as_slugid("check_lint")}
+        - {$eval: as_slugid("integration_check_tests")}
       payload:
         capabilities:
           privileged: true
