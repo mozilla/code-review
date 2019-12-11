@@ -1,6 +1,6 @@
 Logbook==1.5.3
 structlog==19.2.0
-taskcluster==24.0.1
+taskcluster==24.1.0
 raven==6.10.0
 
 # limit async-timeout version to avoid using the alpha 4.0.0a0
