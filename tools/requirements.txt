@@ -8,5 +8,5 @@ raven==6.10.0
 async-timeout<4.0,>=3.0
 
 # limits to avoid building with gcc on alpine
-multidict<4.6.0
+multidict<4.8.0
 yarl<1.4.0
