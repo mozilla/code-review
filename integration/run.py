@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import argparse
+import json
 import os
 import re
 import shutil
@@ -121,34 +122,40 @@ def patch(filename, repo_dir, message):
     return rev
 
 
-def publish(repo_dir, base):
+def publish(repo_dir, repo_callsign, revision):
     """
     Publish diff on Phabricator
     from the base of the repository
     """
+
+    def _dump(path, payload):
+        if os.path.exists(path):
+            logger.info("Skip overriding arc config", path=path)
+            return
+
+        with open(path, "w") as f:
+            json.dump(payload, f, indent=4, sort_keys=True)
+            logger.info("Setup arc configuration", path=path)
+
+    # Write arcrc config files
     phab_url = taskcluster.secrets["phabricator"]["url"]
     phab_token = taskcluster.secrets["phabricator"]["token"]
+    _dump(os.path.expanduser("~/.arcrc"), {"hosts": {phab_url: {"token": phab_token}}})
+    _dump(
+        os.path.join(repo_dir, ".hg", ".arcconfig"),
+        {"repository.callsign": repo_callsign, "phabricator.uri": phab_url},
+    )
+
     logger.info(
         "Publishing a revision on phabricator", url=phab_url, local_revision=revision
     )
-    cmd = [
-        "arc",
-        f"--conduit-uri={phab_url}",
-        f"--conduit-token={phab_token}",
-        "--no-ansi",
-        "diff",
-        "--nolint",
-        "--nounit",
-        "--excuse=integration-test",
-        "--verbatim",
-        "--create",
-        f"{base}",
-    ]
+    cmd = ["moz-phab", "submit", "--yes", "--no-lint", "--no-bug", f"{revision}"]
     output = subprocess.check_output(cmd, cwd=repo_dir)
 
-    # Parse output to get the revision url
-    match = re.search(r"Revision URI: (.*)", output.decode("utf-8"), re.MULTILINE)
-    assert match is not None, "No revision found in arc output"
+    # Parse output to get the revision url on the last line
+    last_line = output.splitlines()[-1]
+    match = re.search(fr"^-> ({phab_url}/D\d+)$", last_line.decode("utf-8"))
+    assert match is not None, f"No revision found in moz-phab output:\n{output}"
 
     return match.group(1)
 
@@ -182,7 +189,7 @@ if __name__ == "__main__":
     revision = patch("nss.diff", nss, "Bug XXYYZZ - Code review integration test")
 
     # Submit commit on Phabricator instance
-    url = publish(nss, base)
+    url = publish(nss, "NSS", revision)
 
     # Send notification to admins
     notify(f"New code-review integration test: {url}")
