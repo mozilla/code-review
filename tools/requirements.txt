@@ -1,12 +1,8 @@
-Logbook==1.5.3
-structlog==19.2.0
-taskcluster==24.0.1
-raven==6.10.0
-
 # limit async-timeout version to avoid using the alpha 4.0.0a0
-# still breaking the events build
 async-timeout<4.0,>=3.0
-
-# limits to avoid building with gcc on alpine
+Logbook==1.5.3
 multidict<4.6.0
+raven==6.10.0
+structlog==19.2.0
+taskcluster==24.1.1
 yarl<1.4.0
