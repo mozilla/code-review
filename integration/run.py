@@ -58,6 +58,11 @@ def configure():
     # Make sure the clone dir is available
     os.makedirs(args.clone_dir, exist_ok=True)
 
+    # Check the url is correctly formatted
+    assert taskcluster.secrets["phabricator"]["url"].endswith(
+        "/api/"
+    ), "Phabricator url must end in /api/"
+
     return args
 
 
