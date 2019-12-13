@@ -39,7 +39,7 @@
             "features": {
                 "taskclusterProxy": true
             },
-            "image": "mozilla/code-review:REVISION",
+            "image": "mozilla/code-review:integration-REVISION",
             "maxRunTime": 7200
         },
         "priority": "normal",

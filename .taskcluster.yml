@@ -326,9 +326,9 @@ tasks:
           - --image
           - mozilla/code-review
           - --tag
-          - "${channel}"
+          - "integration-${channel}"
           - --tag
-          - "${head_rev}"
+          - "integration-${head_rev}"
           - --write
           - /integration.tar
           - integration/docker/Dockerfile
