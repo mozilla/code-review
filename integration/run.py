@@ -154,7 +154,15 @@ def publish(repo_dir, repo_callsign, revision):
     logger.info(
         "Publishing a revision on phabricator", url=phab_url, local_revision=revision
     )
-    cmd = ["moz-phab", "submit", "--yes", "--no-lint", "--no-bug", f"{revision}"]
+    cmd = [
+        "moz-phab",
+        "submit",
+        "--yes",
+        "--no-lint",
+        "--no-bug",
+        "--no-arc",
+        f"{revision}",
+    ]
     output = subprocess.check_output(cmd, cwd=repo_dir)
 
     # Parse output to get the revision url on the last line
