@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import random
 
 import jsone
@@ -267,15 +268,10 @@ class BugbugUtils:
             )
             return
 
-        # If the failure risk is low, don't trigger tests.
-        if not failure_risk:
-            return
-
         # If this diff does not belong to a revision we pushed to try, return.
         try:
             push = self.diff_to_push.get(diff_id)
-            # TODO: Trigger removal, but don't wait for it.
-            await self.diff_to_push.rem(diff_id)
+            asyncio.create_task(self.diff_to_push.rem(diff_id))
         except KeyError:
             logger.warning(
                 "bugbug test select notification for a revision we did not push to try",
@@ -283,6 +279,10 @@ class BugbugUtils:
                 diff_id=diff_id,
                 bugbug_task_id=bugbug_task_id,
             )
+            return
+
+        # If the failure risk is low, don't trigger tests.
+        if not failure_risk:
             return
 
         try:

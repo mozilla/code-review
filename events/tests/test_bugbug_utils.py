@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import json
 import os
 
@@ -311,6 +312,11 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
         )
         await bugbug_utils.got_bugbug_test_select_end(payload)
         assert len(bugbug_utils.task_group_to_build) == 0
+        # Wait removal of object from diff_to_push to be done.
+        tasks = set(asyncio.all_tasks())
+        tasks.remove(asyncio.current_task())
+        await asyncio.gather(*tasks)
+        assert len(bugbug_utils.diff_to_push) == 0
 
     # Nothing happens when the failure risk is high but there are no selected tasks.
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -338,6 +344,11 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
         )
         await bugbug_utils.got_bugbug_test_select_end(payload)
         assert len(bugbug_utils.task_group_to_build) == 0
+        # Wait removal of object from diff_to_push to be done.
+        tasks = set(asyncio.all_tasks())
+        tasks.remove(asyncio.current_task())
+        await asyncio.gather(*tasks)
+        assert len(bugbug_utils.diff_to_push) == 0
 
     # Stuff happens.
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -397,6 +408,11 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
         await bugbug_utils.got_bugbug_test_select_end(payload)
         assert len(bugbug_utils.task_group_to_build) == 1
         assert bugbug_utils.task_group_to_build.get("HDnvYOibTMS8h_5Qzv6fWg") == build
+        # Wait removal of object from diff_to_push to be done.
+        tasks = set(asyncio.all_tasks())
+        tasks.remove(asyncio.current_task())
+        await asyncio.gather(*tasks)
+        assert len(bugbug_utils.diff_to_push) == 0
 
 
 @pytest.mark.asyncio
