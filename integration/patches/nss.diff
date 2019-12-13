@@ -1,0 +1,11 @@
+diff --git a/lib/mozpkix/lib/pkixnames.cpp b/lib/mozpkix/lib/pkixnames.cpp
+--- a/lib/mozpkix/lib/pkixnames.cpp
++++ b/lib/mozpkix/lib/pkixnames.cpp
+@@ -77,6 +77,7 @@ ReadGeneralName(Reader& reader,
+                 /*out*/ GeneralNameType& generalNameType,
+                 /*out*/ Input& value)
+ {
++  int a = null;
+   uint8_t tag;
+   Result rv = der::ReadTagAndGetValue(reader, tag, value);
+   if (rv != Success) {

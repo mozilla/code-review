@@ -6,6 +6,6 @@ ADD events /src/events
 RUN cd /src/tools && python setup.py install
 RUN cd /src/events && python setup.py install
 
-RUN /src/events/docker/bootstrap.sh
+RUN /src/tools/docker/bootstrap-mercurial.sh
 
 CMD ["code-review-events"]
