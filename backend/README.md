@@ -40,7 +40,7 @@ You can retrieve a Database dump from an Heroku instance on your computer using 
 
 ```
 heroku pg:backups:capture -a code-review-backend-testing
-heroku  pg:backups:download -a code-review-backend-testing
+heroku pg:backups:download -a code-review-backend-testing
 ```
 
 This will produce a local Postgres binary dump named `latest.dump`.
