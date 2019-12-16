@@ -45,7 +45,7 @@ heroku pg:backups:download -a code-review-backend-testing
 
 This will produce a local Postgres binary dump named `latest.dump`.
 
-To use that dump, you'll need a local postgresql instance running. The following docker configuration works well for local development :
+To use this dump, you'll need a local PostgreSQL instance running. The following Docker configuration works well for local development:
 
 * a `code_review` database is created,
 * with user/password credentials `postgres` / `crdev1234`,
