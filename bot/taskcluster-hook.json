@@ -85,7 +85,6 @@
         "scopes": [
             "secrets:get:project/relman/code-review/runtime-CHANNEL",
             "index:insert-task:project.relman.CHANNEL.code-review.*",
-            "index:insert-task:project.relman.tasks.*",
             "notify:email:*"
         ],
         "tags": {},
