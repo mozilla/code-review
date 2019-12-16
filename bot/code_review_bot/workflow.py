@@ -244,9 +244,6 @@ class Workflow(object):
             TASKCLUSTER_NAMESPACE.format(channel=settings.app_channel, name=name)
             for name in namespaces
         ]
-        full_namespaces.append(
-            "project.relman.tasks.{}".format(settings.taskcluster.task_id)
-        )
 
         # Index for all required namespaces
         for namespace in full_namespaces:
