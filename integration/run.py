@@ -144,11 +144,12 @@ def publish(repo_dir, repo_callsign, revision):
 
     # Write arcrc config files
     phab_url = taskcluster.secrets["phabricator"]["url"]
+    base_url = phab_url.replace("/api/", "/")
     phab_token = taskcluster.secrets["phabricator"]["token"]
     _dump(os.path.expanduser("~/.arcrc"), {"hosts": {phab_url: {"token": phab_token}}})
     _dump(
         os.path.join(repo_dir, ".hg", ".arcconfig"),
-        {"repository.callsign": repo_callsign, "phabricator.uri": phab_url},
+        {"repository.callsign": repo_callsign, "phabricator.uri": base_url},
     )
 
     logger.info(
@@ -167,7 +168,7 @@ def publish(repo_dir, repo_callsign, revision):
 
     # Parse output to get the revision url on the last line
     last_line = output.splitlines()[-1]
-    match = re.search(fr"^-> ({phab_url}/D\d+)$", last_line.decode("utf-8"))
+    match = re.search(fr"^-> ({base_url}D\d+)$", last_line.decode("utf-8"))
     assert match is not None, f"No revision found in moz-phab output:\n{output}"
 
     return match.group(1)
