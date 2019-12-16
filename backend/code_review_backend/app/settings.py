@@ -96,12 +96,21 @@ WSGI_APPLICATION = "code_review_backend.app.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(ROOT_DIR, "db.sqlite3"),
+if "DATABASE_URL" in os.environ:
+    logger.info("Using remote database from $DATABASE_URL")
+    DATABASES = {
+        "default": dj_database_url.parse(
+            os.environ["DATABASE_URL"], ssl_require="DYNO" in os.environ
+        )
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(ROOT_DIR, "db.sqlite3"),
+        }
+    }
+    logger.info("DATABASE_URL not found, will use sqlite. Data may be lost.")
 
 
 # Password validation
@@ -183,15 +192,6 @@ if "DYNO" in os.environ:
     logger.info("Setting up Heroku environment")
     ALLOWED_HOSTS = ["*"]
     DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
-
-    # Database setup
-    if "DATABASE_URL" in os.environ:
-        logger.info("Using remote database from $DATABASE_URL")
-        DATABASES["default"] = dj_database_url.parse(
-            os.environ["DATABASE_URL"], ssl_require=True
-        )
-    else:
-        logger.info("DATABASE_URL not found, will use sqlite. Data may be lost.")
 
     # Insert Whitenoise Middleware after the security and cors ones
     MIDDLEWARE.insert(2, "whitenoise.middleware.WhiteNoiseMiddleware")
