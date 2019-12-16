@@ -66,7 +66,7 @@ To restore the dump, use the following command (using the password used to start
 pg_restore --verbose --clean --no-acl --no-owner -h localhost -U postgres -d code_review latest.dump
 ```
 
-Finally you can use that database with the backed as:
+Finally you can use that database with the backend as:
 
 ```
 export DATABASE_URL=postgres://postgres:crdev1234@localhost/code_review
