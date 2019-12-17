@@ -203,8 +203,12 @@ export default new Vuex.Store({
 
     load_history (state, payload) {
       let url = this.state.backend_url + '/v1/check/history/'
+      let params = payload || {}
 
-      return axios.get(url).then(resp => {
+      // Remove null values from params
+      Object.entries(params).forEach(([k, v]) => { if (v === null) delete params[k] })
+
+      return axios.get(url, { params }).then(resp => {
         state.commit('use_history', resp.data)
       })
     }

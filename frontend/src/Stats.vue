@@ -1,6 +1,7 @@
 <script>
 import mixins from './mixins.js'
 import Progress from './Progress.vue'
+import Choice from './Choice.vue'
 import Chartist from 'chartist'
 
 export default {
@@ -10,7 +11,12 @@ export default {
   ],
   data () {
     return {
-      sort: 'detected',
+      // Data filters
+      analyzer: null,
+      repository: null,
+      check: null,
+
+      // Options for chartist
       chartOptions: {
         height: 300,
         axisX: {
@@ -24,29 +30,58 @@ export default {
       }
     }
   },
-  components: { Progress },
+  components: { Progress, Choice },
   mounted () {
     this.$store.dispatch('load_stats')
     this.$store.dispatch('load_history')
   },
+  methods: {
+    use_filter (name, value) {
+      // Store new filter value
+      this.$set(this, name, value)
+
+      // Load new history data
+      this.$store.dispatch('load_history', {
+        repository: this.repository,
+        analyzer: this.analyzer,
+        check: this.check
+      })
+    }
+  },
   computed: {
-    checks () {
+    stats_filtered () {
       if (!this.stats) {
         return null
       }
-      let sortStr = (x, y) => x.toLowerCase().localeCompare(y.toLowerCase())
-      var sorts = {
-        'repository': (x, y) => sortStr(x.repository, y.repository),
-        'analyzer': (x, y) => sortStr(x.analyzer, y.analyzer) || sortStr(x.check, y.check),
-        'check': (x, y) => sortStr(x.check, y.check),
-        'detected': (x, y) => y.total - x.total,
-        'published': (x, y) => y.publishable - x.publishable
+
+      // Sort by detected
+      let stats = this.stats.sort((x, y) => x.detected > y.detected)
+
+      // Apply filters
+      if (this.repository !== null) {
+        stats = stats.filter(s => s.repository === this.repository)
+      }
+      if (this.analyzer !== null) {
+        stats = stats.filter(s => s.analyzer === this.analyzer)
+      }
+      if (this.check !== null) {
+        stats = stats.filter(s => s.check === this.check)
       }
 
-      // Apply local sort to the stats from store
-      this.stats.sort(sorts[this.sort])
-      return this.stats
+      return stats
     },
+
+    // Available filtering data
+    repositories () {
+      return [...new Set(this.stats_filtered.map(x => x.repository))].sort()
+    },
+    analyzers () {
+      return [...new Set(this.stats_filtered.map(x => x.analyzer))].sort()
+    },
+    checks () {
+      return [...new Set(this.stats_filtered.map(x => x.check))].sort()
+    },
+
     history () {
       const history = this.$store.state.history
       if (!history) {
@@ -61,11 +96,6 @@ export default {
           }
         ]
       }
-    }
-  },
-  methods: {
-    select_sort (name) {
-      this.$set(this, 'sort', name)
     }
   }
 }
@@ -82,34 +112,30 @@ export default {
     </chartist>
 
     <div v-if="stats">
-      <table class="table is-fullwidth" v-if="checks">
+      <table class="table is-fullwidth" v-if="stats">
         <thead>
           <tr>
             <th>
-              <span class="button" v-on:click="select_sort('repository')" :class="{'is-focused': sort == 'repository' }">Repository</span>
+              <Choice :choices="repositories" name="repository" v-on:new-choice="use_filter('repository', $event)"/>
             </th>
             <th>
-              <span class="button" v-on:click="select_sort('analyzer')" :class="{'is-focused': sort == 'analyzer' }">Analyzer</span>
+              <Choice :choices="analyzers" name="analyzer" v-on:new-choice="use_filter('analyzer', $event)"/>
             </th>
             <th>
-              <span class="button" v-on:click="select_sort('check')" :class="{'is-focused': sort == 'check' }">Check</span>
+              <Choice :choices="checks" name="check" v-on:new-choice="use_filter('check', $event)"/>
             </th>
-            <th>
-              <span class="button" v-on:click="select_sort('detected')" :class="{'is-focused': sort == 'detected' }">Detected</span>
-            </th>
-            <th>
-              <span class="button" v-on:click="select_sort('published')" :class="{'is-focused': sort == 'published' }">Published</span>
-            </th>
+            <th>Detected</th>
+            <th>Published</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="check in checks" :class="{'publishable': check.publishable > 0}">
-            <td>{{ check.repository }}</td>
-            <td>{{ check.analyzer }}</td>
-            <td>{{ check.check }}</td>
-            <td>{{ check.total }}</td>
+          <tr v-for="stat in stats_filtered" :class="{'publishable': stat.publishable > 0}">
+            <td>{{ stat.repository }}</td>
+            <td>{{ stat.analyzer }}</td>
+            <td>{{ stat.check }}</td>
+            <td>{{ stat.total }}</td>
             <td>
-              <router-link v-if="check.publishable > 0" :to="{ name: 'check', params: { check: check.key }}">{{ check.publishable }}</router-link>
+              <router-link v-if="stat.publishable > 0" :to="{ name: 'check', params: { check: check.key }}">{{ stat.publishable }}</router-link>
               <span class="has-text-grey" v-else>0</span>
             </td>
           </tr>

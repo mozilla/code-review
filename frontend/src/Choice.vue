@@ -9,7 +9,7 @@
     <div class="dropdown-menu" id="dropdown-menu" role="menu">
       <div class="dropdown-content">
         <a class="dropdown-item" v-on:click="select(null, $event)" :class="{'is-active': current === null }">
-          {{ default_choice_name }}
+          No filter
         </a>
         <hr class="dropdown-divider">
         <a class="dropdown-item" v-for="choice in choices" v-on:click="select(choice, $event)" :class="{'is-active': current === choice  || current === choice.value}">
