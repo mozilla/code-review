@@ -16,6 +16,7 @@ export default new Vuex.Store({
     repositories: null,
     diff: null,
     issues: {},
+    history: null,
     revision: null
   },
   mutations: {
@@ -68,6 +69,11 @@ export default new Vuex.Store({
     add_stats (state, data) {
       state.stats = state.stats.concat(data.results)
       state.total_stats = data.count
+    },
+
+    // Store check history
+    use_history (state, data) {
+      state.history = data
     }
   },
   actions: {
@@ -192,6 +198,14 @@ export default new Vuex.Store({
             continuationToken: resp.data.continuationToken
           })
         }
+      })
+    },
+
+    load_history (state, payload) {
+      let url = this.state.backend_url + '/v1/check/history/'
+
+      return axios.get(url).then(resp => {
+        state.commit('use_history', resp.data)
       })
     }
   }

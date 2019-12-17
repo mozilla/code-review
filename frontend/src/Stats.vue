@@ -1,6 +1,7 @@
 <script>
 import mixins from './mixins.js'
 import Progress from './Progress.vue'
+import Chartist from 'chartist'
 
 export default {
   mixins: [
@@ -9,12 +10,24 @@ export default {
   ],
   data () {
     return {
-      sort: 'detected'
+      sort: 'detected',
+      chartOptions: {
+        height: 300,
+        axisX: {
+          type: Chartist.FixedScaleAxis,
+          divisor: 15,
+          labelInterpolationFnc: function (value) {
+            const date = new Date(value)
+            return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
+          }
+        }
+      }
     }
   },
   components: { Progress },
   mounted () {
     this.$store.dispatch('load_stats')
+    this.$store.dispatch('load_history')
   },
   computed: {
     checks () {
@@ -33,6 +46,21 @@ export default {
       // Apply local sort to the stats from store
       this.stats.sort(sorts[this.sort])
       return this.stats
+    },
+    history () {
+      const history = this.$store.state.history
+      if (!history) {
+        return null
+      }
+
+      return {
+        series: [
+          {
+            name: 'Total issues',
+            data: history.map(point => { return { x: new Date(point.date), y: point.total } })
+          }
+        ]
+      }
     }
   },
   methods: {
@@ -46,6 +74,12 @@ export default {
 <template>
   <div>
     <Progress name="Statistics" />
+
+    <chartist v-if="history !== null"
+        type="Line"
+        :data="history"
+        :options="chartOptions" >
+    </chartist>
 
     <div v-if="stats">
       <table class="table is-fullwidth" v-if="checks">
@@ -90,5 +124,10 @@ export default {
 <style scoped>
 tr.publishable {
   background: #e6ffcc;
+}
+
+.ct-square {
+  margin: 20px 0;
+  height: 300px;
 }
 </style>
