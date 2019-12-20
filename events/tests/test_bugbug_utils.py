@@ -270,7 +270,7 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
         pass
 
     try:
-        await bugbug_utils.task_group_to_build.rem("HDnvYOibTMS8h_5Qzv6fWg")
+        await bugbug_utils.task_group_to_push.rem("HDnvYOibTMS8h_5Qzv6fWg")
     except KeyError:
         pass
 
@@ -302,7 +302,7 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
 
         assert len(bugbug_utils.diff_to_push) == 0
         await bugbug_utils.got_bugbug_test_select_end(payload)
-        assert len(bugbug_utils.task_group_to_build) == 0
+        assert len(bugbug_utils.task_group_to_push) == 0
 
     # Nothing happens when the failure risk is low.
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -323,7 +323,7 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
             "125397", {"revision": "123", "build": build}
         )
         await bugbug_utils.got_bugbug_test_select_end(payload)
-        assert len(bugbug_utils.task_group_to_build) == 0
+        assert len(bugbug_utils.task_group_to_push) == 0
         # Wait removal of object from diff_to_push to be done.
         tasks = set(asyncio.all_tasks())
         tasks.remove(asyncio.current_task())
@@ -355,7 +355,7 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
             "125397", {"revision": "123", "build": build}
         )
         await bugbug_utils.got_bugbug_test_select_end(payload)
-        assert len(bugbug_utils.task_group_to_build) == 0
+        assert len(bugbug_utils.task_group_to_push) == 0
         # Wait removal of object from diff_to_push to be done.
         tasks = set(asyncio.all_tasks())
         tasks.remove(asyncio.current_task())
@@ -414,12 +414,11 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
             callback=trigger_hook_callback,
         )
 
-        await bugbug_utils.diff_to_push.set(
-            "125397", {"revision": "123", "build": build}
-        )
+        push = {"revision": "123", "build": build}
+        await bugbug_utils.diff_to_push.set("125397", push)
         await bugbug_utils.got_bugbug_test_select_end(payload)
-        assert len(bugbug_utils.task_group_to_build) == 1
-        assert bugbug_utils.task_group_to_build.get("HDnvYOibTMS8h_5Qzv6fWg") == build
+        assert len(bugbug_utils.task_group_to_push) == 1
+        assert bugbug_utils.task_group_to_push.get("HDnvYOibTMS8h_5Qzv6fWg") == push
         # Wait removal of object from diff_to_push to be done.
         tasks = set(asyncio.all_tasks())
         tasks.remove(asyncio.current_task())
@@ -428,7 +427,7 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
 
 
 @pytest.mark.asyncio
-async def test_got_try_task_end(PhabricatorMock, mock_taskcluster):
+async def test_got_try_task_end(PhabricatorMock, mock_taskcluster, mock_treeherder):
     bus = MessageBus()
     build = PhabricatorBuild(
         MockRequest(
@@ -501,7 +500,7 @@ async def test_got_try_task_end(PhabricatorMock, mock_taskcluster):
     bugbug_utils.register(bus)
 
     try:
-        await bugbug_utils.task_group_to_build.rem("HDnvYOibTMS8h_5Qzv6fWg")
+        await bugbug_utils.task_group_to_push.rem("HDnvYOibTMS8h_5Qzv6fWg")
     except KeyError:
         pass
 
@@ -512,30 +511,48 @@ async def test_got_try_task_end(PhabricatorMock, mock_taskcluster):
         phab.update_state(build)
         phab.load_reviewers(build)
 
-        # Nothing happens for tasks that are not test tasks.
-        payload["body"]["task"]["tags"]["kind"] = "source-test"
-        await bugbug_utils.got_try_task_end(payload)
-        assert bus.queues[QUEUE_PHABRICATOR_RESULTS].empty()
+    # Nothing happens for tasks that are not test tasks.
+    payload["body"]["task"]["tags"]["kind"] = "source-test"
+    await bugbug_utils.got_try_task_end(payload)
+    assert bus.queues[QUEUE_PHABRICATOR_RESULTS].empty()
 
-        # Nothing happens for tasks that are not registered.
-        payload["body"]["task"]["tags"]["kind"] = "test"
-        await bugbug_utils.got_try_task_end(payload)
-        assert bus.queues[QUEUE_PHABRICATOR_RESULTS].empty()
+    # Nothing happens for tasks that are not registered.
+    payload["body"]["task"]["tags"]["kind"] = "test"
+    await bugbug_utils.got_try_task_end(payload)
+    assert bus.queues[QUEUE_PHABRICATOR_RESULTS].empty()
 
-        await bugbug_utils.task_group_to_build.set("HDnvYOibTMS8h_5Qzv6fWg", build)
+    push = {
+        "build": build,
+        "revision": "028980a035fb3e214f7645675a01a52234aad0fe",
+    }
+    await bugbug_utils.task_group_to_push.set("HDnvYOibTMS8h_5Qzv6fWg", push)
 
-        payload["body"]["status"]["state"] = "completed"
-        await bugbug_utils.got_try_task_end(payload)
-        mode, build_, extras = await bus.receive(QUEUE_PHABRICATOR_RESULTS)
-        assert mode == "test_result"
-        assert build_ == build
-        assert extras["name"] == "test-linux64-shippable/opt-awsy-tp6-e10s"
-        assert extras["result"] == UnitResultState.Pass
+    payload["body"]["status"]["state"] = "completed"
+    await bugbug_utils.got_try_task_end(payload)
+    mode, build_, extras = await bus.receive(QUEUE_PHABRICATOR_RESULTS)
+    assert mode == "test_result"
+    assert build_ == build
+    assert extras == {
+        "name": "test-linux64-shippable/opt-awsy-tp6-e10s",
+        "result": UnitResultState.Pass,
+        "details": None,
+    }
+
+    with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+        rsps.add(
+            responses.GET,
+            "https://treeherder.mozilla.org/api/jobdetail/?job_guid=5b648c67-76d8-4de6-a706-af9636951e1c/0",
+            body=mock_treeherder("jobdetail.json"),
+            content_type="application/json",
+        )
 
         payload["body"]["status"]["state"] = "failed"
         await bugbug_utils.got_try_task_end(payload)
         mode, build_, extras = await bus.receive(QUEUE_PHABRICATOR_RESULTS)
         assert mode == "test_result"
         assert build_ == build
-        assert extras["name"] == "test-linux64-shippable/opt-awsy-tp6-e10s"
-        assert extras["result"] == UnitResultState.Fail
+        assert extras == {
+            "name": "test-linux64-shippable/opt-awsy-tp6-e10s",
+            "result": UnitResultState.Fail,
+            "details": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=028980a035fb3e214f7645675a01a52234aad0fe&selectedJob=277665740",
+        }

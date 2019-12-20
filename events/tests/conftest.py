@@ -208,3 +208,13 @@ def mock_taskcluster():
     )
 
     return _response
+
+
+@pytest.fixture
+def mock_treeherder():
+    def _response(name):
+        path = os.path.join(FIXTURES_DIR, "treeherder", name)
+        assert os.path.exists(path), "Missing mock {}".format(path)
+        return open(path).read()
+
+    return _response

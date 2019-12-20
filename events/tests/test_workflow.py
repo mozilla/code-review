@@ -102,9 +102,11 @@ async def test_publish_results_test_result_mode(PhabricatorMock, mock_taskcluste
             assert build_target_phid == "PHID-HMBT-icusvlfibcebizyd33op"
             assert state == BuildState.Work
             assert len(unit) == 1
-            assert unit[0]["namespace"] == "code-review"
-            assert unit[0]["name"] == "test-linux64-shippable/opt-awsy-tp6-e10s"
-            assert unit[0]["result"] == "pass"
+            assert unit[0] == {
+                "namespace": "code-review",
+                "name": "test-linux64-shippable/opt-awsy-tp6-e10s",
+                "result": "pass",
+            }
             orig(build_target_phid, state, unit, lint)
 
         client.api.update_build_target = new
@@ -116,6 +118,7 @@ async def test_publish_results_test_result_mode(PhabricatorMock, mock_taskcluste
                 {
                     "name": "test-linux64-shippable/opt-awsy-tp6-e10s",
                     "result": UnitResultState.Pass,
+                    "details": None,
                 },
             )
         )
@@ -124,9 +127,12 @@ async def test_publish_results_test_result_mode(PhabricatorMock, mock_taskcluste
             assert build_target_phid == "PHID-HMBT-icusvlfibcebizyd33op"
             assert state == BuildState.Work
             assert len(unit) == 1
-            assert unit[0]["namespace"] == "code-review"
-            assert unit[0]["name"] == "test-windows10-64/opt-mochitest-1"
-            assert unit[0]["result"] == "fail"
+            assert unit[0] == {
+                "namespace": "code-review",
+                "name": "test-windows10-64/opt-mochitest-1",
+                "result": "fail",
+                "details": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=028980a035fb3e214f7645675a01a52234aad0fe&selectedJob=277665740",
+            }
             orig(build_target_phid, state, unit, lint)
 
         client.api.update_build_target = new
@@ -138,6 +144,7 @@ async def test_publish_results_test_result_mode(PhabricatorMock, mock_taskcluste
                 {
                     "name": "test-windows10-64/opt-mochitest-1",
                     "result": UnitResultState.Fail,
+                    "details": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=028980a035fb3e214f7645675a01a52234aad0fe&selectedJob=277665740",
                 },
             )
         )
