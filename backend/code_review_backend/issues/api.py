@@ -168,7 +168,7 @@ class IssueCheckHistory(generics.ListAPIView):
     serializer_class = HistoryPointSerializer
 
     # For ease of use, the history is available without pagination
-    # as the SQL request should always fast to calculate
+    # as the SQL request should be always fast to calculate
     pagination_class = None
 
     def get_queryset(self):
