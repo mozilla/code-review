@@ -42,12 +42,9 @@ class AnalysisException(Exception):
 
 class Level(enum.Enum):
     # A critical issue breaks CI and must always be reported
-    Critical = "critical"
-
-    # An error should be reported in most cases, but filters apply
     Error = "error"
 
-    # Warnings are not reported except if directly in the patch
+    # Warnings are reported when they are in patch
     Warning = "warning"
 
 
