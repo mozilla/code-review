@@ -67,7 +67,7 @@ async def test_publish_results_success_mode(PhabricatorMock, mock_taskcluster):
 
         phab.update_state(build)
 
-        client.publish_results(
+        await client.publish_results(
             (
                 "success",
                 build,
@@ -109,7 +109,7 @@ async def test_publish_results_test_result_mode(PhabricatorMock, mock_taskcluste
 
         client.api.update_build_target = new
 
-        client.publish_results(
+        await client.publish_results(
             (
                 "test_result",
                 build,
@@ -131,7 +131,7 @@ async def test_publish_results_test_result_mode(PhabricatorMock, mock_taskcluste
 
         client.api.update_build_target = new
 
-        client.publish_results(
+        await client.publish_results(
             (
                 "test_result",
                 build,
