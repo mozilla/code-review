@@ -49,7 +49,7 @@ class InferIssue(Issue):
             nb_lines=1,
             check=entry["bug_type"],
             column=entry["column"],
-            level=Level(kind.lower()),
+            level=Level.Warning,
             message=entry["qualifier"],
         )
 

@@ -753,7 +753,7 @@ def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_b
     assert issue.line == 1196
     assert issue.column == -1
     assert issue.check == "THREAD_SAFETY_VIOLATION"
-    assert issue.level == Level.Error
+    assert issue.level == Level.Warning
     assert issue.message == "Read/Write race."
     assert issue.nb_lines == 1
     assert issue.as_dict() == {
@@ -761,14 +761,14 @@ def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_b
         "check": "THREAD_SAFETY_VIOLATION",
         "column": -1,
         "in_patch": False,
-        "level": "error",
+        "level": "warning",
         "line": 1196,
         "message": "Read/Write race.",
         "nb_lines": 1,
         "path": "mobile/android/geckoview/src/main/java/org/mozilla/test.java",
         "publishable": False,
         "validates": True,
-        "hash": "6ea5e3c092daed6cca6281ba50107abc",
+        "hash": "02353719655edb9ba07e0bd0cacd620b",
     }
 
 

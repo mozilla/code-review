@@ -55,7 +55,7 @@ class CoverityIssue(Issue):
             line=issue["line"],
             nb_lines=1,
             check=issue["flag"],
-            level=Level.Error,
+            level=Level.Warning,
             message=issue["message"],
         )
         self.reliability = (

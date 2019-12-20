@@ -23,7 +23,7 @@ def test_as_text(mock_revision):
     }
     issue = InferIssue("mock-infer", parts, mock_revision)
 
-    expected = "Error: Error on this line [infer: SOMETYPE]"
+    expected = "Warning: Error on this line [infer: SOMETYPE]"
     assert issue.as_text() == expected
 
 
@@ -106,5 +106,7 @@ def test_infer_artifact(version, nb, mock_revision, mock_hgmo):
 
     issues_data = [issue.as_dict() for issue in issues]
 
+    with open(os.path.join(FIXTURES_DIR, f"infer_issues_{version}.json"), "w") as f:
+        json.dump(issues_data, f, sort_keys=True, indent=4)
     with open(os.path.join(FIXTURES_DIR, f"infer_issues_{version}.json")) as f:
         assert issues_data == json.load(f)

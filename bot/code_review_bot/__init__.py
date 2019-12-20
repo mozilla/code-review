@@ -65,7 +65,7 @@ class Issue(abc.ABC):
         check: str,
         column: int = None,
         message: str = None,
-        level: Level = Level.Error,
+        level: Level = Level.Warning,
     ):
         # Check while avoiding circular dependencies
         from code_review_bot.revisions import Revision

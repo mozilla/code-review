@@ -809,7 +809,7 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
 
         assert details == {
             "__conduit__": {"token": "deadbeef"},
-            "content": "Error: Something bad happened on the whole file ! [a-huge-issue]",
+            "content": "Warning: Something bad happened on the whole file ! [a-huge-issue]",
             "diffID": 42,
             "filePath": "xx.cpp",
             "isNewFile": 1,
@@ -856,7 +856,9 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
         message="Something bad happened on the whole file !",
     )
     assert issue.line is None  # check auto conversion
-    assert str(issue) == "full-file-analyzer issue a-huge-issue@error xx.cpp full file"
+    assert (
+        str(issue) == "full-file-analyzer issue a-huge-issue@warning xx.cpp full file"
+    )
     assert issue.is_publishable()
     assert revision.has_file(issue.path)
     assert revision.contains(issue)
