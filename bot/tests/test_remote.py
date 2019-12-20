@@ -9,6 +9,7 @@ from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import UnitResult
 from libmozdata.phabricator import UnitResultState
 
+from code_review_bot import Level
 from code_review_bot import stats
 
 
@@ -712,7 +713,7 @@ def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_b
                     "public/code-review/infer.json": [
                         {
                             "bug_class": "PROVER",
-                            "kind": "ERROR",
+                            "kind": "error",
                             "bug_type": "THREAD_SAFETY_VIOLATION",
                             "qualifier": "Read/Write race.",
                             "severity": "HIGH",
@@ -752,7 +753,7 @@ def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_b
     assert issue.line == 1196
     assert issue.column == -1
     assert issue.check == "THREAD_SAFETY_VIOLATION"
-    assert issue.level == "ERROR"
+    assert issue.level == Level.Warning
     assert issue.message == "Read/Write race."
     assert issue.nb_lines == 1
     assert issue.as_dict() == {
@@ -760,14 +761,14 @@ def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_b
         "check": "THREAD_SAFETY_VIOLATION",
         "column": -1,
         "in_patch": False,
-        "level": "ERROR",
+        "level": "warning",
         "line": 1196,
         "message": "Read/Write race.",
         "nb_lines": 1,
         "path": "mobile/android/geckoview/src/main/java/org/mozilla/test.java",
         "publishable": False,
         "validates": True,
-        "hash": "e8b55c0cf890fc79f4ca4eb6c41cc2fa",
+        "hash": "02353719655edb9ba07e0bd0cacd620b",
     }
 
 

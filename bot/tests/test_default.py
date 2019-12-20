@@ -5,6 +5,7 @@
 
 import pytest
 
+from code_review_bot import Level
 from code_review_bot.tasks.default import DefaultIssue
 from code_review_bot.tasks.default import DefaultTask
 
@@ -79,7 +80,7 @@ def test_parser(mock_workflow, mock_revision, mock_hgmo, mock_backend):
     assert issue.line == 42
     assert issue.nb_lines == 1
     assert issue.column == 51
-    assert issue.level == "error"
+    assert issue.level == Level.Error
     assert issue.check == "XYZ"
     assert issue.message == "A random issue happened here"
     assert issue.as_text() == "Error: A random issue happened here [XYZ]"

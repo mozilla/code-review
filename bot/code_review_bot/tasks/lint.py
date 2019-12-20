@@ -3,6 +3,7 @@ import structlog
 from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
+from code_review_bot import Level
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
@@ -50,7 +51,7 @@ class MozLintIssue(Issue):
             nb_lines=1,
             check=check,
             column=column,
-            level=level,
+            level=Level(level),
             message=message,
         )
         self.linter = linter
@@ -82,7 +83,7 @@ class MozLintIssue(Issue):
         if len(message) > 0:
             message = message[0].capitalize() + message[1:]
         linter = "{}: {}".format(self.linter, self.check) if self.check else self.linter
-        return "{}: {} [{}]".format(self.level.capitalize(), message, linter)
+        return "{}: {} [{}]".format(self.level.name, message, linter)
 
     def as_markdown(self):
         """
@@ -91,7 +92,7 @@ class MozLintIssue(Issue):
         return ISSUE_MARKDOWN.format(
             linter=self.linter,
             path=self.path,
-            level=self.level,
+            level=self.level.value,
             line=self.line,
             message=self.message,
             publishable=self.is_publishable() and "yes" or "no",
@@ -111,7 +112,7 @@ class MozLintIssue(Issue):
             name=name,
             description=self.message,
             code=code,
-            severity=self.level,
+            severity=self.level.value,
             path=self.path,
             line=self.line,
             char=self.column,

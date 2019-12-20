@@ -124,7 +124,6 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
         "51",
         "modernize-use-nullptr",
         "dummy message",
-        "error",
     )
     assert issue.is_publishable()
 
@@ -403,7 +402,6 @@ def test_phabricator_clang_tidy_and_coverage(
         "51",
         "modernize-use-nullptr",
         "dummy message",
-        "error",
     )
     assert issue_clang_tidy.is_publishable()
 
@@ -459,7 +457,6 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
                 "51",
                 "modernize-use-nullptr",
                 "dummy message",
-                "error",
             ),
             InferIssue(
                 "mock-infer",
@@ -468,7 +465,7 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
                     "line": 42,
                     "column": 1,
                     "bug_type": "dummy",
-                    "kind": "whatever",
+                    "kind": "WARNING",
                     "qualifier": "dummy message.",
                 },
                 revision,
@@ -477,7 +474,7 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
                 "mock-lint-flake8",
                 "test.cpp",
                 1,
-                "danger",
+                "error",
                 42,
                 "flake8",
                 "Python error",
@@ -627,7 +624,6 @@ def test_phabricator_harbormaster(mock_phabricator, mock_try_task):
         "51",
         "modernize-use-nullptr",
         "dummy message",
-        "error",
     )
     assert issue.is_publishable()
 
@@ -813,7 +809,7 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
 
         assert details == {
             "__conduit__": {"token": "deadbeef"},
-            "content": "Error: Something bad happened on the whole file ! [a-huge-issue]",
+            "content": "Warning: Something bad happened on the whole file ! [a-huge-issue]",
             "diffID": 42,
             "filePath": "xx.cpp",
             "isNewFile": 1,
@@ -860,7 +856,9 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
         message="Something bad happened on the whole file !",
     )
     assert issue.line is None  # check auto conversion
-    assert str(issue) == "full-file-analyzer issue a-huge-issue@error xx.cpp full file"
+    assert (
+        str(issue) == "full-file-analyzer issue a-huge-issue@warning xx.cpp full file"
+    )
     assert issue.is_publishable()
     assert revision.has_file(issue.path)
     assert revision.contains(issue)

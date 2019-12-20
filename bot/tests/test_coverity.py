@@ -112,7 +112,7 @@ The path that leads to this defect is:
         "in_patch": False,
         "check": "NULL_RETURNS",
         "column": None,
-        "level": "error",
+        "level": "warning",
         "line": 3703,
         "message": """Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
 The path that leads to this defect is:
@@ -130,5 +130,5 @@ The path that leads to this defect is:
         "path": "js/src/jit/BaselineCompiler.cpp",
         "publishable": False,
         "validates": True,
-        "hash": "4304590c14cd2ed9e7a7f913165af94b",
+        "hash": "8c10f73c6f509336236f407c3f9d312a",
     }

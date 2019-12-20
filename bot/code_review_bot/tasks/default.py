@@ -3,6 +3,7 @@ import structlog
 from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
+from code_review_bot import Level
 from code_review_bot import taskcluster
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -34,7 +35,7 @@ class DefaultIssue(Issue):
         """
         Build the text content for reporters
         """
-        return "{}: {} [{}]".format(self.level.capitalize(), self.message, self.check)
+        return "{}: {} [{}]".format(self.level.name, self.message, self.check)
 
     def as_markdown(self):
         """
@@ -44,7 +45,7 @@ class DefaultIssue(Issue):
             analyzer=self.analyzer,
             path=self.path,
             check=self.check,
-            level=self.level,
+            level=self.level.value,
             line=self.line,
             message=self.message,
             publishable=self.is_publishable() and "yes" or "no",
@@ -97,7 +98,7 @@ class DefaultTask(AnalysisTask):
                 line=issue["line"],
                 column=issue["column"],
                 nb_lines=issue.get("nb_lines", 1),
-                level=issue["level"],
+                level=Level(issue["level"]),
                 check=default_check(issue),
                 message=issue["message"],
             )

@@ -9,6 +9,7 @@ from libmozdata.phabricator import UnitResult
 from libmozdata.phabricator import UnitResultState
 
 from code_review_bot import Issue
+from code_review_bot import Level
 from code_review_bot import Reliability
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -54,7 +55,7 @@ class CoverityIssue(Issue):
             line=issue["line"],
             nb_lines=1,
             check=issue["flag"],
-            level="error",
+            level=Level.Warning,
             message=issue["message"],
         )
         self.reliability = (

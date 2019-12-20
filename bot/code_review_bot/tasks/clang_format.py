@@ -3,6 +3,7 @@ import structlog
 from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
+from code_review_bot import Level
 from code_review_bot.config import settings
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -32,7 +33,7 @@ class ClangFormatIssue(Issue):
             nb_lines,
             check="invalid-styling",
             column=column,
-            level="warning",
+            level=Level.Warning,
         )
         self.patch = patch
 
