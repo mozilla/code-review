@@ -199,14 +199,7 @@ class BugbugUtils:
         return (diff_id, True, selected_tasks)
 
     def add_new_jobs(self, revision, selected_tasks):
-        # XXX: For now, only restrict to test-linux64 tasks.
-        selected_tasks = {
-            "tasks": [
-                t
-                for t in selected_tasks["response"].text.splitlines()
-                if t.startswith("test-linux64/")
-            ]
-        }
+        selected_tasks = {"tasks": selected_tasks["response"].text.splitlines()}
         if len(selected_tasks["tasks"]) == 0:
             return None
 
