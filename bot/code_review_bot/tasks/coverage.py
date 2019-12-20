@@ -4,6 +4,7 @@ import os
 import structlog
 
 from code_review_bot import Issue
+from code_review_bot import Level
 from code_review_bot.config import settings
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -30,7 +31,7 @@ class CoverageIssue(Issue):
             line=lineno and int(lineno) or None,
             nb_lines=1,
             check="no-coverage",
-            level="warning",
+            level=Level.Warning,
             message=message,
         )
 

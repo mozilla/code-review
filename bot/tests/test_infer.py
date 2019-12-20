@@ -18,12 +18,12 @@ def test_as_text(mock_revision):
         "line": 3,
         "column": -1,
         "bug_type": "SOMETYPE",
-        "kind": "SomeKindOfBug",
+        "kind": "ERROR",
         "qualifier": "Error on this line",
     }
     issue = InferIssue("mock-infer", parts, mock_revision)
 
-    expected = "SomeKindOfBug: Error on this line [infer: SOMETYPE]"
+    expected = "Error: Error on this line [infer: SOMETYPE]"
     assert issue.as_text() == expected
 
 
@@ -37,7 +37,7 @@ def test_as_dict(mock_revision, mock_hgmo):
         "line": 3,
         "column": -1,
         "bug_type": "SOMETYPE",
-        "kind": "SomeKindOfBug",
+        "kind": "WARNING",
         "qualifier": "Error on this line",
     }
     issue = InferIssue("mock-infer", parts, mock_revision)
@@ -47,14 +47,14 @@ def test_as_dict(mock_revision, mock_hgmo):
         "check": "SOMETYPE",
         "column": -1,
         "in_patch": False,
-        "level": "SomeKindOfBug",
+        "level": "warning",
         "line": 3,
         "message": "Error on this line",
         "nb_lines": 1,
         "path": "path/to/file.java",
         "publishable": False,
         "validates": True,
-        "hash": "405fafd74d01b0d109903804e6cf3a5a",
+        "hash": "fdbdadc20b9d1d905f7d123eb847902b",
     }
 
 
@@ -68,7 +68,7 @@ def test_as_markdown(mock_revision):
         "line": 3,
         "column": -1,
         "bug_type": "SOMETYPE",
-        "kind": "SomeKindOfBug",
+        "kind": "WARNING",
         "qualifier": "Error on this line",
     }
     issue = InferIssue("mock-infer", parts, mock_revision)

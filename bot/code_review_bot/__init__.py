@@ -40,6 +40,17 @@ class AnalysisException(Exception):
         super().__init__(message)
 
 
+class Level(enum.Enum):
+    # A critical issue breaks CI and must always be reported
+    Critical = "critical"
+
+    # An error should be reported in most cases, but filters apply
+    Error = "error"
+
+    # Warnings are not reported except if directly in the patch
+    Warning = "warning"
+
+
 class Issue(abc.ABC):
     """
     Common reported issue interface
@@ -57,7 +68,7 @@ class Issue(abc.ABC):
         check: str,
         column: int = None,
         message: str = None,
-        level: str = "error",
+        level: Level = Level.Error,
     ):
         # Check while avoiding circular dependencies
         from code_review_bot.revisions import Revision
@@ -89,7 +100,9 @@ class Issue(abc.ABC):
 
     def __str__(self):
         line = f"line {self.line}" if self.line is not None else "full file"
-        return f"{self.analyzer} issue {self.check}@{self.level} {self.path} {line}"
+        return (
+            f"{self.analyzer} issue {self.check}@{self.level.value} {self.path} {line}"
+        )
 
     def build_extra_identifiers(self):
         """
@@ -168,7 +181,14 @@ class Issue(abc.ABC):
         # excluding file position information (lines & char)
         extras = json.dumps(self.build_extra_identifiers(), sort_keys=True)
         payload = ":".join(
-            [self.analyzer, self.path, self.level, self.check, extras, raw_content]
+            [
+                self.analyzer,
+                self.path,
+                self.level.value,
+                self.check,
+                extras,
+                raw_content,
+            ]
         ).encode("utf-8")
 
         # Finally build the MD5 hash
@@ -220,7 +240,7 @@ class Issue(abc.ABC):
             "nb_lines": self.nb_lines,
             "column": self.column,
             "check": self.check,
-            "level": self.level,
+            "level": self.level.value,
             "message": self.message,
             "in_patch": self.revision.contains(self),
             "validates": self.validates(),

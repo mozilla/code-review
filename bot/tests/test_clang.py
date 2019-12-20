@@ -18,9 +18,7 @@ def test_expanded_macros(mock_revision):
         "51",
         "dummy message",
         "dummy-check",
-        "error",
     )
-    assert issue.is_problem()
     assert issue.line == 42
     assert issue.column == 51
     assert issue.notes == []
@@ -36,7 +34,6 @@ def test_expanded_macros(mock_revision):
             "51",
             "dummy-check-note",
             "expanded from macro Blah dummy.cpp",
-            "note",
         )
     )
     assert issue.is_expanded_macro() is True
@@ -51,7 +48,6 @@ def test_expanded_macros(mock_revision):
             "51",
             "dummy-check-note",
             "This is not an expanded macro",
-            "note",
         )
     )
     assert issue.is_expanded_macro() is True
@@ -75,12 +71,11 @@ def test_as_text(mock_revision):
         "51",
         "dummy-check",
         "dummy message withUppercaseChars",
-        "error",
     )
 
     assert (
         issue.as_text()
-        == "Error: Dummy message withUppercaseChars [clang-tidy: dummy-check]"
+        == "Warning: Dummy message withUppercaseChars [clang-tidy: dummy-check]"
     )
 
 
@@ -99,7 +94,6 @@ def test_as_dict(mock_revision, mock_hgmo):
         "51",
         "dummy-check",
         "dummy message withUppercaseChars",
-        "error",
         Reliability.Low,
     )
 
@@ -110,12 +104,12 @@ def test_as_dict(mock_revision, mock_hgmo):
         "nb_lines": 1,
         "column": 51,
         "check": "dummy-check",
-        "level": "error",
+        "level": "warning",
         "message": "dummy message withUppercaseChars",
         "in_patch": False,
         "validates": True,
         "publishable": False,
-        "hash": "f94457942070fa51a52230f35a488be0",
+        "hash": "b0f6aa535682909e46e48c783a5737d4",
     }
 
 
@@ -134,14 +128,13 @@ def test_as_markdown(mock_revision):
         "51",
         "dummy-check",
         "dummy message",
-        "error",
         Reliability.High,
     )
 
     assert (
         issue.as_markdown()
         == """
-## clang-tidy error
+## clang-tidy warning
 
 - **Message**: dummy message
 - **Location**: test.cpp:42:51

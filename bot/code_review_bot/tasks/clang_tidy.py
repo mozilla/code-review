@@ -10,6 +10,7 @@ import structlog
 from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
+from code_review_bot import Level
 from code_review_bot import Reliability
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -57,7 +58,6 @@ class ClangTidyIssue(Issue):
         column,
         check,
         message,
-        level="warning",
         reliability=Reliability.Unknown,
         reason=None,
         publish=True,
@@ -72,16 +72,13 @@ class ClangTidyIssue(Issue):
             nb_lines=1,  # Only 1 line affected on clang-tidy
             check=check,
             column=int(column),
-            level=level,
+            level=Level.Warning,
             message=message,
         )
         self.notes = []
         self.reliability = reliability
         self.publishable_check = publish
         self.reason = reason
-
-    def is_problem(self):
-        return self.level in ("warning", "error")
 
     def validates(self):
         """
@@ -106,10 +103,6 @@ class ClangTidyIssue(Issue):
         """
         Is this issue using a publishable check ?
         """
-        # Never publish a note (no check attached)
-        if not self.is_problem():
-            return False
-
         return self.publishable_check is True
 
     def as_text(self):
@@ -119,9 +112,7 @@ class ClangTidyIssue(Issue):
         message = self.message
         if len(message) > 0:
             message = message[0].capitalize() + message[1:]
-        body = "{}: {} [clang-tidy: {}]".format(
-            self.level.capitalize(), message, self.check
-        )
+        body = "{}: {} [clang-tidy: {}]".format(self.level.name, message, self.check)
 
         # Always add body as it's been cleaned up
         if self.reason:
@@ -135,7 +126,7 @@ class ClangTidyIssue(Issue):
 
     def as_markdown(self):
         return ISSUE_MARKDOWN.format(
-            level=self.level,
+            level=self.level.value,
             message=self.message,
             location="{}:{}:{}".format(self.path, self.line, self.column),
             reason=self.reason,

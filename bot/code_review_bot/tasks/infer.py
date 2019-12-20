@@ -7,6 +7,7 @@ import structlog
 from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
+from code_review_bot import Level
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
@@ -48,12 +49,9 @@ class InferIssue(Issue):
             nb_lines=1,
             check=entry["bug_type"],
             column=entry["column"],
-            level=kind,
+            level=Level(kind.lower()),
             message=entry["qualifier"],
         )
-
-    def is_problem(self):
-        return self.level in ("ERROR")
 
     def validates(self):
         """
@@ -68,7 +66,7 @@ class InferIssue(Issue):
         message = self.message
         if len(message) > 0:
             message = message[0].capitalize() + message[1:]
-        return "{}: {} [infer: {}]".format(self.level, message, self.check)
+        return "{}: {} [infer: {}]".format(self.level.name, message, self.check)
 
     def as_markdown(self):
         return ISSUE_MARKDOWN.format(
