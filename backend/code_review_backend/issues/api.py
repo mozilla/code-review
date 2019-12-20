@@ -5,6 +5,7 @@
 
 from django.db.models import Count
 from django.db.models import Q
+from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
 from django.urls import path
 from rest_framework import generics
@@ -19,6 +20,7 @@ from code_review_backend.issues.models import Repository
 from code_review_backend.issues.models import Revision
 from code_review_backend.issues.serializers import DiffFullSerializer
 from code_review_backend.issues.serializers import DiffSerializer
+from code_review_backend.issues.serializers import HistoryPointSerializer
 from code_review_backend.issues.serializers import IssueCheckSerializer
 from code_review_backend.issues.serializers import IssueSerializer
 from code_review_backend.issues.serializers import RepositorySerializer
@@ -154,6 +156,48 @@ class IssueCheckStats(generics.ListAPIView):
     )
 
 
+class IssueCheckHistory(generics.ListAPIView):
+    """
+    Historical usage per day of an issue checks
+    * globally
+    * per repository
+    * per analyzer
+    * per check
+    """
+
+    serializer_class = HistoryPointSerializer
+
+    # For ease of use, the history is available without pagination
+    # as the SQL request should be always fast to calculate
+    pagination_class = None
+
+    def get_queryset(self):
+
+        # Count all the issues per day
+        queryset = (
+            Issue.objects.annotate(date=TruncDate("created"))
+            .values("date")
+            .annotate(total=Count("id"))
+        )
+
+        # Filter by repository
+        repository = self.request.query_params.get("repository")
+        if repository:
+            queryset = queryset.filter(diff__revision__repository__slug=repository)
+
+        # Filter by analyzer
+        analyzer = self.request.query_params.get("analyzer")
+        if analyzer:
+            queryset = queryset.filter(analyzer=analyzer)
+
+        # Filter by check
+        check = self.request.query_params.get("check")
+        if check:
+            queryset = queryset.filter(check=check)
+
+        return queryset.order_by("date")
+
+
 # Build exposed urls for the API
 router = routers.DefaultRouter()
 router.register(r"repository", RepositoryViewSet)
@@ -166,5 +210,6 @@ router.register(
 router.register(r"diff", DiffViewSet, basename="diffs")
 router.register(r"diff/(?P<diff_id>\d+)/issues", IssueViewSet, basename="issues")
 urls = router.urls + [
-    path("check/stats/", IssueCheckStats.as_view(), name="issue-checks-stats")
+    path("check/stats/", IssueCheckStats.as_view(), name="issue-checks-stats"),
+    path("check/history/", IssueCheckHistory.as_view(), name="issue-checks-history"),
 ]

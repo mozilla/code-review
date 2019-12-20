@@ -137,3 +137,12 @@ class IssueCheckSerializer(serializers.Serializer):
 
     # TODO: support publishable stats number once we have hash comparison stored
     publishable = serializers.IntegerField(default=0)
+
+
+class HistoryPointSerializer(serializers.Serializer):
+    """
+    Serialize a data point for issue checks history graphs
+    """
+
+    date = serializers.DateField()
+    total = serializers.IntegerField()
