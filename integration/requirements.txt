@@ -1,2 +1,2 @@
-MozPhab==0.1.69
+MozPhab==0.1.71
 pyyaml==5.2
