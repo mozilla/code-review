@@ -45,6 +45,9 @@ def PhabricatorMock():
             # Search from diffs
             diffs = "-".join(params["constraints"]["phids"])
             mock_name = "search-{}".format(diffs)
+        elif "ids" in params["constraints"]:
+            assert len(params["constraints"]["ids"]) == 1
+            mock_name = "search-{}".format(params["constraints"]["ids"][0])
         else:
             raise Exception("Unsupported diff mock {}".format(params))
         return (200, json_headers, _response(mock_name))
