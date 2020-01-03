@@ -189,7 +189,7 @@ def PhabricatorMock():
 @pytest.fixture
 def mock_taskcluster():
     """
-    Mock Tasklcuster authentication
+    Mock Taskcluster authentication
     """
     taskcluster_config.options = {"rootUrl": "http://taskcluster.test"}
     community_taskcluster_config.options = {
