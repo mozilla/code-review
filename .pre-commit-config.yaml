@@ -40,7 +40,7 @@ repos:
     rev: v1.16.0
     hooks:
       - id: codespell
-        args: ['--exclude-file=frontend/package-lock.json']
+        exclude_types: [json]
   - repo: https://github.com/marco-c/taskcluster_yml_validator
     rev: v0.0.3
     hooks:
