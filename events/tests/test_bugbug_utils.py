@@ -45,6 +45,7 @@ async def test_risk_analysis_should_trigger(PhabricatorMock, mock_taskcluster):
     bugbug_utils.register(bus)
 
     with PhabricatorMock as phab:
+        phab.load_patches_stack(build)
         phab.update_state(build)
         phab.load_reviewers(build)
 
@@ -72,6 +73,7 @@ async def test_risk_analysis_shouldnt_trigger(PhabricatorMock, mock_taskcluster)
     bugbug_utils.register(bus)
 
     with PhabricatorMock as phab:
+        phab.load_patches_stack(build)
         phab.update_state(build)
         phab.load_reviewers(build)
 
@@ -79,7 +81,7 @@ async def test_risk_analysis_shouldnt_trigger(PhabricatorMock, mock_taskcluster)
 
 
 @pytest.mark.asyncio
-async def test_should_run_test_selection(mock_taskcluster):
+async def test_should_run_test_selection(PhabricatorMock, mock_taskcluster):
     build = PhabricatorBuild(
         MockRequest(
             diff="125397",
@@ -88,6 +90,10 @@ async def test_should_run_test_selection(mock_taskcluster):
             target="PHID-HMBT-icusvlfibcebizyd33op",
         )
     )
+    with PhabricatorMock as phab:
+        phab.load_patches_stack(build)
+        phab.update_state(build)
+        phab.load_reviewers(build)
 
     def calc_perc():
         count = sum(
@@ -132,7 +138,7 @@ async def test_should_run_test_selection(mock_taskcluster):
 
 
 @pytest.mark.asyncio
-async def test_process_push(mock_taskcluster):
+async def test_process_push(PhabricatorMock, mock_taskcluster):
     build = PhabricatorBuild(
         MockRequest(
             diff="125397",
@@ -141,6 +147,10 @@ async def test_process_push(mock_taskcluster):
             target="PHID-HMBT-icusvlfibcebizyd33op",
         )
     )
+    with PhabricatorMock as phab:
+        phab.load_patches_stack(build)
+        phab.update_state(build)
+        phab.load_reviewers(build)
 
     bugbug_utils = BugbugUtils()
     await bugbug_utils.setup()
@@ -265,7 +275,9 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
         pass
 
     with PhabricatorMock as phab:
+        phab.load_patches_stack(build)
         phab.update_state(build)
+        phab.load_reviewers(build)
 
     # Nothing happens when diff_to_push is empty.
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -496,7 +508,9 @@ async def test_got_try_task_end(PhabricatorMock, mock_taskcluster):
     with PhabricatorMock as phab:
         bus.add_queue(QUEUE_PHABRICATOR_RESULTS)
 
+        phab.load_patches_stack(build)
         phab.update_state(build)
+        phab.load_reviewers(build)
 
         # Nothing happens for tasks that are not test tasks.
         payload["body"]["task"]["tags"]["kind"] = "source-test"
