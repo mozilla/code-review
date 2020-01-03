@@ -41,13 +41,12 @@ async def test_risk_analysis_should_trigger(PhabricatorMock, mock_taskcluster):
         "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
     }
 
-    bugbug_utils = BugbugUtils()
-    bugbug_utils.register(bus)
-
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
         phab.update_state(build)
-        phab.load_reviewers(build)
+
+        bugbug_utils = BugbugUtils(phab.api)
+        bugbug_utils.register(bus)
 
     assert bugbug_utils.should_run_risk_analysis(build)
 
@@ -69,13 +68,12 @@ async def test_risk_analysis_shouldnt_trigger(PhabricatorMock, mock_taskcluster)
         "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
     }
 
-    bugbug_utils = BugbugUtils()
-    bugbug_utils.register(bus)
-
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
         phab.update_state(build)
-        phab.load_reviewers(build)
+
+        bugbug_utils = BugbugUtils(phab.api)
+        bugbug_utils.register(bus)
 
     assert not bugbug_utils.should_run_risk_analysis(build)
 
@@ -90,10 +88,6 @@ async def test_should_run_test_selection(PhabricatorMock, mock_taskcluster):
             target="PHID-HMBT-icusvlfibcebizyd33op",
         )
     )
-    with PhabricatorMock as phab:
-        phab.load_patches_stack(build)
-        phab.update_state(build)
-        phab.load_reviewers(build)
 
     def calc_perc():
         count = sum(
@@ -101,40 +95,46 @@ async def test_should_run_test_selection(PhabricatorMock, mock_taskcluster):
         )
         return count / 1000
 
-    taskcluster_config.secrets = {
-        "test_selection_enabled": False,
-        "test_selection_share": 0.0,
-    }
+    with PhabricatorMock as phab:
+        phab.load_patches_stack(build)
+        phab.update_state(build)
 
-    bugbug_utils = BugbugUtils()
-    assert calc_perc() == 0.0
+        bugbug_utils = BugbugUtils(phab.api)
 
-    taskcluster_config.secrets = {
-        "test_selection_enabled": False,
-        "test_selection_share": 0.0,
-        "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-    }
+        taskcluster_config.secrets = {
+            "test_selection_enabled": False,
+            "test_selection_share": 0.0,
+        }
 
-    bugbug_utils = BugbugUtils()
-    assert calc_perc() == 0.0
+        bugbug_utils = BugbugUtils(phab.api)
+        assert calc_perc() == 0.0
 
-    taskcluster_config.secrets = {
-        "test_selection_enabled": True,
-        "test_selection_share": 0.0,
-        "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-    }
+        taskcluster_config.secrets = {
+            "test_selection_enabled": False,
+            "test_selection_share": 0.0,
+            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
+        }
 
-    bugbug_utils = BugbugUtils()
-    assert calc_perc() == 0.0
+        bugbug_utils = BugbugUtils(phab.api)
+        assert calc_perc() == 0.0
 
-    taskcluster_config.secrets = {
-        "test_selection_enabled": True,
-        "test_selection_share": 0.1,
-        "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-    }
+        taskcluster_config.secrets = {
+            "test_selection_enabled": True,
+            "test_selection_share": 0.0,
+            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
+        }
 
-    bugbug_utils = BugbugUtils()
-    assert 0.03 < calc_perc() < 0.18
+        bugbug_utils = BugbugUtils(phab.api)
+        assert calc_perc() == 0.0
+
+        taskcluster_config.secrets = {
+            "test_selection_enabled": True,
+            "test_selection_share": 0.1,
+            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
+        }
+
+        bugbug_utils = BugbugUtils(phab.api)
+        assert 0.03 < calc_perc() < 0.18
 
 
 @pytest.mark.asyncio
@@ -152,48 +152,49 @@ async def test_process_push(PhabricatorMock, mock_taskcluster):
         phab.update_state(build)
         phab.load_reviewers(build)
 
-    bugbug_utils = BugbugUtils()
-    await bugbug_utils.setup()
+        bugbug_utils = BugbugUtils(phab.api)
 
-    try:
-        await bugbug_utils.diff_to_push.rem(str(build.diff_id))
-    except KeyError:
-        pass
-
-    assert len(bugbug_utils.diff_to_push) == 0
-
-    await bugbug_utils.process_push(
-        (
-            "success",
-            build,
-            {
-                "treeherder_url": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123",
-                "revision": "123",
-            },
-        )
-    )
-
-    assert len(bugbug_utils.diff_to_push) == 1
-    assert bugbug_utils.diff_to_push.get(str(build.diff_id)) == {
-        "revision": "123",
-        "treeherder_url": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123",
-        "build": build,
-    }
-
-    if "REDIS_URL" in os.environ:
-        # Simulate a restart.
-        bugbug_utils = BugbugUtils()
         await bugbug_utils.setup()
 
-        assert len(bugbug_utils.diff_to_push) == 1
-        stored_push = bugbug_utils.diff_to_push.get(str(build.diff_id))
-        assert stored_push["revision"] == "123"
-        assert (
-            stored_push["treeherder_url"]
-            == "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123"
+        try:
+            await bugbug_utils.diff_to_push.rem(str(build.diff_id))
+        except KeyError:
+            pass
+
+        assert len(bugbug_utils.diff_to_push) == 0
+
+        await bugbug_utils.process_push(
+            (
+                "success",
+                build,
+                {
+                    "treeherder_url": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123",
+                    "revision": "123",
+                },
+            )
         )
-        assert stored_push["build"].diff_id == build.diff_id
-        assert stored_push["build"].target_phid == build.target_phid
+
+        assert len(bugbug_utils.diff_to_push) == 1
+        assert bugbug_utils.diff_to_push.get(str(build.diff_id)) == {
+            "revision": "123",
+            "treeherder_url": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123",
+            "build": build,
+        }
+
+        if "REDIS_URL" in os.environ:
+            # Simulate a restart.
+            bugbug_utils = BugbugUtils(phab.api)
+            await bugbug_utils.setup()
+
+            assert len(bugbug_utils.diff_to_push) == 1
+            stored_push = bugbug_utils.diff_to_push.get(str(build.diff_id))
+            assert stored_push["revision"] == "123"
+            assert (
+                stored_push["treeherder_url"]
+                == "https://treeherder.mozilla.org/#/jobs?repo=try&revision=123"
+            )
+            assert stored_push["build"].diff_id == build.diff_id
+            assert stored_push["build"].target_phid == build.target_phid
 
 
 @pytest.mark.asyncio
@@ -260,9 +261,14 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
         "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
     }
 
-    bugbug_utils = BugbugUtils()
+    with PhabricatorMock as phab:
+        phab.load_patches_stack(build)
+        phab.update_state(build)
+
+        bugbug_utils = BugbugUtils(phab.api)
+        bugbug_utils.register(bus)
+
     await bugbug_utils.setup()
-    bugbug_utils.register(bus)
 
     try:
         await bugbug_utils.diff_to_push.rem(str(build.diff_id))
@@ -273,11 +279,6 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
         await bugbug_utils.task_group_to_push.rem("HDnvYOibTMS8h_5Qzv6fWg")
     except KeyError:
         pass
-
-    with PhabricatorMock as phab:
-        phab.load_patches_stack(build)
-        phab.update_state(build)
-        phab.load_reviewers(build)
 
     # Nothing happens when diff_to_push is empty.
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -495,21 +496,22 @@ async def test_got_try_task_end(PhabricatorMock, mock_taskcluster, mock_treeherd
         "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
     }
 
-    bugbug_utils = BugbugUtils()
-    await bugbug_utils.setup()
-    bugbug_utils.register(bus)
-
-    try:
-        await bugbug_utils.task_group_to_push.rem("HDnvYOibTMS8h_5Qzv6fWg")
-    except KeyError:
-        pass
-
     with PhabricatorMock as phab:
         bus.add_queue(QUEUE_PHABRICATOR_RESULTS)
 
         phab.load_patches_stack(build)
         phab.update_state(build)
         phab.load_reviewers(build)
+
+        bugbug_utils = BugbugUtils(phab.api)
+        bugbug_utils.register(bus)
+
+    await bugbug_utils.setup()
+
+    try:
+        await bugbug_utils.task_group_to_push.rem("HDnvYOibTMS8h_5Qzv6fWg")
+    except KeyError:
+        pass
 
     # Nothing happens for tasks that are not test tasks.
     payload["body"]["task"]["tags"]["kind"] = "source-test"
