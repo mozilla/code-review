@@ -43,7 +43,7 @@ tasks:
         then: 'https://api.code-review.testing.moz.tools'
         else: 'https://api.code-review.moz.tools'
 
-    taskboot_image: "mozilla/taskboot:0.1.10"
+    taskboot_image: "mozilla/taskboot:0.2.1"
 
     pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
     python_version: "3.7"
@@ -527,3 +527,39 @@ tasks:
           description: Update Taskcluster hook triggering the code-review integration tests
           owner: bastien@mozilla.com
           source: https://github.com/mozilla/code-review
+
+    - $if: 'tasks_for == "github-push" && head_branch[:10] == "refs/tags/"'
+      then:
+        $let:
+          version: {$eval: 'head_branch[10:]'}
+        in:
+          taskId: {$eval: as_slugid("release")}
+          dependencies:
+            - {$eval: as_slugid("backend_build")}
+            - {$eval: as_slugid("bot_build")}
+            - {$eval: as_slugid("events_build")}
+            - {$eval: as_slugid("frontend_build")}
+            - {$eval: as_slugid("integration_build")}
+          created: {$fromNow: ''}
+          deadline: {$fromNow: '2 hour'}
+          provisionerId: proj-relman
+          workerType: ci
+          scopes:
+            - secrets:get:project/relman/code-review/release
+          payload:
+            features:
+              taskclusterProxy: true
+            maxRunTime: 3600
+            image: "${taskboot_image}"
+            env:
+              TASKCLUSTER_SECRET: project/relman/code-review/release
+            command:
+              - taskboot
+              - github-release
+              - mozilla/code-review
+              - "${version}"
+          metadata:
+            name: "Code Review Bot release ${version}"
+            description: Publish a new GitHub release for code-review platform
+            owner: bastien@mozilla.com
+            source: https://github.com/mozilla/code-review
