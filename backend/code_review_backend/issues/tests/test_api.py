@@ -158,6 +158,7 @@ class CreationAPITestCase(APITestCase):
                 "new_for_revision": True,
                 "path": "path/to/file.py",
                 "in_patch": True,
+                "publishable": True,
             },
         )
 

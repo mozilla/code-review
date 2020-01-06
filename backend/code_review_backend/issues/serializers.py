@@ -107,6 +107,8 @@ class IssueSerializer(serializers.ModelSerializer):
     Serialize an Issue in a Diff
     """
 
+    publishable = serializers.BooleanField(read_only=True)
+
     class Meta:
         model = Issue
         fields = (
@@ -122,6 +124,7 @@ class IssueSerializer(serializers.ModelSerializer):
             "message",
             "new_for_revision",
             "in_patch",
+            "publishable",
         )
         read_only_fields = ("new_for_revision",)
 

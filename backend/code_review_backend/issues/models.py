@@ -113,3 +113,8 @@ class Issue(models.Model):
 
     class Meta:
         ordering = ("diff", "path", "line", "analyzer")
+
+    @property
+    def publishable(self):
+        """Is that issue publishable on Phabricator to developers"""
+        return self.new_for_revision is True and self.in_patch is True
