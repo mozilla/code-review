@@ -541,7 +541,7 @@ tasks:
             - {$eval: as_slugid("frontend_build")}
             - {$eval: as_slugid("integration_build")}
           created: {$fromNow: ''}
-          deadline: {$fromNow: '2 hour'}
+          deadline: {$fromNow: '2 hours'}
           provisionerId: proj-relman
           workerType: ci
           scopes:
