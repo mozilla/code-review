@@ -138,8 +138,6 @@ class IssueCheckSerializer(serializers.Serializer):
     analyzer = serializers.CharField()
     check = serializers.CharField()
     total = serializers.IntegerField()
-
-    # TODO: support publishable stats number once we have hash comparison stored
     publishable = serializers.IntegerField(default=0)
 
 

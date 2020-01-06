@@ -152,6 +152,9 @@ class IssueCheckStats(generics.ListAPIView):
     queryset = (
         Issue.objects.values("analyzer", "check", "diff__revision__repository__slug")
         .annotate(total=Count("id"))
+        .annotate(
+            publishable=Count("id", filter=Q(in_patch=True) & Q(new_for_revision=True))
+        )
         .order_by("-total")
     )
 
