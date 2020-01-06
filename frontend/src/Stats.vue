@@ -135,7 +135,7 @@ export default {
             <td>{{ stat.check }}</td>
             <td>{{ stat.total }}</td>
             <td>
-              <router-link v-if="stat.publishable > 0" :to="{ name: 'check', params: { check: check.key }}">{{ stat.publishable }}</router-link>
+              <strong v-if="stat.publishable > 0">{{ stat.publishable }}</strong>
               <span class="has-text-grey" v-else>0</span>
             </td>
           </tr>
