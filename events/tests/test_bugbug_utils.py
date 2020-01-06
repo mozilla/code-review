@@ -36,19 +36,30 @@ async def test_risk_analysis_should_trigger(PhabricatorMock, mock_taskcluster):
         )
     )
 
-    taskcluster_config.secrets = {
-        "risk_analysis_reviewers": ["ehsan", "heycam"],
-        "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-    }
-
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
         phab.update_state(build)
 
+        # Reviewer of the patch is in the list of risk analysis users.
+        taskcluster_config.secrets = {
+            "risk_analysis_users": ["ehsan", "heycam"],
+            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
+        }
+
         bugbug_utils = BugbugUtils(phab.api)
         bugbug_utils.register(bus)
 
-    assert bugbug_utils.should_run_risk_analysis(build)
+        assert bugbug_utils.should_run_risk_analysis(build)
+
+        # Author of the patch is in the list of risk analysis users.
+        taskcluster_config.secrets = {
+            "risk_analysis_users": ["ehsan", "tnguyen"],
+            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
+        }
+
+        bugbug_utils = BugbugUtils(phab.api)
+
+        assert bugbug_utils.should_run_risk_analysis(build)
 
 
 @pytest.mark.asyncio
@@ -64,7 +75,7 @@ async def test_risk_analysis_shouldnt_trigger(PhabricatorMock, mock_taskcluster)
     )
 
     taskcluster_config.secrets = {
-        "risk_analysis_reviewers": ["ehsan"],
+        "risk_analysis_users": ["ehsan"],
         "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
     }
 

@@ -38,19 +38,17 @@ class BugbugUtils:
             "test_selection_notify_addresses", []
         )
 
-        risk_analysis_reviewers = taskcluster_config.secrets.get(
-            "risk_analysis_reviewers", []
-        )
+        risk_analysis_users = taskcluster_config.secrets.get("risk_analysis_users", [])
 
-        if len(risk_analysis_reviewers) > 0:
-            self.risk_analysis_reviewers = {
+        if len(risk_analysis_users) > 0:
+            self.risk_analysis_users = {
                 user["phid"]: user["fields"]["username"]
                 for user in phabricator_api.search_users(
-                    constraints={"usernames": risk_analysis_reviewers}
+                    constraints={"usernames": risk_analysis_users}
                 )
             }
         else:
-            self.risk_analysis_reviewers = {}
+            self.risk_analysis_users = {}
 
         # The following ephemeral storage handlers will be initialized in the setup method.
         # A map from try push task group to its linked Phabricator build.
@@ -127,20 +125,19 @@ class BugbugUtils:
     def should_run_risk_analysis(self, build):
         """
         Check if we should trigger a risk analysis for this revision:
-        * when the revision is being reviewed by one of some specific reviewers
+        * when the reviewers or the author of the revision are in a list of specific users
         """
         if self.community_tc is None:
             return False
 
-        reviewerPHIDs = [
+        userPHIDs = [
             reviewer["reviewerPHID"]
             for reviewer in build.revision["attachments"]["reviewers"]["reviewers"]
         ]
 
-        return any(
-            reviewerPHID in self.risk_analysis_reviewers
-            for reviewerPHID in reviewerPHIDs
-        )
+        userPHIDs.append(build.revision["fields"]["authorPHID"])
+
+        return any(userPHID in self.risk_analysis_users for userPHID in userPHIDs)
 
     async def start_risk_analysis(self, build: PhabricatorBuild):
         """
