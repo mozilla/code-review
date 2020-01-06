@@ -4,11 +4,13 @@ import random
 
 import jsone
 import jsonschema
+import slugid
 import structlog
 from libmozdata.phabricator import UnitResultState
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
 from libmozevent.storage import EphemeralStorage
+from thclient import TreeherderClient
 
 from code_review_events import QUEUE_BUGBUG
 from code_review_events import QUEUE_BUGBUG_TRY_PUSH
@@ -41,7 +43,7 @@ class BugbugUtils:
 
         # The following ephemeral storage handlers will be initialized in the setup method.
         # A map from try push task group to its linked Phabricator build.
-        self.task_group_to_build = None
+        self.task_group_to_push = None
         # A map from build phid to try revision.
         self.diff_to_push = None
 
@@ -70,9 +72,11 @@ class BugbugUtils:
         self.hooks_service = taskcluster_config.get_service("hooks")
         self.queue_service = taskcluster_config.get_service("queue")
 
+        self.treeherder_client = TreeherderClient()
+
     async def setup(self):
-        self.task_group_to_build = await EphemeralStorage.create(
-            "bugbug:task_group_to_build", EPHEMERAL_STORAGE_EXPIRATION
+        self.task_group_to_push = await EphemeralStorage.create(
+            "bugbug:task_group_to_push", EPHEMERAL_STORAGE_EXPIRATION
         )
         self.diff_to_push = await EphemeralStorage.create(
             "bugbug:diff_to_push", EPHEMERAL_STORAGE_EXPIRATION
@@ -294,7 +298,7 @@ class BugbugUtils:
 
         # Store the task group ID and a link to the Phabricator build, so we can upload
         # results to Phabricator when we get a task completion/failure notification.
-        await self.task_group_to_build.set(decision_task_id, push["build"])
+        await self.task_group_to_push.set(decision_task_id, push)
 
         for email in self.test_selection_notify_addresses:
             await self.notify_service.email(
@@ -316,7 +320,11 @@ class BugbugUtils:
             task = body["task"]
 
             # source-test failures are reported by the bot.
-            if "kind" not in task["tags"] or task["tags"]["kind"] != "test":
+            if (
+                "kind" not in task["tags"]
+                or task["tags"]["kind"] != "test"
+                or "runId" not in body
+            ):
                 return
 
             status = body["status"]
@@ -327,24 +335,40 @@ class BugbugUtils:
             # revision from the decision task).
             taskGroupId = status["taskGroupId"]
             try:
-                build = self.task_group_to_build.get(taskGroupId)
+                push = self.task_group_to_push.get(taskGroupId)
+                build = push["build"]
+                revision = push["revision"]
             except KeyError:
                 return
 
             name = task["tags"]["label"]
+
+            treeherder_url = None
 
             state = status["state"]
             if state == "completed":
                 result = UnitResultState.Pass
             elif state in ("failed", "exception"):
                 result = UnitResultState.Fail
+
+                uuid = slugid.decode(status["taskId"])
+                last_run = body["runId"]
+                job_details = self.treeherder_client.get_job_details(
+                    job_guid=f"{uuid}/{last_run}"
+                )
+                job_id = job_details[0]["job_id"]
+                treeherder_url = f"https://treeherder.mozilla.org/#/jobs?repo=try&revision={revision}&selectedJob={job_id}"
             else:
                 logger.error("Unexpected state", state=state)
                 return
 
             await self.bus.send(
                 QUEUE_PHABRICATOR_RESULTS,
-                ("test_result", build, {"name": name, "result": result}),
+                (
+                    "test_result",
+                    build,
+                    {"name": name, "result": result, "details": treeherder_url},
+                ),
             )
         except Exception as e:
             logger.error(

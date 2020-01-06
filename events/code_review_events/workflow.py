@@ -184,7 +184,10 @@ class CodeReview(PhabricatorActions):
 
         elif mode == "test_result":
             result = UnitResult(
-                namespace="code-review", name=extras["name"], result=extras["result"]
+                namespace="code-review",
+                name=extras["name"],
+                result=extras["result"],
+                details=extras["details"],
             )
             self.api.update_build_target(
                 build.target_phid, BuildState.Work, unit=[result]

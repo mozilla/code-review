@@ -1,0 +1,161 @@
+{
+	"next": null,
+	"previous": null,
+	"results": [{
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "Swap in / out",
+		"value": "0 / 0",
+		"url": null
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "CPU user",
+		"value": "282.6 (12.7%)",
+		"url": null
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "CPU system",
+		"value": "60.5 (2.7%)",
+		"url": null
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "CPU idle",
+		"value": "1,870.6 (84.2%)",
+		"url": null
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "I/O write bytes / time",
+		"value": "3,506,446,336 / 202,676",
+		"url": null
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "I/O read bytes / time",
+		"value": "52,260,864 / 732",
+		"url": null
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "CPU usage",
+		"value": "15.7%",
+		"url": null
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "resource-usage.json",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//resource-usage.json"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "perfherder_data.json",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//perfherder_data.json"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "mitmproxy.log",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//mitmproxy.log"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "memory-report-TabsOpenSettled-0.json.gz",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//memory-report-TabsOpenSettled-0.json.gz"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "memory-report-TabsOpenForceGC-0.json.gz",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//memory-report-TabsOpenForceGC-0.json.gz"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "memory-report-TabsOpen-0.json.gz",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//memory-report-TabsOpen-0.json.gz"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "memory-report-TabsClosedSettled-0.json.gz",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//memory-report-TabsClosedSettled-0.json.gz"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "memory-report-TabsClosedForceGC-0.json.gz",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//memory-report-TabsClosedForceGC-0.json.gz"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "memory-report-TabsClosedExtraProcesses-0.json.gz",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//memory-report-TabsClosedExtraProcesses-0.json.gz"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "memory-report-TabsClosed-0.json.gz",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//memory-report-TabsClosed-0.json.gz"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "memory-report-StartSettled-0.json.gz",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//memory-report-StartSettled-0.json.gz"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "memory-report-Start-0.json.gz",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//memory-report-Start-0.json.gz"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "marionette_errorsummary.log",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//marionette_errorsummary.log"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "gecko.log",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test_info//gecko.log"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "xvfb.log",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test/xvfb/xvfb.log"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "xsession-errors.log",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/test/public/xsession-errors.log"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "live_backing.log",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/logs/live_backing.log"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "live.log",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/logs/live.log"
+	}, {
+		"job_id": 277665740,
+		"job_guid": "5b648c67-76d8-4de6-a706-af9636951e1c/0",
+		"title": "artifact uploaded",
+		"value": "localconfig.json",
+		"url": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/W2SMZ3bYTeanBq-WNpUeHA/runs/0/artifacts/public/logs//localconfig.json"
+	}]
+}
