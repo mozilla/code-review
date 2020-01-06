@@ -54,7 +54,8 @@ class Revision(PhabricatorModel):
 
     @property
     def phabricator_url(self):
-        return urllib.parse.urljoin(settings.PHABRICATOR_HOST, f"D{self.id}")
+        parser = urllib.parse.urlparse(settings.PHABRICATOR_HOST)
+        return f"{parser.scheme}://{parser.netloc}/D{self.id}"
 
 
 class Diff(PhabricatorModel):
