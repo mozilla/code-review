@@ -27,7 +27,7 @@ EPHEMERAL_STORAGE_EXPIRATION = 25200
 
 
 class BugbugUtils:
-    def __init__(self):
+    def __init__(self, phabricator_api):
         self.test_selection_enabled = taskcluster_config.secrets.get(
             "test_selection_enabled", False
         )
@@ -37,9 +37,20 @@ class BugbugUtils:
         self.test_selection_notify_addresses = taskcluster_config.secrets.get(
             "test_selection_notify_addresses", []
         )
-        self.risk_analysis_reviewers = taskcluster_config.secrets.get(
+
+        risk_analysis_reviewers = taskcluster_config.secrets.get(
             "risk_analysis_reviewers", []
         )
+
+        if len(risk_analysis_reviewers) > 0:
+            self.risk_analysis_reviewers = {
+                user["phid"]: user["fields"]["username"]
+                for user in phabricator_api.search_users(
+                    constraints={"usernames": risk_analysis_reviewers}
+                )
+            }
+        else:
+            self.risk_analysis_reviewers = {}
 
         # The following ephemeral storage handlers will be initialized in the setup method.
         # A map from try push task group to its linked Phabricator build.
@@ -121,10 +132,15 @@ class BugbugUtils:
         if self.community_tc is None:
             return False
 
-        usernames = set(
-            [reviewer["fields"]["username"] for reviewer in build.reviewers]
+        reviewerPHIDs = [
+            reviewer["reviewerPHID"]
+            for reviewer in build.revision["attachments"]["reviewers"]["reviewers"]
+        ]
+
+        return any(
+            reviewerPHID in self.risk_analysis_reviewers
+            for reviewerPHID in reviewerPHIDs
         )
-        return len(usernames.intersection(self.risk_analysis_reviewers)) > 0
 
     async def start_risk_analysis(self, build: PhabricatorBuild):
         """

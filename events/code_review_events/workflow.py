@@ -110,9 +110,6 @@ class CodeReview(PhabricatorActions):
             try:
                 self.load_patches_stack(build)
                 logger.info("Loaded stack of patches", build=str(build))
-
-                self.load_reviewers(build)
-                logger.info("Loaded reviewers", build=str(build))
             except Exception as e:
                 logger.warning(
                     "Failed to load build details", build=str(build), error=str(e)
@@ -379,7 +376,7 @@ class Events(object):
             else:
                 self.community_monitoring = None
 
-            self.bugbug_utils = BugbugUtils()
+            self.bugbug_utils = BugbugUtils(self.workflow.api)
             self.bugbug_utils.register(self.bus)
         else:
             self.workflow = None
