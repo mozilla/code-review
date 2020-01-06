@@ -125,7 +125,7 @@ export default {
               <Choice :choices="checks" name="check" v-on:new-choice="use_filter('check', $event)"/>
             </th>
             <th>Detected</th>
-            <th>Published</th>
+            <th>Publishable</th>
           </tr>
         </thead>
         <tbody>
