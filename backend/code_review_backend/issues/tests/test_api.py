@@ -127,6 +127,7 @@ class CreationAPITestCase(APITestCase):
             "analyzer": "remote-flake8",
             "level": "error",
             "path": "path/to/file.py",
+            "in_patch": True,
         }
 
         # No auth will give a permission denied
@@ -156,6 +157,7 @@ class CreationAPITestCase(APITestCase):
                 "nb_lines": None,
                 "new_for_revision": True,
                 "path": "path/to/file.py",
+                "in_patch": True,
             },
         )
 

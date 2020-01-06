@@ -121,6 +121,7 @@ class IssueSerializer(serializers.ModelSerializer):
             "check",
             "message",
             "new_for_revision",
+            "in_patch",
         )
         read_only_fields = ("new_for_revision",)
 
