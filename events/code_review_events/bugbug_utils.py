@@ -125,7 +125,7 @@ class BugbugUtils:
     def should_run_risk_analysis(self, build):
         """
         Check if we should trigger a risk analysis for this revision:
-        * when the revision is being reviewed by one of some specific reviewers
+        * when the reviewers or the author of the revision are in a list of specific users
         """
         if self.community_tc is None:
             return False
