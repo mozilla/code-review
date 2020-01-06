@@ -122,7 +122,7 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
         return diffs
 
 
-class IssueViewSet(CreateListRetrieveViewSet):
+class IssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
 
     def get_queryset(self):
