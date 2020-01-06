@@ -14,15 +14,7 @@ def test_publish(monkeypatch, workflow, tmpdir, mock_taskcluster):
 
     # Fake moz-phab
     def moz_phab(cmd, **kwargs):
-        assert cmd == [
-            "moz-phab",
-            "submit",
-            "--yes",
-            "--no-lint",
-            "--no-bug",
-            "--no-arc",
-            "1234",
-        ]
+        assert cmd == ["moz-phab", "submit", "--yes", "--no-lint", "--no-bug", "1234"]
         assert kwargs == {"cwd": repo_dir}
 
         return b"some random output...\n-> http://phab.test/D1"
