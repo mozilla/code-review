@@ -7,6 +7,7 @@ import logging
 from multiprocessing import Pool
 
 import requests
+from django import db
 from django.core.management.base import BaseCommand
 from parsepatch.patch import Patch
 
@@ -99,6 +100,9 @@ class Command(BaseCommand):
             Diff.objects.filter(issues__in_patch__isnull=True).order_by("id").distinct()
         )
         logger.debug("Will process {} diffs".format(diffs.count()))
+
+        # Close all DB connection so each process get its own
+        db.connections.close_all()
 
         # Process all the diffs in parallel
         with Pool(processes=options["nb_processes"]) as pool:

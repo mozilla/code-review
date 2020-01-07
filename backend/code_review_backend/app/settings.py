@@ -100,7 +100,9 @@ if "DATABASE_URL" in os.environ:
     logger.info("Using remote database from $DATABASE_URL")
     DATABASES = {
         "default": dj_database_url.parse(
-            os.environ["DATABASE_URL"], ssl_require="DYNO" in os.environ
+            os.environ["DATABASE_URL"],
+            conn_max_age=600,
+            ssl_require="DYNO" in os.environ,
         )
     }
 else:
