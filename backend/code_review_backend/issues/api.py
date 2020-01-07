@@ -84,9 +84,7 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
             )
             .annotate(nb_issues=Count("issues"))
             .annotate(
-                nb_issues_new_for_revision=Count(
-                    "issues", filter=Q(issues__new_for_revision=True)
-                )
+                nb_issues_publishable=Count("issues", filter=Q(issues__in_patch=True))
             )
             .order_by("-id")
         )
@@ -152,9 +150,7 @@ class IssueCheckStats(generics.ListAPIView):
     queryset = (
         Issue.objects.values("analyzer", "check", "diff__revision__repository__slug")
         .annotate(total=Count("id"))
-        .annotate(
-            publishable=Count("id", filter=Q(in_patch=True) & Q(new_for_revision=True))
-        )
+        .annotate(publishable=Count("id", filter=Q(in_patch=True)))
         .order_by("-total")
     )
 
