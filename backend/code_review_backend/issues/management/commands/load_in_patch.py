@@ -95,7 +95,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Only apply on diffs with issues that are not already processed
-        diffs = Diff.objects.filter(issues__in_patch__isnull=True).order_by("id")
+        diffs = (
+            Diff.objects.filter(issues__in_patch__isnull=True).order_by("id").distinct()
+        )
+        logger.debug("Will process {} diffs".format(diffs.count()))
 
         # Process all the diffs in parallel
         with Pool(processes=options["nb_processes"]) as pool:
