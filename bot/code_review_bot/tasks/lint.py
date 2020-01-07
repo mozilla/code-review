@@ -51,7 +51,7 @@ class MozLintIssue(Issue):
             nb_lines=1,
             check=check,
             column=column,
-            level=Level(level),
+            level=level,
             message=message,
         )
         self.linter = linter
@@ -141,7 +141,7 @@ class MozLintTask(AnalysisTask):
                 revision=revision,
                 path=issue.get("relpath", issue["path"]),
                 column=issue["column"],
-                level=issue["level"],
+                level=self.get_issue_level(Level(issue["level"])),
                 lineno=issue["lineno"],
                 linter=issue["linter"],
                 message=issue["message"],

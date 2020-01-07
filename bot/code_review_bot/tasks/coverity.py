@@ -47,7 +47,7 @@ class CoverityIssue(Issue):
     An issue reported by coverity
     """
 
-    def __init__(self, analyzer, revision, issue, file_path):
+    def __init__(self, analyzer, revision, issue, file_path, level=Level.Warning):
         super().__init__(
             analyzer,
             revision,
@@ -55,7 +55,7 @@ class CoverityIssue(Issue):
             line=issue["line"],
             nb_lines=1,
             check=issue["flag"],
-            level=Level.Warning,
+            level=level,
             message=issue["message"],
         )
         self.reliability = (
@@ -198,7 +198,11 @@ class CoverityTask(AnalysisTask):
         assert isinstance(artifacts, dict)
         return [
             CoverityIssue(
-                analyzer=self.name, revision=revision, issue=warning, file_path=path
+                analyzer=self.name,
+                revision=revision,
+                issue=warning,
+                file_path=path,
+                level=self.get_issue_level(Level.Warning),
             )
             for artifact in artifacts.values()
             for path, items in artifact["files"].items()

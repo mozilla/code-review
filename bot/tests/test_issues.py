@@ -3,7 +3,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
+import os
+
+import pytest
+
+from code_review_bot import Level
 from code_review_bot.tasks.clang_format import ClangFormatIssue
+from code_review_bot.tasks.lint import MozLintTask
+from conftest import FIXTURES_DIR
 
 
 def test_allowed_paths(mock_config, mock_revision):
@@ -52,3 +60,46 @@ def test_backend_publication(mock_revision):
     # The backend data takes precedence over local in patch
     issue.on_backend = {"publishable": True}
     assert issue.is_publishable()
+
+
+@pytest.mark.parametrize(
+    "tier_level, issue_level",
+    [
+        (None, Level.Warning),
+        ("1", Level.Error),
+        (1, Level.Error),
+        ("2", Level.Warning),
+        (2, Level.Warning),
+        ("3", Level.Warning),
+        (3, Level.Warning),
+        ("anything else", Level.Warning),
+    ],
+)
+def test_tier_level(tier_level, issue_level, mock_revision):
+    """
+    Test a task tier level on treeherder modifies the level of the issue
+    Warnings must become Errors on tier 1 tasks
+    """
+    mock_revision.repository = "test-try"
+    mock_revision.mercurial_revision = "deadbeef1234"
+    task_status = {
+        "task": {"metadata": {"name": "source-test-mozlint-fake"}},
+        "status": {},
+    }
+
+    # Apply treeherder level
+    if tier_level:
+        task_status["task"].update({"extra": {"treeherder": {"tier": tier_level}}})
+
+    task = MozLintTask("lintTaskId", task_status)
+
+    # Load artifact related to that bug
+    path = os.path.join(FIXTURES_DIR, "mozlint_warnings.json")
+    with open(path) as f:
+        issues = task.parse_issues(
+            {"public/code-review/mozlint": json.load(f)}, mock_revision
+        )
+
+    # We should have 2 issues that use the correct level
+    assert len(issues) == 2
+    assert {i.level for i in issues} == {issue_level}

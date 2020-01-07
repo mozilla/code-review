@@ -34,8 +34,33 @@ class AnalysisTask(object):
         return self.task["metadata"].get("name", "unknown")
 
     @property
+    def treeherder_tier(self):
+        """
+        Access the treeherder tier analyzer level
+        All errors on level 1 should always be reported as they break on autoland
+        """
+        try:
+            return int(self.task["extra"]["treeherder"]["tier"])
+        except (KeyError, ValueError):
+            return None
+
+    @property
     def state(self):
         return self.status["state"]
+
+    def get_issue_level(self, default_level):
+        """
+        Build the level for an issue according to task treeherder tier state
+        All tier 1 tasks always produce errors
+        """
+        from code_review_bot import Level
+
+        assert isinstance(default_level, Level)
+
+        if self.treeherder_tier == 1:
+            return Level.Error
+
+        return default_level
 
     @classmethod
     def build_from_route(cls, index_service, queue_service):

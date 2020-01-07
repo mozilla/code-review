@@ -1,0 +1,32 @@
+{
+    "fake/file.py": [
+        {
+            "rule": "rule-AAA",
+            "linter": "dummy-lint",
+            "column": null,
+            "lineoffset": null,
+            "lineno": 12,
+            "path": "fake/file.py",
+            "relpath": "fake/file.py",
+            "level": "warning",
+            "diff": null,
+            "source": null,
+            "hint": null,
+            "message": "Somme dummy warning for unit test"
+        },
+        {
+            "rule": "rule-XXX",
+            "linter": "dummy-lint",
+            "column": null,
+            "lineoffset": null,
+            "lineno": 42,
+            "path": "fake/file.py",
+            "relpath": "fake/file.py",
+            "level": "warning",
+            "diff": null,
+            "source": null,
+            "hint": null,
+            "message": "Somme other dummy warning for unit test"
+        }
+    ]
+}

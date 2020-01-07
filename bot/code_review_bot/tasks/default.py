@@ -98,7 +98,7 @@ class DefaultTask(AnalysisTask):
                 line=issue["line"],
                 column=issue["column"],
                 nb_lines=issue.get("nb_lines", 1),
-                level=Level(issue["level"]),
+                level=self.get_issue_level(Level(issue["level"])),
                 check=default_check(issue),
                 message=issue["message"],
             )

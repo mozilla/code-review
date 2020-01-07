@@ -37,7 +37,7 @@ class InferIssue(Issue):
     An issue reported by infer
     """
 
-    def __init__(self, analyzer, entry, revision):
+    def __init__(self, analyzer, entry, revision, level=Level.Warning):
         assert isinstance(entry, dict)
         kind = entry.get("kind") or entry.get("severity")
         assert kind is not None, "Missing issue kind"
@@ -49,7 +49,7 @@ class InferIssue(Issue):
             nb_lines=1,
             check=entry["bug_type"],
             column=entry["column"],
-            level=Level.Warning,
+            level=level,
             message=entry["qualifier"],
         )
 
@@ -105,7 +105,12 @@ class InferTask(AnalysisTask):
         """
         assert isinstance(artifacts, dict)
         return [
-            InferIssue(analyzer=self.name, revision=revision, entry=issue)
+            InferIssue(
+                analyzer=self.name,
+                revision=revision,
+                entry=issue,
+                level=self.get_issue_level(Level.Warning),
+            )
             for issues in artifacts.values()
             for issue in issues
         ]

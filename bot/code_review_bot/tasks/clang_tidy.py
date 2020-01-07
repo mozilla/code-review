@@ -61,6 +61,7 @@ class ClangTidyIssue(Issue):
         reliability=Reliability.Unknown,
         reason=None,
         publish=True,
+        level=Level.Warning,
     ):
         assert isinstance(reliability, Reliability)
 
@@ -72,7 +73,7 @@ class ClangTidyIssue(Issue):
             nb_lines=1,  # Only 1 line affected on clang-tidy
             check=check,
             column=int(column),
-            level=Level.Warning,
+            level=level,
             message=message,
         )
         self.notes = []
@@ -193,6 +194,7 @@ class ClangTidyTask(AnalysisTask):
                 else Reliability.Unknown,
                 reason=warning.get("reason"),
                 publish=warning.get("publish"),
+                level=self.get_issue_level(Level.Warning),
             )
             for artifact in artifacts.values()
             for path, items in artifact["files"].items()

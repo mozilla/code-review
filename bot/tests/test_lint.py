@@ -6,6 +6,7 @@
 import json
 import os
 
+from code_review_bot import Level
 from code_review_bot.tasks.lint import MozLintIssue
 from code_review_bot.tasks.lint import MozLintTask
 from conftest import FIXTURES_DIR
@@ -21,7 +22,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo):
         "mock-lint-flake8",
         "test.py",
         1,
-        "error",
+        Level.Error,
         1,
         "flake8",
         "Dummy test",
@@ -36,7 +37,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo):
         "mock-lint-flake8",
         "test.py",
         1,
-        "error",
+        Level.Error,
         1,
         "flake8",
         "Remove bad quotes or whatever.",
@@ -71,7 +72,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo):
         "mock-lint-flake8",
         "test.py",
         1,
-        "error",
+        Level.Error,
         1,
         "flake8",
         "dummy test withUppercaseChars",

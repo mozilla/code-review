@@ -69,6 +69,7 @@ class Issue(abc.ABC):
         from code_review_bot.revisions import Revision
 
         assert isinstance(revision, Revision)
+        assert isinstance(level, Level)
 
         # Base required fields for all issues
         assert not os.path.isabs(path), f"Issue path can not be absolute {path}"
@@ -79,6 +80,7 @@ class Issue(abc.ABC):
         self.line = positive_int("line", line)
         self.nb_lines = positive_int("nb_lines", nb_lines)
         self.check = check
+        self.level = level
 
         # Support line 0, with a Sentry warning
         if self.line == 0:
@@ -88,7 +90,6 @@ class Issue(abc.ABC):
         # Optional common fields
         self.column = column
         self.message = message
-        self.level = level
 
         # Reserved payload for backend
         self.on_backend = None

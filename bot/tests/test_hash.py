@@ -5,6 +5,7 @@
 
 import hashlib
 
+from code_review_bot import Level
 from code_review_bot.tasks.lint import MozLintIssue
 
 
@@ -20,7 +21,7 @@ def test_build_hash(mock_revision, mock_hgmo):
         "mock-analyzer-eslint",
         "path/to/file.cpp",
         42,
-        "error",
+        Level.Error,
         123,
         "eslint",
         "A random & fake linting issue",
@@ -57,7 +58,7 @@ def test_indentation_effect(mock_revision, mock_hgmo):
         "mock-analyzer-flake8",
         "hello1",
         2,
-        "error",
+        Level.Error,
         1,
         "flake8",
         "A random & fake linting issue",
@@ -68,7 +69,7 @@ def test_indentation_effect(mock_revision, mock_hgmo):
         "mock-analyzer-flake8",
         "hello1",
         5,
-        "error",
+        Level.Error,
         1,
         "flake8",
         "A random & fake linting issue",
@@ -101,7 +102,7 @@ def test_full_file(mock_revision, mock_hgmo):
         "mock-analyzer-fullfile",
         "path/to/afile.py",
         0,
-        "error",
+        Level.Error,
         -1,
         "fullfile",
         "Some issue found on a file",

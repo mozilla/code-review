@@ -9,6 +9,8 @@ import urllib
 
 import responses
 
+from code_review_bot import Level
+
 VALID_CLANG_TIDY_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
  - 1 defect found by clang-tidy
@@ -248,7 +250,7 @@ def test_phabricator_mozlint(mock_config, mock_phabricator, mock_try_task):
         lineno=42,
         column=1,
         message="A bad bad error",
-        level="error",
+        level=Level.Error,
         revision=revision,
         linter="flake8",
         check="EXXX",
@@ -474,7 +476,7 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
                 "mock-lint-flake8",
                 "test.cpp",
                 1,
-                "error",
+                Level.Error,
                 42,
                 "flake8",
                 "Python error",
