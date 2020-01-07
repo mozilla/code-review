@@ -13,8 +13,6 @@ import requests
 import structlog
 from taskcluster.helper import TaskclusterConfig
 
-from code_review_bot.config import Publication
-from code_review_bot.config import settings
 from code_review_bot.stats import InfluxDb
 
 logger = structlog.get_logger(__name__)
@@ -110,7 +108,6 @@ class Issue(abc.ABC):
     def is_publishable(self):
         """
         Is this issue publishable on reporters ?
-        Supports both publication mode
         """
         assert self.revision is not None, "Missing revision"
 
@@ -118,26 +115,12 @@ class Issue(abc.ABC):
         if not self.validates():
             return False
 
-        if settings.publication == Publication.IN_PATCH:
-            # Only check that the issue is in this revision
-            return self.revision.contains(self)
+        # Then check if the backend marks this issue as publishable
+        if self.on_backend is not None:
+            return self.on_backend["publishable"]
 
-        if settings.publication == Publication.BEFORE_AFTER:
-            # Simply use marker set by backend
-            # and check the revision contains the file
-            # as Phabricator only support inline comments on modified files
-            if self.on_backend is None:
-                # Fallback to IN_PATCH when backend data is not available
-                return self.revision.contains(self)
-
-            # TODO: this is a naive implementation that only checks if an issue
-            # is new for the revision. All first seen issues will be published !
-            return (
-                self.revision.has_file(self.path)
-                and self.on_backend["new_for_revision"]
-            )
-
-        raise Exception("Unsupported publication mode {}".format(settings.publication))
+        # Fallback to in_patch detection
+        return self.revision.contains(self)
 
     def build_hash(self):
         """
