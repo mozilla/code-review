@@ -84,7 +84,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
         view_name="issues-list", lookup_url_kwarg="diff_id"
     )
     nb_issues = serializers.IntegerField(read_only=True)
-    nb_issues_new_for_revision = serializers.IntegerField(read_only=True)
+    nb_issues_publishable = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Diff
@@ -97,7 +97,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
             "mercurial_hash",
             "issues_url",
             "nb_issues",
-            "nb_issues_new_for_revision",
+            "nb_issues_publishable",
             "created",
         )
 
@@ -106,6 +106,8 @@ class IssueSerializer(serializers.ModelSerializer):
     """
     Serialize an Issue in a Diff
     """
+
+    publishable = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = Issue
@@ -121,6 +123,8 @@ class IssueSerializer(serializers.ModelSerializer):
             "check",
             "message",
             "new_for_revision",
+            "in_patch",
+            "publishable",
         )
         read_only_fields = ("new_for_revision",)
 
@@ -134,8 +138,6 @@ class IssueCheckSerializer(serializers.Serializer):
     analyzer = serializers.CharField()
     check = serializers.CharField()
     total = serializers.IntegerField()
-
-    # TODO: support publishable stats number once we have hash comparison stored
     publishable = serializers.IntegerField(default=0)
 
 

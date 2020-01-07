@@ -104,8 +104,17 @@ class Issue(models.Model):
     # Can be null (not set by API) when a revision is not linked to a diff
     new_for_revision = models.BooleanField(null=True)
 
+    # Is this issue present in the patch ?
+    # Can be null (not set by API) when a revision is not linked to a diff
+    in_patch = models.BooleanField(null=True)
+
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ("diff", "path", "line", "analyzer")
+
+    @property
+    def publishable(self):
+        """Is that issue publishable on Phabricator to developers"""
+        return self.in_patch is True

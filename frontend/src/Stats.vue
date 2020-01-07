@@ -125,7 +125,7 @@ export default {
               <Choice :choices="checks" name="check" v-on:new-choice="use_filter('check', $event)"/>
             </th>
             <th>Detected</th>
-            <th>Published</th>
+            <th>Publishable</th>
           </tr>
         </thead>
         <tbody>
@@ -135,7 +135,7 @@ export default {
             <td>{{ stat.check }}</td>
             <td>{{ stat.total }}</td>
             <td>
-              <router-link v-if="stat.publishable > 0" :to="{ name: 'check', params: { check: check.key }}">{{ stat.publishable }}</router-link>
+              <strong v-if="stat.publishable > 0">{{ stat.publishable }}</strong>
               <span class="has-text-grey" v-else>0</span>
             </td>
           </tr>

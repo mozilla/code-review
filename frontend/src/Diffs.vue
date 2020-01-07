@@ -26,7 +26,7 @@ export default {
         issues: [
           { name: 'No issues', value: 'no' },
           { name: 'Has issues', value: 'any' },
-          { name: 'New issues', value: 'new' }
+          { name: 'Publishable issues', value: 'publishable' }
         ]
       }
     }
@@ -171,8 +171,8 @@ export default {
             <a :href="diff.repository.url + '/rev/' + diff.mercurial_hash" target="_blank">{{ diff.mercurial_hash.substring(0, 8) }} @ {{ diff.repository.slug }}</a>
           </td>
 
-          <td :class="{'has-text-success': diff.nb_issues_new_for_revision > 0}">
-            <span v-if="diff.nb_issues_new_for_revision >= 0">{{ diff.nb_issues_new_for_revision }}</span>
+          <td :class="{'has-text-success': diff.nb_issues_publishable > 0}">
+            <span v-if="diff.nb_issues_publishable >= 0">{{ diff.nb_issues_publishable }}</span>
             <span v-else>-</span>
             / {{ diff.nb_issues }}
           </td>

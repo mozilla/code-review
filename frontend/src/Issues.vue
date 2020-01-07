@@ -8,19 +8,19 @@ export default {
     return {
       state: 'loading',
       filters: {
-        new_for_revision: null,
+        publishable: null,
         analyzer: null,
         path: null
       },
       choices: {
-        new_for_revision: [
+        publishable: [
           {
-            name: 'New in this revision',
-            func: i => i.new_for_revision
+            name: 'Publishable',
+            func: i => i.publishable
           },
           {
-            name: 'Aready present in revision',
-            func: i => !i.new_for_revision
+            name: 'Not publishable',
+            func: i => !(i.publishable)
           }
         ]
       }
@@ -33,7 +33,7 @@ export default {
   mounted () {
     // Update filters from query string
     let newForRevision = parseInt(this.$route.query.issue)
-    this.filters.new_for_revision = isNaN(newForRevision) ? null : this.choices.new_for_revision[newForRevision]
+    this.filters.publishable = isNaN(newForRevision) ? null : this.choices.publishable[newForRevision]
     this.filters.path = this.$route.query.path || null
     this.filters.analyzer = this.$route.query.analyzer || null
 
@@ -62,11 +62,11 @@ export default {
       let uniqueAnalyzers = new Set(this.all_issues.map(i => i.analyzer))
       return [...uniqueAnalyzers].sort()
     },
-    nb_new_for_revision () {
+    nb_publishable () {
       if (!this.diff || !this.diff.issues) {
         return 0
       }
-      return this.all_issues.filter(i => i.new_for_revision).length
+      return this.all_issues.filter(i => i.publishable).length
     },
     all_issues () {
       return this.diff ? (this.$store.state.issues[this.diff.id] || []) : []
@@ -74,9 +74,9 @@ export default {
     issues () {
       let issues = this.all_issues
 
-      // Filter by new_for_revision
-      if (this.filters.new_for_revision !== null) {
-        issues = issues.filter(this.filters.new_for_revision.func)
+      // Filter by publishable
+      if (this.filters.publishable !== null) {
+        issues = issues.filter(this.filters.publishable.func)
       }
 
       // Filter by path
@@ -112,8 +112,8 @@ export default {
       <nav class="level" v-if="diff && diff.id">
         <div class="level-item has-text-centered">
           <div>
-            <p class="heading">new_for_revision</p>
-            <p class="title">{{ nb_new_for_revision }}</p>
+            <p class="heading">Publishable</p>
+            <p class="title">{{ nb_publishable }}</p>
           </div>
         </div>
         <div class="level-item has-text-centered">
@@ -130,7 +130,7 @@ export default {
         </div>
         <div class="level-item has-text-centered">
           <div>
-            <p class="heading">diffed</p>
+            <p class="heading">Diffed</p>
             <p class="title">{{ diff.time|from_timestamp }}</p>
           </div>
         </div>
@@ -143,7 +143,7 @@ export default {
             <td><Choice :choices="analyzers" name="analyzer" v-on:new-choice="filters.analyzer = $event"/></td>
             <td><Choice :choices="paths" name="path" v-on:new-choice="filters.path = $event"/></td>
             <td>Lines</td>
-            <td><Choice :choices="choices.new_for_revision" name="new issue" v-on:new-choice="filters.new_for_revision = $event"/></td>
+            <td><Choice :choices="choices.publishable" name="publishable" v-on:new-choice="filters.publishable = $event"/></td>
             <td>Check</td>
             <td>Level</td>
             <td>Message</td>
@@ -151,7 +151,7 @@ export default {
         </thead>
 
         <tbody>
-          <tr v-for="issue in issues" :class="{'new_for_revision': issue.new_for_revision}">
+          <tr v-for="issue in issues" :class="{'publishable': issue.publishable}">
             <td><samp>{{ issue.hash.substring(0, 12) }}</samp></td>
             <td>
               <span>{{ issue.analyzer }}</span>
@@ -159,7 +159,15 @@ export default {
             <td class="path">{{ issue.path }}</td>
             <td>{{ issue.line }} <span v-if="issue.nb_lines > 1">&rarr; {{ issue.line - 1 + issue.nb_lines }}</span></td>
             <td>
-              <Bool :value="issue.new_for_revision" name="New in this revision" />
+              <p>
+                <Bool :value="issue.publishable" name="Publishable" />
+              </p>
+              <p>
+                <Bool :value="issue.new_for_revision" name="New for revision" />
+              </p>
+              <p>
+                <Bool :value="issue.in_patch" name="In Patch" />
+              </p>
             </td>
 
             <td>
