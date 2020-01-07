@@ -36,7 +36,7 @@ def load_hgmo_patch(diff):
     resp = requests.get(url)
     resp.raise_for_status()
 
-    patch = Patch.parse_patch(resp.content.decode("utf-8"), skip_comments=False)
+    patch = Patch.parse_patch(resp.content, skip_comments=False)
     assert patch != {}, "Empty patch"
     lines = {
         # Use all changes in new files
