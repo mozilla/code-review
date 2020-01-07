@@ -99,4 +99,4 @@ class Command(BaseCommand):
 
         # Process all the diffs in parallel
         with Pool(processes=options["nb_processes"]) as pool:
-            pool.map(process_diff, diffs)
+            pool.map(process_diff, diffs, chunksize=20)
