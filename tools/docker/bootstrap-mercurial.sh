@@ -3,7 +3,7 @@ MERCURIAL_VERSION="5.2"
 VERSION_CONTROL_TOOLS_REV="102106f53cb2"
 
 apt-get update
-apt-get install --no-install-recommends -y curl gcc openssh-client
+apt-get install --no-install-recommends -y curl python-dev gcc openssh-client
 
 pip install --disable-pip-version-check --quiet --no-cache-dir mercurial==$MERCURIAL_VERSION
 
