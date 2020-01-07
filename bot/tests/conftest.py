@@ -38,7 +38,7 @@ def mock_config():
         del os.environ["TASK_ID"]
     os.environ["TRY_TASK_ID"] = "remoteTryTask"
     os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
-    settings.setup("test", "IN_PATCH", ["dom/*", "tests/*.py", "test/*.c"])
+    settings.setup("test", ["dom/*", "tests/*.py", "test/*.c"])
     return settings
 
 

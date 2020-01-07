@@ -59,7 +59,6 @@ def main():
         existing={
             "APP_CHANNEL": "development",
             "REPORTERS": [],
-            "PUBLICATION": "IN_PATCH",
             "ZERO_COVERAGE_ENABLED": True,
             "ALLOWED_PATHS": ["*"],
             "task_failures_ignored": [],
@@ -79,9 +78,7 @@ def main():
 
     # Setup settings before stats
     settings.setup(
-        taskcluster.secrets["APP_CHANNEL"],
-        taskcluster.secrets["PUBLICATION"],
-        taskcluster.secrets["ALLOWED_PATHS"],
+        taskcluster.secrets["APP_CHANNEL"], taskcluster.secrets["ALLOWED_PATHS"]
     )
     # Setup statistics
     influx_conf = taskcluster.secrets.get("influxdb")

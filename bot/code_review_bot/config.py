@@ -7,7 +7,6 @@ from __future__ import absolute_import
 
 import atexit
 import collections
-import enum
 import fnmatch
 import os
 import re
@@ -30,16 +29,6 @@ TaskCluster = collections.namedtuple(
 )
 
 
-class Publication(enum.Enum):
-    # Only check if the issue is in the developer patch
-    # This is the original mode
-    IN_PATCH = 1
-
-    # Every new issue (not found before applying the patch)
-    # will be published
-    BEFORE_AFTER = 2
-
-
 class Settings(object):
     def __init__(self):
         self.config = {
@@ -50,7 +39,6 @@ class Settings(object):
             "js_extensions": frozenset([".js", ".jsm"]),
         }
         self.app_channel = None
-        self.publication = None
         self.taskcluster = None
         self.try_task_id = None
         self.try_group_id = None
@@ -60,7 +48,7 @@ class Settings(object):
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
 
-    def setup(self, app_channel, publication, allowed_paths):
+    def setup(self, app_channel, allowed_paths):
         # Detect source from env
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
             self.try_task_id = os.environ["TRY_TASK_ID"]
@@ -71,16 +59,6 @@ class Settings(object):
             raise Exception("Only TRY mode is supported")
 
         self.app_channel = app_channel
-
-        assert isinstance(publication, str)
-        try:
-            self.publication = Publication[publication]
-        except KeyError:
-            raise Exception(
-                "Publication mode should be {}".format(
-                    "|".join(map(lambda p: p.name, Publication))
-                )
-            )
 
         # Save Taskcluster ID for logging
         if "TASK_ID" in os.environ and "RUN_ID" in os.environ:

@@ -29,3 +29,26 @@ def test_allowed_paths(mock_config, mock_revision):
     }
     for path, result in checks.items():
         assert _allowed(path) is result
+
+
+def test_backend_publication(mock_revision):
+    """
+    Test the backend publication status modifies an issue publication
+    """
+
+    issue = ClangFormatIssue(
+        "mock-clang-format", "dom/somefile.cpp", 1, 1, mock_revision
+    )
+    assert issue.validates()
+
+    # At first backend data is empty
+    assert issue.on_backend is None
+
+    # Not publishable as not in patch
+    assert mock_revision.lines == {}
+    assert not mock_revision.contains(issue)
+    assert not issue.is_publishable()
+
+    # The backend data takes precedence over local in patch
+    issue.on_backend = {"publishable": True}
+    assert issue.is_publishable()

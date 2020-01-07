@@ -131,7 +131,7 @@ def test_on_production(mock_config):
     os.environ["TASK_ID"] = "testingTask"
     os.environ["RUN_ID"] = "0"
     testing = Settings()
-    testing.setup("testing", "IN_PATCH", [])
+    testing.setup("testing", [])
     assert testing.app_channel == "testing"
     assert testing.taskcluster.local is False
     assert testing.on_production is False
@@ -140,7 +140,7 @@ def test_on_production(mock_config):
     os.environ["TASK_ID"] = "prodTask"
     os.environ["RUN_ID"] = "0"
     testing = Settings()
-    testing.setup("production", "IN_PATCH", [])
+    testing.setup("production", [])
     assert testing.app_channel == "production"
     assert testing.taskcluster.local is False
     assert testing.on_production is True
