@@ -112,8 +112,8 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
         issues = self.request.query_params.get("issues")
         if issues == "any":
             diffs = diffs.filter(nb_issues__gt=0)
-        elif issues == "new":
-            diffs = diffs.filter(nb_issues_new_for_revision__gt=0)
+        elif issues == "publishable":
+            diffs = diffs.filter(nb_issues_publishable__gt=0)
         elif issues == "no":
             diffs = diffs.filter(nb_issues=0)
 

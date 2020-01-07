@@ -84,7 +84,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
         view_name="issues-list", lookup_url_kwarg="diff_id"
     )
     nb_issues = serializers.IntegerField(read_only=True)
-    nb_issues_new_for_revision = serializers.IntegerField(read_only=True)
+    nb_issues_publishable = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Diff
@@ -97,7 +97,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
             "mercurial_hash",
             "issues_url",
             "nb_issues",
-            "nb_issues_new_for_revision",
+            "nb_issues_publishable",
             "created",
         )
 
