@@ -36,7 +36,7 @@ def load_hgmo_patch(diff):
     resp = requests.get(url)
     resp.raise_for_status()
 
-    patch = Patch.parse_patch(resp.content, skip_comments=False)
+    patch = Patch.parse_patch(resp.content.decode("utf-8"), skip_comments=False)
     assert patch != {}, "Empty patch"
     lines = {
         # Use all changes in new files
@@ -95,7 +95,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         # Only apply on diffs with issues that are not already processed
-        diffs = Diff.objects.filter(issues__in_patch__isnull=True).order_by("id")
+        diffs = (
+            Diff.objects.filter(issues__in_patch__isnull=True).order_by("id").distinct()
+        )
+        logger.info("Will process {} diffs".format(diffs.count()))
 
         # Process all the diffs in parallel
         with Pool(processes=options["nb_processes"]) as pool:
