@@ -98,7 +98,7 @@ class Command(BaseCommand):
         diffs = (
             Diff.objects.filter(issues__in_patch__isnull=True).order_by("id").distinct()
         )
-        logger.info("Will process {} diffs".format(diffs.count()))
+        logger.debug("Will process {} diffs".format(diffs.count()))
 
         # Process all the diffs in parallel
         with Pool(processes=options["nb_processes"]) as pool:
