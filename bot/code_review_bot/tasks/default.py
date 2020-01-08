@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import structlog
-from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
 from code_review_bot import Level
@@ -49,20 +48,6 @@ class DefaultIssue(Issue):
             line=self.line,
             message=self.message,
             publishable=self.is_publishable() and "yes" or "no",
-        )
-
-    def as_phabricator_lint(self):
-        """
-        Outputs a Phabricator lint result
-        """
-        return LintResult(
-            name=f"Issue {self.analyzer}",
-            description=self.message,
-            code=self.check,
-            severity=self.level,
-            path=self.path,
-            line=self.line,
-            char=self.column,
         )
 
 

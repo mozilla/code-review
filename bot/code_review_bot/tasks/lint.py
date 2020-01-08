@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import structlog
-from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
 from code_review_bot import Level
@@ -97,25 +96,6 @@ class MozLintIssue(Issue):
             message=self.message,
             publishable=self.is_publishable() and "yes" or "no",
             disabled_check=self.is_disabled_check() and "yes" or "no",
-        )
-
-    def as_phabricator_lint(self):
-        """
-        Outputs a Phabricator lint result
-        """
-        code = self.linter
-        name = "MozLint {}".format(self.linter.capitalize())
-        if self.check:
-            code += ".{}".format(self.check)
-            name += " - {}".format(self.check)
-        return LintResult(
-            name=name,
-            description=self.message,
-            code=code,
-            severity=self.level.value,
-            path=self.path,
-            line=self.line,
-            char=self.column,
         )
 
 

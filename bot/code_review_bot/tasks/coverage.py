@@ -64,19 +64,6 @@ class CoverageIssue(Issue):
             publishable=self.is_publishable() and "yes" or "no",
         )
 
-    def as_phabricator_lint(self):
-        """
-        Outputs a Phabricator lint result
-        """
-        return {
-            "name": self.message,
-            "code": "coverage",
-            "severity": "warning",
-            "path": self.path,
-            # Report full file issues on line 1
-            "line": self.line if self.line is not None else 1,
-        }
-
 
 class ZeroCoverageTask(AnalysisTask):
     """

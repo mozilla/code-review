@@ -4,7 +4,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import structlog
-from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
 from code_review_bot import Level
@@ -137,25 +136,6 @@ class CoverityIssue(Issue):
 
         return ERROR_MARKDOWN.format(
             message=self.message, location="{}:{}".format(self.path, self.line)
-        )
-
-    def as_phabricator_lint(self):
-        """
-        Outputs a Phabricator lint result
-        """
-        # If there is the reliability index use it
-        message = (
-            f"Checker reliability is {self.reliability.value}, meaning that the false positive ratio is {self.reliability.invert}.\n{self.message}"
-            if self.reliability != Reliability.Unknown
-            else self.message
-        )
-
-        return LintResult(
-            name=message,
-            code="coverity.{}".format(self.check),
-            severity="error",
-            path=self.path,
-            line=self.line,
         )
 
     def is_build_error(self):

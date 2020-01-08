@@ -4,7 +4,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import structlog
-from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
 from code_review_bot import Level
@@ -21,15 +20,6 @@ ISSUE_MARKDOWN = """
 - **Infer check**: {check}
 - **Publishable **: {publishable}
 """
-
-INFER_SETUP_CMD = [
-    "gecko-env",
-    "./mach",
-    "artifact",
-    "toolchain",
-    "--from-build",
-    "linux64-infer",
-]
 
 
 class InferIssue(Issue):
@@ -75,20 +65,6 @@ class InferIssue(Issue):
             location="{}:{}:{}".format(self.path, self.line, self.column),
             in_patch="yes" if self.revision.contains(self) else "no",
             publishable="yes" if self.is_publishable() else "no",
-        )
-
-    def as_phabricator_lint(self):
-        """
-        Outputs a Phabricator lint result
-        """
-        return LintResult(
-            name=self.message,
-            code="infer.{}".format(self.check),
-            severity=self.level,
-            path=self.path,
-            line=self.line,
-            char=self.column,
-            description="Infer detected an issue on this line",
         )
 
 

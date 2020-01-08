@@ -11,6 +11,7 @@ import os
 
 import requests
 import structlog
+from libmozdata.phabricator import LintResult
 from libmozdata.phabricator import UnitResult
 from libmozdata.phabricator import UnitResultState
 from taskcluster.helper import TaskclusterConfig
@@ -230,13 +231,20 @@ class Issue(abc.ABC):
             "hash": issue_hash,
         }
 
-    @abc.abstractmethod
     def as_phabricator_lint(self):
         """
         Build the Phabricator LintResult instance
-        Used by the HarborMaster reporter
         """
-        raise NotImplementedError
+        return LintResult(
+            name=self.analyzer,
+            description=self.message,
+            code=self.check,
+            severity=self.level.value,
+            path=self.path,
+            # Report full file issues on line 1
+            line=self.line if self.line is not None else 1,
+            char=self.column,
+        )
 
     def as_phabricator_unitresult(self):
         """
