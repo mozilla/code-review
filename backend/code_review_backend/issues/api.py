@@ -83,6 +83,8 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
                 "issues", "revision", "revision__repository", "repository"
             )
             .annotate(nb_issues=Count("issues"))
+            .annotate(nb_errors=Count("issues", filter=Q(issues__level="error")))
+            .annotate(nb_warnings=Count("issues", filter=Q(issues__level="warning")))
             .annotate(
                 nb_issues_publishable=Count("issues", filter=Q(issues__in_patch=True))
             )
