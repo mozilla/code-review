@@ -51,11 +51,14 @@ class BugbugUtils:
         else:
             self.risk_analysis_users = {}
 
-        # The following ephemeral storage handlers will be initialized in the setup method.
         # A map from try push task group to its linked Phabricator build.
-        self.task_group_to_push = None
+        self.task_group_to_push = EphemeralStorage(
+            "bugbug:task_group_to_push", EPHEMERAL_STORAGE_EXPIRATION
+        )
         # A map from build phid to try revision.
-        self.diff_to_push = None
+        self.diff_to_push = EphemeralStorage(
+            "bugbug:diff_to_push", EPHEMERAL_STORAGE_EXPIRATION
+        )
 
         # Setup Taskcluster community hooks for risk analysis
         community_config = taskcluster_config.secrets.get("taskcluster_community")
@@ -83,14 +86,6 @@ class BugbugUtils:
         self.queue_service = taskcluster_config.get_service("queue")
 
         self.treeherder_client = TreeherderClient()
-
-    async def setup(self):
-        self.task_group_to_push = await EphemeralStorage.create(
-            "bugbug:task_group_to_push", EPHEMERAL_STORAGE_EXPIRATION
-        )
-        self.diff_to_push = await EphemeralStorage.create(
-            "bugbug:diff_to_push", EPHEMERAL_STORAGE_EXPIRATION
-        )
 
     def register(self, bus):
         self.bus = bus
@@ -281,7 +276,7 @@ class BugbugUtils:
 
         # If this diff does not belong to a revision we pushed to try, return.
         try:
-            push = self.diff_to_push.get(diff_id)
+            push = await self.diff_to_push.get(diff_id)
             asyncio.create_task(self.diff_to_push.rem(diff_id))
         except KeyError:
             logger.warning(
@@ -349,7 +344,7 @@ class BugbugUtils:
             # revision from the decision task).
             taskGroupId = status["taskGroupId"]
             try:
-                push = self.task_group_to_push.get(taskGroupId)
+                push = await self.task_group_to_push.get(taskGroupId)
                 build = push["build"]
                 revision = push["revision"]
             except KeyError:
