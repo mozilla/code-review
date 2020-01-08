@@ -85,9 +85,9 @@ def test_as_text(mock_config, mock_revision, mock_hgmo):
 
     assert issue.as_phabricator_lint() == {
         "char": 1,
-        "code": "flake8.dummy rule",
+        "code": "dummy rule",
         "line": 1,
-        "name": "MozLint Flake8 - dummy rule",
+        "name": "mock-lint-flake8",
         "description": "dummy test withUppercaseChars",
         "path": "test.py",
         "severity": "error",
