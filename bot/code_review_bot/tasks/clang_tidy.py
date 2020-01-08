@@ -7,7 +7,6 @@
 import re
 
 import structlog
-from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
 from code_review_bot import Level
@@ -146,28 +145,6 @@ class ClangTidyIssue(Issue):
                     for n in self.notes
                 ]
             ),
-        )
-
-    def as_phabricator_lint(self):
-        """
-        Outputs a Phabricator lint result
-        """
-        description = self.message
-
-        # Append to description the reliability index if any
-        if self.reliability != Reliability.Unknown:
-            description += "\nChecker reliability is {0}, meaning that the false positive ratio is {1}.".format(
-                self.reliability.value, self.reliability.invert
-            )
-
-        return LintResult(
-            name="Clang-Tidy - {}".format(self.check),
-            description=description,
-            code="clang-tidy.{}".format(self.check),
-            severity="warning",
-            path=self.path,
-            line=self.line,
-            char=self.column,
         )
 
 

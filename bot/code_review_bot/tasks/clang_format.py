@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import structlog
-from libmozdata.phabricator import LintResult
 
 from code_review_bot import Issue
 from code_review_bot import Level
@@ -48,7 +47,9 @@ class ClangFormatIssue(Issue):
         Build the text body published on reporters
         According to diff mode
         """
-        return "Warning: Incorrect coding style [clang-format]"
+        if self.patch:
+            return "Replace with :\n\n```{}```".format(self.patch)
+        return "Incorrect coding style [clang-format]"
 
     def as_markdown(self):
         """
@@ -56,23 +57,6 @@ class ClangFormatIssue(Issue):
         """
         return ISSUE_MARKDOWN.format(
             path=self.path, line=self.line, nb_lines=self.nb_lines
-        )
-
-    def as_phabricator_lint(self):
-        """
-        Outputs a Phabricator lint result
-        """
-        description = None
-        if self.patch:
-            description = "Replace with :\n\n```{}```".format(self.patch)
-        return LintResult(
-            name="C/C++ style issue",
-            description=description,
-            code="clang-format",
-            severity="warning",
-            path=self.path,
-            line=self.line,
-            char=self.column,
         )
 
 
