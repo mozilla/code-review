@@ -364,13 +364,16 @@ class BugbugUtils:
             elif state in ("failed", "exception"):
                 result = UnitResultState.Fail
 
+                treeherder_url = f"https://treeherder.mozilla.org/#/jobs?repo=try&revision={revision}"
+
                 uuid = slugid.decode(status["taskId"])
                 last_run = body["runId"]
                 job_details = self.treeherder_client.get_job_details(
                     job_guid=f"{uuid}/{last_run}"
                 )
-                job_id = job_details[0]["job_id"]
-                treeherder_url = f"https://treeherder.mozilla.org/#/jobs?repo=try&revision={revision}&selectedJob={job_id}"
+                if len(job_details) > 0:
+                    job_id = job_details[0]["job_id"]
+                    treeherder_url += f"&selectedJob={job_id}"
             else:
                 logger.error("Unexpected state", state=state)
                 return
