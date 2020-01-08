@@ -172,9 +172,15 @@ export default {
           </td>
 
           <td :class="{'has-text-success': diff.nb_issues_publishable > 0}">
-            <span v-if="diff.nb_issues_publishable >= 0">{{ diff.nb_issues_publishable }}</span>
-            <span v-else>-</span>
-            / {{ diff.nb_issues }}
+            <p>
+              <span v-if="diff.nb_issues_publishable > 0" class="tag is-success is-light">{{ diff.nb_issues_publishable }} publishable</span>
+            </p>
+            <p>
+              <span v-if="diff.nb_warnings > 0" class="tag is-warning is-light">{{ diff.nb_warnings }} warnings</span>
+            </p>
+            <p>
+              <span v-if="diff.nb_errors > 0" class="tag is-danger is-light">{{ diff.nb_errors }} errors</span>
+            </p>
           </td>
 
           <td>
