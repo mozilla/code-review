@@ -129,6 +129,6 @@ def test_full_file(mock_revision, mock_hgmo):
         "message": "Some issue found on a file",
         "nb_lines": 1,
         "path": "path/to/afile.py",
-        "publishable": False,
+        "publishable": True,
         "validates": True,
     }

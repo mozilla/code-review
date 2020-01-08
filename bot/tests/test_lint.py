@@ -103,7 +103,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo):
         "message": "dummy test withUppercaseChars",
         "nb_lines": 1,
         "path": "test.py",
-        "publishable": False,
+        "publishable": True,
         "validates": True,
         "hash": "34c27d119c21ea5a2cd3f6ac230d8c4e",
     }
