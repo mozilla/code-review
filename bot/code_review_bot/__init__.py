@@ -11,6 +11,8 @@ import os
 
 import requests
 import structlog
+from libmozdata.phabricator import UnitResult
+from libmozdata.phabricator import UnitResultState
 from taskcluster.helper import TaskclusterConfig
 
 from code_review_bot.stats import InfluxDb
@@ -238,9 +240,19 @@ class Issue(abc.ABC):
 
     def as_phabricator_unitresult(self):
         """
-        Build a Phabricator UnitResult to publish through Harbormaster API
+        Build a Phabricator UnitResult for build errors
         """
-        raise NotImplementedError
+        assert (
+            self.is_build_error()
+        ), "Only build errors may be published as unit results"
+
+        return UnitResult(
+            namespace="code-review",
+            name="general",
+            result=UnitResultState.Fail,
+            details=f"Code review bot found a **build error**: \n{self.message}",
+            format="remarkup",
+        )
 
     def is_build_error(self):
         """

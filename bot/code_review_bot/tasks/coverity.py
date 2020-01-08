@@ -5,8 +5,6 @@
 
 import structlog
 from libmozdata.phabricator import LintResult
-from libmozdata.phabricator import UnitResult
-from libmozdata.phabricator import UnitResultState
 
 from code_review_bot import Issue
 from code_review_bot import Level
@@ -158,23 +156,6 @@ class CoverityIssue(Issue):
             severity="error",
             path=self.path,
             line=self.line,
-        )
-
-    def as_phabricator_unitresult(self):
-        """
-        Output an UnitResult if this is a build error
-        """
-        if not self.build_error:
-            raise Exception("Current issue is not a build error: {}".format(self))
-
-        message = f"Code review bot found a **build error**: \n{self.message}"
-
-        return UnitResult(
-            namespace="code-review",
-            name="general",
-            result=UnitResultState.Fail,
-            details=message,
-            format="remarkup",
         )
 
     def is_build_error(self):
