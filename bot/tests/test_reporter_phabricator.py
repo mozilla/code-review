@@ -564,7 +564,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
     from code_review_bot.report.phabricator import PhabricatorReporter
     from code_review_bot.revisions import Revision
 
-    def _check_unitresult(request):
+    def _check_message(request):
         # Check the Phabricator main comment is well formed
         payload = urllib.parse.parse_qs(request.body)
         assert payload["output"] == ["json"]
@@ -582,7 +582,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
                     "result": "fail",
                 }
             ],
-            "type": "fail",
+            "type": "work",
             "__conduit__": {"token": "deadbeef"},
         }
 
@@ -598,7 +598,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
     responses.add_callback(
         responses.POST,
         "http://phabricator.test/api/harbormaster.sendmessage",
-        callback=_check_unitresult,
+        callback=_check_message,
     )
 
     with mock_phabricator as api:
