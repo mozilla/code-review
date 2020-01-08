@@ -13,8 +13,6 @@ from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.coverage import CoverageIssue
 
-MODE_COMMENT = "comment"
-MODE_HARBORMASTER = "harbormaster"
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"  # noqa
 
 logger = structlog.get_logger(__name__)
@@ -34,12 +32,8 @@ class PhabricatorReporter(Reporter):
             self.analyzers_skipped, list
         ), "analyzers_skipped must be a list"
 
-        self.mode = configuration.get("mode", MODE_COMMENT)
         self.publish_build_errors = configuration.get("publish_build_errors", False)
-        assert self.mode in (MODE_COMMENT, MODE_HARBORMASTER), "Invalid mode"
-        logger.info(
-            "Will publish using", mode=self.mode, build_errors=self.publish_build_errors
-        )
+        logger.info("Will publish using", build_errors=self.publish_build_errors)
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
@@ -73,12 +67,10 @@ class PhabricatorReporter(Reporter):
         build_errors = [issue for issue in issues if issue.is_build_error()]
 
         if issues_only or build_errors or task_failures:
-            if self.mode == MODE_COMMENT:
-                self.publish_comment(revision, issues_only, patches, task_failures)
-            elif self.mode == MODE_HARBORMASTER:
-                self.publish_harbormaster(revision, issues_only)
-            else:
-                raise Exception("Unsupported mode {}".format(self.mode))
+
+            # Always publish comment summarizing issues
+            self.publish_comment(revision, issues_only, patches, task_failures)
+
             # Also publish build issues
             if self.publish_build_errors:
                 self.publish_harbormaster_build_errors(revision, build_errors)
@@ -162,16 +154,6 @@ class PhabricatorReporter(Reporter):
         stats.add_metric("report.phabricator.issues", len(inlines))
         stats.add_metric("report.phabricator")
         logger.info("Published phabricator comment")
-
-    def publish_harbormaster(self, revision, issues):
-        """
-        Publish issues through HarborMaster
-        """
-        self.api.update_build_target(
-            revision.build_target_phid,
-            state=BuildState.Work,
-            lint=[issue.as_phabricator_lint() for issue in issues],
-        )
 
     def comment_inline(self, revision, issue, existing_comments=[]):
         """
