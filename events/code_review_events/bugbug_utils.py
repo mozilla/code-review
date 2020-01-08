@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import random
+from urllib.parse import urlencode
 
 import jsone
 import jsonschema
@@ -364,7 +365,10 @@ class BugbugUtils:
             elif state in ("failed", "exception"):
                 result = UnitResultState.Fail
 
-                treeherder_url = f"https://treeherder.mozilla.org/#/jobs?repo=try&revision={revision}"
+                params = {
+                    "repo": "try",
+                    "revision": revision,
+                }
 
                 uuid = slugid.decode(status["taskId"])
                 last_run = body["runId"]
@@ -373,7 +377,11 @@ class BugbugUtils:
                 )
                 if len(job_details) > 0:
                     job_id = job_details[0]["job_id"]
-                    treeherder_url += f"&selectedJob={job_id}"
+                    params["selectedJob"] = job_id
+
+                treeherder_url = (
+                    f"https://treeherder.mozilla.org/#/jobs?{urlencode(params)}"
+                )
             else:
                 logger.error("Unexpected state", state=state)
                 return
