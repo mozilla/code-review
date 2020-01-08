@@ -33,7 +33,6 @@ class PhabricatorReporter(Reporter):
         ), "analyzers_skipped must be a list"
 
         self.publish_build_errors = configuration.get("publish_build_errors", False)
-        logger.info("Will publish using", build_errors=self.publish_build_errors)
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
