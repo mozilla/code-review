@@ -3,11 +3,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from typing import List
+
 import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import Issue
+from code_review_bot import Level
 from code_review_bot import stats
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import Revision
@@ -16,6 +19,8 @@ from code_review_bot.tasks.coverage import CoverageIssue
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"  # noqa
 
 logger = structlog.get_logger(__name__)
+
+Issues = List[Issue]
 
 
 class PhabricatorReporter(Reporter):
@@ -41,7 +46,10 @@ class PhabricatorReporter(Reporter):
 
     def publish(self, issues, revision, task_failures):
         """
-        Publish inline comments for each issues
+        Publish issues on Phabricator:
+        * in patch issues use inline comments
+        * outside errors are displayed as lint results
+        * build errors are displayed as unit test results
         """
         if not isinstance(revision, Revision):
             logger.info(
@@ -70,25 +78,39 @@ class PhabricatorReporter(Reporter):
             # Always publish comment summarizing issues
             self.publish_comment(revision, issues_only, patches, task_failures)
 
-            # Also publish build issues
-            if self.publish_build_errors:
-                self.publish_harbormaster_build_errors(revision, build_errors)
+            # Publish all errors outside of the patch as lint issues
+            lint_issues = [
+                issue
+                for issue in issues_only
+                if not revision.contains(issue) and issue.level == Level.Error
+            ]
+
+            # Also publish build errors as Phabricator unit result
+            unit_issues = build_errors if self.publish_build_errors else []
+
+            # Publish on Harbormaster all at once
+            self.publish_harbormaster(revision, lint_issues, unit_issues)
         else:
             logger.info("No issues to publish on phabricator")
 
         return issues, patches
 
-    def publish_harbormaster_build_errors(self, revision, issues):
+    def publish_harbormaster(
+        self, revision, lint_issues: Issues = [], unit_issues: Issues = []
+    ):
         """
-        Publish build errors through Phabricator UnitResult
+        Publish issues through HarborMaster
+        either as lint results or unit tests results
         """
-        if not issues:
-            logger.info("No build errors encountered")
+        if not lint_issues and not unit_issues:
+            logger.info("No issues to publish as Phabricator lint or unit results")
             return
+
         self.api.update_build_target(
             revision.build_target_phid,
-            BuildState.Fail,
-            unit=[issue.as_phabricator_unitresult() for issue in issues],
+            state=BuildState.Work,
+            lint=[issue.as_phabricator_lint() for issue in lint_issues],
+            unit=[issue.as_phabricator_unitresult() for issue in unit_issues],
         )
 
     def publish_comment(self, revision, issues, patches, task_failures):
@@ -107,11 +129,17 @@ class PhabricatorReporter(Reporter):
         non_coverage_issues = [
             issue for issue in issues if not isinstance(issue, CoverageIssue)
         ]
+        errors = [
+            issue
+            for issue in issues
+            if issue.level == Level.Error and not revision.contains(issue)
+        ]
         patches_analyzers = set(p.analyzer for p in patches)
 
         # First publish inlines as drafts
         # * skipping coverage issues as they get a dedicated comment
         # * skipping issues reported in a patch
+        # * skipping issues not in the current patch
         inlines = list(
             filter(
                 None,
@@ -120,10 +148,17 @@ class PhabricatorReporter(Reporter):
                     for issue in issues
                     if issue in non_coverage_issues
                     and issue.analyzer not in patches_analyzers
+                    and revision.contains(issue)
                 ],
             )
         )
-        if not inlines and not patches and not coverage_issues and not task_failures:
+        if (
+            not inlines
+            and not patches
+            and not coverage_issues
+            and not task_failures
+            and not errors
+        ):
             logger.info("No new comments found, skipping Phabricator publication")
             return
         logger.info("Added inline comments", ids=[i["id"] for i in inlines])

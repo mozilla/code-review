@@ -118,6 +118,10 @@ class Issue(abc.ABC):
         if not self.validates():
             return False
 
+        # An error is always published
+        if self.level == Level.Error:
+            return True
+
         # Then check if the backend marks this issue as publishable
         if self.on_backend is not None:
             return self.on_backend["publishable"]

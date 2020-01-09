@@ -93,7 +93,7 @@ def test_parser(mock_workflow, mock_revision, mock_hgmo, mock_backend):
 - **Level**: error
 - **Check**: XYZ
 - **Line**: 42
-- **Publishable**: no
+- **Publishable**: yes
 
 ```
 A random issue happened here
@@ -113,6 +113,6 @@ A random issue happened here
         "message": "A random issue happened here",
         "nb_lines": 1,
         "path": "test.cpp",
-        "publishable": False,
+        "publishable": True,
         "validates": True,
     }
