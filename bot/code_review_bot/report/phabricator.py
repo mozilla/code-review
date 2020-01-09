@@ -129,6 +129,11 @@ class PhabricatorReporter(Reporter):
         non_coverage_issues = [
             issue for issue in issues if not isinstance(issue, CoverageIssue)
         ]
+        errors = [
+            issue
+            for issue in issues
+            if issue.level == Level.Error and not revision.contains(issue)
+        ]
         patches_analyzers = set(p.analyzer for p in patches)
 
         # First publish inlines as drafts
@@ -147,7 +152,13 @@ class PhabricatorReporter(Reporter):
                 ],
             )
         )
-        if not inlines and not patches and not coverage_issues and not task_failures:
+        if (
+            not inlines
+            and not patches
+            and not coverage_issues
+            and not task_failures
+            and not errors
+        ):
             logger.info("No new comments found, skipping Phabricator publication")
             return
         logger.info("Added inline comments", ids=[i["id"] for i in inlines])
