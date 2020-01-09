@@ -26,3 +26,9 @@ class IssueTestCase(TestCase):
             path="some/file", line=12, level=LEVEL_WARNING, in_patch=True
         )
         self.assertTrue(issue.publishable)
+
+        # An error in a patch is publishable
+        issue = Issue.objects.create(
+            path="some/file", line=12, level=LEVEL_ERROR, in_patch=True
+        )
+        self.assertTrue(issue.publishable)
