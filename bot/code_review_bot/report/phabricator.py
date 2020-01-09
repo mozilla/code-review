@@ -38,6 +38,12 @@ class PhabricatorReporter(Reporter):
         ), "analyzers_skipped must be a list"
 
         self.publish_build_errors = configuration.get("publish_build_errors", False)
+        self.publish_errors = configuration.get("publish_errors", False)
+        logger.info(
+            "Error publication configuration",
+            errors=self.publish_errors,
+            build_errors=self.publish_build_errors,
+        )
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
@@ -79,11 +85,14 @@ class PhabricatorReporter(Reporter):
             self.publish_comment(revision, issues_only, patches, task_failures)
 
             # Publish all errors outside of the patch as lint issues
-            lint_issues = [
-                issue
-                for issue in issues_only
-                if not revision.contains(issue) and issue.level == Level.Error
-            ]
+            if self.publish_errors:
+                lint_issues = [
+                    issue
+                    for issue in issues_only
+                    if not revision.contains(issue) and issue.level == Level.Error
+                ]
+            else:
+                lint_issues = []
 
             # Also publish build errors as Phabricator unit result
             unit_issues = build_errors if self.publish_build_errors else []
@@ -132,7 +141,9 @@ class PhabricatorReporter(Reporter):
         errors = [
             issue
             for issue in issues
-            if issue.level == Level.Error and not revision.contains(issue)
+            if issue.level == Level.Error
+            and not revision.contains(issue)
+            and self.publish_errors
         ]
         patches_analyzers = set(p.analyzer for p in patches)
 

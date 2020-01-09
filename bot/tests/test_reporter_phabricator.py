@@ -7,6 +7,7 @@ import json
 import unittest
 import urllib
 
+import pytest
 import responses
 
 from code_review_bot import Level
@@ -828,7 +829,13 @@ def test_task_failures(mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "task-failure"
 
 
-def test_extra_errors(mock_phabricator, mock_try_task):
+@pytest.mark.parametrize(
+    "reporter_config, errors_reported",
+    [({"publish_errors": True}, True), ({"publish_errors": False}, False), ({}, False)],
+)
+def test_extra_errors(
+    reporter_config, errors_reported, mock_phabricator, mock_try_task
+):
     """
     Test Phabricator reporter publication with some errors outside of patch
     """
@@ -933,7 +940,7 @@ def test_extra_errors(mock_phabricator, mock_try_task):
         revision = Revision.from_try(mock_try_task, api)
         revision.lines = {"path/to/file.py": [1, 2, 3]}
         revision.files = ["path/to/file.py"]
-        reporter = PhabricatorReporter({}, api=api)
+        reporter = PhabricatorReporter(reporter_config, api=api)
 
     all_issues = [
         # Warning in patch
@@ -975,21 +982,24 @@ def test_extra_errors(mock_phabricator, mock_try_task):
     ]
 
     published_issues, patches = reporter.publish(all_issues, revision, [])
-    assert len(published_issues) == 2
+    assert len(published_issues) == 2 if errors_reported else 1
     assert len(patches) == 0
 
     # Check the callbacks have been used to publish:
     # - an inline comment for the warning in patch
     # - a top comment to summarize issues
-    # - a lint result for the error outside of patch
+    # - a lint result for the error outside of patch (when errors are set to be reported)
     assert len(responses.calls) > 0
-    assert [r.request.url for r in responses.calls[-3:]] == [
+    urls = [
         "http://phabricator.test/api/differential.createinline",
         "http://phabricator.test/api/differential.createcomment",
-        "http://phabricator.test/api/harbormaster.sendmessage",
     ]
-    assert [r.response.headers.get("unittest") for r in responses.calls[-3:]] == [
-        "mozlint-warning",
-        "mozlint-comment",
-        "mozlint-error",
-    ]
+    markers = ["mozlint-warning", "mozlint-comment"]
+    if errors_reported:
+        urls.append("http://phabricator.test/api/harbormaster.sendmessage")
+        markers.append("mozlint-error")
+
+    assert [r.request.url for r in responses.calls[-len(urls) :]] == urls
+    assert [
+        r.response.headers.get("unittest") for r in responses.calls[-len(urls) :]
+    ] == markers
