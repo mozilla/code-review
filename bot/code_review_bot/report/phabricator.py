@@ -84,12 +84,10 @@ class PhabricatorReporter(Reporter):
             # Always publish comment summarizing issues
             self.publish_comment(revision, issues_only, patches, task_failures)
 
-            # Publish all errors outside of the patch as lint issues
+            # Publish all errors as lint issues
             if self.publish_errors:
                 lint_issues = [
-                    issue
-                    for issue in issues_only
-                    if not revision.contains(issue) and issue.level == Level.Error
+                    issue for issue in issues_only if issue.level == Level.Error
                 ]
             else:
                 lint_issues = []
@@ -141,9 +139,7 @@ class PhabricatorReporter(Reporter):
         errors = [
             issue
             for issue in issues
-            if issue.level == Level.Error
-            and not revision.contains(issue)
-            and self.publish_errors
+            if issue.level == Level.Error and self.publish_errors
         ]
         patches_analyzers = set(p.analyzer for p in patches)
 
@@ -151,6 +147,7 @@ class PhabricatorReporter(Reporter):
         # * skipping coverage issues as they get a dedicated comment
         # * skipping issues reported in a patch
         # * skipping issues not in the current patch
+        # * skipping errors as they are reported as lint
         inlines = list(
             filter(
                 None,
@@ -160,6 +157,7 @@ class PhabricatorReporter(Reporter):
                     if issue in non_coverage_issues
                     and issue.analyzer not in patches_analyzers
                     and revision.contains(issue)
+                    and issue.level == Level.Warning
                 ],
             )
         )

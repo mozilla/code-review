@@ -274,7 +274,8 @@ def test_phabricator_mozlint(mock_config, mock_phabricator, mock_try_task):
     # Check the callback has been used
     assert len(responses.calls) > 0
     call = responses.calls[-1]
-    print(list(responses.calls))
+    for c in responses.calls:
+        print(c.request.url)
     assert call.request.url == "http://phabricator.test/api/differential.createcomment"
     assert call.response.headers.get("unittest") == "flake8"
 
