@@ -147,17 +147,26 @@ class PhabricatorReporter(Reporter):
         # * skipping coverage issues as they get a dedicated comment
         # * skipping issues reported in a patch
         # * skipping issues not in the current patch
-        # * skipping errors as they are reported as lint
+        # * skipping errors as they are reported as lint (when enabled)
+        def _is_inline(issue):
+            # Do not publish errors as inline when we are already
+            # publishing them as lint
+            if self.publish_errors and issue.level == Level.Error:
+                return False
+
+            return (
+                issue in non_coverage_issues
+                and issue.analyzer not in patches_analyzers
+                and revision.contains(issue)
+            )
+
         inlines = list(
             filter(
                 None,
                 [
                     self.comment_inline(revision, issue, existing_comments)
                     for issue in issues
-                    if issue in non_coverage_issues
-                    and issue.analyzer not in patches_analyzers
-                    and revision.contains(issue)
-                    and issue.level == Level.Warning
+                    if _is_inline(issue)
                 ],
             )
         )
