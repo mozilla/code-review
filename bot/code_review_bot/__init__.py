@@ -11,6 +11,9 @@ import os
 
 import requests
 import structlog
+from libmozdata.phabricator import LintResult
+from libmozdata.phabricator import UnitResult
+from libmozdata.phabricator import UnitResultState
 from taskcluster.helper import TaskclusterConfig
 
 from code_review_bot.stats import InfluxDb
@@ -114,6 +117,10 @@ class Issue(abc.ABC):
         # Always check specific rules validate
         if not self.validates():
             return False
+
+        # An error is always published
+        if self.level == Level.Error:
+            return True
 
         # Then check if the backend marks this issue as publishable
         if self.on_backend is not None:
@@ -228,19 +235,36 @@ class Issue(abc.ABC):
             "hash": issue_hash,
         }
 
-    @abc.abstractmethod
     def as_phabricator_lint(self):
         """
         Build the Phabricator LintResult instance
-        Used by the HarborMaster reporter
         """
-        raise NotImplementedError
+        return LintResult(
+            name=self.analyzer,
+            description=self.message,
+            code=self.check,
+            severity=self.level.value,
+            path=self.path,
+            # Report full file issues on line 1
+            line=self.line if self.line is not None else 1,
+            char=self.column,
+        )
 
     def as_phabricator_unitresult(self):
         """
-        Build a Phabricator UnitResult to publish through Harbormaster API
+        Build a Phabricator UnitResult for build errors
         """
-        raise NotImplementedError
+        assert (
+            self.is_build_error()
+        ), "Only build errors may be published as unit results"
+
+        return UnitResult(
+            namespace="code-review",
+            name="general",
+            result=UnitResultState.Fail,
+            details=f"Code review bot found a **build error**: \n{self.message}",
+            format="remarkup",
+        )
 
     def is_build_error(self):
         """

@@ -52,9 +52,10 @@ def test_coverage(mock_config, mock_revision, mock_coverage_artifact, mock_hgmo)
         "hash": "c64ebc6d4a3297b192364db4b022e5e2",
     }
     assert issue.as_phabricator_lint() == {
-        "code": "coverage",
+        "code": "no-coverage",
         "line": 1,
-        "name": "This file is uncovered",
+        "name": "coverage",
+        "description": "This file is uncovered",
         "path": "my/path/file1.cpp",
         "severity": "warning",
     }
@@ -99,9 +100,10 @@ This file is uncovered
         "hash": "0cbf1c1105c3b06ea9e8067a50a7e2f6",
     }
     assert issue.as_phabricator_lint() == {
-        "code": "coverage",
+        "code": "no-coverage",
         "line": 1,
-        "name": "This file is uncovered",
+        "name": "coverage",
+        "description": "This file is uncovered",
         "path": "test/dummy/thirdparty.c",
         "severity": "warning",
     }
@@ -143,9 +145,10 @@ This file is uncovered
         "hash": "9319c5bebc687cb439302ca049a9bff7",
     }
     assert issue.as_phabricator_lint() == {
-        "code": "coverage",
+        "code": "no-coverage",
         "line": 1,
-        "name": "This file is uncovered",
+        "name": "coverage",
+        "description": "This file is uncovered",
         "path": "my/path/header.h",
         "severity": "warning",
     }

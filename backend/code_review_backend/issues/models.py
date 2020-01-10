@@ -117,4 +117,4 @@ class Issue(models.Model):
     @property
     def publishable(self):
         """Is that issue publishable on Phabricator to developers"""
-        return self.in_patch is True
+        return self.in_patch is True or self.level == LEVEL_ERROR

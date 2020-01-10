@@ -140,12 +140,12 @@ def test_baseline(mock_config, mock_revision, mock_workflow, mock_backend, mock_
             ("code-review.analysis.files", None, 2),
             ("code-review.analysis.lines", None, 2),
             ("code-review.issues", "source-test-mozlint-flake8", 1),
-            ("code-review.issues.publishable", "source-test-mozlint-flake8", 0),
+            ("code-review.issues.publishable", "source-test-mozlint-flake8", 1),
             ("code-review.issues.paths", "source-test-mozlint-flake8", 1),
             ("code-review.issues", "source-test-mozlint-zero-cov", 1),
             ("code-review.issues.publishable", "source-test-mozlint-zero-cov", 1),
             ("code-review.issues.paths", "source-test-mozlint-zero-cov", 1),
-            ("code-review.analysis.issues.publishable", None, 1),
+            ("code-review.analysis.issues.publishable", None, 2),
             ("code-review.runtime.reports", None, "runtime"),
         ]
     )
@@ -365,9 +365,9 @@ def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_backend):
             ("code-review.analysis.files", None, 2),
             ("code-review.analysis.lines", None, 2),
             ("code-review.issues", "source-test-mozlint-dummy", 1),
-            ("code-review.issues.publishable", "source-test-mozlint-dummy", 0),
+            ("code-review.issues.publishable", "source-test-mozlint-dummy", 1),
             ("code-review.issues.paths", "source-test-mozlint-dummy", 1),
-            ("code-review.analysis.issues.publishable", None, 0),
+            ("code-review.analysis.issues.publishable", None, 1),
             ("code-review.runtime.reports", None, "runtime"),
         ]
     )

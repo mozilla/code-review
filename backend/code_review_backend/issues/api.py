@@ -14,6 +14,7 @@ from rest_framework import routers
 from rest_framework import viewsets
 
 from code_review_backend.issues.compare import detect_new_for_revision
+from code_review_backend.issues.models import LEVEL_ERROR
 from code_review_backend.issues.models import Diff
 from code_review_backend.issues.models import Issue
 from code_review_backend.issues.models import Repository
@@ -83,8 +84,13 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
                 "issues", "revision", "revision__repository", "repository"
             )
             .annotate(nb_issues=Count("issues"))
+            .annotate(nb_errors=Count("issues", filter=Q(issues__level="error")))
+            .annotate(nb_warnings=Count("issues", filter=Q(issues__level="warning")))
             .annotate(
-                nb_issues_publishable=Count("issues", filter=Q(issues__in_patch=True))
+                nb_issues_publishable=Count(
+                    "issues",
+                    filter=Q(issues__in_patch=True) | Q(issues__level=LEVEL_ERROR),
+                )
             )
             .order_by("-id")
         )
@@ -150,7 +156,9 @@ class IssueCheckStats(generics.ListAPIView):
     queryset = (
         Issue.objects.values("analyzer", "check", "diff__revision__repository__slug")
         .annotate(total=Count("id"))
-        .annotate(publishable=Count("id", filter=Q(in_patch=True)))
+        .annotate(
+            publishable=Count("id", filter=Q(in_patch=True) | Q(level=LEVEL_ERROR))
+        )
         .order_by("-total")
     )
 

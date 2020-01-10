@@ -46,7 +46,7 @@ tasks:
     taskboot_image: "mozilla/taskboot:0.2.1"
 
     pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
-    python_version: "3.7"
+    python_version: "3.8"
   in:
     - taskId: {$eval: as_slugid("check_lint")}
       provisionerId: proj-relman

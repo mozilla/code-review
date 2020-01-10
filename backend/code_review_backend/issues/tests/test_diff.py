@@ -87,6 +87,8 @@ class DiffAPITestCase(APITestCase):
                         "issues_url": "http://testserver/v1/diff/3/issues/",
                         "nb_issues": 0,
                         "nb_issues_publishable": 0,
+                        "nb_warnings": 0,
+                        "nb_errors": 0,
                         "created": self.now,
                     },
                     {
@@ -112,6 +114,8 @@ class DiffAPITestCase(APITestCase):
                         "issues_url": "http://testserver/v1/diff/2/issues/",
                         "nb_issues": 0,
                         "nb_issues_publishable": 0,
+                        "nb_warnings": 0,
+                        "nb_errors": 0,
                         "created": self.now,
                     },
                     {
@@ -137,6 +141,8 @@ class DiffAPITestCase(APITestCase):
                         "issues_url": "http://testserver/v1/diff/1/issues/",
                         "nb_issues": 0,
                         "nb_issues_publishable": 0,
+                        "nb_warnings": 0,
+                        "nb_errors": 0,
                         "created": self.now,
                     },
                 ],

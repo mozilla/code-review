@@ -150,10 +150,10 @@ def test_as_markdown(mock_revision):
     )
     assert issue.as_phabricator_lint() == {
         "char": 51,
-        "code": "clang-tidy.dummy-check",
+        "code": "dummy-check",
         "line": 42,
-        "name": "Clang-Tidy - dummy-check",
-        "description": "dummy message\nChecker reliability is high, meaning that the false positive ratio is low.",
+        "name": "clang-tidy",
+        "description": "dummy message",
         "path": "test.cpp",
         "severity": "warning",
     }
