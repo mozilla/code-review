@@ -99,6 +99,9 @@ class BugbugUtils:
 
         # Store the push revision and build, so we can use it after bugbug
         # selects tests to add.
+        logger.info(
+            "Diff added to the list of diffs we pushed to try", diff_id=build.diff_id
+        )
         await self.diff_to_push.set(
             str(build.diff_id),
             {
