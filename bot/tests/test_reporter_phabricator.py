@@ -7,6 +7,7 @@ import json
 import unittest
 import urllib
 
+import pytest
 import responses
 
 from code_review_bot import Level
@@ -211,13 +212,43 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "clang-format"
 
 
-def test_phabricator_mozlint(mock_config, mock_phabricator, mock_try_task):
+@pytest.mark.parametrize(
+    "reporter_config, errors_reported",
+    [({"publish_errors": True}, True), ({"publish_errors": False}, False), ({}, False)],
+)
+def test_phabricator_mozlint(
+    reporter_config, errors_reported, mock_config, mock_phabricator, mock_try_task
+):
     """
     Test Phabricator reporter publication on a mock mozlint issue
     """
     from code_review_bot.report.phabricator import PhabricatorReporter
     from code_review_bot.revisions import Revision
     from code_review_bot.tasks.lint import MozLintIssue
+
+    def _check_inline(request):
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+        details = json.loads(payload["params"][0])
+
+        assert details == {
+            "__conduit__": {"token": "deadbeef"},
+            "content": "Error: A bad bad error [flake8: EXXX]",
+            "diffID": 42,
+            "filePath": "python/test.py",
+            "isNewFile": 1,
+            "lineLength": 0,
+            "lineNumber": 42,
+        }
+
+        # Outputs dummy empty response
+        resp = {"error_code": None, "result": {"id": "PHID-XXXX-YYYYY"}}
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "flake8-inline"},
+            json.dumps(resp),
+        )
 
     def _check_comment(request):
         # Check the Phabricator main comment is well formed
@@ -233,14 +264,57 @@ def test_phabricator_mozlint(mock_config, mock_phabricator, mock_try_task):
         resp = {"error_code": None, "result": None}
         return (
             201,
-            {"Content-Type": "application/json", "unittest": "flake8"},
+            {"Content-Type": "application/json", "unittest": "flake8-comment"},
+            json.dumps(resp),
+        )
+
+    def _check_message(request):
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+        details = json.loads(payload["params"][0])
+        assert details == {
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "char": 1,
+                    "code": "EXXX",
+                    "description": "A bad bad error",
+                    "line": 42,
+                    "name": "source-test-mozlint-py-flake8",
+                    "path": "python/test.py",
+                    "severity": "error",
+                }
+            ],
+            "unit": [],
+            "type": "work",
+            "__conduit__": {"token": "deadbeef"},
+        }
+
+        # Outputs dummy empty response
+        resp = {"error_code": None, "result": None}
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "flake8-error"},
             json.dumps(resp),
         )
 
     responses.add_callback(
         responses.POST,
+        "http://phabricator.test/api/differential.createinline",
+        callback=_check_inline,
+    )
+
+    responses.add_callback(
+        responses.POST,
         "http://phabricator.test/api/differential.createcomment",
         callback=_check_comment,
+    )
+
+    responses.add_callback(
+        responses.POST,
+        "http://phabricator.test/api/harbormaster.sendmessage",
+        callback=_check_message,
     )
 
     with mock_phabricator as api:
@@ -251,7 +325,7 @@ def test_phabricator_mozlint(mock_config, mock_phabricator, mock_try_task):
             "dom/test.cpp": [42],
         }
         revision.files = revision.lines.keys()
-        reporter = PhabricatorReporter({"analyzers": ["clang-format"]}, api=api)
+        reporter = PhabricatorReporter(reporter_config, api=api)
 
     issue = MozLintIssue(
         analyzer="source-test-mozlint-py-flake8",
@@ -270,12 +344,26 @@ def test_phabricator_mozlint(mock_config, mock_phabricator, mock_try_task):
     assert len(issues) == 1
     assert len(patches) == 0
 
-    # Check the callback has been used
+    # Check the callbacks have been used to publish either:
+    # - an inline comment + summary comment when publish_errors is False
+    # - a lint result + summary comment when publish_errors is True
     assert len(responses.calls) > 0
-    call = responses.calls[-1]
-    print(list(responses.calls))
-    assert call.request.url == "http://phabricator.test/api/differential.createcomment"
-    assert call.response.headers.get("unittest") == "flake8"
+    if errors_reported:
+        urls = [
+            "http://phabricator.test/api/differential.createcomment",
+            "http://phabricator.test/api/harbormaster.sendmessage",
+        ]
+        markers = ["flake8-comment", "flake8-error"]
+
+    else:
+        urls = [
+            "http://phabricator.test/api/differential.createinline",
+            "http://phabricator.test/api/differential.createcomment",
+        ]
+        markers = ["flake8-inline", "flake8-comment"]
+
+    assert [r.request.url for r in responses.calls[-2:]] == urls
+    assert [r.response.headers.get("unittest") for r in responses.calls[-2:]] == markers
 
 
 def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
@@ -828,7 +916,13 @@ def test_task_failures(mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "task-failure"
 
 
-def test_extra_errors(mock_phabricator, mock_try_task):
+@pytest.mark.parametrize(
+    "reporter_config, errors_reported",
+    [({"publish_errors": True}, True), ({"publish_errors": False}, False), ({}, False)],
+)
+def test_extra_errors(
+    reporter_config, errors_reported, mock_phabricator, mock_try_task
+):
     """
     Test Phabricator reporter publication with some errors outside of patch
     """
@@ -933,7 +1027,7 @@ def test_extra_errors(mock_phabricator, mock_try_task):
         revision = Revision.from_try(mock_try_task, api)
         revision.lines = {"path/to/file.py": [1, 2, 3]}
         revision.files = ["path/to/file.py"]
-        reporter = PhabricatorReporter({}, api=api)
+        reporter = PhabricatorReporter(reporter_config, api=api)
 
     all_issues = [
         # Warning in patch
@@ -975,21 +1069,24 @@ def test_extra_errors(mock_phabricator, mock_try_task):
     ]
 
     published_issues, patches = reporter.publish(all_issues, revision, [])
-    assert len(published_issues) == 2
+    assert len(published_issues) == 2 if errors_reported else 1
     assert len(patches) == 0
 
     # Check the callbacks have been used to publish:
     # - an inline comment for the warning in patch
     # - a top comment to summarize issues
-    # - a lint result for the error outside of patch
+    # - a lint result for the error outside of patch (when errors are set to be reported)
     assert len(responses.calls) > 0
-    assert [r.request.url for r in responses.calls[-3:]] == [
+    urls = [
         "http://phabricator.test/api/differential.createinline",
         "http://phabricator.test/api/differential.createcomment",
-        "http://phabricator.test/api/harbormaster.sendmessage",
     ]
-    assert [r.response.headers.get("unittest") for r in responses.calls[-3:]] == [
-        "mozlint-warning",
-        "mozlint-comment",
-        "mozlint-error",
-    ]
+    markers = ["mozlint-warning", "mozlint-comment"]
+    if errors_reported:
+        urls.append("http://phabricator.test/api/harbormaster.sendmessage")
+        markers.append("mozlint-error")
+
+    assert [r.request.url for r in responses.calls[-len(urls) :]] == urls
+    assert [
+        r.response.headers.get("unittest") for r in responses.calls[-len(urls) :]
+    ] == markers

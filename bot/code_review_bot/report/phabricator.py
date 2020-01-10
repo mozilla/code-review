@@ -38,6 +38,12 @@ class PhabricatorReporter(Reporter):
         ), "analyzers_skipped must be a list"
 
         self.publish_build_errors = configuration.get("publish_build_errors", False)
+        self.publish_errors = configuration.get("publish_errors", False)
+        logger.info(
+            "Error publication configuration",
+            errors=self.publish_errors,
+            build_errors=self.publish_build_errors,
+        )
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
@@ -78,12 +84,13 @@ class PhabricatorReporter(Reporter):
             # Always publish comment summarizing issues
             self.publish_comment(revision, issues_only, patches, task_failures)
 
-            # Publish all errors outside of the patch as lint issues
-            lint_issues = [
-                issue
-                for issue in issues_only
-                if not revision.contains(issue) and issue.level == Level.Error
-            ]
+            # Publish all errors as lint issues
+            if self.publish_errors:
+                lint_issues = [
+                    issue for issue in issues_only if issue.level == Level.Error
+                ]
+            else:
+                lint_issues = []
 
             # Also publish build errors as Phabricator unit result
             unit_issues = build_errors if self.publish_build_errors else []
@@ -132,7 +139,7 @@ class PhabricatorReporter(Reporter):
         errors = [
             issue
             for issue in issues
-            if issue.level == Level.Error and not revision.contains(issue)
+            if issue.level == Level.Error and self.publish_errors
         ]
         patches_analyzers = set(p.analyzer for p in patches)
 
@@ -140,15 +147,26 @@ class PhabricatorReporter(Reporter):
         # * skipping coverage issues as they get a dedicated comment
         # * skipping issues reported in a patch
         # * skipping issues not in the current patch
+        # * skipping errors as they are reported as lint (when enabled)
+        def _is_inline(issue):
+            # Do not publish errors as inline when we are already
+            # publishing them as lint
+            if self.publish_errors and issue.level == Level.Error:
+                return False
+
+            return (
+                issue in non_coverage_issues
+                and issue.analyzer not in patches_analyzers
+                and revision.contains(issue)
+            )
+
         inlines = list(
             filter(
                 None,
                 [
                     self.comment_inline(revision, issue, existing_comments)
                     for issue in issues
-                    if issue in non_coverage_issues
-                    and issue.analyzer not in patches_analyzers
-                    and revision.contains(issue)
+                    if _is_inline(issue)
                 ],
             )
         )
