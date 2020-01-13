@@ -468,6 +468,9 @@ class Events(object):
             # Keep the web server process running
             asyncio.get_event_loop().run_forever()
 
+        # Make sure any pending task is run.
+        run_tasks(asyncio.Task.all_tasks())
+
         # Stop the webserver when other async processes are stopped
         if self.webserver:
             self.webserver.stop()
