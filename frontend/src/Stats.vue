@@ -16,6 +16,9 @@ export default {
       repository: null,
       check: null,
 
+      // Sort by a column
+      sortColumn: 'total',
+
       // Options for chartist
       chartOptions: {
         height: 300,
@@ -46,6 +49,10 @@ export default {
         analyzer: this.analyzer,
         check: this.check
       })
+    },
+    sort_by (column) {
+      // Store new sort column
+      this.$set(this, 'sortColumn', column)
     }
   },
   computed: {
@@ -54,8 +61,8 @@ export default {
         return null
       }
 
-      // Sort by detected
-      let stats = this.stats.sort((x, y) => x.detected > y.detected)
+      // Sort by specified column
+      let stats = this.stats.sort((x, y) => x[this.sortColumn] < y[this.sortColumn])
 
       // Apply filters
       if (this.repository !== null) {
@@ -124,8 +131,12 @@ export default {
             <th>
               <Choice :choices="checks" name="check" v-on:new-choice="use_filter('check', $event)"/>
             </th>
-            <th>Detected</th>
-            <th>Publishable</th>
+            <th>
+              <button class="button is-info" v-on:click="sort_by('total')" :disabled="sortColumn == 'total'">Detected</button>
+            </th>
+            <th>
+              <button class="button is-info" v-on:click="sort_by('publishable')" :disabled="sortColumn == 'publishable'">Publishable</button>
+            </th>
           </tr>
         </thead>
         <tbody>
