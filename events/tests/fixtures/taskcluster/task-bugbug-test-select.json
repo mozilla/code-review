@@ -58,6 +58,7 @@
   },
   "tags": {},
   "extra": {
+      "phabricator-deployment": "prod",
       "phabricator-diff-id": 125397
   }
 }

@@ -29,6 +29,12 @@ EPHEMERAL_STORAGE_EXPIRATION = 25200
 
 class BugbugUtils:
     def __init__(self, phabricator_api):
+        self.phabricator_deployment = (
+            "prod"
+            if "dev" not in taskcluster_config.secrets["PHABRICATOR"]["url"]
+            else "dev"
+        )
+
         self.test_selection_enabled = taskcluster_config.secrets.get(
             "test_selection_enabled", False
         )
@@ -148,7 +154,12 @@ class BugbugUtils:
                 return
 
             task = self.community_tc["hooks"].triggerHook(
-                "project-relman", "bugbug-classify-patch", {"DIFF_ID": build.diff_id}
+                "project-relman",
+                "bugbug-classify-patch",
+                {
+                    "PHABRICATOR_DEPLOYMENT": self.phabricator_deployment,
+                    "DIFF_ID": build.diff_id,
+                },
             )
             task_id = task["status"]["taskId"]
             logger.info("Triggered a new risk analysis task", id=task_id)
@@ -181,7 +192,12 @@ class BugbugUtils:
                 return
 
             task = self.community_tc["hooks"].triggerHook(
-                "project-relman", "bugbug-test-select", {"DIFF_ID": build.diff_id}
+                "project-relman",
+                "bugbug-test-select",
+                {
+                    "PHABRICATOR_DEPLOYMENT": self.phabricator_deployment,
+                    "DIFF_ID": build.diff_id,
+                },
             )
             task_id = task["status"]["taskId"]
             logger.info("Triggered a new test selection task", id=task_id)
@@ -197,7 +213,11 @@ class BugbugUtils:
     async def get_test_selection_results(self, task_id):
         # Get the Phabricator diff ID from bugbug task definition.
         bugbug_task = self.community_tc["queue"].task(task_id)
+        phabricator_deployment = str(bugbug_task["extra"]["phabricator-deployment"])
         diff_id = str(bugbug_task["extra"]["phabricator-diff-id"])
+
+        if self.phabricator_deployment != phabricator_deployment:
+            return (phabricator_deployment, diff_id, False, [])
 
         # Retrieve artifacts from bugbug test selection task.
         failure_risk = self.community_tc["queue"].getLatestArtifact(
@@ -206,13 +226,13 @@ class BugbugUtils:
         assert isinstance(failure_risk, int)
 
         if failure_risk == 0:
-            return (diff_id, False, [])
+            return (phabricator_deployment, diff_id, False, [])
 
         selected_tasks = self.community_tc["queue"].getLatestArtifact(
             task_id, "public/selected_tasks"
         )
 
-        return (diff_id, True, selected_tasks)
+        return (phabricator_deployment, diff_id, True, selected_tasks)
 
     def add_new_jobs(self, revision, selected_tasks):
         selected_tasks = {"tasks": selected_tasks["response"].text.splitlines()}
@@ -265,6 +285,7 @@ class BugbugUtils:
 
         try:
             (
+                phabricator_deployment,
                 diff_id,
                 failure_risk,
                 selected_tasks,
@@ -275,6 +296,10 @@ class BugbugUtils:
                 task=bugbug_task_id,
                 error=e,
             )
+            return
+
+        # If this diff belongs to a Phabricator deployment we are not attached to, return.
+        if self.phabricator_deployment != phabricator_deployment:
             return
 
         # If this diff does not belong to a revision we pushed to try, return.
