@@ -268,3 +268,43 @@ class StatsAPITestCase(APITestCase):
                 ],
             },
         )
+
+    def test_details(self):
+        """
+        Check API endpoint to list issues in a check
+        """
+        self.maxDiff = None
+        response = self.client.get("/v1/check/myrepo/analyzer-X/check-1/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["count"], 34)
+        self.assertEqual(len(data["results"]), 34)
+
+        def check_issue(issue):
+            """Check issue without straight comparison as several fields are random"""
+
+            # Base fields
+            self.assertEqual(issue["analyzer"], "analyzer-X")
+            self.assertEqual(issue["check"], "check-1")
+            self.assertEqual(issue["level"], "warning")
+            self.assertIsNone(issue["message"])
+            self.assertIsNone(issue["in_patch"])
+            self.assertFalse(issue["publishable"])
+            self.assertEqual(issue["path"], "path/to/file")
+
+            # Diff
+            diff = issue["diff"]
+            self.assertTrue(diff["id"] > 0)
+            self.assertEqual(diff["repository"], "http://repo.test/myrepo-try")
+
+            # Revision
+            rev = diff["revision"]
+            self.assertTrue(rev["id"] > 0)
+            self.assertEqual(rev["repository"], "http://repo.test/myrepo")
+            self.assertEqual(
+                rev["phabricator_url"], f"http://anotherphab.test/D{rev['id']}"
+            )
+
+            return True
+
+        self.assertTrue(all(map(check_issue, data["results"])))

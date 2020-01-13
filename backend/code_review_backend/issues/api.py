@@ -23,6 +23,7 @@ from code_review_backend.issues.serializers import DiffFullSerializer
 from code_review_backend.issues.serializers import DiffSerializer
 from code_review_backend.issues.serializers import HistoryPointSerializer
 from code_review_backend.issues.serializers import IssueCheckSerializer
+from code_review_backend.issues.serializers import IssueCheckStatsSerializer
 from code_review_backend.issues.serializers import IssueSerializer
 from code_review_backend.issues.serializers import RepositorySerializer
 from code_review_backend.issues.serializers import RevisionSerializer
@@ -146,13 +147,39 @@ class IssueViewSet(viewsets.ModelViewSet):
         )
 
 
+class IssueCheckDetails(generics.ListAPIView):
+    """
+    List all the issues found by a specific analyzer check in a repository
+    """
+
+    serializer_class = IssueCheckSerializer
+
+    def get_queryset(self):
+        repo = self.kwargs["repository"]
+        return (
+            Issue.objects.filter(
+                Q(diff__repository__slug=repo)
+                | Q(diff__revision__repository__slug=repo)
+            )
+            .filter(analyzer=self.kwargs["analyzer"])
+            .filter(check=self.kwargs["check"])
+            .prefetch_related(
+                "diff",
+                "diff__repository",
+                "diff__revision",
+                "diff__revision__repository",
+            )
+            .order_by("-created")
+        )
+
+
 class IssueCheckStats(generics.ListAPIView):
     """
     List all analyzer checks per repository aggregated with
     their total number of issues
     """
 
-    serializer_class = IssueCheckSerializer
+    serializer_class = IssueCheckStatsSerializer
     queryset = (
         Issue.objects.values("analyzer", "check", "diff__revision__repository__slug")
         .annotate(total=Count("id"))
@@ -219,4 +246,9 @@ router.register(r"diff/(?P<diff_id>\d+)/issues", IssueViewSet, basename="issues"
 urls = router.urls + [
     path("check/stats/", IssueCheckStats.as_view(), name="issue-checks-stats"),
     path("check/history/", IssueCheckHistory.as_view(), name="issue-checks-history"),
+    path(
+        "check/<str:repository>/<str:analyzer>/<str:check>/",
+        IssueCheckDetails.as_view(),
+        name="issue-check-details",
+    ),
 ]
