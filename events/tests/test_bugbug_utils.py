@@ -25,7 +25,7 @@ class MockRequest:
 
 
 taskcluster_config.secrets = {
-    "PHABRICATOR": {"url": "https://phabricator.services.mozilla.com/api/"},
+    "bugbug_phabricator_deployment": "prod",
     "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
 }
 

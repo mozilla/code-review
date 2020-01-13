@@ -29,11 +29,13 @@ EPHEMERAL_STORAGE_EXPIRATION = 25200
 
 class BugbugUtils:
     def __init__(self, phabricator_api):
-        self.phabricator_deployment = (
-            "prod"
-            if "dev" not in taskcluster_config.secrets["PHABRICATOR"]["url"]
-            else "dev"
+        self.phabricator_deployment = taskcluster_config.secrets.get(
+            "bugbug_phabricator_deployment", "prod"
         )
+        assert self.phabricator_deployment in (
+            "prod",
+            "dev",
+        ), f"{self.phabricator_deployment} should be either 'prod' or 'dev'"
 
         self.test_selection_enabled = taskcluster_config.secrets.get(
             "test_selection_enabled", False
