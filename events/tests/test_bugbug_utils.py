@@ -24,6 +24,12 @@ class MockRequest:
         self.rel_url = MockURL(**kwargs)
 
 
+taskcluster_config.secrets = {
+    "bugbug_phabricator_deployment": "prod",
+    "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
+}
+
+
 @pytest.mark.asyncio
 async def test_risk_analysis_should_trigger(PhabricatorMock, mock_taskcluster):
     bus = MessageBus()
@@ -41,10 +47,7 @@ async def test_risk_analysis_should_trigger(PhabricatorMock, mock_taskcluster):
         phab.update_state(build)
 
         # Reviewer of the patch is in the list of risk analysis users.
-        taskcluster_config.secrets = {
-            "risk_analysis_users": ["ehsan", "heycam"],
-            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-        }
+        taskcluster_config.secrets["risk_analysis_users"] = ["ehsan", "heycam"]
 
         bugbug_utils = BugbugUtils(phab.api)
         bugbug_utils.register(bus)
@@ -52,10 +55,7 @@ async def test_risk_analysis_should_trigger(PhabricatorMock, mock_taskcluster):
         assert bugbug_utils.should_run_risk_analysis(build)
 
         # Author of the patch is in the list of risk analysis users.
-        taskcluster_config.secrets = {
-            "risk_analysis_users": ["ehsan", "tnguyen"],
-            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-        }
+        taskcluster_config.secrets["risk_analysis_users"] = ["ehsan", "tnguyen"]
 
         bugbug_utils = BugbugUtils(phab.api)
 
@@ -74,10 +74,7 @@ async def test_risk_analysis_shouldnt_trigger(PhabricatorMock, mock_taskcluster)
         )
     )
 
-    taskcluster_config.secrets = {
-        "risk_analysis_users": ["ehsan"],
-        "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-    }
+    taskcluster_config.secrets["risk_analysis_users"] = ["ehsan"]
 
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
@@ -112,37 +109,26 @@ async def test_should_run_test_selection(PhabricatorMock, mock_taskcluster):
 
         bugbug_utils = BugbugUtils(phab.api)
 
-        taskcluster_config.secrets = {
-            "test_selection_enabled": False,
-            "test_selection_share": 0.0,
-        }
+        taskcluster_config.secrets["test_selection_enabled"] = False
+        taskcluster_config.secrets["test_selection_share"] = 0.0
 
         bugbug_utils = BugbugUtils(phab.api)
         assert calc_perc() == 0.0
 
-        taskcluster_config.secrets = {
-            "test_selection_enabled": False,
-            "test_selection_share": 0.0,
-            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-        }
+        taskcluster_config.secrets["test_selection_enabled"] = False
+        taskcluster_config.secrets["test_selection_share"] = 0.1
 
         bugbug_utils = BugbugUtils(phab.api)
         assert calc_perc() == 0.0
 
-        taskcluster_config.secrets = {
-            "test_selection_enabled": True,
-            "test_selection_share": 0.0,
-            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-        }
+        taskcluster_config.secrets["test_selection_enabled"] = True
+        taskcluster_config.secrets["test_selection_share"] = 0.0
 
         bugbug_utils = BugbugUtils(phab.api)
         assert calc_perc() == 0.0
 
-        taskcluster_config.secrets = {
-            "test_selection_enabled": True,
-            "test_selection_share": 0.1,
-            "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-        }
+        taskcluster_config.secrets["test_selection_enabled"] = True
+        taskcluster_config.secrets["test_selection_share"] = 0.1
 
         bugbug_utils = BugbugUtils(phab.api)
         assert 0.03 < calc_perc() < 0.18
@@ -266,11 +252,8 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
 
     taskGroupId = payload["body"]["status"]["taskGroupId"]
 
-    taskcluster_config.secrets = {
-        "test_selection_enabled": True,
-        "test_selection_share": 0.1,
-        "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-    }
+    taskcluster_config.secrets["test_selection_enabled"] = True
+    taskcluster_config.secrets["test_selection_share"] = 0.1
 
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
@@ -315,6 +298,25 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
         await bugbug_utils.got_bugbug_test_select_end(payload)
         with pytest.raises(KeyError):
             await bugbug_utils.task_group_to_push.get(taskGroupId)
+
+    # Nothing happens when we are on the wrong Phabricator deployment.
+    with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+        rsps.add(
+            responses.GET,
+            "http://community_taskcluster.test/api/queue/v1/task/bugbug-test-select",
+            body=mock_taskcluster("task-bugbug-test-select.json"),
+            content_type="application/json",
+        )
+
+        bugbug_utils.phabricator_deployment = "dev"
+
+        await bugbug_utils.diff_to_push.set(diffId, {"revision": "123", "build": build})
+        await bugbug_utils.got_bugbug_test_select_end(payload)
+        with pytest.raises(KeyError):
+            await bugbug_utils.task_group_to_push.get(taskGroupId)
+        await bugbug_utils.diff_to_push.rem(diffId)
+
+        bugbug_utils.phabricator_deployment = "prod"
 
     # Nothing happens when the failure risk is low.
     with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
@@ -503,11 +505,8 @@ async def test_got_try_task_end(PhabricatorMock, mock_taskcluster, mock_treeherd
 
     taskGroupId = payload["body"]["status"]["taskGroupId"]
 
-    taskcluster_config.secrets = {
-        "test_selection_enabled": True,
-        "test_selection_share": 0.1,
-        "taskcluster_community": {"client_id": "xxx", "access_token": "yyy"},
-    }
+    taskcluster_config.secrets["test_selection_enabled"] = True
+    taskcluster_config.secrets["test_selection_share"] = 0.1
 
     with PhabricatorMock as phab:
         bus.add_queue(QUEUE_PHABRICATOR_RESULTS)
