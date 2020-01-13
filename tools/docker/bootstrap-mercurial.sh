@@ -1,16 +1,14 @@
 #!/bin/bash -ex
-MERCURIAL_VERSION="5.1"
+MERCURIAL_VERSION="5.2"
+VERSION_CONTROL_TOOLS_REV="102106f53cb2"
 
 apt-get update
-apt-get install --no-install-recommends -y curl python2-minimal python-bz2file python-dev gcc openssh-client
+apt-get install --no-install-recommends -y curl python-dev gcc openssh-client
 
-# Setup mercurial from its own website, without install pip2 which has a lot of dependencies
-curl -L https://www.mercurial-scm.org/release/mercurial-$MERCURIAL_VERSION.tar.gz | tar -C /opt -xvz
-cd /opt/mercurial-$MERCURIAL_VERSION
-python2 setup.py install
+pip install --disable-pip-version-check --quiet --no-cache-dir mercurial==$MERCURIAL_VERSION
 
 # Setup mercurial with needed extensions
-hg clone -u cc7be0763bb7cb36e64b55b8cec6998741709776 https://hg.mozilla.org/hgcustom/version-control-tools /src/version-control-tools/
+hg clone -r $VERSION_CONTROL_TOOLS_REV https://hg.mozilla.org/hgcustom/version-control-tools /src/version-control-tools/
 mkdir -p /etc/mercurial/hgrc.d
 ln -s /src/tools/docker/hgrc /etc/mercurial/hgrc.d/code-review.rc
 
