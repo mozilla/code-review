@@ -1,6 +1,7 @@
 <script>
 import mixins from './mixins.js'
 import Choice from './Choice.vue'
+import Pagination from './Pagination.vue'
 
 export default {
   mounted () {
@@ -17,7 +18,8 @@ export default {
     this.$store.dispatch('load_repositories')
   },
   components: {
-    Choice: Choice
+    Choice,
+    Pagination
   },
   data: function () {
     return {
@@ -36,24 +38,6 @@ export default {
     mixins.query
   ],
   methods: {
-    load_next_diffs () {
-      if (!this.has_next) {
-        return
-      }
-
-      this.$store.dispatch('load_diffs', {
-        url: this.$store.state.diffs.next
-      })
-    },
-    load_previous_diffs () {
-      if (!this.has_previous) {
-        return
-      }
-
-      this.$store.dispatch('load_diffs', {
-        url: this.$store.state.diffs.previous
-      })
-    },
     use_filter (name, value) {
       // Filter current diffs query
       if (value) {
@@ -90,20 +74,6 @@ export default {
     repositories () {
       let repos = this.$store.state.repositories || []
       return repos.map(r => r.slug)
-    },
-
-    // Pagination helper
-    total () {
-      return this.$store.state.diffs.count
-    },
-    page_nb () {
-      return this.$store.state.diffs.results.length
-    },
-    has_next () {
-      return this.$store.state.diffs.next !== null
-    },
-    has_previous () {
-      return this.$store.state.diffs.previous !== null
     }
   },
   filters: {
@@ -124,14 +94,7 @@ export default {
 
 <template>
   <section>
-    <nav class="columns" v-if="total > 0">
-      <div class="column is-6 is-offset-6">
-        <button class="button is-pulled-right is-dark" :disabled="!has_next" v-on:click="load_next_diffs">Older diffs ↣</button>
-        <button class="button is-pulled-right is-dark" :disabled="!has_previous" v-on:click="load_previous_diffs">↞ Newer diffs</button>
-        <button class="button is-pulled-right is-success" v-if="Object.keys(query).length > 0" v-on:click="reset_query()">Reset search</button>
-        <div class="is-text-dark is-pulled-right">Showing {{ page_nb }}/{{ total }} Diffs</div>
-      </div>
-    </nav>
+    <Pagination :api_data="$store.state.diffs" name="diffs" store_method="load_diffs"></Pagination>
 
     <table class="table is-fullwidth">
       <thead>
@@ -220,18 +183,6 @@ export default {
 <style>
 .mono{
   font-family: monospace;
-}
-
-nav.columns {
-  margin-top: 12px;
-}
-
-nav.columns * {
-  margin-left: 10px;
-}
-
-nav.columns div {
-  padding-top: 5px;
 }
 
 div.table input.input {

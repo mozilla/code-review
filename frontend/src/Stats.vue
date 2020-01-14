@@ -137,6 +137,7 @@ export default {
             <th>
               <button class="button is-info" v-on:click="sort_by('publishable')" :disabled="sortColumn == 'publishable'">Publishable</button>
             </th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -148,6 +149,9 @@ export default {
             <td>
               <strong v-if="stat.publishable > 0">{{ stat.publishable }}</strong>
               <span class="has-text-grey" v-else>0</span>
+            </td>
+            <td>
+              <router-link class="button is-small" :to="{ name: 'check', params: { repository: stat.repository, analyzer: stat.analyzer, check: stat.check }}">View issues</router-link>
             </td>
           </tr>
         </tbody>
