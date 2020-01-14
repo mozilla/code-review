@@ -5,6 +5,7 @@ import tempfile
 
 import structlog
 import yaml
+from libmozevent.utils import run_tasks
 
 from code_review_events import community_taskcluster_config
 from code_review_events import taskcluster_config
@@ -74,7 +75,7 @@ def main():
     )
 
     events = Events(args.cache_root)
-    events.run()
+    run_tasks([events.start()])
 
 
 if __name__ == "__main__":
