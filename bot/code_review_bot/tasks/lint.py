@@ -34,8 +34,20 @@ class MozLintIssue(Issue):
         message,
         check,
         revision,
-        **kwargs
+        diff=None,
     ):
+        base_line = lineno and int(lineno) or 0
+        nb_lines = 1
+
+        if diff:
+            try:
+                base_line, nb_lines = self.parse_diff(diff, base_line)
+
+                # Add diff to message
+                message += f"\n```\n{diff}\n```"
+            except Exception as e:
+                logger.warning(f"Failed to parse diff: {e}")
+
         # Use analyzer name when check is not provided
         # This happens for analyzers who only have one rule
         if check is None:
@@ -44,16 +56,37 @@ class MozLintIssue(Issue):
             analyzer,
             revision,
             path,
-            line=(
-                lineno and int(lineno) or 0
-            ),  # mozlint sometimes produce strings here
-            nb_lines=1,
+            line=base_line,
+            nb_lines=nb_lines,
             check=check,
             column=column,
             level=Level(level),
             message=message,
         )
         self.linter = linter
+
+    def parse_diff(self, diff, base_line):
+        """
+        Parse an optional Mozlint diff to get the lines from the original patch
+        """
+        changes = list(
+            filter(
+                None,
+                [
+                    (i, c[0]) if c and c[0] in ("-", "+") else None
+                    for i, c in enumerate(diff.splitlines(), start=base_line)
+                ],
+            )
+        )
+        assert changes, "No changes in diff"
+
+        # First change has the position of the issue's top line
+        base_line, _ = changes[0]
+
+        # We only consider the old lines as being in patch
+        nb_lines = len([c for c in changes if c[1] == "-"]) or 1
+
+        return base_line, nb_lines
 
     def is_disabled_check(self):
         """
@@ -126,6 +159,7 @@ class MozLintTask(AnalysisTask):
                 linter=issue["linter"],
                 message=issue["message"],
                 check=issue["rule"],
+                diff=issue.get("diff"),
             )
             for artifact in artifacts.values()
             for _, path_issues in artifact.items()
