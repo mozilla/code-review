@@ -9,20 +9,21 @@ export default new Vuex.Store({
   state: {
     backend_url: process.env.BACKEND_URL,
     tasks: [],
-    diffs: [],
+    diffs: {},
     stats: null,
     total_stats: 0, // Used to track download progress
     states: null,
     repositories: null,
     diff: null,
     issues: {},
+    check_issues: {},
     history: null,
     revision: null
   },
   mutations: {
     reset (state) {
       state.tasks = []
-      state.diffs = []
+      state.diffs = {}
       state.diff = null
     },
 
@@ -74,6 +75,11 @@ export default new Vuex.Store({
     // Store check history
     use_history (state, data) {
       state.history = data
+    },
+
+    // Store check issues
+    use_check_issues (state, data) {
+      state.check_issues = data
     }
   },
   actions: {
@@ -137,6 +143,14 @@ export default new Vuex.Store({
 
         // Load next stats
         state.dispatch('load_stats', resp.data.next)
+      })
+    },
+
+    // Store new issues for that check
+    load_check_issues (state, payload) {
+      const url = payload.url || this.state.backend_url + `/v1/check/${payload.repository}/${payload.analyzer}/${payload.check}/`
+      axios.get(url).then(resp => {
+        state.commit('use_check_issues', resp.data)
       })
     },
 

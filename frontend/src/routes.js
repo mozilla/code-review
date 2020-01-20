@@ -37,7 +37,7 @@ export default new VueRouter({
       component: Stats
     },
     {
-      path: '/check/:check',
+      path: '/check/:repository/:analyzer/:check',
       name: 'check',
       component: Check
     }

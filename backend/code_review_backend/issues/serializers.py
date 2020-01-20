@@ -47,6 +47,21 @@ class RevisionSerializer(serializers.ModelSerializer):
         )
 
 
+class RevisionLightSerializer(serializers.ModelSerializer):
+    """
+    Serialize a Revision in a Diff light serializer
+    """
+
+    repository = serializers.SlugRelatedField(
+        queryset=Repository.objects.all(), slug_field="url"
+    )
+    phabricator_url = serializers.URLField(read_only=True)
+
+    class Meta:
+        model = Revision
+        fields = ("id", "repository", "title", "bugzilla_id", "phabricator_url")
+
+
 class DiffSerializer(serializers.ModelSerializer):
     """
     Serialize a Diff in a Revision
@@ -70,6 +85,22 @@ class DiffSerializer(serializers.ModelSerializer):
             "mercurial_hash",
             "issues_url",
         )
+
+
+class DiffLightSerializer(serializers.ModelSerializer):
+    """
+    Serialize a Diff from an Issue in a check
+    """
+
+    repository = serializers.SlugRelatedField(
+        queryset=Repository.objects.all(), slug_field="url"
+    )
+
+    revision = RevisionLightSerializer()
+
+    class Meta:
+        model = Diff
+        fields = ("id", "repository", "revision")
 
 
 class DiffFullSerializer(serializers.ModelSerializer):
@@ -133,7 +164,19 @@ class IssueSerializer(serializers.ModelSerializer):
         read_only_fields = ("new_for_revision",)
 
 
-class IssueCheckSerializer(serializers.Serializer):
+class IssueCheckSerializer(IssueSerializer):
+    """
+    Serialize an Issue in a Diff
+    """
+
+    diff = DiffLightSerializer()
+
+    class Meta:
+        model = Issue
+        fields = IssueSerializer.Meta.fields + ("diff",)
+
+
+class IssueCheckStatsSerializer(serializers.Serializer):
     """
     Serialize the usage statistics for each check encountered
     """
