@@ -316,6 +316,8 @@ tasks:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("integration_check_tests")}
       payload:
+        features:
+          dind: true
         maxRunTime: 3600
         image: "${taskboot_image}"
         env:
@@ -324,6 +326,8 @@ tasks:
         command:
           - taskboot
           - build
+          - --build-tool
+          - dind
           - --image
           - mozilla/code-review
           - --tag
