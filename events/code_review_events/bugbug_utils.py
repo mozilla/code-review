@@ -119,15 +119,15 @@ class BugbugUtils:
             },
         )
 
+        # Start test selection
+        await self.start_test_selection(build, extras["revision"])
+
     async def process_build(self, build):
         assert build is not None, "Invalid payload"
         assert isinstance(build, PhabricatorBuild)
 
         # Start risk analysis
         await self.start_risk_analysis(build)
-
-        # Start test selection
-        await self.start_test_selection(build)
 
     def should_run_risk_analysis(self, build):
         """
@@ -184,7 +184,7 @@ class BugbugUtils:
 
         return random.random() < self.test_selection_share
 
-    async def start_test_selection(self, build: PhabricatorBuild):
+    async def start_test_selection(self, build: PhabricatorBuild, revision: str):
         """
         Run test selection by triggering a Taskcluster hook
         """
@@ -199,6 +199,11 @@ class BugbugUtils:
                 {
                     "PHABRICATOR_DEPLOYMENT": self.phabricator_deployment,
                     "DIFF_ID": build.diff_id,
+                    "RUNNABLE_JOBS": self.index_service.buildUrl(
+                        "findArtifactFromTask",
+                        f"gecko.v2.try.revision.{revision}.firefox.decision",
+                        "public/runnable-jobs.json",
+                    ),
                 },
             )
             task_id = task["status"]["taskId"]

@@ -20,7 +20,7 @@ You can run this analysis locally with:
  - `./mach static-analysis check another_test.cpp` (C/C++)
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
-"""  # noqa
+"""
 
 VALID_CLANG_FORMAT_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
@@ -32,7 +32,7 @@ You can run this analysis locally with:
 For your convenience, [here is a patch]({results}/clang-format-PHID-DIFF-test.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply -p0`).
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
-"""  # noqa
+"""
 
 
 VALID_FLAKE8_MESSAGE = """
@@ -43,7 +43,7 @@ You can run this analysis locally with:
  - `./mach lint --warnings path/to/file` (JS/Python/etc)
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
-"""  # noqa
+"""
 
 
 VALID_COVERAGE_MESSAGE = """
@@ -56,21 +56,21 @@ Should they have tests, or are they dead code ?
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
-"""  # noqa
+"""
 
 VALID_DEFAULT_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
  - 1 defect found by full-file-analyzer
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
-"""  # noqa
+"""
 
 VALID_TASK_FAILURES_MESSAGE = """
 The analysis task [mock-infer](https://firefox-ci-tc.services.mozilla.com/tasks/erroneousTaskId) failed, but we could not detect any issue.
 Please check this task manually.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
-"""  # noqa
+"""
 
 
 VALID_MOZLINT_MESSAGE = """
@@ -81,7 +81,7 @@ You can run this analysis locally with:
  - `./mach lint --warnings path/to/file` (JS/Python/etc)
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
-"""  # noqa
+"""
 
 
 def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
