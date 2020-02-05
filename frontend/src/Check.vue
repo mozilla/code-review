@@ -1,13 +1,41 @@
 <script>
 import Pagination from './Pagination.vue'
 import Bool from './Bool.vue'
+import Choice from './Choice.vue'
 
 export default {
   mounted () {
-    this.$store.dispatch('load_check_issues', this.$route.params)
+    this.load_issues()
+  },
+  data () {
+    return {
+      choices: {
+        publishable: [
+          {
+            name: 'All states',
+            value: 'all'
+          },
+          {
+            name: 'Publishable',
+            value: 'true'
+          },
+          {
+            name: 'Not publishable',
+            value: 'false'
+          }
+        ]
+      }
+    }
+  },
+  methods: {
+    load_issues (extras) {
+      const payload = { ...this.$route.params, ...(extras || {}) }
+      this.$store.dispatch('load_check_issues', payload)
+    }
   },
   components: {
     Bool,
+    Choice,
     Pagination
   },
   computed: {
@@ -34,7 +62,7 @@ export default {
           <th>Revision</th>
           <th>Path</th>
           <th>Line</th>
-          <th>State</th>
+          <td><Choice :choices="choices.publishable" name="publishable" v-on:new-choice="load_issues({publishable: $event ? $event.value : 'true'})"/></td>
           <th>Message</th>
         </tr>
       </thead>
