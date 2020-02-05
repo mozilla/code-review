@@ -9,6 +9,7 @@ from datetime import timedelta
 import structlog
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
+from taskcluster.utils import stringDate
 
 from code_review_bot import stats
 from code_review_bot.backend import BackendAPI
@@ -24,7 +25,6 @@ from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
-from code_review_tools.taskcluster import TASKCLUSTER_DATE_FORMAT
 
 logger = structlog.get_logger(__name__)
 
@@ -172,7 +172,7 @@ class Workflow(object):
             if settings.taskcluster.local:
                 patch.write()
             else:
-                patch.publish(self.queue_service)
+                patch.publish()
 
         # Report issues publication stats
         nb_issues = len(issues)
@@ -216,7 +216,7 @@ class Workflow(object):
 
         # Always add the indexing
         now = datetime.utcnow()
-        payload["indexed"] = now.strftime(TASKCLUSTER_DATE_FORMAT)
+        payload["indexed"] = stringDate(now)
 
         # Always add the source and try config
         payload["source"] = "try"
@@ -253,9 +253,7 @@ class Workflow(object):
                     "taskId": settings.taskcluster.task_id,
                     "rank": 0,
                     "data": payload,
-                    "expires": (now + timedelta(days=TASKCLUSTER_INDEX_TTL)).strftime(
-                        TASKCLUSTER_DATE_FORMAT
-                    ),
+                    "expires": stringDate(now + timedelta(days=TASKCLUSTER_INDEX_TTL)),
                 },
             )
 
