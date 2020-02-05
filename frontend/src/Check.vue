@@ -8,7 +8,14 @@ export default {
     this.load_issues()
   },
   data () {
+    // Set default since to one month back
+    let since = new Date()
+    since.setMonth(since.getMonth() - 1)
+    since = since.toISOString().substring(0, 10)
+
     return {
+      since,
+      publishable: 'true',
       choices: {
         publishable: [
           {
@@ -28,8 +35,13 @@ export default {
     }
   },
   methods: {
-    load_issues (extras) {
-      const payload = { ...this.$route.params, ...(extras || {}) }
+    load_issues (name, evt) {
+      // Use directly set value from v-model
+      if (name !== undefined) {
+        this.$set(this, name, evt ? evt.value : null)
+      }
+
+      const payload = { ...this.$route.params, publishable: this.publishable, since: this.since }
       this.$store.dispatch('load_check_issues', payload)
     }
   },
@@ -55,6 +67,13 @@ export default {
     <h2 class="subtitle">On repository {{ $route.params.repository }}</h2>
     <Pagination :api_data="$store.state.check_issues" name="issues" store_method="load_check_issues"></Pagination>
 
+    <div class="field">
+      <label class="label">Issues since:</label>
+      <div class="control">
+        <input class="input" type="date" v-model="since" v-on:change="load_issues()" />
+      </div>
+    </div>
+
     <table class="table is-fullwidth" v-if="issues">
       <thead>
         <tr>
@@ -62,7 +81,7 @@ export default {
           <th>Revision</th>
           <th>Path</th>
           <th>Line</th>
-          <td><Choice :choices="choices.publishable" name="publishable" v-on:new-choice="load_issues({publishable: $event ? $event.value : 'true'})"/></td>
+          <td><Choice :choices="choices.publishable" name="publishable" v-on:new-choice="load_issues('publishable', $event)"/></td>
           <th>Message</th>
         </tr>
       </thead>
@@ -91,9 +110,9 @@ export default {
           </td>
         </tr>
       </tbody>
-
     </table>
     <div class="notification is-info" v-else>Loading check issues...</div>
+    <div class="notification is-info" v-if="issues && issues.length == 0">No issues found with these filters</div>
   </div>
 </template>
 
