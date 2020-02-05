@@ -3,6 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from datetime import datetime
+
 from django.db.models import Count
 from django.db.models import Q
 from django.db.models.functions import TruncDate
@@ -183,6 +185,15 @@ class IssueCheckDetails(generics.ListAPIView):
             queryset = queryset.exclude(_filter)
         elif publishable != "all":
             raise APIException(detail="publishable can only be true, false or all")
+
+        # Filter issues by date
+        since = self.request.query_params.get("since")
+        if since is not None:
+            try:
+                since = datetime.strptime(since, "%Y-%m-%d").date()
+            except ValueError:
+                raise APIException(detail="invalid since date - should be YYYY-MM-DD")
+            queryset = queryset.filter(created__gte=since)
 
         return queryset
 
