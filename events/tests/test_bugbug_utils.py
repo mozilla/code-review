@@ -9,6 +9,7 @@ from libmozdata.phabricator import UnitResultState
 from libmozevent.bus import MessageBus
 from libmozevent.phabricator import PhabricatorBuild
 
+from code_review_events import QUEUE_MONITORING_COMMUNITY
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
 from code_review_events import taskcluster_config
 from code_review_events.bugbug_utils import BugbugUtils
@@ -132,6 +133,60 @@ async def test_should_run_test_selection(PhabricatorMock, mock_taskcluster):
 
         bugbug_utils = BugbugUtils(phab.api)
         assert 0.03 < calc_perc() < 0.18
+
+
+@pytest.mark.asyncio
+async def test_start_test_selection(PhabricatorMock, mock_taskcluster):
+    bus = MessageBus()
+    bus.add_queue(QUEUE_MONITORING_COMMUNITY)
+
+    build = PhabricatorBuild(
+        MockRequest(
+            diff="125397",
+            repo="PHID-REPO-saax4qdxlbbhahhp2kg5",
+            revision="36474",
+            target="PHID-HMBT-icusvlfibcebizyd33op",
+        )
+    )
+
+    taskcluster_config.secrets["test_selection_enabled"] = True
+    taskcluster_config.secrets["test_selection_share"] = 1.0
+
+    with PhabricatorMock as phab:
+        phab.load_patches_stack(build)
+        phab.update_state(build)
+        phab.load_reviewers(build)
+
+        bugbug_utils = BugbugUtils(phab.api)
+        bugbug_utils.register(bus)
+
+    with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
+
+        def trigger_hook_callback(request):
+            payload = json.loads(request.body)
+            assert payload == {
+                "DIFF_ID": 125397,
+                "PHABRICATOR_DEPLOYMENT": "prod",
+                "RUNNABLE_JOBS": "http://taskcluster.test/api/index/v1/task/gecko.v2.try.revision.MyRevision.firefox.decision/artifacts/public%2Frunnable-jobs.json",
+            }
+            return (
+                200,
+                {"Content-Type": "application/json"},
+                json.dumps({"status": {"taskId": "xxx"}}),
+            )
+
+        rsps.add_callback(
+            responses.POST,
+            "http://community_taskcluster.test/api/hooks/v1/hooks/project-relman/bugbug-test-select/trigger",
+            callback=trigger_hook_callback,
+        )
+
+        await bugbug_utils.start_test_selection(build, "MyRevision")
+
+        group_id, hook_id, task_id = await bus.receive(QUEUE_MONITORING_COMMUNITY)
+        assert group_id == "project-relman"
+        assert hook_id == "bugbug-test-select"
+        assert task_id == "xxx"
 
 
 @pytest.mark.asyncio
