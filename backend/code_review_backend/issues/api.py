@@ -12,6 +12,7 @@ from rest_framework import generics
 from rest_framework import mixins
 from rest_framework import routers
 from rest_framework import viewsets
+from rest_framework.exceptions import APIException
 
 from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import LEVEL_ERROR
@@ -156,7 +157,8 @@ class IssueCheckDetails(generics.ListAPIView):
 
     def get_queryset(self):
         repo = self.kwargs["repository"]
-        return (
+
+        queryset = (
             Issue.objects.filter(
                 Q(diff__repository__slug=repo)
                 | Q(diff__revision__repository__slug=repo)
@@ -171,6 +173,18 @@ class IssueCheckDetails(generics.ListAPIView):
             )
             .order_by("-created")
         )
+
+        # Display only publishable issues by default
+        publishable = self.request.query_params.get("publishable", "true").lower()
+        _filter = Q(in_patch=True) | Q(level=LEVEL_ERROR)
+        if publishable == "true":
+            queryset = queryset.filter(_filter)
+        elif publishable == "false":
+            queryset = queryset.exclude(_filter)
+        elif publishable != "all":
+            raise APIException(detail="publishable can only be true, false or all")
+
+        return queryset
 
 
 class IssueCheckStats(generics.ListAPIView):
