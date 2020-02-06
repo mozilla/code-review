@@ -170,8 +170,8 @@ tasks:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("bot_check_tests")}
       payload:
-        features:
-          dind: true
+        capabilities:
+          privileged: true
         maxRunTime: 3600
         image: "${taskboot_image}"
         env:
@@ -182,8 +182,49 @@ tasks:
           - build
           - --image
           - mozilla/code-review
+          - --tag
+          - "${channel}"
+          - --tag
+          - "${head_rev}"
+          - --write
+          - /bot.tar
+          - bot/docker/Dockerfile
+        artifacts:
+          public/code-review-bot.tar:
+            expires: {$fromNow: '2 weeks'}
+            path: /bot.tar
+            type: file
+      scopes:
+        - docker-worker:capability:privileged
+      metadata:
+        name: Code Review Bot docker img build
+        description: Build docker image of code review bot, using img on a privileged daemon
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
+
+    - taskId: {$eval: as_slugid("bot_build_dind")}
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      provisionerId: proj-relman
+      workerType: ci
+      dependencies:
+        - {$eval: as_slugid("check_lint")}
+        - {$eval: as_slugid("bot_check_tests")}
+      payload:
+        features:
+          dind: true
+        maxRunTime: 3600
+        image: "${taskboot_image}"
+        env:
+          GIT_REPOSITORY: ${repository}
+          GIT_REVISION: ${head_rev}
+        command:
+          - taskboot
+          - build
           - --build-tool
           - dind
+          - --image
+          - mozilla/code-review
           - --tag
           - "${channel}"
           - --tag
@@ -197,8 +238,8 @@ tasks:
             path: /bot.tar
             type: file
       metadata:
-        name: Code Review Bot docker build
-        description: Build docker image of code review bot
+        name: Code Review Bot docker in docker build
+        description: Build docker image of code review bot, using a remote docker daemon
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
@@ -211,8 +252,8 @@ tasks:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("events_check_tests")}
       payload:
-        features:
-          dind: true
+        capabilities:
+          privileged: true
         maxRunTime: 3600
         image: "${taskboot_image}"
         env:
@@ -223,8 +264,6 @@ tasks:
           - build
           - --image
           - mozilla/code-review
-          - --build-tool
-          - dind
           - --tag
           - "${channel}"
           - --tag
@@ -237,6 +276,8 @@ tasks:
             expires: {$fromNow: '2 weeks'}
             path: /events.tar
             type: file
+      scopes:
+        - docker-worker:capability:privileged
       metadata:
         name: Code Review Events docker build
         description: Build docker image of code review events
@@ -252,8 +293,8 @@ tasks:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("backend_check_tests")}
       payload:
-        features:
-          dind: true
+        capabilities:
+          privileged: true
         maxRunTime: 3600
         image: "${taskboot_image}"
         env:
@@ -264,8 +305,6 @@ tasks:
           - build
           - --image
           - mozilla/code-review
-          - --build-tool
-          - dind
           - --tag
           - "${channel}"
           - --tag
@@ -278,6 +317,8 @@ tasks:
             expires: {$fromNow: '2 weeks'}
             path: /backend.tar
             type: file
+      scopes:
+        - docker-worker:capability:privileged
       metadata:
         name: Code Review Backend docker build
         description: Build docker image of code review backend
@@ -315,8 +356,8 @@ tasks:
         - {$eval: as_slugid("check_lint")}
         - {$eval: as_slugid("integration_check_tests")}
       payload:
-        features:
-          dind: true
+        capabilities:
+          privileged: true
         maxRunTime: 3600
         image: "${taskboot_image}"
         env:
@@ -325,8 +366,6 @@ tasks:
         command:
           - taskboot
           - build
-          - --build-tool
-          - dind
           - --image
           - mozilla/code-review
           - --tag
@@ -341,6 +380,8 @@ tasks:
             expires: {$fromNow: '2 weeks'}
             path: /integration.tar
             type: file
+      scopes:
+        - docker-worker:capability:privileged
       metadata:
         name: Code Review Integration docker build
         description: Build docker image of code review integration tests
