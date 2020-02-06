@@ -149,7 +149,14 @@ export default new Vuex.Store({
     // Store new issues for that check
     load_check_issues (state, payload) {
       const url = payload.url || this.state.backend_url + `/v1/check/${payload.repository}/${payload.analyzer}/${payload.check}/`
-      axios.get(url).then(resp => {
+      let params = {}
+      if (payload.publishable !== undefined) {
+        params.publishable = payload.publishable
+      }
+      if (payload.since !== undefined) {
+        params.since = payload.since
+      }
+      axios.get(url, { params }).then(resp => {
         state.commit('use_check_issues', resp.data)
       })
     },

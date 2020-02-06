@@ -274,7 +274,9 @@ class StatsAPITestCase(APITestCase):
         Check API endpoint to list issues in a check
         """
         self.maxDiff = None
-        response = self.client.get("/v1/check/myrepo/analyzer-X/check-1/")
+        response = self.client.get(
+            "/v1/check/myrepo/analyzer-X/check-1/?publishable=all"
+        )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["count"], 34)
