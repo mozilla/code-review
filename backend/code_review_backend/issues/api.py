@@ -3,6 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from datetime import datetime
+
 from django.db.models import Count
 from django.db.models import Q
 from django.db.models.functions import TruncDate
@@ -12,6 +14,7 @@ from rest_framework import generics
 from rest_framework import mixins
 from rest_framework import routers
 from rest_framework import viewsets
+from rest_framework.exceptions import APIException
 
 from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import LEVEL_ERROR
@@ -156,7 +159,8 @@ class IssueCheckDetails(generics.ListAPIView):
 
     def get_queryset(self):
         repo = self.kwargs["repository"]
-        return (
+
+        queryset = (
             Issue.objects.filter(
                 Q(diff__repository__slug=repo)
                 | Q(diff__revision__repository__slug=repo)
@@ -171,6 +175,27 @@ class IssueCheckDetails(generics.ListAPIView):
             )
             .order_by("-created")
         )
+
+        # Display only publishable issues by default
+        publishable = self.request.query_params.get("publishable", "true").lower()
+        _filter = Q(in_patch=True) | Q(level=LEVEL_ERROR)
+        if publishable == "true":
+            queryset = queryset.filter(_filter)
+        elif publishable == "false":
+            queryset = queryset.exclude(_filter)
+        elif publishable != "all":
+            raise APIException(detail="publishable can only be true, false or all")
+
+        # Filter issues by date
+        since = self.request.query_params.get("since")
+        if since is not None:
+            try:
+                since = datetime.strptime(since, "%Y-%m-%d").date()
+            except ValueError:
+                raise APIException(detail="invalid since date - should be YYYY-MM-DD")
+            queryset = queryset.filter(created__gte=since)
+
+        return queryset
 
 
 class IssueCheckStats(generics.ListAPIView):
