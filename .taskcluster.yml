@@ -237,8 +237,6 @@ tasks:
             expires: {$fromNow: '2 weeks'}
             path: /bot.tar
             type: file
-      scopes:
-        - docker-worker:capability:privileged
       metadata:
         name: Code Review Bot docker in docker build
         description: Build docker image of code review bot, using a remote docker daemon
