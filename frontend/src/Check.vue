@@ -8,7 +8,7 @@ export default {
     this.load_issues()
   },
   data () {
-    // Set default since to one month back
+    // Set default to since one month back
     let since = new Date()
     since.setMonth(since.getMonth() - 1)
     since = since.toISOString().substring(0, 10)
