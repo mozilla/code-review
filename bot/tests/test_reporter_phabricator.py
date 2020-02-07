@@ -679,6 +679,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
                     "details": 'Code review bot found a **build error**: \nDereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
                     "format": "remarkup",
                     "name": "general",
+                    "engine": "mock-coverity",
                     "namespace": "code-review",
                     "result": "fail",
                 }

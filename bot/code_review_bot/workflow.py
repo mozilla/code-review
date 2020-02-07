@@ -24,6 +24,7 @@ from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.tests import TestsTask
 from code_review_tools.taskcluster import TASKCLUSTER_DATE_FORMAT
 
 logger = structlog.get_logger(__name__)
@@ -394,6 +395,8 @@ class Workflow(object):
             return CoverityTask(task_id, task_status)
         elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
+        elif name in ("source-test-node-debugger-tests",):
+            return TestsTask(task_id, task_status)
         elif name.startswith("source-test-"):
             logger.error(f"Unsupported {name} task: will need a local implementation")
         else:

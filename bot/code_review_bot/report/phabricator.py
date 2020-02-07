@@ -15,6 +15,7 @@ from code_review_bot import stats
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.coverage import CoverageIssue
+from code_review_bot.tasks.tests import TestsIssue
 
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
@@ -78,6 +79,7 @@ class PhabricatorReporter(Reporter):
         # List of issues without possible build errors
         issues_only = [issue for issue in issues if not issue.is_build_error()]
         build_errors = [issue for issue in issues if issue.is_build_error()]
+        test_errors = [issue for issue in issues if isinstance(issue, TestsIssue)]
 
         if issues_only or build_errors or task_failures:
 
@@ -92,8 +94,10 @@ class PhabricatorReporter(Reporter):
             else:
                 lint_issues = []
 
-            # Also publish build errors as Phabricator unit result
-            unit_issues = build_errors if self.publish_build_errors else []
+            # Also publish build & tests errors as Phabricator unit result
+            unit_issues = (
+                build_errors + test_errors if self.publish_build_errors else []
+            )
 
             # Publish on Harbormaster all at once
             self.publish_harbormaster(revision, lint_issues, unit_issues)

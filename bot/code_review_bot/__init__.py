@@ -254,15 +254,19 @@ class Issue(abc.ABC):
         """
         Build a Phabricator UnitResult for build errors
         """
-        assert (
-            self.is_build_error()
-        ), "Only build errors may be published as unit results"
+        if self.is_build_error():
+            details = f"Code review bot found a **build error**: \n{self.message}"
+            name = "general"
+        else:
+            details = self.message
+            name = self.check or "test"
 
         return UnitResult(
             namespace="code-review",
-            name="general",
+            name=name,
+            engine=self.analyzer,
             result=UnitResultState.Fail,
-            details=f"Code review bot found a **build error**: \n{self.message}",
+            details=details,
             format="remarkup",
         )
 
