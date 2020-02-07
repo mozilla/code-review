@@ -66,7 +66,7 @@ If you see a problem in this automated review, [please report it here](https://b
 """
 
 VALID_TASK_FAILURES_MESSAGE = """
-The analysis task [mock-infer](https://firefox-ci-tc.services.mozilla.com/tasks/erroneousTaskId) failed, but we could not detect any issue.
+The analysis task [mock-infer](https://treeherder.mozilla.org/#/jobs?revision=aabbccddee&selectedJob=1234) failed, but we could not detect any issue.
 Please check this task manually.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
@@ -864,7 +864,7 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "full-file-inline"
 
 
-def test_task_failures(mock_phabricator, mock_try_task):
+def test_task_failures(mock_phabricator, mock_try_task, mock_treeherder):
     """
     Test Phabricator reporter publication with some task failures
     """
@@ -901,10 +901,14 @@ def test_task_failures(mock_phabricator, mock_try_task):
 
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "aabbccddee"
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy"]}, api=api)
 
-    status = {"task": {"metadata": {"name": "mock-infer"}}, "status": {}}
-    task = ClangTidyTask("erroneousTaskId", status)
+    status = {
+        "task": {"metadata": {"name": "mock-infer"}},
+        "status": {"runs": [{"runId": 0}]},
+    }
+    task = ClangTidyTask("ab3NrysvSZyEwsOHL2MZfw", status)
     issues, patches = reporter.publish([], revision, [task])
     assert len(issues) == 0
     assert len(patches) == 0

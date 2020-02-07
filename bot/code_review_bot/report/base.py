@@ -8,6 +8,8 @@ import re
 import urllib.parse
 from typing import Pattern
 
+from code_review_tools import treeherder
+
 HELP_COMMANDS = {
     "source-test-clang-tidy": " - `./mach static-analysis check {files}` (C/C++)",
     "source-test-infer-infer": " - `./mach static-analysis check-java path/to/file.java` (Java)",
@@ -39,7 +41,7 @@ COMMENT_DIFF_DOWNLOAD = """
 For your convenience, [here is a patch]({url}) that fixes all the {analyzer} defects (use it in your repository with `hg import` or `git apply -p0`).
 """
 COMMENT_TASK_FAILURE = """
-The analysis task [{name}](https://firefox-ci-tc.services.mozilla.com/tasks/{task_id}) failed, but we could not detect any issue.
+The analysis task [{name}]({url}) failed, but we could not detect any issue.
 Please check this task manually.
 """
 
@@ -171,7 +173,10 @@ class Reporter(object):
             )
 
         for task in task_failures:
-            comment += COMMENT_TASK_FAILURE.format(name=task.name, task_id=task.id)
+            treeherder_url = treeherder.get_job_url(
+                task.id, task.run_id, revision=revision.mercurial_revision
+            )
+            comment += COMMENT_TASK_FAILURE.format(name=task.name, url=treeherder_url)
 
         assert comment != "", "Empty comment"
 
