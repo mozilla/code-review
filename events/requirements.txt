@@ -4,4 +4,3 @@ jsonschema==3.2.0
 libmozdata==0.1.64
 libmozevent==1.1.3
 pyyaml==5.3
-treeherder-client==5.0.0
