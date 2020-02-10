@@ -14,12 +14,12 @@ from parsepatch.patch import Patch
 
 from code_review_bot import Issue
 from code_review_bot import stats
+from code_review_bot import taskcluster
 from code_review_bot.config import REGEX_PHABRICATOR_COMMIT
 from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import REPO_MOZILLA_CENTRAL
 from code_review_bot.config import REPO_NSS
 from code_review_bot.config import settings
-from code_review_tools.taskcluster import create_blob_artifact
 
 logger = structlog.get_logger(__name__)
 
@@ -49,7 +49,7 @@ class ImprovementPatch(object):
             length = f.write(self.content)
             logger.info("Improvement patch saved", path=self.path, length=length)
 
-    def publish(self, queue_service, days_ttl=30):
+    def publish(self, days_ttl=30):
         """
         Push through Taskcluster API to setup the content-type header
         so it displays nicely in browsers
@@ -57,13 +57,10 @@ class ImprovementPatch(object):
         assert (
             not settings.taskcluster.local
         ), "Only publish on online Taskcluster tasks"
-        self.url = create_blob_artifact(
-            queue_service,
-            task_id=settings.taskcluster.task_id,
-            run_id=settings.taskcluster.run_id,
-            path="public/patch/{}".format(self.name),
-            content=self.content,
-            content_type="text/plain; charset=utf-8",  # Displays instead of download):
+        self.url = taskcluster.upload_artifact(
+            "public/patch/{}".format(self.name),
+            self.content,
+            content_type="text/plain; charset=utf-8",  # Displays instead of download
             ttl=timedelta(days=days_ttl - 1),
         )
         logger.info("Improvement patch published", url=self.url)
