@@ -1,17 +1,14 @@
 # -*- coding: utf-8 -*-
 import asyncio
 import random
-from urllib.parse import urlencode
 
 import jsone
 import jsonschema
-import slugid
 import structlog
 from libmozdata.phabricator import UnitResultState
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
 from libmozevent.storage import EphemeralStorage
-from thclient import TreeherderClient
 
 from code_review_events import QUEUE_BUGBUG
 from code_review_events import QUEUE_BUGBUG_TRY_PUSH
@@ -19,6 +16,7 @@ from code_review_events import QUEUE_MONITORING_COMMUNITY
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
 from code_review_events import community_taskcluster_config
 from code_review_events import taskcluster_config
+from code_review_tools.treeherder import get_job_url
 
 logger = structlog.get_logger(__name__)
 
@@ -92,8 +90,6 @@ class BugbugUtils:
         self.index_service = taskcluster_config.get_service("index")
         self.hooks_service = taskcluster_config.get_service("hooks")
         self.queue_service = taskcluster_config.get_service("queue")
-
-        self.treeherder_client = TreeherderClient()
 
     def register(self, bus):
         self.bus = bus
@@ -395,23 +391,10 @@ class BugbugUtils:
             elif state in ("failed", "exception"):
                 result = UnitResultState.Fail
 
-                params = {
-                    "repo": "try",
-                    "revision": revision,
-                }
-
-                uuid = slugid.decode(status["taskId"])
-                last_run = body["runId"]
-                job_details = self.treeherder_client.get_job_details(
-                    job_guid=f"{uuid}/{last_run}"
+                treeherder_url = get_job_url(
+                    status["taskId"], body["runId"], repo="try", revision=revision
                 )
-                if len(job_details) > 0:
-                    job_id = job_details[0]["job_id"]
-                    params["selectedJob"] = job_id
 
-                treeherder_url = (
-                    f"https://treeherder.mozilla.org/#/jobs?{urlencode(params)}"
-                )
             else:
                 logger.error("Unexpected state", state=state)
                 return

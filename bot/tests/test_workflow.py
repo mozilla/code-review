@@ -13,6 +13,7 @@ from code_review_bot.revisions import Revision
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.coverity import CoverityTask
+from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
 
@@ -90,7 +91,7 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
         ("source-test-clang-format", ClangFormatTask),
         ("source-test-coverity-coverity", CoverityTask),
         ("source-test-infer-infer", InferTask),
-        ("source-test-unsupported", None),
+        ("source-test-unsupported", DefaultTask),
         ("totally-unsupported", None),
     ],
 )
