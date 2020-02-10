@@ -2,5 +2,5 @@
 json-e==3.0.0
 jsonschema==3.2.0
 libmozdata==0.1.64
-libmozevent==1.1.3
+libmozevent==1.1.4
 pyyaml==5.3
