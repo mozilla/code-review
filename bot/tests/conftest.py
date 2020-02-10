@@ -332,21 +332,13 @@ class MockQueue(object):
     def createArtifact(self, task_id, run_id, name, payload):
         if task_id not in self._artifacts:
             self._artifacts[task_id] = {"artifacts": []}
-        payload["name"] = name
-        payload["requests"] = [
-            {
-                "method": "PUT",
-                "url": "http://storage.test/{}".format(name),
-                "headers": {},
-            }
-        ]
-        self._artifacts[task_id]["artifacts"].append(payload)
-        return payload
 
-    def completeArtifact(self, task_id, run_id, name, payload):
-        assert task_id in self._artifacts
-        assert "etags" in payload
-        assert "test123" in payload["etags"]
+        self._artifacts[task_id]["artifacts"].append(payload)
+        return {
+            "storageType": "s3",
+            "putUrl": "http://storage.test/{}".format(name),
+            "contentType": payload["contentType"],
+        }
 
 
 class MockIndex(object):

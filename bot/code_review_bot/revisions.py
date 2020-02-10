@@ -14,7 +14,7 @@ from parsepatch.patch import Patch
 
 from code_review_bot import Issue
 from code_review_bot import stats
-from code_review_bot import taskcluster_config
+from code_review_bot import taskcluster
 from code_review_bot.config import REGEX_PHABRICATOR_COMMIT
 from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import REPO_MOZILLA_CENTRAL
@@ -57,7 +57,7 @@ class ImprovementPatch(object):
         assert (
             not settings.taskcluster.local
         ), "Only publish on online Taskcluster tasks"
-        self.url = taskcluster_config.upload_artifact(
+        self.url = taskcluster.upload_artifact(
             "public/patch/{}".format(self.name),
             self.content,
             content_type="text/plain; charset=utf-8",  # Displays instead of download
