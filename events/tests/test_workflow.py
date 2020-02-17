@@ -148,3 +148,46 @@ async def test_publish_results_test_result_mode(PhabricatorMock, mock_taskcluste
                 },
             )
         )
+
+
+def test_repositories(PhabricatorMock, mock_taskcluster, tmpdir):
+    configuration = [
+        {
+            "checkout": "robust",
+            "try_url": "ssh://hg.mozilla.org/try",
+            "try_mode": "json",
+            "name": "mozilla-central",
+            "ssh_user": "someone@mozilla.com",
+            "url": "https://hg.mozilla.org/mozilla-central/",
+        },
+        {
+            "checkout": "batch",
+            "try_url": "https://hg.mozilla.org/projects/nss-try",
+            "try_mode": "json",
+            "name": "nss",
+            "ssh_user": "someone@mozilla.com",
+            "ssh_key": "custom NSS secret key",
+            "url": "https://hg.mozilla.org/projects/nss",
+        },
+    ]
+    with PhabricatorMock:
+        client = CodeReview(
+            publish=True, url="http://phabricator.test/api/", api_key="fakekey"
+        )
+        repositories = client.get_repositories(
+            configuration, tmpdir, default_ssh_key="DEFAULT FAKE KEY"
+        )
+
+    assert len(repositories) == 2
+
+    # Check mc has the default key
+    assert "PHID-REPO-mc" in repositories
+    mc = repositories["PHID-REPO-mc"]
+    assert mc.name == "mozilla-central"
+    assert open(mc.ssh_key_path).read() == "DEFAULT FAKE KEY"
+
+    # Check nss has its own key
+    assert "PHID-REPO-mc" in repositories
+    nss = repositories["PHID-REPO-nss"]
+    assert nss.name == "nss"
+    assert open(nss.ssh_key_path).read() == "custom NSS secret key"

@@ -73,12 +73,20 @@ class CodeReview(PhabricatorActions):
         self.bus.add_queue(QUEUE_PHABRICATOR_RESULTS)
         self.bus.add_queue(QUEUE_MERCURIAL_APPLIED)
 
-    def get_repositories(self, repositories, cache_root):
+    def get_repositories(self, repositories, cache_root, default_ssh_key=None):
         """
         Configure repositories, and index them by phid
         """
+
+        def _build_conf(config):
+            # Use the default ssh key when specific repo key is not available
+            if config.get("ssh_key") is None:
+                config["ssh_key"] = default_ssh_key
+            assert config["ssh_key"] is not None, "Missing ssh key"
+            return config
+
         repositories = {
-            phab_repo["phid"]: Repository(conf, cache_root)
+            phab_repo["phid"]: Repository(_build_conf(conf), cache_root)
             for phab_repo in self.api.list_repositories()
             for conf in repositories
             if phab_repo["fields"]["name"] == conf["name"]
@@ -350,7 +358,9 @@ class Events(object):
                 QUEUE_MERCURIAL,
                 QUEUE_MERCURIAL_APPLIED,
                 repositories=self.workflow.get_repositories(
-                    taskcluster_config.secrets["repositories"], cache_root
+                    taskcluster_config.secrets["repositories"],
+                    cache_root,
+                    default_ssh_key=taskcluster_config.secrets["ssh_key"],
                 ),
             )
             self.mercurial.register(self.bus)
