@@ -13,7 +13,7 @@ from libmozevent.phabricator import PhabricatorActions
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.phabricator import PhabricatorBuildState
 from libmozevent.pulse import PulseListener
-from libmozevent.utils import run_tasks
+from libmozevent.utils import AsyncRedis
 from libmozevent.web import WebServer
 
 from code_review_events import MONITORING_PERIOD
@@ -248,14 +248,17 @@ class Events(object):
     """
 
     def __init__(self, cache_root):
+        self.cache_root = cache_root
+
+    def setup(self, redis_conn):
         # Create message bus shared amongst processes
-        self.bus = MessageBus()
+        self.bus = MessageBus(redis_conn)
 
         publish = taskcluster_config.secrets["PHABRICATOR"].get("publish", False)
 
         # Check the redis support is enabled on Heroku
         if heroku.in_dyno():
-            assert self.bus.redis_enabled is True, "Need Redis on Heroku"
+            assert self.bus.redis, "Need Redis on Heroku"
 
         community_config = taskcluster_config.secrets.get("taskcluster_community")
         test_selection_enabled = taskcluster_config.secrets.get(
@@ -350,7 +353,7 @@ class Events(object):
                 QUEUE_MERCURIAL,
                 QUEUE_MERCURIAL_APPLIED,
                 repositories=self.workflow.get_repositories(
-                    taskcluster_config.secrets["repositories"], cache_root
+                    taskcluster_config.secrets["repositories"], self.cache_root
                 ),
             )
             self.mercurial.register(self.bus)
@@ -463,14 +466,18 @@ class Events(object):
 
         if consumers:
             # Run all tasks concurrently
-            run_tasks(consumers)
+            await asyncio.gather(*consumers)
         else:
             # Keep the web server process running
+            await asyncio.get_running_loop().run_in_executor(
+                None, lambda: self.webserver.process.join()
+            )
             asyncio.get_event_loop().run_forever()
 
         # Make sure any pending task is run.
-        run_tasks(asyncio.Task.all_tasks())
+        await asyncio.gather(*asyncio.all_tasks())
 
-        # Stop the webserver when other async processes are stopped
-        if self.webserver:
-            self.webserver.stop()
+    async def start(self):
+        async with AsyncRedis() as redis_conn:
+            await self.setup(redis_conn)
+            self.run()
