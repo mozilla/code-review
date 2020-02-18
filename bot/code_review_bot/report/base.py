@@ -128,9 +128,9 @@ class Reporter(object):
         revision,
         issues,
         bug_report_url,
+        frontend_url,
         patches=[],
         task_failures=[],
-        frontend_url=None,
     ):
         """
         Build a Markdown comment about published issues
@@ -183,7 +183,7 @@ class Reporter(object):
 
         for task in task_failures:
             treeherder_url = treeherder.get_job_url(
-                task.id, task.run_id, revision=revision.mercurial_revision
+                revision.repository, revision.mercurial_revision, task.id, task.run_id
             )
             comment += COMMENT_TASK_FAILURE.format(name=task.name, url=treeherder_url)
 
@@ -191,8 +191,8 @@ class Reporter(object):
 
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
-        if defects and frontend_url:
-            treeherder_url = treeherder.get_revision_url(
+        if defects:
+            treeherder_url = treeherder.get_job_url(
                 revision.repository, revision.mercurial_revision
             )
             comment += FRONTEND_LINKS.format(

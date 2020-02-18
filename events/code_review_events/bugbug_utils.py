@@ -392,7 +392,7 @@ class BugbugUtils:
                 result = UnitResultState.Fail
 
                 treeherder_url = get_job_url(
-                    status["taskId"], body["runId"], repo="try", revision=revision
+                    "try", revision, status["taskId"], body["runId"]
                 )
 
             else:
