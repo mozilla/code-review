@@ -44,8 +44,8 @@ COMMENT_TASK_FAILURE = """
 The analysis task [{name}]({url}) failed, but we could not detect any issue.
 Please check this task manually.
 """
-FRONTEND_LINK = """
-You can view [these defects]({url}) on the code-review frontend.
+FRONTEND_LINKS = """
+You can view these defects on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
 """
 
 
@@ -192,7 +192,12 @@ class Reporter(object):
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
         if defects and frontend_url:
-            comment += FRONTEND_LINK.format(url=frontend_url)
+            treeherder_url = treeherder.get_revision_url(
+                revision.repository, revision.mercurial_revision
+            )
+            comment += FRONTEND_LINKS.format(
+                frontend_url=frontend_url, treeherder_url=treeherder_url
+            )
 
         return comment
 

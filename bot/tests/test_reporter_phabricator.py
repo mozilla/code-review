@@ -21,7 +21,7 @@ You can run this analysis locally with:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view [these defects](https://code-review.moz.tools/#/diff/42) on the code-review frontend.
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_CLANG_FORMAT_MESSAGE = """
@@ -35,7 +35,7 @@ For your convenience, [here is a patch]({results}/clang-format-PHID-DIFF-test.di
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view [these defects](https://code-review.moz.tools/#/diff/42) on the code-review frontend.
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 
@@ -48,7 +48,7 @@ You can run this analysis locally with:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view [these defects](https://code-review.moz.tools/#/diff/42) on the code-review frontend.
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 
@@ -70,7 +70,7 @@ Code analysis found 1 defect in the diff 42:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view [these defects](https://code-review.moz.tools/#/diff/42) on the code-review frontend.
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_TASK_FAILURES_MESSAGE = """
@@ -90,7 +90,7 @@ You can run this analysis locally with:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view [these defects](https://code-review.moz.tools/#/diff/42) on the code-review frontend.
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 
@@ -131,6 +131,8 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
 
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "try"
         revision.lines = {
             # Add dummy lines diff
             "another_test.cpp": [41, 42, 43]
@@ -194,6 +196,8 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
 
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "try"
         revision.lines = {
             # Add dummy lines diff
             "test.cpp": [41, 42, 43],
@@ -329,6 +333,8 @@ def test_phabricator_mozlint(
 
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "try"
         revision.lines = {
             # Add dummy lines diff
             "python/test.py": [41, 42, 43],
@@ -492,6 +498,8 @@ def test_phabricator_clang_tidy_and_coverage(
 
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "try"
         revision.lines = {
             # Add dummy lines diff
             "test.txt": [0],
@@ -551,6 +559,8 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
     def _test_reporter(api, analyzers_skipped):
         # Always use the same setup, only varies the analyzers
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "try"
         revision.lines = {"test.cpp": [0, 41, 42, 43], "dom/test.cpp": [42]}
         reporter = PhabricatorReporter(
             {"analyzers_skipped": analyzers_skipped}, api=api
@@ -834,6 +844,8 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
 
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "try"
         revision.lines = {
             # Add dummy lines diff
             "xx.cpp": [123, 124, 125]
@@ -1039,6 +1051,8 @@ def test_extra_errors(
 
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "try"
         revision.lines = {"path/to/file.py": [1, 2, 3]}
         revision.files = ["path/to/file.py"]
         reporter = PhabricatorReporter(reporter_config, api=api)
