@@ -44,6 +44,9 @@ COMMENT_TASK_FAILURE = """
 The analysis task [{name}]({url}) failed, but we could not detect any issue.
 Please check this task manually.
 """
+FRONTEND_LINK = """
+You can view [these defects]({url}) on the code-review frontend.
+"""
 
 
 class Reporter(object):
@@ -121,7 +124,13 @@ class Reporter(object):
         return [stats(analyzer, items) for analyzer, items in groups]
 
     def build_comment(
-        self, revision, issues, bug_report_url, patches=[], task_failures=[]
+        self,
+        revision,
+        issues,
+        bug_report_url,
+        patches=[],
+        task_failures=[],
+        frontend_url=None,
     ):
         """
         Build a Markdown comment about published issues
@@ -181,6 +190,9 @@ class Reporter(object):
         assert comment != "", "Empty comment"
 
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
+
+        if defects and frontend_url:
+            comment += FRONTEND_LINK.format(url=frontend_url)
 
         return comment
 
