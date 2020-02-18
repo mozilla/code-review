@@ -12,6 +12,8 @@ def get_job_url(repository, revision, task_id=None, run_id=None, **params):
     """Build a Treeherder job url for a given Taskcluster task"""
     assert isinstance(repository, str) and repository, "Missing repository"
     assert isinstance(revision, str) and revision, "Missing revision"
+    assert "repo" not in params, "repo cannot be set in params"
+    assert "revision" not in params, "revision cannot be set in params"
 
     params.update({"repo": repository, "revision": revision})
 
