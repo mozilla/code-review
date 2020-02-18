@@ -45,6 +45,10 @@ class PhabricatorReporter(Reporter):
             build_errors=self.publish_build_errors,
         )
 
+        self.frontend_diff_url = configuration.get(
+            "frontend_diff_url", "https://code-review.moz.tools/#/diff/{diff_id}"
+        )
+
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
         self.api = api
@@ -190,6 +194,9 @@ class PhabricatorReporter(Reporter):
                     issues=non_coverage_issues,
                     patches=patches,
                     bug_report_url=BUG_REPORT_URL,
+                    frontend_url=self.frontend_diff_url.format(
+                        diff_id=revision.diff_id
+                    ),
                     task_failures=task_failures,
                 ),
             )
