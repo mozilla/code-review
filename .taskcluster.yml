@@ -47,7 +47,54 @@ tasks:
 
     pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
     python_version: "3.8"
+
   in:
+
+    $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
+    then:
+
+    - taskId: {$eval: as_slugid("bot_build_dind")}
+      created: {$fromNow: ''}
+      deadline: {$fromNow: '1 hour'}
+      provisionerId: code-analysis-3
+      workerType: linux
+      dependencies:
+        - {$eval: as_slugid("check_lint")}
+        - {$eval: as_slugid("bot_check_tests")}
+      payload:
+        features:
+          dind: true
+        maxRunTime: 3600
+        image: "${taskboot_image}"
+        env:
+          GIT_REPOSITORY: ${repository}
+          GIT_REVISION: ${head_rev}
+        command:
+          - taskboot
+          - build
+          - --build-tool
+          - dind
+          - --image
+          - mozilla/code-review
+          - --tag
+          - "${channel}"
+          - --tag
+          - "${head_rev}"
+          - --write
+          - /bot.tar
+          - bot/docker/Dockerfile
+        artifacts:
+          public/code-review-bot.tar:
+            expires: {$fromNow: '2 weeks'}
+            path: /bot.tar
+            type: file
+      metadata:
+        name: Code Review Bot docker in docker build
+        description: Build docker image of code review bot, using a remote docker daemon
+        owner: bastien@mozilla.com
+        source: https://github.com/mozilla/code-review
+
+    else:
     - taskId: {$eval: as_slugid("check_lint")}
       provisionerId: proj-relman
       workerType: ci
@@ -199,47 +246,6 @@ tasks:
       metadata:
         name: Code Review Bot docker img build
         description: Build docker image of code review bot, using img on a privileged daemon
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
-
-    - taskId: {$eval: as_slugid("bot_build_dind")}
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      provisionerId: proj-relman
-      workerType: ci
-      dependencies:
-        - {$eval: as_slugid("check_lint")}
-        - {$eval: as_slugid("bot_check_tests")}
-      payload:
-        features:
-          dind: true
-        maxRunTime: 3600
-        image: "${taskboot_image}"
-        env:
-          GIT_REPOSITORY: ${repository}
-          GIT_REVISION: ${head_rev}
-        command:
-          - taskboot
-          - build
-          - --build-tool
-          - dind
-          - --image
-          - mozilla/code-review
-          - --tag
-          - "${channel}"
-          - --tag
-          - "${head_rev}"
-          - --write
-          - /bot.tar
-          - bot/docker/Dockerfile
-        artifacts:
-          public/code-review-bot.tar:
-            expires: {$fromNow: '2 weeks'}
-            path: /bot.tar
-            type: file
-      metadata:
-        name: Code Review Bot docker in docker build
-        description: Build docker image of code review bot, using a remote docker daemon
         owner: bastien@mozilla.com
         source: https://github.com/mozilla/code-review
 
