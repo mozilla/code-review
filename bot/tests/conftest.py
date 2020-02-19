@@ -415,7 +415,7 @@ def mock_workflow(mock_config, mock_phabricator, mock_taskcluster_config):
             Add mock tasks in queue & index mock services
             """
             # The task group id is used to find the decision task
-            # as it should be the first task in the group
+            # as it's the task with the same ID as the group
             mock_config.try_group_id = "decision"
             self.index_service.configure(tasks)
             self.queue_service.configure(tasks)
