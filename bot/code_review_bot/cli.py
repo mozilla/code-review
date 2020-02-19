@@ -55,7 +55,13 @@ def main():
     taskcluster.load_secrets(
         args.taskcluster_secret,
         prefixes=["common", "code-review-bot", "bot"],
-        required=("APP_CHANNEL", "REPORTERS", "PHABRICATOR", "ALLOWED_PATHS"),
+        required=(
+            "APP_CHANNEL",
+            "REPORTERS",
+            "PHABRICATOR",
+            "ALLOWED_PATHS",
+            "repositories",
+        ),
         existing={
             "APP_CHANNEL": "development",
             "REPORTERS": [],
@@ -78,7 +84,9 @@ def main():
 
     # Setup settings before stats
     settings.setup(
-        taskcluster.secrets["APP_CHANNEL"], taskcluster.secrets["ALLOWED_PATHS"]
+        taskcluster.secrets["APP_CHANNEL"],
+        taskcluster.secrets["ALLOWED_PATHS"],
+        taskcluster.secrets["repositories"],
     )
     # Setup statistics
     influx_conf = taskcluster.secrets.get("influxdb")

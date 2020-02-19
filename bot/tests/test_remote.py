@@ -294,9 +294,9 @@ def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
             "remoteTryTask": {},
         }
     )
-    with pytest.raises(AssertionError) as e:
+    with pytest.raises(Exception) as e:
         mock_workflow.run(mock_revision)
-    assert str(e.value) == "Missing try revision"
+    assert str(e.value) == "Unsupported decision task"
     assert mock_revision.mercurial_revision is None
 
     mock_workflow.setup_mock_tasks(
