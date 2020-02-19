@@ -5,7 +5,17 @@ pull_request_rules:
       - author~=^dependabot(|-preview)\[bot\]$
       - status-success=Community-TC (pull_request)
       - base=master
-      - #approved-reviews-by>=1
+      - "#approved-reviews-by>=1"
     actions:
       merge:
-        method: merge
+        method: squash
+
+  - name: Automatic merge on approval for contributors
+    conditions:
+      - author!=@mozilla/sallt
+      - status-success=Community-TC (pull_request)
+      - base=master
+      - "#approved-reviews-by>=1"
+    actions:
+      merge:
+        method: squash
