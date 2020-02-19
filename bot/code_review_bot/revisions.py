@@ -82,6 +82,7 @@ class Revision(object):
         mercurial_revision=None,
         repository=None,
         target_repository=None,
+        phabricator_repository=None,
         url=None,
         patch=None,
     ):
@@ -102,6 +103,9 @@ class Revision(object):
 
         # the target repo where the patch may land
         self.target_repository = target_repository
+
+        # the phabricator repository payload for later identification
+        self.phabricator_repository = phabricator_repository
 
         # Backend data
         self.issues_url = None
@@ -163,6 +167,13 @@ class Revision(object):
 
         revision = phabricator.load_revision(phid)
 
+        # Load repository detailed information
+        repos = phabricator.request(
+            "diffusion.repository.search",
+            constraints={"phids": [revision["fields"]["repositoryPHID"]]},
+        )
+        assert len(repos["data"]) == 1, "Repository not found on Phabricator"
+
         # Load target patch from Phabricator for Try mode
         patch = phabricator.load_raw_diff(diff_id)
 
@@ -175,6 +186,7 @@ class Revision(object):
             diff_phid=diff_phid,
             build_target_phid=build_target_phid,
             revision=revision,
+            phabricator_repository=repos["data"][0],
             diff=diff,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
             patch=patch,
@@ -405,10 +417,13 @@ class Revision(object):
         # with the decision task environment to get the mercurial information
         decision_env = decision_task["task"]["payload"]["env"]
         for repository in settings.repositories:
-            if (
-                repository.decision_env_revision in decision_env
-                and repository.decision_env_repository in decision_env
-            ):
+            if repository.name == self.phabricator_repository["fields"]["name"]:
+                assert (
+                    repository.decision_env_revision in decision_env
+                ), f"Revision {repository.decision_env_revision} not found in decision task"
+                assert (
+                    repository.decision_env_repository in decision_env
+                ), f"Repository {repository.decision_env_repository} not found in decision task"
                 self.mercurial_revision = decision_env[repository.decision_env_revision]
                 self.repository = decision_env[repository.decision_env_repository]
                 self.target_repository = repository.url
