@@ -18,7 +18,6 @@ from code_review_bot import taskcluster
 from code_review_bot.config import REGEX_PHABRICATOR_COMMIT
 from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import REPO_MOZILLA_CENTRAL
-from code_review_bot.config import REPO_NSS
 from code_review_bot.config import settings
 
 logger = structlog.get_logger(__name__)
@@ -83,6 +82,7 @@ class Revision(object):
         mercurial_revision=None,
         repository=None,
         target_repository=None,
+        phabricator_repository=None,
         url=None,
         patch=None,
     ):
@@ -103,6 +103,9 @@ class Revision(object):
 
         # the target repo where the patch may land
         self.target_repository = target_repository
+
+        # the phabricator repository payload for later identification
+        self.phabricator_repository = phabricator_repository
 
         # Backend data
         self.issues_url = None
@@ -164,6 +167,13 @@ class Revision(object):
 
         revision = phabricator.load_revision(phid)
 
+        # Load repository detailed information
+        repos = phabricator.request(
+            "diffusion.repository.search",
+            constraints={"phids": [revision["fields"]["repositoryPHID"]]},
+        )
+        assert len(repos["data"]) == 1, "Repository not found on Phabricator"
+
         # Load target patch from Phabricator for Try mode
         patch = phabricator.load_raw_diff(diff_id)
 
@@ -176,6 +186,7 @@ class Revision(object):
             diff_phid=diff_phid,
             build_target_phid=build_target_phid,
             revision=revision,
+            phabricator_repository=repos["data"][0],
             diff=diff,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
             patch=patch,
@@ -402,29 +413,30 @@ class Revision(object):
             "Found decision task", name=decision_task["task"]["metadata"]["name"]
         )
 
-        # Use mercurial infos for local revision
+        # Match the supported repositories from settings
+        # with the decision task environment to get the mercurial information
         decision_env = decision_task["task"]["payload"]["env"]
-        if "GECKO_HEAD_REPOSITORY" in decision_env:
-            # Mozilla-Central Try
-            self.mercurial_revision = decision_env.get("GECKO_HEAD_REV")
-            self.repository = decision_env["GECKO_HEAD_REPOSITORY"]
-            # mozilla-unified is used in the Decision task payload
-            # but that is not the "real" target repository
-            self.target_repository = REPO_MOZILLA_CENTRAL
+        for repository in settings.repositories:
+            if repository.name == self.phabricator_repository["fields"]["name"]:
+                assert (
+                    repository.decision_env_revision in decision_env
+                ), f"Revision {repository.decision_env_revision} not found in decision task"
+                assert (
+                    repository.decision_env_repository in decision_env
+                ), f"Repository {repository.decision_env_repository} not found in decision task"
+                self.mercurial_revision = decision_env[repository.decision_env_revision]
+                self.repository = decision_env[repository.decision_env_repository]
+                self.target_repository = repository.url
+                break
 
-        elif "NSS_HEAD_REPOSITORY" in decision_env:
-            # NSS Try
-            self.mercurial_revision = decision_env.get("NSS_HEAD_REVISION")
-            self.repository = decision_env["NSS_HEAD_REPOSITORY"]
-            # Unfortunately the NSS decision task does not expose the target repository
-            self.target_repository = REPO_NSS
-
-        else:
-            raise Exception("Unsupported decision task")
-
-        # Save mercurial revision
-        assert self.mercurial_revision is not None, "Missing try revision"
-        logger.info("Using Try mercurial revision", rev=self.mercurial_revision)
+        # Check mercurial revision is set
+        assert self.mercurial_revision is not None, "Unsupported decision task"
+        logger.info(
+            "Using mercurial revision",
+            rev=self.mercurial_revision,
+            repository=self.repository,
+            target=self.target_repository,
+        )
 
     @property
     def bugzilla_id(self):

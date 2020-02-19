@@ -1,0 +1,50 @@
+{
+  "result": {
+    "data": [
+      {
+        "id": 1,
+        "type": "REPO",
+        "phid": "PHID-REPO-mc",
+        "fields": {
+          "name": "mozilla-central",
+          "vcs": "hg",
+          "callsign": "MOZILLACENTRAL",
+          "shortName": "mozilla-central",
+          "status": "active",
+          "isImporting": false,
+          "almanacServicePHID": null,
+          "refRules": {
+            "fetchRules": [],
+            "trackRules": [],
+            "permanentRefRules": []
+          },
+          "defaultBranch": "default",
+          "description": {
+            "raw": ""
+          },
+          "spacePHID": null,
+          "dateCreated": 1502986064,
+          "dateModified": 1558793245,
+          "policy": {
+            "view": "public",
+            "edit": "admin",
+            "diffusion.push": "no-one"
+          }
+        },
+        "attachments": {}
+      }
+    ],
+    "maps": {},
+    "query": {
+      "queryKey": null
+    },
+    "cursor": {
+      "limit": 100,
+      "after": null,
+      "before": null,
+      "order": null
+    }
+  },
+  "error_code": null,
+  "error_info": null
+}
