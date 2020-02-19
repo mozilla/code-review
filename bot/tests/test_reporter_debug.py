@@ -16,10 +16,12 @@ def test_publication(tmpdir, mock_issues, mock_revision):
 
     # Load description from Taskcluster tasks
     mock_revision.setup_try(
+        "decision",
         {
             # Base information are retrieved from the decision task
             "decision": {
                 "task": {
+                    "metadata": {"name": "Mock decision task"},
                     "payload": {
                         "image": "taskcluster/decision",
                         "env": {
@@ -27,10 +29,10 @@ def test_publication(tmpdir, mock_issues, mock_revision):
                             "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
                             "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-central",
                         },
-                    }
+                    },
                 }
             }
-        }
+        },
     )
 
     report_dir = str(tmpdir.mkdir("public").realpath())

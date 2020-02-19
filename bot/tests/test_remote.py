@@ -249,17 +249,22 @@ def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
     Test a remote workflow with different decision task setup
     """
 
-    mock_workflow.setup_mock_tasks({"decision": {}, "remoteTryTask": {}})
-    with pytest.raises(AssertionError) as e:
+    mock_workflow.setup_mock_tasks({"notDecision": {}, "remoteTryTask": {}})
+    with pytest.raises(Exception) as e:
         mock_workflow.run(mock_revision)
     assert str(e.value) == "Missing decision task"
+
+    mock_workflow.setup_mock_tasks({"decision": {}, "remoteTryTask": {}})
+    with pytest.raises(Exception) as e:
+        mock_workflow.run(mock_revision)
+    assert str(e.value) == "Unsupported decision task"
 
     mock_workflow.setup_mock_tasks(
         {"decision": {"image": "anotherImage"}, "remoteTryTask": {}}
     )
-    with pytest.raises(AssertionError) as e:
+    with pytest.raises(Exception) as e:
         mock_workflow.run(mock_revision)
-    assert str(e.value) == "Missing decision task"
+    assert str(e.value) == "Unsupported decision task"
 
     mock_workflow.setup_mock_tasks(
         {
@@ -269,9 +274,9 @@ def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
             "remoteTryTask": {},
         }
     )
-    with pytest.raises(AssertionError) as e:
+    with pytest.raises(Exception) as e:
         mock_workflow.run(mock_revision)
-    assert str(e.value) == "Missing decision task"
+    assert str(e.value) == "Unsupported decision task"
 
     mock_workflow.setup_mock_tasks(
         {"decision": {"image": "taskcluster/decision:XXX"}, "remoteTryTask": {}}

@@ -266,12 +266,10 @@ class Workflow(object):
         assert "tasks" in tasks
         tasks = {task["status"]["taskId"]: task for task in tasks["tasks"]}
         assert len(tasks) > 0
-        logger.info(
-            "Loaded Taskcluster group", id=settings.try_group_id, tasks=len(tasks)
-        )
+        logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
 
         # Update the local revision with tasks
-        revision.setup_try(tasks)
+        revision.setup_try(group_id, tasks)
 
         # Store the revision in the backend
         # It needs to be after setup_try to have a repository value

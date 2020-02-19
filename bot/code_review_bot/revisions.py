@@ -391,20 +391,16 @@ class Revision(object):
         """
         self.improvement_patches = []
 
-    def setup_try(self, tasks):
+    def setup_try(self, task_group_id, tasks):
         """
         Find the mercurial revision from the Try decision task env
         """
-        # Find the decision task
-        def is_decision_task(task):
-            image = task["task"]["payload"].get("image")
-            if image is not None and isinstance(image, str):
-                return image.startswith("taskcluster/decision") or image.startswith(
-                    "djmitche/nss-decision"
-                )
-
-        decision_task = next(filter(is_decision_task, tasks.values()), None)
+        # The decision task should have the same id as the task group
+        decision_task = tasks.get(task_group_id)
         assert decision_task is not None, "Missing decision task"
+        logger.info(
+            "Found decision task", name=decision_task["task"]["metadata"]["name"]
+        )
 
         # Use mercurial infos for local revision
         decision_env = decision_task["task"]["payload"]["env"]
