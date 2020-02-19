@@ -16,7 +16,6 @@ import tempfile
 import structlog
 
 REPO_MOZILLA_CENTRAL = "https://hg.mozilla.org/mozilla-central"
-REPO_NSS = "https://hg.mozilla.org/projects/nss"
 REPO_AUTOLAND = "https://hg.mozilla.org/integration/autoland"
 REGEX_PHABRICATOR_COMMIT = re.compile(
     r"^Differential Revision: (https://[\w\-\.]+/D(\d+))$", re.MULTILINE
@@ -26,6 +25,9 @@ logger = structlog.get_logger(__name__)
 
 TaskCluster = collections.namedtuple(
     "TaskCluster", "results_dir, task_id, run_id, local"
+)
+RepositoryConf = collections.namedtuple(
+    "RepositoryConf", "name, url, decision_env_revision, decision_env_repository"
 )
 
 
@@ -44,11 +46,12 @@ class Settings(object):
         self.try_group_id = None
         self.autoland_group_id = None
         self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
+        self.repositories = []
 
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
 
-    def setup(self, app_channel, allowed_paths):
+    def setup(self, app_channel, allowed_paths, repositories):
         # Detect source from env
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
             self.try_task_id = os.environ["TRY_TASK_ID"]
@@ -76,6 +79,22 @@ class Settings(object):
         assert isinstance(allowed_paths, list)
         assert all(map(lambda p: isinstance(p, str), allowed_paths))
         self.allowed_paths = allowed_paths
+
+        # Build available repositories from secret
+        def build_conf(nb, repo):
+            assert isinstance(
+                repo, dict
+            ), "Repository configuration #{nb+1} is not a dict"
+            data = []
+            for key in RepositoryConf._fields:
+                assert (
+                    key in repo
+                ), f"Missing key {key} in repository configuration #{nb+1}"
+                data.append(repo[key])
+            return RepositoryConf._make(data)
+
+        self.repositories = [build_conf(i, repo) for i, repo in enumerate(repositories)]
+        assert self.repositories, "No repositories available"
 
     def __getattr__(self, key):
         if key not in self.config:

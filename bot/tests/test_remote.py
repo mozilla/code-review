@@ -248,18 +248,32 @@ def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with different decision task setup
     """
+    assert mock_revision.phabricator_repository["fields"]["name"] == "mozilla-central"
+
+    mock_workflow.setup_mock_tasks({"notDecision": {}, "remoteTryTask": {}})
+    with pytest.raises(Exception) as e:
+        mock_workflow.run(mock_revision)
+    assert str(e.value) == "Missing decision task"
 
     mock_workflow.setup_mock_tasks({"decision": {}, "remoteTryTask": {}})
     with pytest.raises(AssertionError) as e:
+        mock_revision.phabricator_repository["fields"]["name"] = "unknown"
         mock_workflow.run(mock_revision)
-    assert str(e.value) == "Missing decision task"
+    assert str(e.value) == "Unsupported decision task"
+
+    # Restore name
+    mock_revision.phabricator_repository["fields"]["name"] = "mozilla-central"
+    mock_workflow.setup_mock_tasks({"decision": {}, "remoteTryTask": {}})
+    with pytest.raises(Exception) as e:
+        mock_workflow.run(mock_revision)
+    assert str(e.value) == "Revision GECKO_HEAD_REV not found in decision task"
 
     mock_workflow.setup_mock_tasks(
         {"decision": {"image": "anotherImage"}, "remoteTryTask": {}}
     )
-    with pytest.raises(AssertionError) as e:
+    with pytest.raises(Exception) as e:
         mock_workflow.run(mock_revision)
-    assert str(e.value) == "Missing decision task"
+    assert str(e.value) == "Revision GECKO_HEAD_REV not found in decision task"
 
     mock_workflow.setup_mock_tasks(
         {
@@ -269,29 +283,29 @@ def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
             "remoteTryTask": {},
         }
     )
-    with pytest.raises(AssertionError) as e:
+    with pytest.raises(Exception) as e:
         mock_workflow.run(mock_revision)
-    assert str(e.value) == "Missing decision task"
+    assert str(e.value) == "Revision GECKO_HEAD_REV not found in decision task"
 
     mock_workflow.setup_mock_tasks(
         {"decision": {"image": "taskcluster/decision:XXX"}, "remoteTryTask": {}}
     )
     with pytest.raises(Exception) as e:
         mock_workflow.run(mock_revision)
-    assert str(e.value) == "Unsupported decision task"
+    assert str(e.value) == "Revision GECKO_HEAD_REV not found in decision task"
 
     mock_workflow.setup_mock_tasks(
         {
             "decision": {
                 "image": "taskcluster/decision:XXX",
-                "env": {"GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try"},
+                "env": {"GECKO_HEAD_REV": "someRevision"},
             },
             "remoteTryTask": {},
         }
     )
-    with pytest.raises(AssertionError) as e:
+    with pytest.raises(Exception) as e:
         mock_workflow.run(mock_revision)
-    assert str(e.value) == "Missing try revision"
+    assert str(e.value) == "Repository GECKO_HEAD_REPOSITORY not found in decision task"
     assert mock_revision.mercurial_revision is None
 
     mock_workflow.setup_mock_tasks(
@@ -299,8 +313,8 @@ def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
             "decision": {
                 "image": "taskcluster/decision:XXX",
                 "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
                     "GECKO_HEAD_REV": "someRevision",
+                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
                 },
             },
             "remoteTryTask": {},
