@@ -386,7 +386,7 @@ def mock_backend_secret(mock_taskcluster_config):
 
 
 @pytest.fixture
-def mock_workflow(mock_phabricator, mock_taskcluster_config):
+def mock_workflow(mock_config, mock_phabricator, mock_taskcluster_config):
     """
     Mock the workflow along with Taskcluster mocks
     No phabricator output here
@@ -414,6 +414,9 @@ def mock_workflow(mock_phabricator, mock_taskcluster_config):
             """
             Add mock tasks in queue & index mock services
             """
+            # The task group id is used to find the decision task
+            # as it should be the first task in the group
+            mock_config.try_group_id = "decision"
             self.index_service.configure(tasks)
             self.queue_service.configure(tasks)
 
