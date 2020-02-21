@@ -173,6 +173,8 @@ tasks:
               source: https://github.com/mozilla/code-review
 
           - taskId: {$eval: as_slugid("backend_check_tests")}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
             created: {$fromNow: ''}
             deadline: {$fromNow: '1 hour'}
             payload:
