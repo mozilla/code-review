@@ -48,565 +48,575 @@ tasks:
     pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
     python_version: "3.8"
 
+    provisionerId:
+      $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
+      then: code-analysis-3
+      else: proj-relman
+
+    workerType:
+      $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
+      then: linux
+      else: ci
   in:
+    $flatten:
+      $match:
+        # Always run those tasks
+        "true":
+          - taskId: {$eval: as_slugid("check_lint")}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            payload:
+              maxRunTime: 3600
+              image: "python:${python_version}"
+              command:
+                - sh
+                - -lxce
+                - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+                  cd /src/bot && ${pip_install} -r requirements-dev.txt &&
+                  cd /src && pre-commit run -a"
+            metadata:
+              name: "Code Review Bot checks: linting"
+              description: Check code style with pre-commit hooks
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
-    then:
+          - taskId: {$eval: as_slugid("bot_check_tests")}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            payload:
+              maxRunTime: 3600
+              image: "python:${python_version}-alpine"
+              command:
+                - sh
+                - -lxce
+                - "apk add git --quiet &&
+                  git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+                  cd /src/tools && ${pip_install} . &&
+                  cd /src/bot && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
+                  pytest -v"
+            metadata:
+              name: "Code Review Bot checks: unit tests"
+              description: Check python code with pytest
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("bot_build_dind")}
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      provisionerId: code-analysis-3
-      workerType: linux
-      dependencies:
-        - {$eval: as_slugid("check_lint")}
-        - {$eval: as_slugid("bot_check_tests")}
-      payload:
-        features:
-          dind: true
-        maxRunTime: 3600
-        image: "${taskboot_image}"
-        env:
-          GIT_REPOSITORY: ${repository}
-          GIT_REVISION: ${head_rev}
-        command:
-          - taskboot
-          - build
-          - --build-tool
-          - dind
-          - --image
-          - mozilla/code-review
-          - --tag
-          - "${channel}"
-          - --tag
-          - "${head_rev}"
-          - --write
-          - /bot.tar
-          - bot/docker/Dockerfile
-        artifacts:
-          public/code-review-bot.tar:
-            expires: {$fromNow: '2 weeks'}
-            path: /bot.tar
-            type: file
-      metadata:
-        name: Code Review Bot docker in docker build
-        description: Build docker image of code review bot, using a remote docker daemon
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+        # Run only on firefoxci Taskcluster
+        'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"':
+          - taskId: {$eval: as_slugid("bot_build_dind")}
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            dependencies:
+              - {$eval: as_slugid("check_lint")}
+              - {$eval: as_slugid("bot_check_tests")}
+            payload:
+              features:
+                dind: true
+              maxRunTime: 3600
+              image: "${taskboot_image}"
+              env:
+                GIT_REPOSITORY: ${repository}
+                GIT_REVISION: ${head_rev}
+              command:
+                - taskboot
+                - build
+                - --build-tool
+                - dind
+                - --image
+                - mozilla/code-review
+                - --tag
+                - "${channel}"
+                - --tag
+                - "${head_rev}"
+                - --write
+                - /bot.tar
+                - bot/docker/Dockerfile
+              artifacts:
+                public/code-review-bot.tar:
+                  expires: {$fromNow: '2 weeks'}
+                  path: /bot.tar
+                  type: file
+            metadata:
+              name: Code Review Bot docker in docker build
+              description: Build docker image of code review bot, using a remote docker daemon
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    else:
-    - taskId: {$eval: as_slugid("check_lint")}
-      provisionerId: proj-relman
-      workerType: ci
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      payload:
-        maxRunTime: 3600
-        image: "python:${python_version}"
-        command:
-          - sh
-          - -lxce
-          - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-            cd /src/bot && ${pip_install} -r requirements-dev.txt &&
-            cd /src && pre-commit run -a"
-      metadata:
-        name: "Code Review Bot checks: linting"
-        description: Check code style with pre-commit hooks
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+        # Run only on community Taskcluster
+        'taskcluster_root_url == "https://community-tc.services.mozilla.com"':
+          - taskId: {$eval: as_slugid("events_check_tests")}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            payload:
+              maxRunTime: 3600
+              image: "python:${python_version}"
+              command:
+                - sh
+                - -lxce
+                - "apt-get -qq update && apt-get -qq install -y redis-server &&
+                  git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+                  cd /src/tools && ${pip_install} . &&
+                  cd /src/events && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
+                  export REDIS_URL='redis://localhost:6379/' && redis-server --daemonize yes &&
+                  pytest -v"
+            metadata:
+              name: "Code Review Events checks: unit tests"
+              description: Check python code with pytest
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("bot_check_tests")}
-      provisionerId: proj-relman
-      workerType: ci
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      payload:
-        maxRunTime: 3600
-        image: "python:${python_version}-alpine"
-        command:
-          - sh
-          - -lxce
-          - "apk add git --quiet &&
-            git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-            cd /src/tools && ${pip_install} . &&
-            cd /src/bot && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
-            pytest -v"
-      metadata:
-        name: "Code Review Bot checks: unit tests"
-        description: Check python code with pytest
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+          - taskId: {$eval: as_slugid("backend_check_tests")}
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            payload:
+              maxRunTime: 3600
+              image: "python:${python_version}"
+              command:
+                - sh
+                - -lxce
+                - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+                  cd /src/tools && ${pip_install} . &&
+                  cd /src/backend && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
+                  ./manage.py test"
+            metadata:
+              name: "Code Review Backend checks: unit tests"
+              description: Check python code with Django tests
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("events_check_tests")}
-      provisionerId: proj-relman
-      workerType: ci
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      payload:
-        maxRunTime: 3600
-        image: "python:${python_version}"
-        command:
-          - sh
-          - -lxce
-          - "apt-get -qq update && apt-get -qq install -y redis-server &&
-            git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-            cd /src/tools && ${pip_install} . &&
-            cd /src/events && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
-            export REDIS_URL='redis://localhost:6379/' && redis-server --daemonize yes &&
-            pytest -v"
-      metadata:
-        name: "Code Review Events checks: unit tests"
-        description: Check python code with pytest
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+          - taskId: {$eval: as_slugid("frontend_build")}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            payload:
+              maxRunTime: 3600
+              image: node:11-alpine
+              env:
+                BACKEND_URL: "${backend_url}"
+              command:
+                - sh
+                - -lxce
+                - "apk add git lcms2-dev bash libpng-dev autoconf build-base --quiet &&
+                  git clone --quiet ${repository} /src && cd /src/frontend && git checkout ${head_rev} -b build &&
+                  npm install && npm run build"
+              artifacts:
+                public/frontend:
+                  expires: {$fromNow: '2 weeks'}
+                  path: /src/frontend/build
+                  type: directory
+            metadata:
+              name: Code Review Frontend build
+              description: Build web single page application
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("backend_check_tests")}
-      provisionerId: proj-relman
-      workerType: ci
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      payload:
-        maxRunTime: 3600
-        image: "python:${python_version}"
-        command:
-          - sh
-          - -lxce
-          - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-            cd /src/tools && ${pip_install} . &&
-            cd /src/backend && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
-            ./manage.py test"
-      metadata:
-        name: "Code Review Backend checks: unit tests"
-        description: Check python code with Django tests
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+          - taskId: {$eval: as_slugid("bot_build")}
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            dependencies:
+              - {$eval: as_slugid("check_lint")}
+              - {$eval: as_slugid("bot_check_tests")}
+            payload:
+              capabilities:
+                privileged: true
+              maxRunTime: 3600
+              image: "${taskboot_image}"
+              env:
+                GIT_REPOSITORY: ${repository}
+                GIT_REVISION: ${head_rev}
+              command:
+                - taskboot
+                - build
+                - --image
+                - mozilla/code-review
+                - --tag
+                - "${channel}"
+                - --tag
+                - "${head_rev}"
+                - --write
+                - /bot.tar
+                - bot/docker/Dockerfile
+              artifacts:
+                public/code-review-bot.tar:
+                  expires: {$fromNow: '2 weeks'}
+                  path: /bot.tar
+                  type: file
+            scopes:
+              - docker-worker:capability:privileged
+            metadata:
+              name: Code Review Bot docker img build
+              description: Build docker image of code review bot, using img on a privileged daemon
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("frontend_build")}
-      provisionerId: proj-relman
-      workerType: ci
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      payload:
-        maxRunTime: 3600
-        image: node:11-alpine
-        env:
-          BACKEND_URL: "${backend_url}"
-        command:
-          - sh
-          - -lxce
-          - "apk add git lcms2-dev bash libpng-dev autoconf build-base --quiet &&
-            git clone --quiet ${repository} /src && cd /src/frontend && git checkout ${head_rev} -b build &&
-            npm install && npm run build"
-        artifacts:
-          public/frontend:
-            expires: {$fromNow: '2 weeks'}
-            path: /src/frontend/build
-            type: directory
-      metadata:
-        name: Code Review Frontend build
-        description: Build web single page application
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+          - taskId: {$eval: as_slugid("events_build")}
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            dependencies:
+              - {$eval: as_slugid("check_lint")}
+              - {$eval: as_slugid("events_check_tests")}
+            payload:
+              capabilities:
+                privileged: true
+              maxRunTime: 3600
+              image: "${taskboot_image}"
+              env:
+                GIT_REPOSITORY: ${repository}
+                GIT_REVISION: ${head_rev}
+              command:
+                - taskboot
+                - build
+                - --image
+                - mozilla/code-review
+                - --tag
+                - "${channel}"
+                - --tag
+                - "${head_rev}"
+                - --write
+                - /events.tar
+                - events/docker/Dockerfile
+              artifacts:
+                public/code-review-events.tar:
+                  expires: {$fromNow: '2 weeks'}
+                  path: /events.tar
+                  type: file
+            scopes:
+              - docker-worker:capability:privileged
+            metadata:
+              name: Code Review Events docker build
+              description: Build docker image of code review events
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("bot_build")}
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      provisionerId: proj-relman
-      workerType: ci
-      dependencies:
-        - {$eval: as_slugid("check_lint")}
-        - {$eval: as_slugid("bot_check_tests")}
-      payload:
-        capabilities:
-          privileged: true
-        maxRunTime: 3600
-        image: "${taskboot_image}"
-        env:
-          GIT_REPOSITORY: ${repository}
-          GIT_REVISION: ${head_rev}
-        command:
-          - taskboot
-          - build
-          - --image
-          - mozilla/code-review
-          - --tag
-          - "${channel}"
-          - --tag
-          - "${head_rev}"
-          - --write
-          - /bot.tar
-          - bot/docker/Dockerfile
-        artifacts:
-          public/code-review-bot.tar:
-            expires: {$fromNow: '2 weeks'}
-            path: /bot.tar
-            type: file
-      scopes:
-        - docker-worker:capability:privileged
-      metadata:
-        name: Code Review Bot docker img build
-        description: Build docker image of code review bot, using img on a privileged daemon
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+          - taskId: {$eval: as_slugid("backend_build")}
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            dependencies:
+              - {$eval: as_slugid("check_lint")}
+              - {$eval: as_slugid("backend_check_tests")}
+            payload:
+              capabilities:
+                privileged: true
+              maxRunTime: 3600
+              image: "${taskboot_image}"
+              env:
+                GIT_REPOSITORY: ${repository}
+                GIT_REVISION: ${head_rev}
+              command:
+                - taskboot
+                - build
+                - --image
+                - mozilla/code-review
+                - --tag
+                - "${channel}"
+                - --tag
+                - "${head_rev}"
+                - --write
+                - /backend.tar
+                - backend/Dockerfile
+              artifacts:
+                public/code-review-backend.tar:
+                  expires: {$fromNow: '2 weeks'}
+                  path: /backend.tar
+                  type: file
+            scopes:
+              - docker-worker:capability:privileged
+            metadata:
+              name: Code Review Backend docker build
+              description: Build docker image of code review backend
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("events_build")}
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      provisionerId: proj-relman
-      workerType: ci
-      dependencies:
-        - {$eval: as_slugid("check_lint")}
-        - {$eval: as_slugid("events_check_tests")}
-      payload:
-        capabilities:
-          privileged: true
-        maxRunTime: 3600
-        image: "${taskboot_image}"
-        env:
-          GIT_REPOSITORY: ${repository}
-          GIT_REVISION: ${head_rev}
-        command:
-          - taskboot
-          - build
-          - --image
-          - mozilla/code-review
-          - --tag
-          - "${channel}"
-          - --tag
-          - "${head_rev}"
-          - --write
-          - /events.tar
-          - events/docker/Dockerfile
-        artifacts:
-          public/code-review-events.tar:
-            expires: {$fromNow: '2 weeks'}
-            path: /events.tar
-            type: file
-      scopes:
-        - docker-worker:capability:privileged
-      metadata:
-        name: Code Review Events docker build
-        description: Build docker image of code review events
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+          - taskId: {$eval: as_slugid("integration_check_tests")}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            payload:
+              maxRunTime: 3600
+              image: "python:${python_version}-alpine"
+              command:
+                - sh
+                - -lxce
+                - "apk add git --quiet &&
+                  git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+                  cd /src/tools && ${pip_install} . &&
+                  cd /src/integration && ${pip_install} -r requirements.txt -r requirements-dev.txt &&
+                  pytest -v"
+            metadata:
+              name: "Code Review Integration checks: unit tests"
+              description: Check python code with pytest
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("backend_build")}
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      provisionerId: proj-relman
-      workerType: ci
-      dependencies:
-        - {$eval: as_slugid("check_lint")}
-        - {$eval: as_slugid("backend_check_tests")}
-      payload:
-        capabilities:
-          privileged: true
-        maxRunTime: 3600
-        image: "${taskboot_image}"
-        env:
-          GIT_REPOSITORY: ${repository}
-          GIT_REVISION: ${head_rev}
-        command:
-          - taskboot
-          - build
-          - --image
-          - mozilla/code-review
-          - --tag
-          - "${channel}"
-          - --tag
-          - "${head_rev}"
-          - --write
-          - /backend.tar
-          - backend/Dockerfile
-        artifacts:
-          public/code-review-backend.tar:
-            expires: {$fromNow: '2 weeks'}
-            path: /backend.tar
-            type: file
-      scopes:
-        - docker-worker:capability:privileged
-      metadata:
-        name: Code Review Backend docker build
-        description: Build docker image of code review backend
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+          - taskId: {$eval: as_slugid("integration_build")}
+            created: {$fromNow: ''}
+            deadline: {$fromNow: '1 hour'}
+            provisionerId: "${provisionerId}"
+            workerType: "${workerType}"
+            dependencies:
+              - {$eval: as_slugid("check_lint")}
+              - {$eval: as_slugid("integration_check_tests")}
+            payload:
+              capabilities:
+                privileged: true
+              maxRunTime: 3600
+              image: "${taskboot_image}"
+              env:
+                GIT_REPOSITORY: ${repository}
+                GIT_REVISION: ${head_rev}
+              command:
+                - taskboot
+                - build
+                - --image
+                - mozilla/code-review
+                - --tag
+                - "integration-${channel}"
+                - --tag
+                - "integration-${head_rev}"
+                - --write
+                - /integration.tar
+                - integration/docker/Dockerfile
+              artifacts:
+                public/code-review-integration.tar:
+                  expires: {$fromNow: '2 weeks'}
+                  path: /integration.tar
+                  type: file
+            scopes:
+              - docker-worker:capability:privileged
+            metadata:
+              name: Code Review Integration docker build
+              description: Build docker image of code review integration tests
+              owner: bastien@mozilla.com
+              source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("integration_check_tests")}
-      provisionerId: proj-relman
-      workerType: ci
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      payload:
-        maxRunTime: 3600
-        image: "python:${python_version}-alpine"
-        command:
-          - sh
-          - -lxce
-          - "apk add git --quiet &&
-            git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-            cd /src/tools && ${pip_install} . &&
-            cd /src/integration && ${pip_install} -r requirements.txt -r requirements-dev.txt &&
-            pytest -v"
-      metadata:
-        name: "Code Review Integration checks: unit tests"
-        description: Check python code with pytest
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+          - $if: 'channel in ["testing", "production"]'
+            then:
+              taskId: {$eval: as_slugid("frontend_deploy")}
+              created: {$fromNow: ''}
+              deadline: {$fromNow: '1 hour'}
+              provisionerId: "${provisionerId}"
+              workerType: "${workerType}"
+              dependencies:
+                - {$eval: as_slugid("frontend_build")}
+              payload:
+                features:
+                  # Needed for access to secret
+                  taskclusterProxy: true
+                maxRunTime: 3600
+                image: "${taskboot_image}"
+                env:
+                  TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
+                command:
+                  - taskboot
+                  - deploy-s3
+                  - --artifact-folder
+                  - public/frontend
+                  - --bucket
+                  - "relman-${channel}-code-review-${channel}-static-website"
+              scopes:
+                - "secrets:get:project/relman/code-review/deploy-${channel}"
+              metadata:
+                name: "Code Review Frontend deploy (${channel})"
+                description: Deploy frontend build on environment
+                owner: bastien@mozilla.com
+                source: https://github.com/mozilla/code-review
 
-    - taskId: {$eval: as_slugid("integration_build")}
-      created: {$fromNow: ''}
-      deadline: {$fromNow: '1 hour'}
-      provisionerId: proj-relman
-      workerType: ci
-      dependencies:
-        - {$eval: as_slugid("check_lint")}
-        - {$eval: as_slugid("integration_check_tests")}
-      payload:
-        capabilities:
-          privileged: true
-        maxRunTime: 3600
-        image: "${taskboot_image}"
-        env:
-          GIT_REPOSITORY: ${repository}
-          GIT_REVISION: ${head_rev}
-        command:
-          - taskboot
-          - build
-          - --image
-          - mozilla/code-review
-          - --tag
-          - "integration-${channel}"
-          - --tag
-          - "integration-${head_rev}"
-          - --write
-          - /integration.tar
-          - integration/docker/Dockerfile
-        artifacts:
-          public/code-review-integration.tar:
-            expires: {$fromNow: '2 weeks'}
-            path: /integration.tar
-            type: file
-      scopes:
-        - docker-worker:capability:privileged
-      metadata:
-        name: Code Review Integration docker build
-        description: Build docker image of code review integration tests
-        owner: bastien@mozilla.com
-        source: https://github.com/mozilla/code-review
+          - $if: 'channel in ["testing", "production"]'
+            then:
+              taskId: {$eval: as_slugid("bot_deploy")}
+              created: {$fromNow: ''}
+              deadline: {$fromNow: '1 hour'}
+              provisionerId: "${provisionerId}"
+              workerType: "${workerType}"
+              dependencies:
+                - {$eval: as_slugid("bot_build")}
+              payload:
+                features:
+                  # Needed for access to secret
+                  taskclusterProxy: true
+                maxRunTime: 3600
+                image: "${taskboot_image}"
+                env:
+                  TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
+                command:
+                  - taskboot
+                  - push-artifact
+              scopes:
+                - "secrets:get:project/relman/code-review/deploy-${channel}"
+              metadata:
+                name: "Code Review Bot push (${channel})"
+                description: Push bot's docker image on repository
+                owner: bastien@mozilla.com
+                source: https://github.com/mozilla/code-review
 
-    - $if: 'channel in ["testing", "production"]'
-      then:
-        taskId: {$eval: as_slugid("frontend_deploy")}
-        created: {$fromNow: ''}
-        deadline: {$fromNow: '1 hour'}
-        provisionerId: proj-relman
-        workerType: ci
-        dependencies:
-          - {$eval: as_slugid("frontend_build")}
-        payload:
-          features:
-            # Needed for access to secret
-            taskclusterProxy: true
-          maxRunTime: 3600
-          image: "${taskboot_image}"
-          env:
-            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
-          command:
-            - taskboot
-            - deploy-s3
-            - --artifact-folder
-            - public/frontend
-            - --bucket
-            - "relman-${channel}-code-review-${channel}-static-website"
-        scopes:
-          - "secrets:get:project/relman/code-review/deploy-${channel}"
-        metadata:
-          name: "Code Review Frontend deploy (${channel})"
-          description: Deploy frontend build on environment
-          owner: bastien@mozilla.com
-          source: https://github.com/mozilla/code-review
+          - $if: 'channel in ["testing", "production"]'
+            then:
+              taskId: {$eval: as_slugid("events_deploy")}
+              created: {$fromNow: ''}
+              deadline: {$fromNow: '1 hour'}
+              provisionerId: "${provisionerId}"
+              workerType: "${workerType}"
+              dependencies:
+                - {$eval: as_slugid("events_build")}
+              payload:
+                features:
+                  taskclusterProxy: true
+                maxRunTime: 3600
+                image: "${taskboot_image}"
+                command:
+                  - taskboot
+                  - deploy-heroku
+                  - --heroku-app
+                  - "code-review-events-${channel}"
+                  - web:public/code-review-events.tar
+                  - worker:public/code-review-events.tar
+                env:
+                  TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
+              scopes:
+                - "secrets:get:project/relman/code-review/deploy-${channel}"
+              metadata:
+                name: "Code Review Events deployment (${channel})"
+                description: Deploy docker image on Heroku
+                owner: bastien@mozilla.com
+                source: https://github.com/mozilla/code-review
 
-    - $if: 'channel in ["testing", "production"]'
-      then:
-        taskId: {$eval: as_slugid("bot_deploy")}
-        created: {$fromNow: ''}
-        deadline: {$fromNow: '1 hour'}
-        provisionerId: proj-relman
-        workerType: ci
-        dependencies:
-          - {$eval: as_slugid("bot_build")}
-        payload:
-          features:
-            # Needed for access to secret
-            taskclusterProxy: true
-          maxRunTime: 3600
-          image: "${taskboot_image}"
-          env:
-            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
-          command:
-            - taskboot
-            - push-artifact
-        scopes:
-          - "secrets:get:project/relman/code-review/deploy-${channel}"
-        metadata:
-          name: "Code Review Bot push (${channel})"
-          description: Push bot's docker image on repository
-          owner: bastien@mozilla.com
-          source: https://github.com/mozilla/code-review
+          - $if: 'channel in ["testing", "production"]'
+            then:
+              taskId: {$eval: as_slugid("backend_deploy")}
+              created: {$fromNow: ''}
+              deadline: {$fromNow: '1 hour'}
+              provisionerId: "${provisionerId}"
+              workerType: "${workerType}"
+              dependencies:
+                - {$eval: as_slugid("backend_build")}
+              payload:
+                features:
+                  taskclusterProxy: true
+                maxRunTime: 3600
+                image: "${taskboot_image}"
+                command:
+                  - taskboot
+                  - deploy-heroku
+                  - --heroku-app
+                  - "code-review-backend-${channel}"
+                  - web:public/code-review-backend.tar
+                env:
+                  TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
+              scopes:
+                - "secrets:get:project/relman/code-review/deploy-${channel}"
+              metadata:
+                name: "Code Review Backend deployment (${channel})"
+                description: Deploy docker image on Heroku
+                owner: bastien@mozilla.com
+                source: https://github.com/mozilla/code-review
 
-    - $if: 'channel in ["testing", "production"]'
-      then:
-        taskId: {$eval: as_slugid("events_deploy")}
-        created: {$fromNow: ''}
-        deadline: {$fromNow: '1 hour'}
-        provisionerId: proj-relman
-        workerType: ci
-        dependencies:
-          - {$eval: as_slugid("events_build")}
-        payload:
-          features:
-            taskclusterProxy: true
-          maxRunTime: 3600
-          image: "${taskboot_image}"
-          command:
-            - taskboot
-            - deploy-heroku
-            - --heroku-app
-            - "code-review-events-${channel}"
-            - web:public/code-review-events.tar
-            - worker:public/code-review-events.tar
-          env:
-            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
-        scopes:
-          - "secrets:get:project/relman/code-review/deploy-${channel}"
-        metadata:
-          name: "Code Review Events deployment (${channel})"
-          description: Deploy docker image on Heroku
-          owner: bastien@mozilla.com
-          source: https://github.com/mozilla/code-review
+          - $if: 'channel in ["testing", "production"]'
+            then:
+              taskId: {$eval: as_slugid("integration_deploy")}
+              created: {$fromNow: ''}
+              deadline: {$fromNow: '1 hour'}
+              provisionerId: "${provisionerId}"
+              workerType: "${workerType}"
+              dependencies:
+                - {$eval: as_slugid("integration_build")}
+              payload:
+                features:
+                  # Needed for access to secret
+                  taskclusterProxy: true
+                maxRunTime: 3600
+                image: "${taskboot_image}"
+                env:
+                  TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
+                command:
+                  - taskboot
+                  - push-artifact
+              scopes:
+                - "secrets:get:project/relman/code-review/deploy-${channel}"
+              metadata:
+                name: "Code Review Integration test push (${channel})"
+                description: Push integration's docker image on repository
+                owner: bastien@mozilla.com
+                source: https://github.com/mozilla/code-review
 
-    - $if: 'channel in ["testing", "production"]'
-      then:
-        taskId: {$eval: as_slugid("backend_deploy")}
-        created: {$fromNow: ''}
-        deadline: {$fromNow: '1 hour'}
-        provisionerId: proj-relman
-        workerType: ci
-        dependencies:
-          - {$eval: as_slugid("backend_build")}
-        payload:
-          features:
-            taskclusterProxy: true
-          maxRunTime: 3600
-          image: "${taskboot_image}"
-          command:
-            - taskboot
-            - deploy-heroku
-            - --heroku-app
-            - "code-review-backend-${channel}"
-            - web:public/code-review-backend.tar
-          env:
-            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
-        scopes:
-          - "secrets:get:project/relman/code-review/deploy-${channel}"
-        metadata:
-          name: "Code Review Backend deployment (${channel})"
-          description: Deploy docker image on Heroku
-          owner: bastien@mozilla.com
-          source: https://github.com/mozilla/code-review
+          - $if: 'channel in ["testing", "production"]'
+            then:
+              taskId: {$eval: as_slugid("integration_hook")}
+              dependencies:
+                - {$eval: as_slugid("integration_deploy")}
+              scopes:
+                - "assume:hook-id:project-relman/code-review-integration-${channel}"
+                - "hooks:modify-hook:project-relman/code-review-integration-${channel}"
+              created: {$fromNow: ''}
+              deadline: {$fromNow: '5 hours'}
+              provisionerId: "${provisionerId}"
+              workerType: "${workerType}"
+              payload:
+                features:
+                  # Needed for access to hook api
+                  taskclusterProxy: true
+                maxRunTime: 3600
+                image: "${taskboot_image}"
+                command:
+                  - "/bin/sh"
+                  - "-lcxe"
+                  - "git clone --quiet ${repository} &&
+                     cd code-review &&
+                     git checkout ${head_rev} &&
+                     sed -i -e 's/CHANNEL/${channel}/g' -e 's/REVISION/${head_rev}/g' integration/taskcluster-hook.json &&
+                     taskboot --target . build-hook integration/taskcluster-hook.json project-relman code-review-integration-${channel}"
+              metadata:
+                name: "Code Review Bot integration test hook update (${channel})"
+                description: Update Taskcluster hook triggering the code-review integration tests
+                owner: bastien@mozilla.com
+                source: https://github.com/mozilla/code-review
 
-    - $if: 'channel in ["testing", "production"]'
-      then:
-        taskId: {$eval: as_slugid("integration_deploy")}
-        created: {$fromNow: ''}
-        deadline: {$fromNow: '1 hour'}
-        provisionerId: proj-relman
-        workerType: ci
-        dependencies:
-          - {$eval: as_slugid("integration_build")}
-        payload:
-          features:
-            # Needed for access to secret
-            taskclusterProxy: true
-          maxRunTime: 3600
-          image: "${taskboot_image}"
-          env:
-            TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
-          command:
-            - taskboot
-            - push-artifact
-        scopes:
-          - "secrets:get:project/relman/code-review/deploy-${channel}"
-        metadata:
-          name: "Code Review Integration test push (${channel})"
-          description: Push integration's docker image on repository
-          owner: bastien@mozilla.com
-          source: https://github.com/mozilla/code-review
-
-    - $if: 'channel in ["testing", "production"]'
-      then:
-        taskId: {$eval: as_slugid("integration_hook")}
-        dependencies:
-          - {$eval: as_slugid("integration_deploy")}
-        scopes:
-          - "assume:hook-id:project-relman/code-review-integration-${channel}"
-          - "hooks:modify-hook:project-relman/code-review-integration-${channel}"
-        created: {$fromNow: ''}
-        deadline: {$fromNow: '5 hours'}
-        provisionerId: proj-relman
-        workerType: ci
-        payload:
-          features:
-            # Needed for access to hook api
-            taskclusterProxy: true
-          maxRunTime: 3600
-          image: "${taskboot_image}"
-          command:
-            - "/bin/sh"
-            - "-lcxe"
-            - "git clone --quiet ${repository} &&
-               cd code-review &&
-               git checkout ${head_rev} &&
-               sed -i -e 's/CHANNEL/${channel}/g' -e 's/REVISION/${head_rev}/g' integration/taskcluster-hook.json &&
-               taskboot --target . build-hook integration/taskcluster-hook.json project-relman code-review-integration-${channel}"
-        metadata:
-          name: "Code Review Bot integration test hook update (${channel})"
-          description: Update Taskcluster hook triggering the code-review integration tests
-          owner: bastien@mozilla.com
-          source: https://github.com/mozilla/code-review
-
-    - $if: 'tasks_for == "github-push" && head_branch[:10] == "refs/tags/"'
-      then:
-        $let:
-          version: {$eval: 'head_branch[10:]'}
-        in:
-          taskId: {$eval: as_slugid("release")}
-          dependencies:
-            - {$eval: as_slugid("backend_build")}
-            - {$eval: as_slugid("bot_build")}
-            - {$eval: as_slugid("events_build")}
-            - {$eval: as_slugid("frontend_build")}
-            - {$eval: as_slugid("integration_build")}
-          created: {$fromNow: ''}
-          deadline: {$fromNow: '2 hours'}
-          provisionerId: proj-relman
-          workerType: ci
-          scopes:
-            - secrets:get:project/relman/code-review/release
-          payload:
-            features:
-              taskclusterProxy: true
-            maxRunTime: 3600
-            image: "${taskboot_image}"
-            env:
-              TASKCLUSTER_SECRET: project/relman/code-review/release
-            command:
-              - taskboot
-              - github-release
-              - mozilla/code-review
-              - "${version}"
-          metadata:
-            name: "Code Review Bot release ${version}"
-            description: Publish a new GitHub release for code-review platform
-            owner: bastien@mozilla.com
-            source: https://github.com/mozilla/code-review
+          - $if: 'tasks_for == "github-push" && head_branch[:10] == "refs/tags/"'
+            then:
+              $let:
+                version: {$eval: 'head_branch[10:]'}
+              in:
+                taskId: {$eval: as_slugid("release")}
+                dependencies:
+                  - {$eval: as_slugid("backend_build")}
+                  - {$eval: as_slugid("bot_build")}
+                  - {$eval: as_slugid("events_build")}
+                  - {$eval: as_slugid("frontend_build")}
+                  - {$eval: as_slugid("integration_build")}
+                created: {$fromNow: ''}
+                deadline: {$fromNow: '2 hours'}
+                provisionerId: "${provisionerId}"
+                workerType: "${workerType}"
+                scopes:
+                  - secrets:get:project/relman/code-review/release
+                payload:
+                  features:
+                    taskclusterProxy: true
+                  maxRunTime: 3600
+                  image: "${taskboot_image}"
+                  env:
+                    TASKCLUSTER_SECRET: project/relman/code-review/release
+                  command:
+                    - taskboot
+                    - github-release
+                    - mozilla/code-review
+                    - "${version}"
+                metadata:
+                  name: "Code Review Bot release ${version}"
+                  description: Publish a new GitHub release for code-review platform
+                  owner: bastien@mozilla.com
+                  source: https://github.com/mozilla/code-review
