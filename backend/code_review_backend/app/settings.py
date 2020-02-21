@@ -199,7 +199,8 @@ if "DYNO" in os.environ:
     MIDDLEWARE.insert(2, "whitenoise.middleware.WhiteNoiseMiddleware")
 
     # Use Secret key from env
-    SECRET_KEY = os.environ.get("SECRET_KEY", SECRET_KEY)
+    assert "SECRET_KEY" in os.environ, "Missing SECRET_KEY in Heroku config"
+    SECRET_KEY = os.environ["SECRET_KEY"]
 
     # Cors closed on heroku
     CORS_ORIGIN_ALLOW_ALL = False
