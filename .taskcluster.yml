@@ -8,7 +8,11 @@ tasks:
       then: ${event.pull_request.head.ref}
       else:
         $if: 'tasks_for == "github-push"'
-        then: ${event.ref}
+        then:
+          # Strip ref branch prefix
+          $if: 'event.ref[0:11] == "refs/heads/"'
+          then: ${event.ref[11:]}
+          else: ${event.ref}
         else: ${event.release.target_commitish}
 
     head_rev:
@@ -141,6 +145,13 @@ tasks:
                   expires: {$fromNow: '2 weeks'}
                   path: /bot.tar
                   type: file
+            routes:
+              - "index.project.code-review.bot.rev.${head_rev}"
+              - $if: 'tasks_for == "github-pull-request"'
+                then: "index.project.code-review.bot.pull_request.${head_branch}"
+                else: "index.project.code-review.bot.${head_branch}"
+            scopes:
+              - queue:route:index.project.code-review.bot.*
             metadata:
               name: Code Review Bot docker in docker build
               description: Build docker image of code review bot, using a remote docker daemon
