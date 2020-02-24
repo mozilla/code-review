@@ -248,6 +248,9 @@ def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with different decision task setup
     """
+    # Reset mercurial revision to enable setup_try to run
+    mock_revision.mercurial_revision = None
+
     assert mock_revision.phabricator_repository["fields"]["name"] == "mozilla-central"
 
     mock_workflow.setup_mock_tasks({"notDecision": {}, "remoteTryTask": {}})
