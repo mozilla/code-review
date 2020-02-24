@@ -44,6 +44,9 @@ COMMENT_TASK_FAILURE = """
 The analysis task [{name}]({url}) failed, but we could not detect any issue.
 Please check this task manually.
 """
+FRONTEND_LINKS = """
+You can view these defects on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
+"""
 
 
 class Reporter(object):
@@ -121,7 +124,13 @@ class Reporter(object):
         return [stats(analyzer, items) for analyzer, items in groups]
 
     def build_comment(
-        self, revision, issues, bug_report_url, patches=[], task_failures=[]
+        self,
+        revision,
+        issues,
+        bug_report_url,
+        frontend_url,
+        patches=[],
+        task_failures=[],
     ):
         """
         Build a Markdown comment about published issues
@@ -174,13 +183,21 @@ class Reporter(object):
 
         for task in task_failures:
             treeherder_url = treeherder.get_job_url(
-                task.id, task.run_id, revision=revision.mercurial_revision
+                revision.repository, revision.mercurial_revision, task.id, task.run_id
             )
             comment += COMMENT_TASK_FAILURE.format(name=task.name, url=treeherder_url)
 
         assert comment != "", "Empty comment"
 
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
+
+        if defects:
+            treeherder_url = treeherder.get_job_url(
+                revision.repository, revision.mercurial_revision
+            )
+            comment += FRONTEND_LINKS.format(
+                frontend_url=frontend_url, treeherder_url=treeherder_url
+            )
 
         return comment
 
