@@ -232,11 +232,23 @@ def mock_phabricator(mock_config):
 
 
 @pytest.fixture
-def mock_try_task():
+def mock_try_task(mock_hgmo):
     """
     Mock a remote Try task definition
     """
-    return {"extra": {"code-review": {"phabricator-diff": "PHID-HMBT-test"}}}
+    return {
+        "task": {
+            "payload": {
+                "env": {
+                    "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-unified",
+                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                    "GECKO_HEAD_REF": "deadbeef123456",
+                    "GECKO_HEAD_REV": "deadbeef123456",
+                }
+            },
+            "metadata": {"name": "Dummy decision task"},
+        }
+    }
 
 
 @pytest.fixture
@@ -264,14 +276,7 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
-
-        # Setup mercurial information manually instead of calling setup_try
-        revision.mercurial_revision = "deadbeef123456"
-        revision.repository = "https://hg.mozilla.org/try"
-        revision.target_repository = "https://hg.mozilla.org/mozilla-central"
-
-        return revision
+        return Revision.from_try(mock_try_task, api)
 
 
 class MockQueue(object):
