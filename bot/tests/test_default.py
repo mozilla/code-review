@@ -101,12 +101,12 @@ A random issue happened here
 """
     )
 
-    assert issue.build_hash() == "006f9f3481aec88ed3de11bc8de2eff6"
+    assert issue.build_hash() == "72e96480790d04981c2a1f1ceb6c924f"
     assert issue.as_dict() == {
         "analyzer": "any-analyzer-name",
         "check": "XYZ",
         "column": 51,
-        "hash": "006f9f3481aec88ed3de11bc8de2eff6",
+        "hash": "72e96480790d04981c2a1f1ceb6c924f",
         "in_patch": False,
         "level": "error",
         "line": 42,

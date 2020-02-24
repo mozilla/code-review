@@ -263,7 +263,14 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        return Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, api)
+
+        # Setup mercurial information manually instead of calling setup_try
+        revision.mercurial_revision = "deadbeef123456"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.target_repository = "https://hg.mozilla.org/mozilla-central"
+
+        return revision
 
 
 class MockQueue(object):
@@ -494,6 +501,9 @@ def mock_hgmo():
     def fake_raw_file(request):
         repo, _, revision, *path = request.path_url[1:].split("/")
         path = "/".join(path)
+
+        assert repo != "None", "Missing repo"
+        assert revision != "None", "Missing revision"
 
         mock_path = os.path.join(MOCK_DIR, f"hgmo_{path}")
         if os.path.exists(mock_path):

@@ -58,7 +58,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo):
         "path": "test.py",
         "publishable": False,
         "validates": False,
-        "hash": "57a49008d6a3ec23f987c0bf62c43d75",
+        "hash": "28e40e8a562fa8ebea98f984abd503fd",
     }
 
 
@@ -105,7 +105,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo):
         "path": "test.py",
         "publishable": True,
         "validates": True,
-        "hash": "34c27d119c21ea5a2cd3f6ac230d8c4e",
+        "hash": "f8d818d42677f3ffdc0be647453278b8",
     }
 
 

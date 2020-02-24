@@ -49,7 +49,7 @@ def test_coverage(mock_config, mock_revision, mock_coverage_artifact, mock_hgmo)
         "column": None,
         "level": "warning",
         "nb_lines": 1,
-        "hash": "c64ebc6d4a3297b192364db4b022e5e2",
+        "hash": "35268931247f488cf2a71d0b06285e76",
     }
     assert issue.as_phabricator_lint() == {
         "code": "no-coverage",
@@ -97,7 +97,7 @@ This file is uncovered
         "column": None,
         "level": "warning",
         "nb_lines": 1,
-        "hash": "0cbf1c1105c3b06ea9e8067a50a7e2f6",
+        "hash": "a864bee7b5876989534b28cf245e2ee0",
     }
     assert issue.as_phabricator_lint() == {
         "code": "no-coverage",
@@ -142,7 +142,7 @@ This file is uncovered
         "column": None,
         "level": "warning",
         "nb_lines": 1,
-        "hash": "9319c5bebc687cb439302ca049a9bff7",
+        "hash": "8d06f3f7063ff4ba9f42b9fe2a808dbd",
     }
     assert issue.as_phabricator_lint() == {
         "code": "no-coverage",
