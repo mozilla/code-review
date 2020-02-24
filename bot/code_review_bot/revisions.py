@@ -9,6 +9,7 @@ from datetime import timedelta
 
 import requests
 import structlog
+import tenacity
 from libmozdata.phabricator import PhabricatorAPI
 from parsepatch.patch import Patch
 
@@ -21,6 +22,27 @@ from code_review_bot.config import REPO_MOZILLA_CENTRAL
 from code_review_bot.config import settings
 
 logger = structlog.get_logger(__name__)
+
+
+@tenacity.retry(wait=tenacity.wait_incrementing(start=5, increment=4))
+def hgmo_build_phid(repository, revision):
+    """
+    Retrieve the Phabricator build PHID from a try_task_config.json
+    file on a remote mercurial repository on HGMO
+    """
+    resp = requests.get(f"{repository}/raw-file/{revision}/try_task_config.json")
+    resp.raise_for_status()
+    config = resp.json()
+
+    assert config.get("version") == 2, "Invalid try task config version"
+    parameters = config.get("parameters")
+    assert parameters is not None, "Missing parameters"
+    if "phabricator_diff" in parameters:
+        return parameters["phabricator_diff"]
+    elif "code-review" in parameters:
+        return parameters["code-review"]["phabricator-build-target"]
+    else:
+        raise Exception("Unsupported try_task_config json payload")
 
 
 class ImprovementPatch(object):
@@ -139,74 +161,47 @@ class Revision(object):
         Load identifiers from Phabricator, using the remote task description
         """
         logger.info(
-            "Using try decision task",
-            name=try_decision_task["task"]["metadata"]["name"],
+            "Using try decision task", name=try_decision_task["metadata"]["name"]
         )
 
-        def match_task_env(repo, env):
-            print(
-                repository.url,
-                repository.decision_env_revision,
-                repository.decision_env_repository,
-            )
-
+        def match_task_env(repository):
+            decision_env = try_decision_task["payload"]["env"]
             try_url = repository.try_url.replace("ssh://", "https://")
 
             if repository.decision_env_revision not in decision_env:
-                return False
+                return
             if repository.decision_env_repository not in decision_env:
-                return False
+                return
             if try_url != decision_env[repository.decision_env_repository]:
-                return False
+                return
 
-            return True
+            return {
+                "repository": decision_env[repository.decision_env_repository],
+                "target_repository": repository.url,
+                "mercurial_revision": decision_env[repository.decision_env_revision],
+            }
 
         # Match the supported repositories from settings
         # with the decision task environment to get the mercurial information
-        decision_env = try_decision_task["task"]["payload"]["env"]
-        mercurial_revision, head_repository, target_repository = None, None, None
-        for repository in settings.repositories:
-            if match_task_env(repository, decision_env):
-                assert (
-                    repository.decision_env_revision in decision_env
-                ), f"Revision {repository.decision_env_revision} not found in decision task"
-                assert (
-                    repository.decision_env_repository in decision_env
-                ), f"Repository {repository.decision_env_repository} not found in decision task"
-                mercurial_revision = decision_env[repository.decision_env_revision]
-                head_repository = decision_env[repository.decision_env_repository]
-                target_repository = repository.url
-                break
+        hg_config = next(
+            filter(
+                None,
+                (match_task_env(repository) for repository in settings.repositories),
+            ),
+            None,
+        )
 
         # Check mercurial revision is set
-        assert mercurial_revision is not None, "Unsupported decision task"
-        logger.info(
-            "Using mercurial revision",
-            rev=mercurial_revision,
-            repository=head_repository,
-            target=target_repository,
-        )
+        assert hg_config is not None, "Unsupported decision task"
+        logger.info("Using mercurial revision", **hg_config)
 
         # Load build target phid from the HGMO server
-        # TODO: use tenacity
-        target_hgmo_url = target_repository.replace("ssh://", "https://")
-        config_url = (
-            f"{target_hgmo_url}/raw-file/{mercurial_revision}/try_task_config.json"
+        build_target_phid = hgmo_build_phid(
+            hg_config["repository"], hg_config["mercurial_revision"]
         )
-        resp = requests.get(config_url)
-        resp.raise_for_status()
-        config = resp.json()
-
-        assert config.get("version") == 2, "Invalid try task config version"
-        parameters = config.get("parameters")
-        assert parameters is not None, "Missing parameters"
-        if "phabricator_diff" in parameters:
-            build_target_phid = parameters["phabricator-diff"]
-        elif "code-review" in parameters:
-            build_target_phid = parameters["code-review"]["phabricator-build-target"]
-        else:
-            raise Exception("Unsupported try_task_config json payload")
-        assert build_target_phid.startswith("PHID-HMBT-")
+        assert build_target_phid.startswith(
+            "PHID-HMBT-"
+        ), "Not a Phabricator build phid"
 
         # And get the diff from the phabricator api
         buildable = phabricator.find_target_buildable(build_target_phid)
@@ -241,9 +236,7 @@ class Revision(object):
             diff=diff,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
             patch=patch,
-            mercurial_revision=mercurial_revision,
-            repository=head_repository,
-            target_repository=target_repository,
+            **hg_config,
         )
 
     @staticmethod

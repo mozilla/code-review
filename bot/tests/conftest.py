@@ -40,7 +40,21 @@ def mock_repositories():
             "try_name": "try",
             "name": "mozilla-central",
             "ssh_user": "reviewbot@mozilla.com",
-        }
+        },
+        {
+            "url": "https://hg.mozilla.org/nss",
+            "decision_env_revision": "NSS_HEAD_REV",
+            "decision_env_repository": "NSS_HEAD_REPO",
+            "try_url": "ssh://hg.mozilla.org/nss-try",
+            "name": "nss",
+        },
+        {
+            "url": "https://hg.mozilla.org/ci/taskgraph",
+            "decision_env_revision": "TASKGRAPH_HEAD_REV",
+            "decision_env_repository": "TASKGRAPH_HEAD_REPO",
+            "try_url": "ssh://hg.mozilla.org/ci/taskgraph-try",
+            "name": "taskgraph",
+        },
     ]
 
 
@@ -237,17 +251,15 @@ def mock_try_task(mock_hgmo):
     Mock a remote Try task definition
     """
     return {
-        "task": {
-            "payload": {
-                "env": {
-                    "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-unified",
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REF": "deadbeef123456",
-                    "GECKO_HEAD_REV": "deadbeef123456",
-                }
-            },
-            "metadata": {"name": "Dummy decision task"},
-        }
+        "payload": {
+            "env": {
+                "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-unified",
+                "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                "GECKO_HEAD_REF": "deadbeef123456",
+                "GECKO_HEAD_REV": "deadbeef123456",
+            }
+        },
+        "metadata": {"name": "Dummy decision task"},
     }
 
 
