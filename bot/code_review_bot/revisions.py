@@ -81,6 +81,7 @@ class Revision(object):
         build_target_phid=None,
         mercurial_revision=None,
         repository=None,
+        repository_try_name=None,
         target_repository=None,
         phabricator_repository=None,
         url=None,
@@ -100,6 +101,9 @@ class Revision(object):
 
         # a try repo where the revision is stored
         self.repository = repository
+
+        # the name of the try repo where the revision is stored
+        self.repository_try_name = repository_try_name
 
         # the target repo where the patch may land
         self.target_repository = target_repository
@@ -424,6 +428,7 @@ class Revision(object):
                 assert (
                     repository.decision_env_repository in decision_env
                 ), f"Repository {repository.decision_env_repository} not found in decision task"
+                self.repository_try_name = repository.try_name
                 self.mercurial_revision = decision_env[repository.decision_env_revision]
                 self.repository = decision_env[repository.decision_env_repository]
                 self.target_repository = repository.url

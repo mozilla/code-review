@@ -132,7 +132,8 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
-        revision.repository = "try"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         revision.lines = {
             # Add dummy lines diff
             "another_test.cpp": [41, 42, 43]
@@ -197,7 +198,8 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
-        revision.repository = "try"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         revision.lines = {
             # Add dummy lines diff
             "test.cpp": [41, 42, 43],
@@ -334,7 +336,8 @@ def test_phabricator_mozlint(
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
-        revision.repository = "try"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         revision.lines = {
             # Add dummy lines diff
             "python/test.py": [41, 42, 43],
@@ -499,7 +502,8 @@ def test_phabricator_clang_tidy_and_coverage(
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
-        revision.repository = "try"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         revision.lines = {
             # Add dummy lines diff
             "test.txt": [0],
@@ -560,7 +564,8 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
         # Always use the same setup, only varies the analyzers
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
-        revision.repository = "try"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         revision.lines = {"test.cpp": [0, 41, 42, 43], "dom/test.cpp": [42]}
         reporter = PhabricatorReporter(
             {"analyzers_skipped": analyzers_skipped}, api=api
@@ -845,7 +850,8 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
-        revision.repository = "try"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         revision.lines = {
             # Add dummy lines diff
             "xx.cpp": [123, 124, 125]
@@ -924,7 +930,8 @@ def test_task_failures(mock_phabricator, mock_try_task, mock_treeherder):
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "aabbccddee"
-        revision.repository = "try"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy"]}, api=api)
 
     status = {
@@ -1053,7 +1060,8 @@ def test_extra_errors(
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
-        revision.repository = "try"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         revision.lines = {"path/to/file.py": [1, 2, 3]}
         revision.files = ["path/to/file.py"]
         reporter = PhabricatorReporter(reporter_config, api=api)

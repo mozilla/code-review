@@ -183,7 +183,10 @@ class Reporter(object):
 
         for task in task_failures:
             treeherder_url = treeherder.get_job_url(
-                revision.repository, revision.mercurial_revision, task.id, task.run_id
+                revision.repository_try_name,
+                revision.mercurial_revision,
+                task.id,
+                task.run_id,
             )
             comment += COMMENT_TASK_FAILURE.format(name=task.name, url=treeherder_url)
 
@@ -193,7 +196,7 @@ class Reporter(object):
 
         if defects:
             treeherder_url = treeherder.get_job_url(
-                revision.repository, revision.mercurial_revision
+                revision.repository_try_name, revision.mercurial_revision
             )
             comment += FRONTEND_LINKS.format(
                 frontend_url=frontend_url, treeherder_url=treeherder_url
