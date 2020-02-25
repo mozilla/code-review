@@ -54,7 +54,10 @@ tasks:
 
     provisionerId:
       $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
-      then: code-analysis-3
+      then:
+          $if: 'tasks_for == "github-push"'
+          then: 'code-analysis-3'
+          else: 'code-analysis-1'
       else: proj-relman
 
     workerType:
