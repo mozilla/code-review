@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/asottile/seed-isort-config
-    rev: v1.9.3
+    rev: v2.1.0
     hooks:
       - id: seed-isort-config
   - repo: https://github.com/pre-commit/mirrors-isort
@@ -21,7 +21,7 @@ repos:
           - 'flake8-debugger==3.1.0'
           - 'flake8-mypy==17.8.0'
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.4.0
+    rev: v2.5.0
     hooks:
       - id: check-ast
       - id: check-docstring-first
@@ -46,7 +46,7 @@ repos:
     hooks:
       - id: taskcluster_yml
   - repo: https://github.com/asottile/yesqa
-    rev: v0.0.11
+    rev: v1.1.0
     hooks:
       - id: yesqa
   - repo: meta
