@@ -39,7 +39,7 @@ def test_task_structure():
     assert str(e.value) == "Unsupported decision task"
 
 
-def test_mozila_central(mock_config, mock_phabricator, mock_hgmo):
+def test_mozilla_central(mock_config, mock_phabricator, mock_hgmo):
     """
     Simple test case using mock config & hgmo
     """
