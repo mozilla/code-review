@@ -390,16 +390,13 @@ class Workflow(object):
             return CoverityTask(task_id, task_status)
         elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
-        elif name.startswith("source-test-"):
-            return DefaultTask(task_id, task_status)
+        elif settings.autoland_group_id is not None and not name.startswith(
+            "source-test-"
+        ):
+            # Log cleanly on autoland unknown tasks
+            logger.info("Skipping unknown task", id=task_id, name=name)
         else:
-            # Log cleanly for autoland, but send a warning on try
-            log = (
-                logger.info
-                if settings.autoland_group_id is not None
-                else logger.warning
-            )
-            log("Skipping unknown task", id=task_id, name=name)
+            return DefaultTask(task_id, task_status)
 
     def update_status(self, revision, state):
         """
