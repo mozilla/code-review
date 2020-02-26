@@ -46,6 +46,7 @@ def mock_repositories():
             "decision_env_revision": "NSS_HEAD_REV",
             "decision_env_repository": "NSS_HEAD_REPO",
             "try_url": "ssh://hg.mozilla.org/nss-try",
+            "try_name": "nss-try",
             "name": "nss",
         },
         {
@@ -53,6 +54,7 @@ def mock_repositories():
             "decision_env_revision": "TASKGRAPH_HEAD_REV",
             "decision_env_repository": "TASKGRAPH_HEAD_REPO",
             "try_url": "ssh://hg.mozilla.org/ci/taskgraph-try",
+            "try_name": "taskgraph-try",
             "name": "taskgraph",
         },
     ]
