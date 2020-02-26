@@ -184,6 +184,7 @@ class Revision(object):
                 "repository": decision_env[repository.decision_env_repository],
                 "target_repository": repository.url,
                 "mercurial_revision": decision_env[repository.decision_env_revision],
+                "repository_try_name": repository.try_name,
             }
 
         # Match the supported repositories from settings
