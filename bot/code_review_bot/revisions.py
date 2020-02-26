@@ -12,6 +12,7 @@ import structlog
 import tenacity
 from libmozdata.phabricator import PhabricatorAPI
 from parsepatch.patch import Patch
+from requests.exceptions import RequestException
 
 from code_review_bot import Issue
 from code_review_bot import stats
@@ -24,7 +25,11 @@ from code_review_bot.config import settings
 logger = structlog.get_logger(__name__)
 
 
-@tenacity.retry(wait=tenacity.wait_incrementing(start=5, increment=4))
+@tenacity.retry(
+    wait=tenacity.wait_incrementing(start=5, increment=4),
+    stop=tenacity.stop_after_attempt(5),
+    retry=tenacity.retry_if_exception_type(RequestException),
+)
 def hgmo_build_phid(repository, revision):
     """
     Retrieve the Phabricator build PHID from a try_task_config.json
