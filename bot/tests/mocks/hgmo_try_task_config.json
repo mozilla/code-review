@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "parameters": {
+    "code-review": {
+      "phabricator-build-target": "PHID-HMBT-test"
+    }
+  }
+}
