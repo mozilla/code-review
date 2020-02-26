@@ -27,7 +27,8 @@ TaskCluster = collections.namedtuple(
     "TaskCluster", "results_dir, task_id, run_id, local"
 )
 RepositoryConf = collections.namedtuple(
-    "RepositoryConf", "name, url, decision_env_revision, decision_env_repository"
+    "RepositoryConf",
+    "name, try_name, url, decision_env_revision, decision_env_repository",
 )
 
 
