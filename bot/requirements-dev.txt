@@ -3,6 +3,3 @@ pytest==5.3.5
 pytest-responses==0.4.0
 pytest-structlog==0.2
 responses==0.10.11
-
-# Fix black setup issue with newer virtualenv
-virtualenv<=20.0.5
