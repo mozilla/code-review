@@ -83,22 +83,35 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
 
 
 @pytest.mark.parametrize(
-    "task_name, result",
+    "task_name, result, on_autoland",
     [
-        ("source-test-clang-tidy", ClangTidyTask),
-        ("source-test-mozlint-eslint", MozLintTask),
-        ("source-test-mozlint-whatever", MozLintTask),
-        ("source-test-clang-format", ClangFormatTask),
-        ("source-test-coverity-coverity", CoverityTask),
-        ("source-test-infer-infer", InferTask),
-        ("source-test-unsupported", DefaultTask),
-        ("totally-unsupported", None),
+        ("source-test-clang-tidy", ClangTidyTask, False),
+        ("source-test-clang-tidy", ClangTidyTask, True),
+        ("source-test-mozlint-eslint", MozLintTask, False),
+        ("source-test-mozlint-eslint", MozLintTask, True),
+        ("source-test-mozlint-whatever", MozLintTask, False),
+        ("source-test-mozlint-whatever", MozLintTask, True),
+        ("source-test-clang-format", ClangFormatTask, False),
+        ("source-test-clang-format", ClangFormatTask, True),
+        ("source-test-coverity-coverity", CoverityTask, False),
+        ("source-test-coverity-coverity", CoverityTask, True),
+        ("source-test-infer-infer", InferTask, False),
+        ("source-test-infer-infer", InferTask, True),
+        ("source-test-unsupported", DefaultTask, False),
+        ("source-test-unsupported", DefaultTask, True),
+        # On autoland, we only support source-test tasks
+        ("totally-unknown", DefaultTask, False),
+        ("totally-unknown", None, True),
     ],
 )
-def test_build_task(task_name, result, mock_workflow):
+def test_build_task(task_name, result, on_autoland, mock_config, mock_workflow):
     """
     Test the build_task method with different task payloads
     """
+    # Setup autoland id
+    mock_config.autoland_task_id = "someTaskId" if on_autoland else None
+    mock_config.autoland_group_id = "someGroupId" if on_autoland else None
+
     task_status = {
         "task": {"metadata": {"name": task_name}},
         "status": {"taskId": "someTaskId"},

@@ -54,7 +54,10 @@ tasks:
 
     provisionerId:
       $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
-      then: code-analysis-3
+      then:
+          $if: 'tasks_for == "github-push"'
+          then: 'code-analysis-3'
+          else: 'code-analysis-1'
       else: proj-relman
 
     workerType:
@@ -79,13 +82,15 @@ tasks:
                 - -lxce
                 - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
                   cd /src/bot && ${pip_install} -r requirements-dev.txt &&
-                  cd /src && pre-commit run -a"
+                  cd /src && pre-commit run -a --show-diff-on-failure"
             metadata:
               name: "Code Review Bot checks: linting"
               description: Check code style with pre-commit hooks
               owner: bastien@mozilla.com
               source: https://github.com/mozilla/code-review
 
+        # Run only on firefoxci Taskcluster
+        'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"':
           - taskId: {$eval: as_slugid("bot_check_tests")}
             provisionerId: "${provisionerId}"
             workerType: "${workerType}"
@@ -108,8 +113,6 @@ tasks:
               owner: bastien@mozilla.com
               source: https://github.com/mozilla/code-review
 
-        # Run only on firefoxci Taskcluster
-        'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"':
           - taskId: {$eval: as_slugid("bot_build_dind")}
             created: {$fromNow: ''}
             deadline: {$fromNow: '1 hour'}
@@ -146,12 +149,13 @@ tasks:
                   path: /bot.tar
                   type: file
             routes:
-              - "index.project.code-review.bot.rev.${head_rev}"
-              - $if: 'tasks_for == "github-pull-request"'
-                then: "index.project.code-review.bot.pull_request.${head_branch}"
-                else: "index.project.code-review.bot.${head_branch}"
-            scopes:
-              - queue:route:index.project.code-review.bot.*
+              $if: 'tasks_for == "github-pull-request"'
+              then:
+                - "index.code-analysis.v2.code-review-pr.revision.${head_rev}"
+                - "index.code-analysis.v2.code-review-pr.branch.${head_branch}"
+              else:
+                - "index.code-analysis.v2.code-review.revision.${head_rev}"
+                - "index.code-analysis.v2.code-review.branch.${head_branch}"
             metadata:
               name: Code Review Bot docker in docker build
               description: Build docker image of code review bot, using a remote docker daemon
@@ -228,47 +232,6 @@ tasks:
             metadata:
               name: Code Review Frontend build
               description: Build web single page application
-              owner: bastien@mozilla.com
-              source: https://github.com/mozilla/code-review
-
-          - taskId: {$eval: as_slugid("bot_build")}
-            created: {$fromNow: ''}
-            deadline: {$fromNow: '1 hour'}
-            provisionerId: "${provisionerId}"
-            workerType: "${workerType}"
-            dependencies:
-              - {$eval: as_slugid("check_lint")}
-              - {$eval: as_slugid("bot_check_tests")}
-            payload:
-              capabilities:
-                privileged: true
-              maxRunTime: 3600
-              image: "${taskboot_image}"
-              env:
-                GIT_REPOSITORY: ${repository}
-                GIT_REVISION: ${head_rev}
-              command:
-                - taskboot
-                - build
-                - --image
-                - mozilla/code-review
-                - --tag
-                - "${channel}"
-                - --tag
-                - "${head_rev}"
-                - --write
-                - /bot.tar
-                - bot/docker/Dockerfile
-              artifacts:
-                public/code-review-bot.tar:
-                  expires: {$fromNow: '2 weeks'}
-                  path: /bot.tar
-                  type: file
-            scopes:
-              - docker-worker:capability:privileged
-            metadata:
-              name: Code Review Bot docker img build
-              description: Build docker image of code review bot, using img on a privileged daemon
               owner: bastien@mozilla.com
               source: https://github.com/mozilla/code-review
 
@@ -451,34 +414,6 @@ tasks:
 
           - $if: 'channel in ["testing", "production"]'
             then:
-              taskId: {$eval: as_slugid("bot_deploy")}
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
-              provisionerId: "${provisionerId}"
-              workerType: "${workerType}"
-              dependencies:
-                - {$eval: as_slugid("bot_build")}
-              payload:
-                features:
-                  # Needed for access to secret
-                  taskclusterProxy: true
-                maxRunTime: 3600
-                image: "${taskboot_image}"
-                env:
-                  TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
-                command:
-                  - taskboot
-                  - push-artifact
-              scopes:
-                - "secrets:get:project/relman/code-review/deploy-${channel}"
-              metadata:
-                name: "Code Review Bot push (${channel})"
-                description: Push bot's docker image on repository
-                owner: bastien@mozilla.com
-                source: https://github.com/mozilla/code-review
-
-          - $if: 'channel in ["testing", "production"]'
-            then:
               taskId: {$eval: as_slugid("events_deploy")}
               created: {$fromNow: ''}
               deadline: {$fromNow: '1 hour'}
@@ -606,7 +541,6 @@ tasks:
                 taskId: {$eval: as_slugid("release")}
                 dependencies:
                   - {$eval: as_slugid("backend_build")}
-                  - {$eval: as_slugid("bot_build")}
                   - {$eval: as_slugid("events_build")}
                   - {$eval: as_slugid("frontend_build")}
                   - {$eval: as_slugid("integration_build")}

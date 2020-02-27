@@ -37,9 +37,26 @@ def mock_repositories():
             "checkout": "robust",
             "try_url": "ssh://hg.mozilla.org/try",
             "try_mode": "json",
+            "try_name": "try",
             "name": "mozilla-central",
             "ssh_user": "reviewbot@mozilla.com",
-        }
+        },
+        {
+            "url": "https://hg.mozilla.org/nss",
+            "decision_env_revision": "NSS_HEAD_REV",
+            "decision_env_repository": "NSS_HEAD_REPO",
+            "try_url": "ssh://hg.mozilla.org/nss-try",
+            "try_name": "nss-try",
+            "name": "nss",
+        },
+        {
+            "url": "https://hg.mozilla.org/ci/taskgraph",
+            "decision_env_revision": "TASKGRAPH_HEAD_REV",
+            "decision_env_repository": "TASKGRAPH_HEAD_REPO",
+            "try_url": "ssh://hg.mozilla.org/ci/taskgraph-try",
+            "try_name": "taskgraph-try",
+            "name": "taskgraph",
+        },
     ]
 
 
@@ -231,11 +248,21 @@ def mock_phabricator(mock_config):
 
 
 @pytest.fixture
-def mock_try_task():
+def mock_try_task(mock_hgmo):
     """
     Mock a remote Try task definition
     """
-    return {"extra": {"code-review": {"phabricator-diff": "PHID-HMBT-test"}}}
+    return {
+        "payload": {
+            "env": {
+                "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-unified",
+                "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                "GECKO_HEAD_REF": "deadbeef123456",
+                "GECKO_HEAD_REV": "deadbeef123456",
+            }
+        },
+        "metadata": {"name": "Dummy decision task"},
+    }
 
 
 @pytest.fixture
@@ -494,6 +521,9 @@ def mock_hgmo():
     def fake_raw_file(request):
         repo, _, revision, *path = request.path_url[1:].split("/")
         path = "/".join(path)
+
+        assert repo != "None", "Missing repo"
+        assert revision != "None", "Missing revision"
 
         mock_path = os.path.join(MOCK_DIR, f"hgmo_{path}")
         if os.path.exists(mock_path):

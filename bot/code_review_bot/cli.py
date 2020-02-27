@@ -117,7 +117,7 @@ def main():
             )
         else:
             revision = Revision.from_try(
-                queue_service.task(settings.try_task_id), phabricator_api
+                queue_service.task(settings.try_group_id), phabricator_api
             )
     except Exception as e:
         # Report revision loading failure on production only
@@ -128,10 +128,7 @@ def main():
 
         else:
             logger.info(
-                "Failed to load revision",
-                task=settings.try_task_id,
-                error=str(e),
-                phabricator=phabricator["url"],
+                "Failed to load revision", error=str(e), phabricator=phabricator["url"]
             )
             return 1
 

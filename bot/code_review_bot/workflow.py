@@ -268,11 +268,7 @@ class Workflow(object):
         assert len(tasks) > 0
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
 
-        # Update the local revision with tasks
-        revision.setup_try(group_id, tasks)
-
         # Store the revision in the backend
-        # It needs to be after setup_try to have a repository value
         self.backend_api.publish_revision(revision)
 
         # Load task description
@@ -390,16 +386,13 @@ class Workflow(object):
             return CoverityTask(task_id, task_status)
         elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
-        elif name.startswith("source-test-"):
-            return DefaultTask(task_id, task_status)
+        elif settings.autoland_group_id is not None and not name.startswith(
+            "source-test-"
+        ):
+            # Log cleanly on autoland unknown tasks
+            logger.info("Skipping unknown task", id=task_id, name=name)
         else:
-            # Log cleanly for autoland, but send a warning on try
-            log = (
-                logger.info
-                if settings.autoland_group_id is not None
-                else logger.warning
-            )
-            log("Skipping unknown task", id=task_id, name=name)
+            return DefaultTask(task_id, task_status)
 
     def update_status(self, revision, state):
         """

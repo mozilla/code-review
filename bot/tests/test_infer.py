@@ -54,7 +54,7 @@ def test_as_dict(mock_revision, mock_hgmo):
         "path": "path/to/file.java",
         "publishable": False,
         "validates": True,
-        "hash": "fdbdadc20b9d1d905f7d123eb847902b",
+        "hash": "f446f72d667c04e3d9164f91af424414",
     }
 
 
