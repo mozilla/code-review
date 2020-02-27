@@ -22,11 +22,13 @@ MOZILLA_CENTRAL_DECISION_TASK = {
     },
 }
 
+INCOMPATIBLE_CODE_REVIEW_TASK = {"metadata": {"name": "code-review"}, "extra": {}}
+
 
 def test_task_structure():
     # No data
     with pytest.raises(KeyError) as e:
-        Revision.from_try({}, None)
+        Revision.from_try({}, {}, None)
     assert str(e.value) == "'metadata'"
 
     # No payload
@@ -35,7 +37,7 @@ def test_task_structure():
         "payload": {"env": {"KEY": "VALUE"}},
     }
     with pytest.raises(AssertionError) as e:
-        Revision.from_try(decision_task, None)
+        Revision.from_try(INCOMPATIBLE_CODE_REVIEW_TASK, decision_task, None)
     assert str(e.value) == "Unsupported decision task"
 
 
@@ -45,7 +47,9 @@ def test_mozilla_central(mock_config, mock_phabricator, mock_hgmo):
     """
 
     with mock_phabricator as phab:
-        revision = Revision.from_try(MOZILLA_CENTRAL_DECISION_TASK, phab)
+        revision = Revision.from_try(
+            INCOMPATIBLE_CODE_REVIEW_TASK, MOZILLA_CENTRAL_DECISION_TASK, phab
+        )
 
     assert revision.as_dict() == {
         "bugzilla_id": 1234567,
@@ -121,13 +125,17 @@ def test_try_task_config(
         # Check exceptions
         with pytest.raises(result) as e:
             with mock_phabricator as phab:
-                revision = Revision.from_try(MOZILLA_CENTRAL_DECISION_TASK, phab)
+                revision = Revision.from_try(
+                    INCOMPATIBLE_CODE_REVIEW_TASK, MOZILLA_CENTRAL_DECISION_TASK, phab
+                )
         assert str(e.value) == message
 
     else:
         # Check working flow
         with mock_phabricator as phab:
-            revision = Revision.from_try(MOZILLA_CENTRAL_DECISION_TASK, phab)
+            revision = Revision.from_try(
+                INCOMPATIBLE_CODE_REVIEW_TASK, MOZILLA_CENTRAL_DECISION_TASK, phab
+            )
 
         assert revision.mercurial_revision == "abcdef12"
         assert revision.repository == "https://hg.mozilla.org/try"
@@ -185,7 +193,41 @@ def test_building_revision(
     assert len(mock_config.repositories) == 3
 
     with mock_phabricator as phab:
-        revision = Revision.from_try(decision_task, phab)
+        revision = Revision.from_try(INCOMPATIBLE_CODE_REVIEW_TASK, decision_task, phab)
+
+    assert revision.mercurial_revision == mercurial_revision
+    assert revision.repository == repository
+    assert revision.build_target_phid == "PHID-HMBT-fakeBuild"
+
+
+@pytest.mark.parametrize(
+    "mercurial_revision, repository",
+    [
+        ("abcdef12", "https://hg.mozilla.org/try"),
+        ("123456789", "https://hg.mozilla.org/ci/taskgraph-try"),
+    ],
+)
+def test_building_revision_from_code_review_task(
+    mercurial_revision, repository, mock_phabricator, mock_config
+):
+    """Test code-review tasks payload"""
+    code_review_task = {
+        "metadata": {"name": "code-review"},
+        "extra": {
+            "code-review": {
+                "phabricator-build-target": "PHID-HMBT-fakeBuild",
+                "repository": repository,
+                "revision": mercurial_revision,
+            }
+        },
+    }
+
+    assert len(mock_config.repositories) == 3
+
+    with mock_phabricator as phab:
+        revision = Revision.from_try(
+            code_review_task, MOZILLA_CENTRAL_DECISION_TASK, phab
+        )
 
     assert revision.mercurial_revision == mercurial_revision
     assert revision.repository == repository

@@ -94,7 +94,9 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 
-def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
+def test_phabricator_clang_tidy(
+    mock_phabricator, mock_try_task, mock_try_decision_task
+):
     """
     Test Phabricator reporter publication on a mock clang-tidy issue
     """
@@ -130,7 +132,7 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.mercurial_revision = "deadbeef1234"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
@@ -163,7 +165,9 @@ def test_phabricator_clang_tidy(mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "clang-tidy"
 
 
-def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
+def test_phabricator_clang_format(
+    mock_config, mock_phabricator, mock_try_task, mock_try_decision_task
+):
     """
     Test Phabricator reporter publication on a mock clang-format issue
     """
@@ -196,7 +200,7 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.mercurial_revision = "deadbeef1234"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
@@ -233,7 +237,12 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, mock_try_task):
     [({"publish_errors": True}, True), ({"publish_errors": False}, False), ({}, False)],
 )
 def test_phabricator_mozlint(
-    reporter_config, errors_reported, mock_config, mock_phabricator, mock_try_task
+    reporter_config,
+    errors_reported,
+    mock_config,
+    mock_phabricator,
+    mock_try_task,
+    mock_try_decision_task,
 ):
     """
     Test Phabricator reporter publication on a mock mozlint issue
@@ -334,7 +343,7 @@ def test_phabricator_mozlint(
     )
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.mercurial_revision = "deadbeef1234"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
@@ -385,7 +394,9 @@ def test_phabricator_mozlint(
     assert [r.response.headers.get("unittest") for r in responses.calls[-2:]] == markers
 
 
-def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
+def test_phabricator_coverage(
+    mock_config, mock_phabricator, mock_try_task, mock_try_decision_task
+):
     """
     Test Phabricator reporter publication on a mock coverage issue
     """
@@ -416,7 +427,7 @@ def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.lines = {
             # Add dummy lines diff
             "test.txt": [0],
@@ -440,7 +451,7 @@ def test_phabricator_coverage(mock_config, mock_phabricator, mock_try_task):
 
 
 def test_phabricator_clang_tidy_and_coverage(
-    mock_config, mock_phabricator, mock_try_task
+    mock_config, mock_phabricator, mock_try_task, mock_try_decision_task
 ):
     """
     Test Phabricator reporter publication on a mock coverage issue
@@ -500,7 +511,7 @@ def test_phabricator_clang_tidy_and_coverage(
     )
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.mercurial_revision = "deadbeef1234"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
@@ -548,7 +559,9 @@ def test_phabricator_clang_tidy_and_coverage(
     assert call.response.headers.get("unittest") == "coverage"
 
 
-def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
+def test_phabricator_analyzers(
+    mock_config, mock_phabricator, mock_try_task, mock_try_decision_task
+):
     """
     Test analyzers filtering on phabricator reporter
     """
@@ -562,7 +575,7 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
 
     def _test_reporter(api, analyzers_skipped):
         # Always use the same setup, only varies the analyzers
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.mercurial_revision = "deadbeef1234"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
@@ -682,7 +695,9 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
         ]
 
 
-def test_phabricator_unitresult(mock_phabricator, mock_try_task):
+def test_phabricator_unitresult(
+    mock_phabricator, mock_try_task, mock_try_decision_task
+):
     """
     Test Phabricator UnitResult for a CoverityIssue
     """
@@ -728,7 +743,7 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.lines = {
             # Add dummy lines diff
             "test.cpp": [41, 42, 43]
@@ -784,7 +799,9 @@ def test_phabricator_unitresult(mock_phabricator, mock_try_task):
         assert responses.calls[-1].response.headers.get("unittest") == "coverity"
 
 
-def test_full_file(mock_config, mock_phabricator, mock_try_task):
+def test_full_file(
+    mock_config, mock_phabricator, mock_try_task, mock_try_decision_task
+):
     """
     Test Phabricator reporter supports an issue on a full file
     """
@@ -848,7 +865,7 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
     )
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.mercurial_revision = "deadbeef1234"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
@@ -892,7 +909,9 @@ def test_full_file(mock_config, mock_phabricator, mock_try_task):
     assert call.response.headers.get("unittest") == "full-file-inline"
 
 
-def test_task_failures(mock_phabricator, mock_try_task, mock_treeherder):
+def test_task_failures(
+    mock_phabricator, mock_try_task, mock_try_decision_task, mock_treeherder
+):
     """
     Test Phabricator reporter publication with some task failures
     """
@@ -928,7 +947,7 @@ def test_task_failures(mock_phabricator, mock_try_task, mock_treeherder):
     )
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.mercurial_revision = "aabbccddee"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
@@ -955,7 +974,11 @@ def test_task_failures(mock_phabricator, mock_try_task, mock_treeherder):
     [({"publish_errors": True}, True), ({"publish_errors": False}, False), ({}, False)],
 )
 def test_extra_errors(
-    reporter_config, errors_reported, mock_phabricator, mock_try_task
+    reporter_config,
+    errors_reported,
+    mock_phabricator,
+    mock_try_task,
+    mock_try_decision_task,
 ):
     """
     Test Phabricator reporter publication with some errors outside of patch
@@ -1058,7 +1081,7 @@ def test_extra_errors(
     )
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, mock_try_decision_task, api)
         revision.mercurial_revision = "deadbeef1234"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
