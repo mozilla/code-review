@@ -161,50 +161,79 @@ class Revision(object):
         return "Phabricator #{} - {}".format(self.diff_id, self.diff_phid)
 
     @staticmethod
-    def from_try(try_decision_task: dict, phabricator: PhabricatorAPI):
+    def from_try(try_task: dict, try_decision_task: dict, phabricator: PhabricatorAPI):
         """
         Load identifiers from Phabricator, using the remote task description
         """
-        logger.info(
-            "Using try decision task", name=try_decision_task["metadata"]["name"]
+
+        logger.info("Using try code-rview task", name=try_task["metadata"]["name"])
+        code_review = try_task["extra"].get("code-review", {})
+        build_target_phid = code_review.get("phabricator-diff") or code_review.get(
+            "phabricator-build-target"
         )
 
-        def match_task_env(repository):
-            decision_env = try_decision_task["payload"]["env"]
-            try_url = repository.try_url.replace("ssh://", "https://")
+        if "revision" in code_review and "repository" in code_review:
+            for repository in settings.repositories:
+                try_url = repository.try_url.replace("ssh://", "https://")
+                if try_url != code_review["repository"]:
+                    continue
+                hg_config = {
+                    "repository": try_url,
+                    "target_repository": repository.url,
+                    "mercurial_revision": code_review["revision"],
+                    "repository_try_name": repository.try_name,
+                }
+                break
+            else:
+                raise Exception(f"No repository_found for {code_review['repository']}")
+        else:
+            logger.info(
+                "Using try decision task", name=try_decision_task["metadata"]["name"]
+            )
 
-            if repository.decision_env_revision not in decision_env:
-                return
-            if repository.decision_env_repository not in decision_env:
-                return
-            if try_url != decision_env[repository.decision_env_repository]:
-                return
+            def match_task_env(repository):
+                decision_env = try_decision_task["payload"]["env"]
+                try_url = repository.try_url.replace("ssh://", "https://")
 
-            return {
-                "repository": decision_env[repository.decision_env_repository],
-                "target_repository": repository.url,
-                "mercurial_revision": decision_env[repository.decision_env_revision],
-                "repository_try_name": repository.try_name,
-            }
+                if repository.decision_env_revision not in decision_env:
+                    return
+                if repository.decision_env_repository not in decision_env:
+                    return
+                if try_url != decision_env[repository.decision_env_repository]:
+                    return
 
-        # Match the supported repositories from settings
-        # with the decision task environment to get the mercurial information
-        hg_config = next(
-            filter(
+                return {
+                    "repository": decision_env[repository.decision_env_repository],
+                    "target_repository": repository.url,
+                    "mercurial_revision": decision_env[
+                        repository.decision_env_revision
+                    ],
+                    "repository_try_name": repository.try_name,
+                }
+
+            # Match the supported repositories from settings
+            # with the decision task environment to get the mercurial information
+            hg_config = next(
+                filter(
+                    None,
+                    (
+                        match_task_env(repository)
+                        for repository in settings.repositories
+                    ),
+                ),
                 None,
-                (match_task_env(repository) for repository in settings.repositories),
-            ),
-            None,
-        )
+            )
 
-        # Check mercurial revision is set
-        assert hg_config is not None, "Unsupported decision task"
+            # Check mercurial revision is set
+            assert hg_config is not None, "Unsupported decision task"
+
+            # Load build target phid from the HGMO server
+            build_target_phid = hgmo_build_phid(
+                hg_config["repository"], hg_config["mercurial_revision"]
+            )
+
         logger.info("Using mercurial revision", **hg_config)
 
-        # Load build target phid from the HGMO server
-        build_target_phid = hgmo_build_phid(
-            hg_config["repository"], hg_config["mercurial_revision"]
-        )
         assert build_target_phid.startswith(
             "PHID-HMBT-"
         ), "Not a Phabricator build phid"

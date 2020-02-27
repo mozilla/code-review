@@ -248,7 +248,24 @@ def mock_phabricator(mock_config):
 
 
 @pytest.fixture
-def mock_try_task(mock_hgmo):
+def mock_try_task():
+    """
+    Mock a remote Try task definition
+    """
+    return {
+        "extra": {
+            "code-review": {
+                "phabricator-diff": "PHID-HMBT-test",
+                "repository": "https://hg.mozilla.org/try",
+                "revision": "deadbeef123456",
+            }
+        },
+        "metadata": {"name": "Dummy code-review task"},
+    }
+
+
+@pytest.fixture
+def mock_try_decision_task(mock_hgmo):
     """
     Mock a remote Try task definition
     """
@@ -283,14 +300,14 @@ def mock_autoland_task():
 
 
 @pytest.fixture
-def mock_revision(mock_phabricator, mock_try_task, mock_config):
+def mock_revision(mock_phabricator, mock_try_task, mock_try_decision_task, mock_config):
     """
     Mock a mercurial revision
     """
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        return Revision.from_try(mock_try_task, api)
+        return Revision.from_try(mock_try_task, mock_try_decision_task, api)
 
 
 class MockQueue(object):
