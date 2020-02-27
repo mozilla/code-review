@@ -149,12 +149,13 @@ tasks:
                   path: /bot.tar
                   type: file
             routes:
-              - "index.project.code-review.bot.rev.${head_rev}"
-              - $if: 'tasks_for == "github-pull-request"'
-                then: "index.project.code-review.bot.pull_request.${head_branch}"
-                else: "index.project.code-review.bot.${head_branch}"
-            scopes:
-              - queue:route:index.project.code-review.bot.*
+              $if: 'tasks_for == "github-pull-request"'
+              then:
+                - "index.code-analysis.v2.code-review-pr.revision.${head_rev}"
+                - "index.code-analysis.v2.code-review-pr.branch.${head_branch}"
+              else:
+                - "index.code-analysis.v2.code-review.revision.${head_rev}"
+                - "index.code-analysis.v2.code-review.branch.${head_branch}"
             metadata:
               name: Code Review Bot docker in docker build
               description: Build docker image of code review bot, using a remote docker daemon
