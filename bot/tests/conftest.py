@@ -40,23 +40,7 @@ def mock_repositories():
             "try_name": "try",
             "name": "mozilla-central",
             "ssh_user": "reviewbot@mozilla.com",
-        },
-        {
-            "url": "https://hg.mozilla.org/nss",
-            "decision_env_revision": "NSS_HEAD_REV",
-            "decision_env_repository": "NSS_HEAD_REPO",
-            "try_url": "ssh://hg.mozilla.org/nss-try",
-            "try_name": "nss-try",
-            "name": "nss",
-        },
-        {
-            "url": "https://hg.mozilla.org/ci/taskgraph",
-            "decision_env_revision": "TASKGRAPH_HEAD_REV",
-            "decision_env_repository": "TASKGRAPH_HEAD_REPO",
-            "try_url": "ssh://hg.mozilla.org/ci/taskgraph-try",
-            "try_name": "taskgraph-try",
-            "name": "taskgraph",
-        },
+        }
     ]
 
 
@@ -248,21 +232,11 @@ def mock_phabricator(mock_config):
 
 
 @pytest.fixture
-def mock_try_task(mock_hgmo):
+def mock_try_task():
     """
     Mock a remote Try task definition
     """
-    return {
-        "payload": {
-            "env": {
-                "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-unified",
-                "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                "GECKO_HEAD_REF": "deadbeef123456",
-                "GECKO_HEAD_REV": "deadbeef123456",
-            }
-        },
-        "metadata": {"name": "Dummy decision task"},
-    }
+    return {"extra": {"code-review": {"phabricator-diff": "PHID-HMBT-test"}}}
 
 
 @pytest.fixture
@@ -290,7 +264,14 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        return Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try(mock_try_task, api)
+
+        # Setup mercurial information manually instead of calling setup_try
+        revision.mercurial_revision = "deadbeef123456"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.target_repository = "https://hg.mozilla.org/mozilla-central"
+
+        return revision
 
 
 class MockQueue(object):
