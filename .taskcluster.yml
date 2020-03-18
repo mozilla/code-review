@@ -145,7 +145,7 @@ tasks:
                 - bot/docker/Dockerfile
               artifacts:
                 public/code-review-bot.tar:
-                  expires: {$fromNow: '2 weeks'}
+                  expires: {$fromNow: '6 months'}
                   path: /bot.tar
                   type: file
             routes:
