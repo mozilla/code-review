@@ -19,8 +19,22 @@ BACKEND_URL = "https://api.code-review.moz.tools/v1/diff/"
 REGEX_PHAB_ID = re.compile(
     r"try_task_config for https://phabricator.services.mozilla.com/D(\d+)"
 )
+PHABRICATOR_REVISION_URL = (
+    "https://phabricator.services.mozilla.com/api/differential.revision.search"
+)
 
 taskcluster = TaskclusterConfig("https://firefox-ci-tc.services.mozilla.com")
+
+
+def phab_state(revision_id):
+    data = {
+        "constraints[ids][0]": revision_id,
+        "api.token": taskcluster.secrets["PHABRICATOR"]["api_key"],
+    }
+    resp = requests.post(PHABRICATOR_REVISION_URL, data)
+    resp.raise_for_status()
+    data = resp.json()
+    return data["result"]["data"][0]["fields"]["status"]
 
 
 def list_diffs(min_date, max_date):
@@ -84,13 +98,22 @@ def list_pushes(known_revisions, updates, min_date, max_date):
                 continue
 
             # Check if that phabricator revision needs an update
-            phab_revision = REGEX_PHAB_ID.search(job["revisions"][0]["comments"])
-            if phab_revision is None:
+            match = REGEX_PHAB_ID.search(job["revisions"][0]["comments"])
+            if match is None:
                 print(f"No Phabricator revision found for {rev}")
 
-            update = updates.get(int(phab_revision.group(1)))
+            phab_revision = int(match.group(1))
+            update = updates.get(phab_revision)
             if update and update > date:
                 print(f"Skipping {rev}: revision already got a review")
+                continue
+
+            # Check if revision is still open
+            state = phab_state(phab_revision)
+            if state["closed"] is True:
+                print(
+                    f"Skipping {rev}: revision is closed on Phabricator {phab_revision}"
+                )
                 continue
 
             # Process job
@@ -135,6 +158,13 @@ def find_task(push_id):
 def go(min_date, max_date):
     # Start by authenticating on taskcluster
     taskcluster.auth()
+
+    # And load secret
+    taskcluster.load_secrets(
+        "project/relman/code-review/runtime-production",
+        prefixes=["common"],
+        required=["PHABRICATOR"],
+    )
 
     # Load hook service
     hooks = taskcluster.get_service("hooks")
