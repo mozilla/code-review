@@ -16,7 +16,7 @@ HELP_COMMANDS = {
     "source-test-clang-format": " - `./mach clang-format -s -p {files}` (C/C++)",
     re.compile(
         "^source-test-mozlint-.*"
-    ): " - `./mach lint --warnings path/to/file` (JS/Python/etc)",
+    ): " - `./mach lint --warnings --outgoing` (JS/Python/etc)",
 }
 COMMENT_FAILURE = """
 Code analysis found {defects_total} in the diff {diff_id}:
