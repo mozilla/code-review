@@ -9,4 +9,4 @@ The analyzer tasks are triggered by [pulselistener](https://github.com/mozilla/r
 
 :blue_book: Documentation is available in this repository [in the docs folder](docs/summary.md).
 
-:loudspeaker: You can contact the code review bot's developers on IRC in #static-analyzers or on Slack in #code-review-bot.
+:loudspeaker: You can contact the code review bot's developers [on Matrix](https://chat.mozilla.org/#/room/#static-analysis:mozilla.org) or on Slack in #code-review-bot.
