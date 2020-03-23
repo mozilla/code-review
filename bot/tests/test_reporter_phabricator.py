@@ -17,6 +17,7 @@ from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.coverage import CoverageIssue
 from code_review_bot.tasks.coverity import CoverityIssue
 from code_review_bot.tasks.default import DefaultIssue
+from code_review_bot.tasks.infer import InferIssue
 from code_review_bot.tasks.lint import MozLintIssue
 
 VALID_CLANG_TIDY_MESSAGE = """
@@ -327,19 +328,58 @@ def test_phabricator_clang_tidy_and_coverage(
     assert phab.comments[51] == [VALID_CLANG_TIDY_MESSAGE, VALID_COVERAGE_MESSAGE]
 
 
-def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
+@pytest.mark.parametrize(
+    "analyzers_skipped, valid_issues, valid_patches",
+    [
+        # All analyzers
+        (
+            [],
+            [
+                "mock-clang-format",
+                "mock-clang-tidy",
+                "mock-infer",
+                "mock-lint-flake8",
+                "coverage",
+            ],
+            [
+                "dummy",
+                "mock-clang-tidy",
+                "mock-clang-format",
+                "mock-infer",
+                "mock-lint-flake8",
+            ],
+        ),
+        # Skip clang-tidy
+        (
+            ["mock-clang-tidy"],
+            ["mock-clang-format", "mock-infer", "mock-lint-flake8", "coverage"],
+            ["dummy", "mock-clang-format", "mock-infer", "mock-lint-flake8"],
+        ),
+        # Skip clang-tidy and mozlint
+        (
+            ["mock-clang-format", "mock-clang-tidy"],
+            ["mock-infer", "mock-lint-flake8", "coverage"],
+            ["dummy", "mock-infer", "mock-lint-flake8"],
+        ),
+    ],
+)
+def test_phabricator_analyzers(
+    analyzers_skipped,
+    valid_issues,
+    valid_patches,
+    mock_config,
+    mock_phabricator,
+    mock_try_task,
+):
     """
     Test analyzers filtering on phabricator reporter
     """
-    from code_review_bot.report.phabricator import PhabricatorReporter
-    from code_review_bot.revisions import Revision, ImprovementPatch
-    from code_review_bot.tasks.clang_format import ClangFormatIssue
-    from code_review_bot.tasks.infer import InferIssue
-    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
-    from code_review_bot.tasks.lint import MozLintIssue
-    from code_review_bot.tasks.coverage import CoverageIssue
+    with mock_phabricator as api:
 
-    def _test_reporter(api, analyzers_skipped):
+        # Skip commenting on phabricator
+        # we only care about filtering issues
+        api.comment = unittest.mock.Mock(return_value=True)
+
         # Always use the same setup, only varies the analyzers
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
@@ -350,115 +390,61 @@ def test_phabricator_analyzers(mock_config, mock_phabricator, mock_try_task):
             {"analyzers_skipped": analyzers_skipped}, api=api
         )
 
-        issues = [
-            ClangFormatIssue("mock-clang-format", "dom/test.cpp", 42, 1, revision),
-            ClangTidyIssue(
-                "mock-clang-tidy",
-                revision,
-                "test.cpp",
-                "42",
-                "51",
-                "modernize-use-nullptr",
-                "dummy message",
-            ),
-            InferIssue(
-                "mock-infer",
-                {
-                    "file": "test.cpp",
-                    "line": 42,
-                    "column": 1,
-                    "bug_type": "dummy",
-                    "kind": "WARNING",
-                    "qualifier": "dummy message.",
-                },
-                revision,
-            ),
-            MozLintIssue(
-                "mock-lint-flake8",
-                "test.cpp",
-                1,
-                "error",
-                42,
-                "flake8",
-                "Python error",
-                "EXXX",
-                revision,
-            ),
-            CoverageIssue("test.cpp", 0, "This file is uncovered", revision),
-        ]
-
-        assert all(i.is_publishable() for i in issues)
-
-        revision.improvement_patches = [
-            ImprovementPatch("dummy", repr(revision), "Whatever"),
-            ImprovementPatch("mock-clang-tidy", repr(revision), "Some C fixes"),
-            ImprovementPatch("mock-clang-format", repr(revision), "Some lint fixes"),
-            ImprovementPatch("mock-infer", repr(revision), "Some java fixes"),
-            ImprovementPatch("mock-lint-flake8", repr(revision), "Some js fixes"),
-        ]
-        list(
-            map(lambda p: p.write(), revision.improvement_patches)
-        )  # trigger local write
-
-        return reporter.publish(issues, revision, [])
-
-    # Use same instance of api
-    with mock_phabricator as api:
-
-        # Skip commenting on phabricator
-        # we only care about filtering issues
-        api.comment = unittest.mock.Mock(return_value=True)
-
-        # All of them
-        issues, patches = _test_reporter(api, [])
-        assert len(issues) == 5
-        assert len(patches) == 5
-        assert [i.analyzer for i in issues] == [
-            "mock-clang-format",
+    issues = [
+        ClangFormatIssue("mock-clang-format", "dom/test.cpp", 42, 1, revision),
+        ClangTidyIssue(
             "mock-clang-tidy",
+            revision,
+            "test.cpp",
+            "42",
+            "51",
+            "modernize-use-nullptr",
+            "dummy message",
+        ),
+        InferIssue(
             "mock-infer",
+            {
+                "file": "test.cpp",
+                "line": 42,
+                "column": 1,
+                "bug_type": "dummy",
+                "kind": "WARNING",
+                "qualifier": "dummy message.",
+            },
+            revision,
+        ),
+        MozLintIssue(
             "mock-lint-flake8",
-            "coverage",
-        ]
-        assert [p.analyzer for p in patches] == [
-            "dummy",
-            "mock-clang-tidy",
-            "mock-clang-format",
-            "mock-infer",
-            "mock-lint-flake8",
-        ]
+            "test.cpp",
+            1,
+            "error",
+            42,
+            "flake8",
+            "Python error",
+            "EXXX",
+            revision,
+        ),
+        CoverageIssue("test.cpp", 0, "This file is uncovered", revision),
+    ]
 
-        # Skip clang-tidy
-        issues, patches = _test_reporter(api, ["mock-clang-tidy"])
-        assert len(issues) == 4
-        assert len(patches) == 4
-        assert [i.analyzer for i in issues] == [
-            "mock-clang-format",
-            "mock-infer",
-            "mock-lint-flake8",
-            "coverage",
-        ]
-        assert [p.analyzer for p in patches] == [
-            "dummy",
-            "mock-clang-format",
-            "mock-infer",
-            "mock-lint-flake8",
-        ]
+    assert all(i.is_publishable() for i in issues)
 
-        # Skip clang-tidy and mozlint
-        issues, patches = _test_reporter(api, ["mock-clang-format", "mock-clang-tidy"])
-        assert len(issues) == 3
-        assert len(patches) == 3
-        assert [i.analyzer for i in issues] == [
-            "mock-infer",
-            "mock-lint-flake8",
-            "coverage",
-        ]
-        assert [p.analyzer for p in patches] == [
-            "dummy",
-            "mock-infer",
-            "mock-lint-flake8",
-        ]
+    revision.improvement_patches = [
+        ImprovementPatch("dummy", repr(revision), "Whatever"),
+        ImprovementPatch("mock-clang-tidy", repr(revision), "Some C fixes"),
+        ImprovementPatch("mock-clang-format", repr(revision), "Some lint fixes"),
+        ImprovementPatch("mock-infer", repr(revision), "Some java fixes"),
+        ImprovementPatch("mock-lint-flake8", repr(revision), "Some js fixes"),
+    ]
+    list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
+
+    issues, patches = reporter.publish(issues, revision, [])
+
+    # Check issues & patches analyzers
+    assert len(issues) == len(valid_issues)
+    assert len(patches) == len(valid_patches)
+    assert [i.analyzer for i in issues] == valid_issues
+    assert [p.analyzer for p in patches] == valid_patches
 
 
 def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task):
