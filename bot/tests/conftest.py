@@ -3,9 +3,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import collections
 import json
 import os.path
 import re
+import urllib
 import urllib.parse
 import uuid
 from collections import defaultdict
@@ -644,3 +646,97 @@ def mock_treeherder():
         body=json.dumps({"results": [{"job_id": 1234}]}),
         content_type="application/json",
     )
+
+
+class MockPhabricator(object):
+    """
+    A Mock Phabricator API server using responses
+    """
+
+    def __init__(self, base_url, auth_token):
+        self.auth_token = auth_token
+
+        # Objects storages
+        self.comments = collections.defaultdict(list)
+        self.inline_comments = collections.defaultdict(list)
+        self.build_messages = collections.defaultdict(list)
+
+        endpoints = {
+            "differential.createcomment": self.comment,
+            "differential.createinline": self.comment_inline,
+            "harbormaster.sendmessage": self.build_message,
+        }
+
+        for endpoint, callback in endpoints.items():
+            responses.add_callback(
+                responses.POST, f"{base_url}/api/{endpoint}", callback=callback
+            )
+
+    def parse_request(self, request, required_keys):
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+
+        # Check auth token
+        params = json.loads(payload["params"][0])
+        conduit = params.pop("__conduit__")
+        assert conduit["token"] == self.auth_token
+
+        # Check required keys
+        assert set(params.keys()).issuperset(required_keys)
+
+        return params
+
+    def comment(self, request):
+        """Post a new comment on a revision"""
+        params = self.parse_request(
+            request, ("revision_id", "message", "attach_inlines")
+        )
+
+        # Store the comment on the revision
+        self.comments[params["revision_id"]].append(params["message"])
+
+        # Outputs dummy empty response
+        return (
+            201,
+            {"Content-Type": "application/json"},
+            json.dumps({"error_code": None, "result": None}),
+        )
+
+    def comment_inline(self, request):
+        """Post a new inline comment on a revision"""
+        params = self.parse_request(
+            request,
+            ("diffID", "content", "filePath", "isNewFile", "lineLength", "lineNumber"),
+        )
+
+        # Store the comment on the diff
+        self.inline_comments[params["diffID"]].append(params)
+
+        # Outputs dummy empty response
+        return (
+            201,
+            {"Content-Type": "application/json"},
+            json.dumps({"error_code": None, "result": {"id": "PHID-XXXX-YYYYY"}}),
+        )
+
+    def build_message(self, request):
+        """Set a new state on a Harbormaster build"""
+        params = self.parse_request(
+            request, ("buildTargetPHID", "lint", "unit", "type")
+        )
+
+        # Store the message on the build
+        self.build_messages[params["buildTargetPHID"]].append(params)
+
+        # Outputs dummy empty response
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "flake8-error"},
+            json.dumps({"error_code": None, "result": None}),
+        )
+
+
+@pytest.fixture
+def phab():
+    return MockPhabricator("http://phabricator.test", "deadbeef")
