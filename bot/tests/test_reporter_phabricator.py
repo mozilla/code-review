@@ -187,30 +187,6 @@ def test_phabricator_mozlint(
     Test Phabricator reporter publication on a mock mozlint issue
     """
 
-    def _check_inline(request):
-        payload = urllib.parse.parse_qs(request.body)
-        assert payload["output"] == ["json"]
-        assert len(payload["params"]) == 1
-        details = json.loads(payload["params"][0])
-
-        assert details == {
-            "__conduit__": {"token": "deadbeef"},
-            "content": "Error: A bad bad error [flake8: EXXX]",
-            "diffID": 42,
-            "filePath": "python/test.py",
-            "isNewFile": 1,
-            "lineLength": 0,
-            "lineNumber": 42,
-        }
-
-        # Outputs dummy empty response
-        resp = {"error_code": None, "result": {"id": "PHID-XXXX-YYYYY"}}
-        return (
-            201,
-            {"Content-Type": "application/json", "unittest": "flake8-inline"},
-            json.dumps(resp),
-        )
-
     def _check_message(request):
         payload = urllib.parse.parse_qs(request.body)
         assert payload["output"] == ["json"]
@@ -241,12 +217,6 @@ def test_phabricator_mozlint(
             {"Content-Type": "application/json", "unittest": "flake8-error"},
             json.dumps(resp),
         )
-
-    responses.add_callback(
-        responses.POST,
-        "http://phabricator.test/api/differential.createinline",
-        callback=_check_inline,
-    )
 
     responses.add_callback(
         responses.POST,
@@ -287,29 +257,24 @@ def test_phabricator_mozlint(
     # Check the callbacks have been used to publish either:
     # - an inline comment + summary comment when publish_errors is False
     # - a lint result + summary comment when publish_errors is True
-    assert len(responses.calls) > 0
+    assert phab.comments[51] == [
+        VALID_FLAKE8_MESSAGE.format(results=mock_config.taskcluster.results_dir)
+    ]
     if errors_reported:
-        urls = [
-            "http://phabricator.test/api/differential.createcomment",
-            "http://phabricator.test/api/harbormaster.sendmessage",
-        ]
-        markers = [None, "flake8-error"]
-        assert phab.comments[51] == [
-            VALID_FLAKE8_MESSAGE.format(results=mock_config.taskcluster.results_dir)
-        ]
+        # TODO: check send message
+        pass
 
     else:
-        urls = [
-            "http://phabricator.test/api/differential.createinline",
-            "http://phabricator.test/api/differential.createcomment",
+        assert phab.inline_comments[42] == [
+            {
+                "content": "Error: A bad bad error [flake8: EXXX]",
+                "diffID": 42,
+                "filePath": "python/test.py",
+                "isNewFile": 1,
+                "lineLength": 0,
+                "lineNumber": 42,
+            }
         ]
-        markers = ["flake8-inline", None]
-        assert phab.comments[51] == [
-            VALID_FLAKE8_MESSAGE.format(results=mock_config.taskcluster.results_dir)
-        ]
-
-    assert [r.request.url for r in responses.calls[-2:]] == urls
-    assert [r.response.headers.get("unittest") for r in responses.calls[-2:]] == markers
 
 
 def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task):
@@ -626,38 +591,6 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task):
     Test Phabricator reporter supports an issue on a full file
     """
 
-    def _check_inline(request):
-        # Check the inline does not have a null value for line
-        payload = urllib.parse.parse_qs(request.body)
-        assert payload["output"] == ["json"]
-        assert len(payload["params"]) == 1
-        details = json.loads(payload["params"][0])
-
-        assert details == {
-            "__conduit__": {"token": "deadbeef"},
-            "content": "Warning: Something bad happened on the whole file ! [a-huge-issue]",
-            "diffID": 42,
-            "filePath": "xx.cpp",
-            "isNewFile": 1,
-            "lineLength": -1,
-            # Cannot be null for a full file as it's not supported by phabricator
-            "lineNumber": 1,
-        }
-
-        # Outputs dummy empty response
-        resp = {"error_code": None, "result": {"id": "PHID-XXXX-YYYYY"}}
-        return (
-            201,
-            {"Content-Type": "application/json", "unittest": "full-file-inline"},
-            json.dumps(resp),
-        )
-
-    responses.add_callback(
-        responses.POST,
-        "http://phabricator.test/api/differential.createinline",
-        callback=_check_inline,
-    )
-
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
@@ -697,9 +630,17 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task):
     ]
 
     # Check the inline callback has been used
-    call = responses.calls[-2]
-    assert call.request.url == "http://phabricator.test/api/differential.createinline"
-    assert call.response.headers.get("unittest") == "full-file-inline"
+    assert phab.inline_comments[42] == [
+        {
+            "content": "Warning: Something bad happened on the whole file ! [a-huge-issue]",
+            "diffID": 42,
+            "filePath": "xx.cpp",
+            "isNewFile": 1,
+            "lineLength": -1,
+            # Cannot be null for a full file as it's not supported by phabricator
+            "lineNumber": 1,
+        }
+    ]
 
 
 def test_task_failures(mock_phabricator, phab, mock_try_task, mock_treeherder):
@@ -738,30 +679,6 @@ def test_extra_errors(
     Test Phabricator reporter publication with some errors outside of patch
     """
 
-    def _check_inline(request):
-        payload = urllib.parse.parse_qs(request.body)
-        assert payload["output"] == ["json"]
-        assert len(payload["params"]) == 1
-        details = json.loads(payload["params"][0])
-
-        assert details == {
-            "__conduit__": {"token": "deadbeef"},
-            "content": "Warning: Some not so bad python mistake [flake8: EYYY]",
-            "diffID": 42,
-            "filePath": "path/to/file.py",
-            "isNewFile": 1,
-            "lineLength": 0,
-            "lineNumber": 2,
-        }
-
-        # Outputs dummy empty response
-        resp = {"error_code": None, "result": {"id": "PHID-XXXX-YYYYY"}}
-        return (
-            201,
-            {"Content-Type": "application/json", "unittest": "mozlint-warning"},
-            json.dumps(resp),
-        )
-
     def _check_message(request):
         payload = urllib.parse.parse_qs(request.body)
         assert payload["output"] == ["json"]
@@ -792,12 +709,6 @@ def test_extra_errors(
             {"Content-Type": "application/json", "unittest": "mozlint-error"},
             json.dumps(resp),
         )
-
-    responses.add_callback(
-        responses.POST,
-        "http://phabricator.test/api/differential.createinline",
-        callback=_check_inline,
-    )
 
     responses.add_callback(
         responses.POST,
@@ -861,20 +772,19 @@ def test_extra_errors(
     # - an inline comment for the warning in patch
     # - a top comment to summarize issues
     # - a lint result for the error outside of patch (when errors are set to be reported)
-    assert len(responses.calls) > 0
-    urls = [
-        "http://phabricator.test/api/differential.createinline",
-        "http://phabricator.test/api/differential.createcomment",
-    ]
-    markers = ["mozlint-warning", None]
     if errors_reported:
-        urls.append("http://phabricator.test/api/harbormaster.sendmessage")
-        markers.append("mozlint-error")
-
-    assert [r.request.url for r in responses.calls[-len(urls) :]] == urls
-    assert [
-        r.response.headers.get("unittest") for r in responses.calls[-len(urls) :]
-    ] == markers
+        # TODO: check send message
+        pass
 
     # Check the callback has been used to post comments
     assert phab.comments[51] == [VALID_MOZLINT_MESSAGE]
+    assert phab.inline_comments[42] == [
+        {
+            "content": "Warning: Some not so bad python mistake [flake8: EYYY]",
+            "diffID": 42,
+            "filePath": "path/to/file.py",
+            "isNewFile": 1,
+            "lineLength": 0,
+            "lineNumber": 2,
+        }
+    ]
