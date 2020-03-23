@@ -3,9 +3,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import collections
 import json
 import os.path
 import re
+import urllib
 import urllib.parse
 import uuid
 from collections import defaultdict
@@ -644,3 +646,55 @@ def mock_treeherder():
         body=json.dumps({"results": [{"job_id": 1234}]}),
         content_type="application/json",
     )
+
+
+class MockPhabricator(object):
+    """
+    A Mock Phabricator API server using responses
+    """
+
+    def __init__(self, base_url, auth_token):
+        self.auth_token = auth_token
+
+        # Objects storages
+        self.comments = collections.defaultdict(list)
+
+        endpoints = {"differential.createcomment": self.comment}
+
+        for endpoint, callback in endpoints.items():
+            responses.add_callback(
+                responses.POST, f"{base_url}/api/{endpoint}", callback=callback
+            )
+
+    def parse_request(self, request):
+        payload = urllib.parse.parse_qs(request.body)
+        assert payload["output"] == ["json"]
+        assert len(payload["params"]) == 1
+
+        # check auth token
+        params = json.loads(payload["params"][0])
+        conduit = params.pop("__conduit__")
+        assert conduit["token"] == self.auth_token
+        print(conduit)
+
+        return params
+
+    def comment(self, request):
+        # Check the Phabricator main comment is well formed
+        params = self.parse_request(request)
+        assert list(params.keys()) == ["revision_id", "message", "attach_inlines"]
+
+        # Store the comment on the revision
+        self.comments[params["revision_id"]].append(params["message"])
+
+        # Outputs dummy empty response
+        return (
+            201,
+            {"Content-Type": "application/json"},
+            json.dumps({"error_code": None, "result": None}),
+        )
+
+
+@pytest.fixture
+def phab():
+    return MockPhabricator("http://phabricator.test", "deadbeef")
