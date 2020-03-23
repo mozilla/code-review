@@ -659,10 +659,12 @@ class MockPhabricator(object):
         # Objects storages
         self.comments = collections.defaultdict(list)
         self.inline_comments = collections.defaultdict(list)
+        self.build_messages = collections.defaultdict(list)
 
         endpoints = {
             "differential.createcomment": self.comment,
             "differential.createinline": self.comment_inline,
+            "harbormaster.sendmessage": self.build_message,
         }
 
         for endpoint, callback in endpoints.items():
@@ -714,8 +716,24 @@ class MockPhabricator(object):
         # Outputs dummy empty response
         return (
             201,
-            {"Content-Type": "application/json", "unittest": "flake8-inline"},
+            {"Content-Type": "application/json"},
             json.dumps({"error_code": None, "result": {"id": "PHID-XXXX-YYYYY"}}),
+        )
+
+    def build_message(self, request):
+        """Set a new state on a Harbormaster build"""
+        params = self.parse_request(
+            request, ("buildTargetPHID", "lint", "unit", "type")
+        )
+
+        # Store the message on the build
+        self.build_messages[params["buildTargetPHID"]].append(params)
+
+        # Outputs dummy empty response
+        return (
+            201,
+            {"Content-Type": "application/json", "unittest": "flake8-error"},
+            json.dumps({"error_code": None, "result": None}),
         )
 
 
