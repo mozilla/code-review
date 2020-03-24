@@ -5,7 +5,6 @@
 
 import itertools
 import re
-import urllib.parse
 from typing import Pattern
 
 from code_review_tools import treeherder
@@ -24,15 +23,6 @@ Code analysis found {defects_total} in the diff {diff_id}:
 COMMENT_RUN_ANALYZERS = """
 You can run this analysis locally with:
 {analyzers}
-"""
-COMMENT_COVERAGE = """
-In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
-{paths}
-
-Should they have tests, or are they dead code ?
-
- - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
- - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 """
 BUG_REPORT = """
 If you see a problem in this automated review, [please report it here]({bug_report_url}).
@@ -201,24 +191,5 @@ class Reporter(object):
             comment += FRONTEND_LINKS.format(
                 frontend_url=frontend_url, treeherder_url=treeherder_url
             )
-
-        return comment
-
-    def build_coverage_comment(self, issues, bug_report_url):
-        """
-        Build a Markdown comment about coverage-related issues
-        """
-
-        def coverage_url(path):
-            path = urllib.parse.quote_plus(path)
-            return f"https://coverage.moz.tools/#revision=latest&path={path}&view=file"
-
-        comment = COMMENT_COVERAGE.format(
-            paths="\n".join(
-                f" - [{issue.path}]({coverage_url(issue.path)})" for issue in issues
-            )
-        )
-
-        comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
         return comment

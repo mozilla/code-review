@@ -61,15 +61,12 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 
 VALID_COVERAGE_MESSAGE = """
-In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
- - [path/to/test.cpp](https://coverage.moz.tools/#revision=latest&path=path%2Fto%2Ftest.cpp&view=file)
-
-Should they have tests, or are they dead code ?
-
- - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
- - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
+Code analysis found 1 defect in the diff 42:
+ - 1 defect found by coverage
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_DEFAULT_MESSAGE = """
@@ -95,6 +92,19 @@ Code analysis found 2 defects in the diff 42:
 
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing` (JS/Python/etc)
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+"""
+
+VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
+Code analysis found 2 defects in the diff 42:
+ - 1 defect found by coverage
+ - 1 defect found by clang-tidy
+
+You can run this analysis locally with:
+ - `./mach static-analysis check another_test.cpp` (C/C++)
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -241,6 +251,9 @@ def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task
 
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         revision.lines = {
             # Add dummy lines diff
             "test.txt": [0],
@@ -255,6 +268,25 @@ def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task
     issues, patches = reporter.publish([issue], revision, [])
     assert len(issues) == 1
     assert len(patches) == 0
+
+    # Check the lint results
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "code": "no-coverage",
+                    "description": "This file is uncovered",
+                    "line": 1,
+                    "name": "coverage",
+                    "path": "path/to/test.cpp",
+                    "severity": "warning",
+                }
+            ],
+            "type": "work",
+            "unit": [],
+        }
+    ]
 
     # Check the callback has been used
     assert phab.comments[51] == [VALID_COVERAGE_MESSAGE]
@@ -303,8 +335,36 @@ def test_phabricator_clang_tidy_and_coverage(
     assert len(issues) == 2
     assert len(patches) == 0
 
-    # Check the callback has been used to post both comments
-    assert phab.comments[51] == [VALID_CLANG_TIDY_MESSAGE, VALID_COVERAGE_MESSAGE]
+    # Check the lint results
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "char": 51,
+                    "code": "modernize-use-nullptr",
+                    "description": "dummy message",
+                    "line": 42,
+                    "name": "source-test-clang-tidy",
+                    "path": "another_test.cpp",
+                    "severity": "warning",
+                },
+                {
+                    "code": "no-coverage",
+                    "description": "This file is uncovered",
+                    "line": 1,
+                    "name": "coverage",
+                    "path": "path/to/test.cpp",
+                    "severity": "warning",
+                },
+            ],
+            "type": "work",
+            "unit": [],
+        }
+    ]
+
+    # Check the callback has been used to post unique comment
+    assert phab.comments[51] == [VALID_CLANG_TIDY_COVERAGE_MESSAGE]
 
 
 @pytest.mark.parametrize(

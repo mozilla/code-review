@@ -12,7 +12,6 @@ from libmozdata.phabricator import PhabricatorAPI
 from code_review_bot import Issue
 from code_review_bot import stats
 from code_review_bot.report.base import Reporter
-from code_review_bot.tasks.coverage import CoverageIssue
 
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
@@ -68,28 +67,16 @@ class PhabricatorReporter(Reporter):
             # Split issues and build errors
             issues_only = [issue for issue in issues if not issue.is_build_error()]
             build_errors = [issue for issue in issues if issue.is_build_error()]
-            non_coverage_issues = [
-                issue for issue in issues_only if not isinstance(issue, CoverageIssue)
-            ]
-            coverage_issues = [
-                issue for issue in issues_only if isinstance(issue, CoverageIssue)
-            ]
 
-            if non_coverage_issues or build_errors:
+            if issues_only or build_errors:
                 # Publish on Harbormaster all at once
                 # * All non coverage publishable issues as lint issues
                 # * All build errors as unit test results
-                self.publish_harbormaster(revision, non_coverage_issues, build_errors)
+                self.publish_harbormaster(revision, issues_only, build_errors)
 
-            if non_coverage_issues or patches or task_failures:
+            if issues_only or patches or task_failures:
                 # Publish comment summarizing issues
-                self.publish_summary(
-                    revision, non_coverage_issues, patches, task_failures
-                )
-
-            # Publish a comment about low coverage
-            if coverage_issues:
-                self.publish_zero_coverage(revision, coverage_issues)
+                self.publish_summary(revision, issues_only, patches, task_failures)
 
             # Publish statistics
             stats.add_metric("report.phabricator.issues", len(issues))
@@ -136,18 +123,3 @@ class PhabricatorReporter(Reporter):
             ),
         )
         logger.info("Published phabricator summary")
-
-    def publish_zero_coverage(self, revision, coverage_issues):
-        """
-        Publish a comment about low coverage when detected
-        """
-        assert all(
-            map(lambda i: isinstance(i, CoverageIssue), coverage_issues)
-        ), "Only support coverage issues"
-        self.api.comment(
-            revision.id,
-            self.build_coverage_comment(
-                issues=coverage_issues, bug_report_url=BUG_REPORT_URL
-            ),
-        )
-        logger.info("Published low coverage comment")
