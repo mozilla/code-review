@@ -6,6 +6,7 @@
 import json
 import os
 
+from code_review_bot import Level
 from code_review_bot.tasks.lint import MozLintIssue
 from code_review_bot.tasks.lint import MozLintTask
 from conftest import FIXTURES_DIR
@@ -139,3 +140,72 @@ def test_licence_payload(mock_revision, mock_hgmo):
     )
     assert issue.check == issue.analyzer == "source-test-mozlint-license"
     assert issue.build_hash() == "0809d81e1e24ee94039c0e2733321a39"
+
+
+def test_rustfmt_payload(mock_revision, mock_hgmo):
+    """
+    Test mozlint rusfmt payload, with warnings
+    This payload should report only one manually created issue in patch
+    but with an improvement patch
+    """
+    mock_revision.repository = "test-try"
+    mock_revision.mercurial_revision = "deadbeef1234"
+    task_status = {
+        "task": {"metadata": {"name": "source-test-mozlint-rustfmt"}},
+        "status": {},
+    }
+    task = MozLintTask("lintTaskId", task_status)
+
+    # Setup patch to trigger publishable
+    mock_revision.lines = {"tools/fuzzing/rust/src/lib.rs": [19, 20]}
+    mock_revision.files = list(mock_revision.lines.keys())
+
+    # Load artifact related to that bug
+    path = os.path.join(FIXTURES_DIR, "mozlint_rustfmt_issues.json")
+    with open(path) as f:
+        issues = task.parse_issues(
+            {"public/code-review/mozlint": json.load(f)}, mock_revision
+        )
+
+    # Check the issues are all warnings and only one is publishable
+    assert len(issues) == 19
+    assert {i.level for i in issues} == {Level.Warning}
+    publishables = [i for i in issues if i.is_publishable()]
+    for i in issues:
+        print(i)
+    assert len(publishables) == 1
+    issue = publishables[0]
+
+    assert (
+        str(issue)
+        == "source-test-mozlint-rustfmt issue source-test-mozlint-rustfmt@warning tools/fuzzing/rust/src/lib.rs line 19"
+    )
+    assert mock_revision.contains(issue)
+    assert issue.is_publishable()
+
+    assert issue.as_dict() == {
+        "analyzer": "source-test-mozlint-rustfmt",
+        "check": "source-test-mozlint-rustfmt",
+        "column": None,
+        "hash": "4ea2998c1f2029f1b95c135b7a6b5100",
+        "in_patch": True,
+        "level": "warning",
+        "line": 19,
+        "message": """Reformat rust
+```
+ use tempfile::Builder;
+
+ fn eat_lmdb_err<T>(value: Result<T, rkv::StoreError>) -> Result<Option<T>, rkv::StoreError> {
+-     // Should trigger rustfmt in patch
+-      match value {
++    // Should trigger rustfmt in patch
++    match value {
+         Ok(value) => Ok(Some(value)),
+         Err(rkv::StoreError::LmdbError(_)) => Ok(None),
+         Err(err) => {
+```""",
+        "nb_lines": 2,
+        "path": "tools/fuzzing/rust/src/lib.rs",
+        "publishable": True,
+        "validates": True,
+    }
