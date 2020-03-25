@@ -62,7 +62,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 VALID_COVERAGE_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
- - 1 defect found by coverage
+ - 1 defect found by code coverage analysis
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -100,7 +100,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
 Code analysis found 2 defects in the diff 42:
- - 1 defect found by coverage
+ - 1 defect found by code coverage analysis
  - 1 defect found by clang-tidy
 
 You can run this analysis locally with:

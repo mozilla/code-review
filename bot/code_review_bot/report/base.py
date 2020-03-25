@@ -101,6 +101,10 @@ class Reporter(object):
             if analyzer.startswith("source-test-"):
                 analyzer = analyzer[12:]
 
+            # Nicer name for code coverage
+            elif analyzer == "coverage":
+                analyzer = "code coverage analysis"
+
             return {
                 "analyzer": analyzer,
                 "help": _help,
