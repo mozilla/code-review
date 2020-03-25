@@ -7,6 +7,7 @@ import itertools
 import re
 from typing import Pattern
 
+from code_review_bot.tasks.coverage import CoverageIssue
 from code_review_tools import treeherder
 
 HELP_COMMANDS = {
@@ -23,6 +24,13 @@ Code analysis found {defects_total} in the diff {diff_id}:
 COMMENT_RUN_ANALYZERS = """
 You can run this analysis locally with:
 {analyzers}
+"""
+COMMENT_COVERAGE = """
+In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
+Should they have tests, or are they dead code ?
+
+ - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
+ - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 """
 BUG_REPORT = """
 If you see a problem in this automated review, [please report it here]({bug_report_url}).
@@ -135,6 +143,9 @@ class Reporter(object):
             assert isinstance(nb, int)
             return "{} {}".format(nb, nb == 1 and word or word + "s")
 
+        # List all the issues classes
+        issue_classes = {issue.__class__ for issue in issues}
+
         # Calc stats for issues, grouped by class
         stats = self.calc_stats(issues)
 
@@ -195,5 +206,9 @@ class Reporter(object):
             comment += FRONTEND_LINKS.format(
                 frontend_url=frontend_url, treeherder_url=treeherder_url
             )
+
+        # Add coverage reporting details when a coverage issue is published
+        if CoverageIssue in issue_classes:
+            comment += COMMENT_COVERAGE
 
         return comment
