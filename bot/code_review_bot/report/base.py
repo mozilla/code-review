@@ -195,6 +195,10 @@ class Reporter(object):
             )
             comment += COMMENT_TASK_FAILURE.format(name=task.name, url=treeherder_url)
 
+        # Add coverage reporting details when a coverage issue is published
+        if CoverageIssue in issue_classes:
+            comment += COMMENT_COVERAGE
+
         assert comment != "", "Empty comment"
 
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
@@ -206,9 +210,5 @@ class Reporter(object):
             comment += FRONTEND_LINKS.format(
                 frontend_url=frontend_url, treeherder_url=treeherder_url
             )
-
-        # Add coverage reporting details when a coverage issue is published
-        if CoverageIssue in issue_classes:
-            comment += COMMENT_COVERAGE
 
         return comment
