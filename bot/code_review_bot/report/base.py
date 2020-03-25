@@ -5,9 +5,9 @@
 
 import itertools
 import re
-import urllib.parse
 from typing import Pattern
 
+from code_review_bot.tasks.coverage import CoverageIssue
 from code_review_tools import treeherder
 
 HELP_COMMANDS = {
@@ -27,8 +27,6 @@ You can run this analysis locally with:
 """
 COMMENT_COVERAGE = """
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
-{paths}
-
 Should they have tests, or are they dead code ?
 
  - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
@@ -111,6 +109,10 @@ class Reporter(object):
             if analyzer.startswith("source-test-"):
                 analyzer = analyzer[12:]
 
+            # Nicer name for code coverage
+            elif analyzer == "coverage":
+                analyzer = "code coverage analysis"
+
             return {
                 "analyzer": analyzer,
                 "help": _help,
@@ -140,6 +142,9 @@ class Reporter(object):
             assert isinstance(word, str)
             assert isinstance(nb, int)
             return "{} {}".format(nb, nb == 1 and word or word + "s")
+
+        # List all the issues classes
+        issue_classes = {issue.__class__ for issue in issues}
 
         # Calc stats for issues, grouped by class
         stats = self.calc_stats(issues)
@@ -190,6 +195,10 @@ class Reporter(object):
             )
             comment += COMMENT_TASK_FAILURE.format(name=task.name, url=treeherder_url)
 
+        # Add coverage reporting details when a coverage issue is published
+        if CoverageIssue in issue_classes:
+            comment += COMMENT_COVERAGE
+
         assert comment != "", "Empty comment"
 
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
@@ -201,24 +210,5 @@ class Reporter(object):
             comment += FRONTEND_LINKS.format(
                 frontend_url=frontend_url, treeherder_url=treeherder_url
             )
-
-        return comment
-
-    def build_coverage_comment(self, issues, bug_report_url):
-        """
-        Build a Markdown comment about coverage-related issues
-        """
-
-        def coverage_url(path):
-            path = urllib.parse.quote_plus(path)
-            return f"https://coverage.moz.tools/#revision=latest&path={path}&view=file"
-
-        comment = COMMENT_COVERAGE.format(
-            paths="\n".join(
-                f" - [{issue.path}]({coverage_url(issue.path)})" for issue in issues
-            )
-        )
-
-        comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
         return comment

@@ -61,15 +61,18 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 
 VALID_COVERAGE_MESSAGE = """
-In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
- - [path/to/test.cpp](https://coverage.moz.tools/#revision=latest&path=path%2Fto%2Ftest.cpp&view=file)
+Code analysis found 1 defect in the diff 42:
+ - 1 defect found by code coverage analysis
 
+In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
 Should they have tests, or are they dead code ?
 
  - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_DEFAULT_MESSAGE = """
@@ -95,6 +98,25 @@ Code analysis found 2 defects in the diff 42:
 
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing` (JS/Python/etc)
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+"""
+
+VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
+Code analysis found 2 defects in the diff 42:
+ - 1 defect found by code coverage analysis
+ - 1 defect found by clang-tidy
+
+You can run this analysis locally with:
+ - `./mach static-analysis check another_test.cpp` (C/C++)
+
+In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
+Should they have tests, or are they dead code ?
+
+ - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
+ - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -175,13 +197,7 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, phab, mock_try_
     ]
 
 
-@pytest.mark.parametrize(
-    "reporter_config, errors_reported",
-    [({"publish_errors": True}, True), ({"publish_errors": False}, False), ({}, False)],
-)
-def test_phabricator_mozlint(
-    reporter_config, errors_reported, mock_config, mock_phabricator, phab, mock_try_task
-):
+def test_phabricator_mozlint(mock_config, mock_phabricator, phab, mock_try_task):
     """
     Test Phabricator reporter publication on a mock mozlint issue
     """
@@ -197,7 +213,7 @@ def test_phabricator_mozlint(
             "dom/test.cpp": [42],
         }
         revision.files = revision.lines.keys()
-        reporter = PhabricatorReporter(reporter_config, api=api)
+        reporter = PhabricatorReporter({}, api=api)
 
     issue = MozLintIssue(
         analyzer="source-test-mozlint-py-flake8",
@@ -216,43 +232,28 @@ def test_phabricator_mozlint(
     assert len(issues) == 1
     assert len(patches) == 0
 
-    # Check the callbacks have been used to publish either:
-    # - an inline comment + summary comment when publish_errors is False
-    # - a lint result + summary comment when publish_errors is True
+    # Check the callbacks have been used to publish either a lint result + summary comment
     assert phab.comments[51] == [
         VALID_FLAKE8_MESSAGE.format(results=mock_config.taskcluster.results_dir)
     ]
-    if errors_reported:
-        assert phab.build_messages["PHID-HMBT-test"] == [
-            {
-                "buildTargetPHID": "PHID-HMBT-test",
-                "lint": [
-                    {
-                        "char": 1,
-                        "code": "EXXX",
-                        "description": "A bad bad error",
-                        "line": 42,
-                        "name": "source-test-mozlint-py-flake8",
-                        "path": "python/test.py",
-                        "severity": "error",
-                    }
-                ],
-                "unit": [],
-                "type": "work",
-            }
-        ]
-
-    else:
-        assert phab.inline_comments[42] == [
-            {
-                "content": "Error: A bad bad error [flake8: EXXX]",
-                "diffID": 42,
-                "filePath": "python/test.py",
-                "isNewFile": 1,
-                "lineLength": 0,
-                "lineNumber": 42,
-            }
-        ]
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "char": 1,
+                    "code": "EXXX",
+                    "description": "A bad bad error",
+                    "line": 42,
+                    "name": "source-test-mozlint-py-flake8",
+                    "path": "python/test.py",
+                    "severity": "error",
+                }
+            ],
+            "unit": [],
+            "type": "work",
+        }
+    ]
 
 
 def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task):
@@ -262,6 +263,9 @@ def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task
 
     with mock_phabricator as api:
         revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
         revision.lines = {
             # Add dummy lines diff
             "test.txt": [0],
@@ -276,6 +280,25 @@ def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task
     issues, patches = reporter.publish([issue], revision, [])
     assert len(issues) == 1
     assert len(patches) == 0
+
+    # Check the lint results
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "code": "no-coverage",
+                    "description": "This file is uncovered",
+                    "line": 1,
+                    "name": "coverage",
+                    "path": "path/to/test.cpp",
+                    "severity": "warning",
+                }
+            ],
+            "type": "work",
+            "unit": [],
+        }
+    ]
 
     # Check the callback has been used
     assert phab.comments[51] == [VALID_COVERAGE_MESSAGE]
@@ -324,8 +347,36 @@ def test_phabricator_clang_tidy_and_coverage(
     assert len(issues) == 2
     assert len(patches) == 0
 
-    # Check the callback has been used to post both comments
-    assert phab.comments[51] == [VALID_CLANG_TIDY_MESSAGE, VALID_COVERAGE_MESSAGE]
+    # Check the lint results
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "char": 51,
+                    "code": "modernize-use-nullptr",
+                    "description": "dummy message",
+                    "line": 42,
+                    "name": "source-test-clang-tidy",
+                    "path": "another_test.cpp",
+                    "severity": "warning",
+                },
+                {
+                    "code": "no-coverage",
+                    "description": "This file is uncovered",
+                    "line": 1,
+                    "name": "coverage",
+                    "path": "path/to/test.cpp",
+                    "severity": "warning",
+                },
+            ],
+            "type": "work",
+            "unit": [],
+        }
+    ]
+
+    # Check the callback has been used to post unique comment
+    assert phab.comments[51] == [VALID_CLANG_TIDY_COVERAGE_MESSAGE]
 
 
 @pytest.mark.parametrize(
@@ -564,15 +615,21 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task):
     ]
 
     # Check the inline callback has been used
-    assert phab.inline_comments[42] == [
+    assert phab.build_messages["PHID-HMBT-test"] == [
         {
-            "content": "Warning: Something bad happened on the whole file ! [a-huge-issue]",
-            "diffID": 42,
-            "filePath": "xx.cpp",
-            "isNewFile": 1,
-            "lineLength": -1,
-            # Cannot be null for a full file as it's not supported by phabricator
-            "lineNumber": 1,
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "code": "a-huge-issue",
+                    "description": "Something bad happened on the " "whole file !",
+                    "line": 1,
+                    "name": "full-file-analyzer",
+                    "path": "xx.cpp",
+                    "severity": "warning",
+                }
+            ],
+            "type": "work",
+            "unit": [],
         }
     ]
 
@@ -602,13 +659,7 @@ def test_task_failures(mock_phabricator, phab, mock_try_task, mock_treeherder):
     assert phab.comments[51] == [VALID_TASK_FAILURES_MESSAGE]
 
 
-@pytest.mark.parametrize(
-    "reporter_config, errors_reported",
-    [({"publish_errors": True}, True), ({"publish_errors": False}, False), ({}, False)],
-)
-def test_extra_errors(
-    reporter_config, errors_reported, mock_phabricator, mock_try_task, phab
-):
+def test_extra_errors(mock_phabricator, mock_try_task, phab):
     """
     Test Phabricator reporter publication with some errors outside of patch
     """
@@ -620,7 +671,7 @@ def test_extra_errors(
         revision.repository_try_name = "try"
         revision.lines = {"path/to/file.py": [1, 2, 3]}
         revision.files = ["path/to/file.py"]
-        reporter = PhabricatorReporter(reporter_config, api=api)
+        reporter = PhabricatorReporter({}, api=api)
 
     all_issues = [
         # Warning in patch
@@ -662,42 +713,39 @@ def test_extra_errors(
     ]
 
     published_issues, patches = reporter.publish(all_issues, revision, [])
-    assert len(published_issues) == 2 if errors_reported else 1
+    assert len(published_issues) == 2
     assert len(patches) == 0
 
     # Check the callbacks have been used to publish:
-    # - an inline comment for the warning in patch
     # - a top comment to summarize issues
-    # - a lint result for the error outside of patch (when errors are set to be reported)
-    if errors_reported:
-        assert phab.build_messages["PHID-HMBT-test"] == [
-            {
-                "buildTargetPHID": "PHID-HMBT-test",
-                "lint": [
-                    {
-                        "char": 12,
-                        "code": "EXXX",
-                        "description": "Some bad python typo",
-                        "line": 10,
-                        "name": "source-test-mozlint-dummy",
-                        "path": "path/to/file.py",
-                        "severity": "error",
-                    }
-                ],
-                "unit": [],
-                "type": "work",
-            }
-        ]
-
-    # Check the callback has been used to post comments
-    assert phab.comments[51] == [VALID_MOZLINT_MESSAGE]
-    assert phab.inline_comments[42] == [
+    # - a lint result for the error outside of patch
+    # - a lint result for the warning inside patch
+    assert phab.build_messages["PHID-HMBT-test"] == [
         {
-            "content": "Warning: Some not so bad python mistake [flake8: EYYY]",
-            "diffID": 42,
-            "filePath": "path/to/file.py",
-            "isNewFile": 1,
-            "lineLength": 0,
-            "lineNumber": 2,
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "char": 25,
+                    "code": "EYYY",
+                    "description": "Some not so bad python mistake",
+                    "line": 2,
+                    "name": "source-test-mozlint-dummy",
+                    "path": "path/to/file.py",
+                    "severity": "warning",
+                },
+                {
+                    "char": 12,
+                    "code": "EXXX",
+                    "description": "Some bad python typo",
+                    "line": 10,
+                    "name": "source-test-mozlint-dummy",
+                    "path": "path/to/file.py",
+                    "severity": "error",
+                },
+            ],
+            "unit": [],
+            "type": "work",
         }
     ]
+
+    assert phab.comments[51] == [VALID_MOZLINT_MESSAGE]

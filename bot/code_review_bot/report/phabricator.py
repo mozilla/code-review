@@ -10,11 +10,8 @@ from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import Issue
-from code_review_bot import Level
 from code_review_bot import stats
 from code_review_bot.report.base import Reporter
-from code_review_bot.revisions import Revision
-from code_review_bot.tasks.coverage import CoverageIssue
 
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
@@ -37,14 +34,6 @@ class PhabricatorReporter(Reporter):
             self.analyzers_skipped, list
         ), "analyzers_skipped must be a list"
 
-        self.publish_build_errors = configuration.get("publish_build_errors", False)
-        self.publish_errors = configuration.get("publish_errors", False)
-        logger.info(
-            "Error publication configuration",
-            errors=self.publish_errors,
-            build_errors=self.publish_build_errors,
-        )
-
         self.frontend_diff_url = configuration.get(
             "frontend_diff_url", "https://code-review.moz.tools/#/diff/{diff_id}"
         )
@@ -57,15 +46,9 @@ class PhabricatorReporter(Reporter):
     def publish(self, issues, revision, task_failures):
         """
         Publish issues on Phabricator:
-        * in patch issues use inline comments
-        * outside errors are displayed as lint results
+        * publishable issues use lint results
         * build errors are displayed as unit test results
         """
-        if not isinstance(revision, Revision):
-            logger.info(
-                "Phabricator reporter only publishes Phabricator revisions. Skipping."
-            )
-            return None, None
 
         # Use only publishable issues and patches
         # and avoid publishing a patch from a de-activated analyzer
@@ -79,28 +62,25 @@ class PhabricatorReporter(Reporter):
             for patch in revision.improvement_patches
             if patch.analyzer not in self.analyzers_skipped
         ]
-        # List of issues without possible build errors
-        issues_only = [issue for issue in issues if not issue.is_build_error()]
-        build_errors = [issue for issue in issues if issue.is_build_error()]
 
-        if issues_only or build_errors or task_failures:
+        if issues or task_failures:
+            # Split issues and build errors
+            issues_only = [issue for issue in issues if not issue.is_build_error()]
+            build_errors = [issue for issue in issues if issue.is_build_error()]
 
-            # Always publish comment summarizing issues
-            self.publish_comment(revision, issues_only, patches, task_failures)
+            if issues_only or build_errors:
+                # Publish on Harbormaster all at once
+                # * All non coverage publishable issues as lint issues
+                # * All build errors as unit test results
+                self.publish_harbormaster(revision, issues_only, build_errors)
 
-            # Publish all errors as lint issues
-            if self.publish_errors:
-                lint_issues = [
-                    issue for issue in issues_only if issue.level == Level.Error
-                ]
-            else:
-                lint_issues = []
+            if issues_only or patches or task_failures:
+                # Publish comment summarizing issues
+                self.publish_summary(revision, issues_only, patches, task_failures)
 
-            # Also publish build errors as Phabricator unit result
-            unit_issues = build_errors if self.publish_build_errors else []
-
-            # Publish on Harbormaster all at once
-            self.publish_harbormaster(revision, lint_issues, unit_issues)
+            # Publish statistics
+            stats.add_metric("report.phabricator.issues", len(issues))
+            stats.add_metric("report.phabricator")
         else:
             logger.info("No issues to publish on phabricator")
 
@@ -113,9 +93,7 @@ class PhabricatorReporter(Reporter):
         Publish issues through HarborMaster
         either as lint results or unit tests results
         """
-        if not lint_issues and not unit_issues:
-            logger.info("No issues to publish as Phabricator lint or unit results")
-            return
+        assert lint_issues or unit_issues, "No issues to publish"
 
         self.api.update_build_target(
             revision.build_target_phid,
@@ -123,138 +101,25 @@ class PhabricatorReporter(Reporter):
             lint=[issue.as_phabricator_lint() for issue in lint_issues],
             unit=[issue.as_phabricator_unitresult() for issue in unit_issues],
         )
-
-    def publish_comment(self, revision, issues, patches, task_failures):
-        """
-        Publish issues through Phabricator comment
-        """
-        # Load existing comments for this revision
-        existing_comments = self.api.list_comments(revision.phid)
         logger.info(
-            "Found {} existing comments on review".format(len(existing_comments))
+            "Updated Harbormaster build state with issues",
+            nb_lint=len(lint_issues),
+            nb_unit=len(unit_issues),
         )
 
-        coverage_issues = [
-            issue for issue in issues if isinstance(issue, CoverageIssue)
-        ]
-        non_coverage_issues = [
-            issue for issue in issues if not isinstance(issue, CoverageIssue)
-        ]
-        errors = [
-            issue
-            for issue in issues
-            if issue.level == Level.Error and self.publish_errors
-        ]
-        patches_analyzers = set(p.analyzer for p in patches)
-
-        # First publish inlines as drafts
-        # * skipping coverage issues as they get a dedicated comment
-        # * skipping issues reported in a patch
-        # * skipping issues not in the current patch
-        # * skipping errors as they are reported as lint (when enabled)
-        def _is_inline(issue):
-            # Do not publish errors as inline when we are already
-            # publishing them as lint
-            if self.publish_errors and issue.level == Level.Error:
-                return False
-
-            return (
-                issue in non_coverage_issues
-                and issue.analyzer not in patches_analyzers
-                and revision.contains(issue)
-            )
-
-        inlines = list(
-            filter(
-                None,
-                [
-                    self.comment_inline(revision, issue, existing_comments)
-                    for issue in issues
-                    if _is_inline(issue)
-                ],
-            )
-        )
-        if (
-            not inlines
-            and not patches
-            and not coverage_issues
-            and not task_failures
-            and not errors
-        ):
-            logger.info("No new comments found, skipping Phabricator publication")
-            return
-        logger.info("Added inline comments", ids=[i["id"] for i in inlines])
-
-        # Then publish top comment
-        if len(non_coverage_issues) or task_failures:
-            self.api.comment(
-                revision.id,
-                self.build_comment(
-                    revision=revision,
-                    issues=non_coverage_issues,
-                    patches=patches,
-                    bug_report_url=BUG_REPORT_URL,
-                    frontend_url=self.frontend_diff_url.format(
-                        diff_id=revision.diff_id
-                    ),
-                    task_failures=task_failures,
-                ),
-            )
-
-        # Then publish top coverage comment
-        if len(coverage_issues):
-            self.api.comment(
-                revision.id,
-                self.build_coverage_comment(
-                    issues=coverage_issues, bug_report_url=BUG_REPORT_URL
-                ),
-            )
-
-        stats.add_metric("report.phabricator.issues", len(inlines))
-        stats.add_metric("report.phabricator")
-        logger.info("Published phabricator comment")
-
-    def comment_inline(self, revision, issue, existing_comments=[]):
+    def publish_summary(self, revision, issues, patches, task_failures):
         """
-        Post an inline comment on a diff
+        Summarize publishable issues through Phabricator comment
         """
-        assert isinstance(revision, Revision)
-        assert isinstance(issue, Issue)
-
-        # Enforce path validation or Phabricator will crash here
-        if not revision.has_file(issue.path):
-            logger.warn(
-                "Will not publish inline comment on invalid path {}: {}".format(
-                    issue.path, issue
-                )
-            )
-            return
-
-        # Check if comment is already posted
-        comment = {
-            "diffID": revision.diff_id,
-            "filePath": issue.path,
-            "lineNumber": issue.line
-            if issue.line is not None
-            else 1,  # support full file
-            "lineLength": issue.nb_lines - 1,
-            "content": issue.as_text(),
-        }
-        if comment in existing_comments:
-            logger.info(
-                "Skipping existing comment",
-                text=comment["content"],
-                filename=comment["filePath"],
-                line=comment["lineNumber"],
-            )
-            return
-
-        inline = self.api.request(
-            "differential.createinline",
-            # This displays on the new file (right side)
-            # Python boolean is not recognized by Conduit :/
-            isNewFile=1,
-            # Use comment data
-            **comment
+        self.api.comment(
+            revision.id,
+            self.build_comment(
+                revision=revision,
+                issues=issues,
+                patches=patches,
+                bug_report_url=BUG_REPORT_URL,
+                frontend_url=self.frontend_diff_url.format(diff_id=revision.diff_id),
+                task_failures=task_failures,
+            ),
         )
-        return inline
+        logger.info("Published phabricator summary")
