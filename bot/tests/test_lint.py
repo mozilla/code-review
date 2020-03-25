@@ -11,14 +11,14 @@ from code_review_bot.tasks.lint import MozLintTask
 from conftest import FIXTURES_DIR
 
 
-def test_flake8_checks(mock_config, mock_revision, mock_hgmo):
+def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
     """
     Check flake8 check detection
     """
 
     # Valid issue
     issue = MozLintIssue(
-        "mock-lint-flake8",
+        mock_task(MozLintTask, "mock-lint-flake8"),
         "test.py",
         1,
         "error",
@@ -33,7 +33,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo):
 
     # Flake8 bad quotes
     issue = MozLintIssue(
-        "mock-lint-flake8",
+        mock_task(MozLintTask, "mock-lint-flake8"),
         "test.py",
         1,
         "error",
@@ -62,13 +62,13 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo):
     }
 
 
-def test_as_text(mock_config, mock_revision, mock_hgmo):
+def test_as_text(mock_config, mock_revision, mock_hgmo, mock_task):
     """
     Test text export for ClangTidyIssue
     """
 
     issue = MozLintIssue(
-        "mock-lint-flake8",
+        mock_task(MozLintTask, "mock-lint-flake8"),
         "test.py",
         1,
         "error",
@@ -137,5 +137,5 @@ def test_licence_payload(mock_revision, mock_hgmo):
         str(issue)
         == "source-test-mozlint-license issue source-test-mozlint-license@error intl/locale/rust/unic-langid-ffi/src/lib.rs full file"
     )
-    assert issue.check == issue.analyzer == "source-test-mozlint-license"
+    assert issue.check == issue.analyzer.name == "source-test-mozlint-license"
     assert issue.build_hash() == "0809d81e1e24ee94039c0e2733321a39"

@@ -4,20 +4,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import itertools
-import re
-from typing import Pattern
 
 from code_review_bot.tasks.coverage import CoverageIssue
 from code_review_tools import treeherder
 
-HELP_COMMANDS = {
-    "source-test-clang-tidy": " - `./mach static-analysis check {files}` (C/C++)",
-    "source-test-infer-infer": " - `./mach static-analysis check-java path/to/file.java` (Java)",
-    "source-test-clang-format": " - `./mach clang-format -s -p {files}` (C/C++)",
-    re.compile(
-        "^source-test-mozlint-.*"
-    ): " - `./mach lint --warnings --outgoing` (JS/Python/etc)",
-}
 COMMENT_FAILURE = """
 Code analysis found {defects_total} in the diff {diff_id}:
 """
@@ -89,38 +79,18 @@ class Reporter(object):
         """
 
         groups = itertools.groupby(
-            sorted(issues, key=lambda i: i.analyzer), lambda i: i.analyzer
+            sorted(issues, key=lambda i: i.analyzer.name), lambda i: i.analyzer
         )
 
         def stats(analyzer, items):
             _items = list(items)
-
-            # Lookup the help message, supporting regexes
-            _help = HELP_COMMANDS.get(analyzer)
-            if _help is None:
-                for regex, help_value in HELP_COMMANDS.items():
-                    if isinstance(regex, Pattern) and regex.match(analyzer):
-                        assert (
-                            _help is None
-                        ), f"Duplicate help command found for {analyzer}"
-                        _help = help_value
-
-            # Strip source-test- to get cleaner names
-            if analyzer.startswith("source-test-"):
-                analyzer = analyzer[12:]
-
-            # Nicer name for code coverage
-            elif analyzer == "coverage":
-                analyzer = "code coverage analysis"
-
+            paths = list({i.path for i in _items if i.is_publishable()})
             return {
-                "analyzer": analyzer,
-                "help": _help,
+                "analyzer": analyzer.display_name,
+                "help": analyzer.build_help_message(paths),
                 "total": len(_items),
                 "publishable": sum([i.is_publishable() for i in _items]),
-                "publishable_paths": list(
-                    {i.path for i in _items if i.is_publishable()}
-                ),
+                "publishable_paths": paths,
             }
 
         return [stats(analyzer, items) for analyzer, items in groups]
@@ -160,9 +130,7 @@ class Reporter(object):
             )
             _help = stat.get("help")
             if _help is not None:
-                analyzers.append(
-                    _help.format(files=" ".join(stat["publishable_paths"]))
-                )
+                analyzers.append(f" - {_help}")
 
         # Build top comment
         nb = len(issues)
@@ -183,7 +151,7 @@ class Reporter(object):
 
         for patch in patches:
             comment += COMMENT_DIFF_DOWNLOAD.format(
-                analyzer=patch.analyzer, url=patch.url or patch.path
+                analyzer=patch.analyzer.display_name, url=patch.url or patch.path
             )
 
         for task in task_failures:

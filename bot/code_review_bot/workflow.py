@@ -333,7 +333,7 @@ class Workflow(object):
 
                     task_patches = task.build_patches(artifacts)
                     for patch in task_patches:
-                        revision.add_improvement_patch(task.name, patch)
+                        revision.add_improvement_patch(task, patch)
 
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot

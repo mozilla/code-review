@@ -41,7 +41,7 @@ class DefaultIssue(Issue):
         Build the Markdown content for debug email
         """
         return ISSUE_MARKDOWN.format(
-            analyzer=self.analyzer,
+            analyzer=self.analyzer.name,
             path=self.path,
             check=self.check,
             level=self.level.value,
@@ -77,7 +77,7 @@ class DefaultTask(AnalysisTask):
 
         return [
             DefaultIssue(
-                analyzer=issue.get("analyzer", self.name),
+                analyzer=self,
                 revision=revision,
                 path=issue["path"],
                 line=issue["line"],

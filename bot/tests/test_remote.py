@@ -565,7 +565,7 @@ def test_clang_format_task(
     assert len(issues) == 1
     assert len(mock_revision.improvement_patches) == 1
     patch = mock_revision.improvement_patches[0]
-    assert patch.analyzer == "source-test-clang-format"
+    assert patch.analyzer.name == "source-test-clang-format"
     assert patch.content == "A nice diff in here..."
 
 

@@ -19,6 +19,7 @@ from code_review_bot.config import REGEX_PHABRICATOR_COMMIT
 from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import REPO_MOZILLA_CENTRAL
 from code_review_bot.config import settings
+from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
 
@@ -28,16 +29,18 @@ class ImprovementPatch(object):
     An improvement patch built by the bot
     """
 
-    def __init__(self, analyzer_name, patch_name, content):
+    def __init__(self, analyzer, patch_name, content):
+        assert isinstance(analyzer, AnalysisTask)
+
         # Build name from analyzer and revision
-        self.analyzer = analyzer_name
-        self.name = "{}-{}.diff".format(analyzer_name, patch_name)
+        self.analyzer = analyzer
+        self.name = "{}-{}.diff".format(self.analyzer.name, patch_name)
         self.content = content
         self.url = None
         self.path = None
 
     def __str__(self):
-        return "{}: {}".format(self.analyzer, self.url or self.path or self.name)
+        return "{}: {}".format(self.analyzer.name, self.url or self.path or self.name)
 
     def write(self):
         """
@@ -388,16 +391,14 @@ class Revision(object):
 
         return any(_is_infer(f) for f in self.files)
 
-    def add_improvement_patch(self, analyzer_name, content):
+    def add_improvement_patch(self, analyzer, content):
         """
         Save an improvement patch, and make it available
         as a Taskcluster artifact
         """
         assert isinstance(content, str)
         assert len(content) > 0
-        self.improvement_patches.append(
-            ImprovementPatch(analyzer_name, repr(self), content)
-        )
+        self.improvement_patches.append(ImprovementPatch(analyzer, repr(self), content))
 
     def reset(self):
         """

@@ -17,6 +17,7 @@ from libmozdata.phabricator import UnitResultState
 from taskcluster.helper import TaskclusterConfig
 
 from code_review_bot.stats import InfluxDb
+from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
 
@@ -58,7 +59,7 @@ class Issue(abc.ABC):
 
     def __init__(
         self,
-        analyzer: str,
+        analyzer: AnalysisTask,
         revision,
         path: str,
         line: int,
@@ -72,6 +73,7 @@ class Issue(abc.ABC):
         from code_review_bot.revisions import Revision
 
         assert isinstance(revision, Revision)
+        assert isinstance(analyzer, AnalysisTask)
 
         # Base required fields for all issues
         assert not os.path.isabs(path), f"Issue path can not be absolute {path}"
@@ -98,9 +100,7 @@ class Issue(abc.ABC):
 
     def __str__(self):
         line = f"line {self.line}" if self.line is not None else "full file"
-        return (
-            f"{self.analyzer} issue {self.check}@{self.level.value} {self.path} {line}"
-        )
+        return f"{self.analyzer.name} issue {self.check}@{self.level.value} {self.path} {line}"
 
     def build_extra_identifiers(self):
         """
@@ -169,7 +169,7 @@ class Issue(abc.ABC):
         extras = json.dumps(self.build_extra_identifiers(), sort_keys=True)
         payload = ":".join(
             [
-                self.analyzer,
+                self.analyzer.name,
                 self.path,
                 self.level.value,
                 self.check,
@@ -221,7 +221,7 @@ class Issue(abc.ABC):
             issue_hash = None
 
         return {
-            "analyzer": self.analyzer,
+            "analyzer": self.analyzer.name,
             "path": self.path,
             "line": self.line,
             "nb_lines": self.nb_lines,
@@ -240,7 +240,7 @@ class Issue(abc.ABC):
         Build the Phabricator LintResult instance
         """
         return LintResult(
-            name=self.analyzer,
+            name=self.analyzer.display_name,
             description=self.message,
             code=self.check,
             severity=self.level.value,

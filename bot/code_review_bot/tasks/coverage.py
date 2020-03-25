@@ -23,9 +23,9 @@ ISSUE_MARKDOWN = """
 
 
 class CoverageIssue(Issue):
-    def __init__(self, path, lineno, message, revision):
+    def __init__(self, analyzer, path, lineno, message, revision):
         super().__init__(
-            "coverage",
+            analyzer,
             revision,
             path,
             line=lineno and int(lineno) or None,
@@ -74,6 +74,10 @@ class ZeroCoverageTask(AnalysisTask):
     route = "project.relman.code-coverage.production.cron.latest"
     artifacts = ["public/zero_coverage_report.json"]
 
+    @property
+    def display_name(self):
+        return "code coverage analysis"
+
     def parse_issues(self, artifacts, revision):
         zero_coverage_files = {
             file_info["name"]
@@ -83,7 +87,7 @@ class ZeroCoverageTask(AnalysisTask):
         }
 
         return [
-            CoverageIssue(path, 0, "This file is uncovered", revision)
+            CoverageIssue(self, path, 0, "This file is uncovered", revision)
             for path in revision.files
             if path in zero_coverage_files
         ]

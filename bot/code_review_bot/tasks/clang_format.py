@@ -71,6 +71,14 @@ class ClangFormatTask(AnalysisTask):
         "public/code-review/clang-format.diff",
     ]
 
+    @property
+    def display_name(self):
+        return "clang-format"
+
+    def build_help_message(self, files):
+        files = " ".join(files)
+        return f"`./mach clang-format -s -p {files}` (C/C++)"
+
     def parse_issues(self, artifacts, revision):
         artifact = artifacts.get("public/code-review/clang-format.json")
         if artifact is None:
@@ -79,7 +87,7 @@ class ClangFormatTask(AnalysisTask):
 
         return [
             ClangFormatIssue(
-                analyzer=self.name,
+                analyzer=self,
                 path=path,
                 line=issue["line"],
                 nb_lines=issue["lines_modified"],

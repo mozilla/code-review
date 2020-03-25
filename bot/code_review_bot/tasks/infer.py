@@ -75,13 +75,17 @@ class InferTask(AnalysisTask):
 
     artifacts = ["public/code-review/infer.json"]
 
+    def build_help_message(self, files):
+        files = " ".join(files)
+        return f"`./mach static-analysis check-java {files} (Java)"
+
     def parse_issues(self, artifacts, revision):
         """
         Parse issues from a direct Infer JSON report
         """
         assert isinstance(artifacts, dict)
         return [
-            InferIssue(analyzer=self.name, revision=revision, entry=issue)
+            InferIssue(analyzer=self, revision=revision, entry=issue)
             for issues in artifacts.values()
             for issue in issues
         ]

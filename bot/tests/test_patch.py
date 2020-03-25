@@ -7,9 +7,12 @@ import responses
 
 from code_review_bot.config import settings
 from code_review_bot.revisions import ImprovementPatch
+from code_review_bot.tasks.default import DefaultTask
 
 
-def test_publication(monkeypatch, mock_taskcluster_config, mock_repositories):
+def test_publication(
+    monkeypatch, mock_taskcluster_config, mock_repositories, mock_task
+):
     """
     Check a patch publication through Taskcluster services
     """
@@ -28,7 +31,9 @@ def test_publication(monkeypatch, mock_taskcluster_config, mock_repositories):
         headers={"ETag": "test123"},
     )
 
-    patch = ImprovementPatch("mock-analyzer", "test-improvement", "This is good code")
+    patch = ImprovementPatch(
+        mock_task(DefaultTask, "mock-analyzer"), "test-improvement", "This is good code"
+    )
     assert patch.url is None
 
     patch.publish()

@@ -34,12 +34,12 @@ class MozLintIssue(Issue):
         message,
         check,
         revision,
-        **kwargs
+        **kwargs,
     ):
         # Use analyzer name when check is not provided
         # This happens for analyzers who only have one rule
         if check is None:
-            check = analyzer
+            check = analyzer.name
         super().__init__(
             analyzer,
             revision,
@@ -110,6 +110,24 @@ class MozLintTask(AnalysisTask):
     valid_states = ("failed",)
     skipped_states = ("completed",)
 
+    @property
+    def linter(self):
+        # Detect linter from task name
+        if not self.name.startswith("source-test-mozlint-"):
+            return
+        return self.name[20:]
+
+    @property
+    def display_name(self):
+        if self.linter:
+            return f"{self.linter} (by MozLint)"
+        if self.name.startswith("source-test-"):
+            return self.name[12:]
+        return self.name
+
+    def build_help_message(self, files):
+        return "`./mach lint --warnings --outgoing` (JS/Python/etc)"
+
     def parse_issues(self, artifacts, revision):
         """
         Parse issues from a log file content
@@ -117,7 +135,7 @@ class MozLintTask(AnalysisTask):
         assert isinstance(artifacts, dict)
         return [
             MozLintIssue(
-                analyzer=self.name,
+                analyzer=self,
                 revision=revision,
                 path=issue.get("relpath", issue["path"]),
                 column=issue["column"],

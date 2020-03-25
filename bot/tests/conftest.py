@@ -22,6 +22,8 @@ from code_review_bot import stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
 from code_review_bot.tasks.coverity import CoverityIssue
+from code_review_bot.tasks.coverity import CoverityTask
+from code_review_bot.tasks.default import DefaultTask
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -62,16 +64,17 @@ def mock_config(mock_repositories):
 
 
 @pytest.fixture
-def mock_issues():
+def mock_issues(mock_task):
     """
     Build a list of dummy issues
     """
+    task = mock_task(DefaultTask, "mock-analyzer")
 
     class MockIssue(object):
         def __init__(self, nb):
             self.nb = nb
             self.path = "/path/to/file"
-            self.analyzer = "mock-analyzer"
+            self.analyzer = task
 
         def as_markdown(self):
             return "This is the mock issue n°{}".format(self.nb)
@@ -92,14 +95,24 @@ def mock_issues():
 
 
 @pytest.fixture
-def mock_coverity_issues(mock_revision,):
+def mock_task():
+    """Build configuration for any Analysis task"""
+
+    def _build(cls, name):
+        return cls(f"{name}-ID", {"task": {"metadata": {"name": name}}, "status": {}})
+
+    return _build
+
+
+@pytest.fixture
+def mock_coverity_issues(mock_revision, mock_task):
     """
     Build a list of Coverity issues
     """
 
     return [
         CoverityIssue(
-            "mock-coverity",
+            mock_task(CoverityTask, "mock-coverity"),
             mock_revision,
             {
                 "reliability": "high",

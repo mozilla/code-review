@@ -6,9 +6,10 @@
 import hashlib
 
 from code_review_bot.tasks.lint import MozLintIssue
+from code_review_bot.tasks.lint import MozLintTask
 
 
-def test_build_hash(mock_revision, mock_hgmo):
+def test_build_hash(mock_revision, mock_hgmo, mock_task):
     """
     Test build hash algorithm
     """
@@ -17,7 +18,7 @@ def test_build_hash(mock_revision, mock_hgmo):
     mock_revision.mercurial_revision = "deadbeef1234"
 
     issue = MozLintIssue(
-        "mock-analyzer-eslint",
+        mock_task(MozLintTask, "mock-analyzer-eslint"),
         "path/to/file.cpp",
         42,
         "error",
@@ -43,7 +44,7 @@ def test_build_hash(mock_revision, mock_hgmo):
     assert hash_check == "045f57ef8ee111d0c8c475bd7a617564" == issue.build_hash()
 
 
-def test_indentation_effect(mock_revision, mock_hgmo):
+def test_indentation_effect(mock_revision, mock_hgmo, mock_task):
     """
     Test indentation does not affect the hash
     2 lines with same content in a file, triggering the same error
@@ -54,7 +55,7 @@ def test_indentation_effect(mock_revision, mock_hgmo):
     mock_revision.mercurial_revision = "deadbeef1234"
 
     issue_indent = MozLintIssue(
-        "mock-analyzer-flake8",
+        mock_task(MozLintTask, "mock-analyzer-flake8"),
         "hello1",
         2,
         "error",
@@ -65,7 +66,7 @@ def test_indentation_effect(mock_revision, mock_hgmo):
         mock_revision,
     )
     issue_no_indent = MozLintIssue(
-        "mock-analyzer-flake8",
+        mock_task(MozLintTask, "mock-analyzer-flake8"),
         "hello1",
         5,
         "error",
@@ -89,7 +90,7 @@ def test_indentation_effect(mock_revision, mock_hgmo):
     )
 
 
-def test_full_file(mock_revision, mock_hgmo):
+def test_full_file(mock_revision, mock_hgmo, mock_task):
     """
     Test build hash algorithm when using a full file (line is -1)
     """
@@ -98,7 +99,7 @@ def test_full_file(mock_revision, mock_hgmo):
     mock_revision.mercurial_revision = "deadbeef1234"
 
     issue = MozLintIssue(
-        "mock-analyzer-fullfile",
+        mock_task(MozLintTask, "mock-analyzer-fullfile"),
         "path/to/afile.py",
         0,
         "error",

@@ -2,9 +2,10 @@
 from code_review_bot.tasks.coverage import ZeroCoverageTask
 
 
-def test_coverage(mock_config, mock_revision, mock_coverage_artifact, mock_hgmo):
-    task_status = {"task": {}, "status": {}}
-    cov = ZeroCoverageTask("covTaskId", task_status)
+def test_coverage(
+    mock_config, mock_revision, mock_coverage_artifact, mock_hgmo, mock_task
+):
+    cov = mock_task(ZeroCoverageTask, "coverage")
 
     mock_revision.files = [
         # Uncovered file
@@ -54,7 +55,7 @@ def test_coverage(mock_config, mock_revision, mock_coverage_artifact, mock_hgmo)
     assert issue.as_phabricator_lint() == {
         "code": "no-coverage",
         "line": 1,
-        "name": "coverage",
+        "name": "code coverage analysis",
         "description": "This file is uncovered",
         "path": "my/path/file1.cpp",
         "severity": "warning",
@@ -102,7 +103,7 @@ This file is uncovered
     assert issue.as_phabricator_lint() == {
         "code": "no-coverage",
         "line": 1,
-        "name": "coverage",
+        "name": "code coverage analysis",
         "description": "This file is uncovered",
         "path": "test/dummy/thirdparty.c",
         "severity": "warning",
@@ -147,7 +148,7 @@ This file is uncovered
     assert issue.as_phabricator_lint() == {
         "code": "no-coverage",
         "line": 1,
-        "name": "coverage",
+        "name": "code coverage analysis",
         "description": "This file is uncovered",
         "path": "my/path/header.h",
         "severity": "warning",

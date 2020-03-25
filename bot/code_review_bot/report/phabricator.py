@@ -55,12 +55,13 @@ class PhabricatorReporter(Reporter):
         issues = [
             issue
             for issue in issues
-            if issue.is_publishable() and issue.analyzer not in self.analyzers_skipped
+            if issue.is_publishable()
+            and issue.analyzer.name not in self.analyzers_skipped
         ]
         patches = [
             patch
             for patch in revision.improvement_patches
-            if patch.analyzer not in self.analyzers_skipped
+            if patch.analyzer.name not in self.analyzers_skipped
         ]
 
         if issues or task_failures:
