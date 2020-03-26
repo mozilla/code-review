@@ -2,22 +2,17 @@
 import pytest
 
 from code_review_bot.tasks.clang_format import ClangFormatTask
+from code_review_bot.tasks.clang_tidy import ClangTidyIssue
+from code_review_bot.tasks.clang_tidy import ClangTidyTask
 
 
-def test_expanded_macros(mock_revision):
+def test_expanded_macros(mock_revision, mock_task):
     """
     Test expanded macros are detected by clang issue
     """
-    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
-
+    analyzer = mock_task(ClangTidyTask, "clang-tidy")
     issue = ClangTidyIssue(
-        "clang-tidy",
-        mock_revision,
-        "test.cpp",
-        "42",
-        "51",
-        "dummy message",
-        "dummy-check",
+        analyzer, mock_revision, "test.cpp", "42", "51", "dummy message", "dummy-check"
     )
     assert issue.line == 42
     assert issue.column == 51
@@ -27,7 +22,7 @@ def test_expanded_macros(mock_revision):
     # Add a note starting with "expanded from macro..."
     issue.notes.append(
         ClangTidyIssue(
-            "clang-tidy",
+            analyzer,
             mock_revision,
             "test.cpp",
             "42",
@@ -41,7 +36,7 @@ def test_expanded_macros(mock_revision):
     # Add another note does not change it
     issue.notes.append(
         ClangTidyIssue(
-            "clang-tidy",
+            analyzer,
             mock_revision,
             "test.cpp",
             "42",
@@ -57,14 +52,13 @@ def test_expanded_macros(mock_revision):
     assert issue.is_expanded_macro() is False
 
 
-def test_as_text(mock_revision):
+def test_as_text(mock_revision, mock_task):
     """
     Test text export for ClangTidyIssue
     """
-    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 
     issue = ClangTidyIssue(
-        "clang-tidy",
+        mock_task(ClangTidyTask, "clang-tidy"),
         mock_revision,
         "test.cpp",
         "42",
@@ -79,15 +73,14 @@ def test_as_text(mock_revision):
     )
 
 
-def test_as_dict(mock_revision, mock_hgmo):
+def test_as_dict(mock_revision, mock_hgmo, mock_task):
     """
     Test text export for ClangTidyIssue
     """
     from code_review_bot import Reliability
-    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 
     issue = ClangTidyIssue(
-        "clang-tidy",
+        mock_task(ClangTidyTask, "clang-tidy"),
         mock_revision,
         "test.cpp",
         "42",
@@ -113,15 +106,14 @@ def test_as_dict(mock_revision, mock_hgmo):
     }
 
 
-def test_as_markdown(mock_revision):
+def test_as_markdown(mock_revision, mock_task):
     """
     Test markdown generation for ClangTidyIssue
     """
     from code_review_bot import Reliability
-    from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 
     issue = ClangTidyIssue(
-        "clang-tidy",
+        mock_task(ClangTidyTask, "clang-tidy"),
         mock_revision,
         "test.cpp",
         "42",

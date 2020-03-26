@@ -155,10 +155,18 @@ class ClangTidyTask(AnalysisTask):
 
     artifacts = ["public/code-review/clang-tidy.json"]
 
+    @property
+    def display_name(self):
+        return "clang-tidy"
+
+    def build_help_message(self, files):
+        files = " ".join(files)
+        return f"`./mach static-analysis check {files}` (C/C++)"
+
     def parse_issues(self, artifacts, revision):
         return [
             ClangTidyIssue(
-                analyzer=self.name,
+                analyzer=self,
                 revision=revision,
                 path=path,
                 line=warning["line"],

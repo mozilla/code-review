@@ -4,9 +4,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from code_review_bot.tasks.clang_format import ClangFormatIssue
+from code_review_bot.tasks.clang_format import ClangFormatTask
 
 
-def test_allowed_paths(mock_config, mock_revision):
+def test_allowed_paths(mock_config, mock_revision, mock_task):
     """
     Test allowed paths for ClangFormatIssue
     The test config has these 2 rules: dom/* and tests/*.py
@@ -15,7 +16,9 @@ def test_allowed_paths(mock_config, mock_revision):
     def _allowed(path):
         # Build an issue and check its validation
         # that will trigger the path validation
-        issue = ClangFormatIssue("mock-clang-format", path, 1, 1, mock_revision)
+        issue = ClangFormatIssue(
+            mock_task(ClangFormatTask, "mock-clang-format"), path, 1, 1, mock_revision
+        )
         return issue.validates()
 
     checks = {
@@ -31,13 +34,17 @@ def test_allowed_paths(mock_config, mock_revision):
         assert _allowed(path) is result
 
 
-def test_backend_publication(mock_revision):
+def test_backend_publication(mock_revision, mock_task):
     """
     Test the backend publication status modifies an issue publication
     """
 
     issue = ClangFormatIssue(
-        "mock-clang-format", "dom/somefile.cpp", 1, 1, mock_revision
+        mock_task(ClangFormatTask, "mock-clang-format"),
+        "dom/somefile.cpp",
+        1,
+        1,
+        mock_revision,
     )
     assert issue.validates()
 

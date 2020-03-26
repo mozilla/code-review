@@ -8,6 +8,9 @@ import json
 import pytest
 import responses
 
+from code_review_bot.tasks.clang_format import ClangFormatTask
+from code_review_bot.tasks.clang_tidy import ClangTidyTask
+
 MAIL_CONTENT = """
 # Found 3 publishable issues (5 total)
 
@@ -68,7 +71,9 @@ def test_conf(mock_config, mock_taskcluster_config):
     assert r.emails == ["test@mozilla.com", "test2@mozilla.com", "test3@mozilla.com"]
 
 
-def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
+def test_mail(
+    mock_config, mock_issues, mock_revision, mock_taskcluster_config, mock_task
+):
     """
     Test mail sending through Taskcluster
     """
@@ -101,8 +106,16 @@ def test_mail(mock_config, mock_issues, mock_revision, mock_taskcluster_config):
     r = MailReporter(conf)
 
     mock_revision.improvement_patches = [
-        ImprovementPatch("clang-tidy", repr(mock_revision), "Some code fixes"),
-        ImprovementPatch("clang-format", repr(mock_revision), "Some lint fixes"),
+        ImprovementPatch(
+            mock_task(ClangTidyTask, "clang-tidy"),
+            repr(mock_revision),
+            "Some code fixes",
+        ),
+        ImprovementPatch(
+            mock_task(ClangFormatTask, "clang-format"),
+            repr(mock_revision),
+            "Some lint fixes",
+        ),
     ]
     list(
         map(lambda p: p.write(), mock_revision.improvement_patches)

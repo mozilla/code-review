@@ -12,13 +12,19 @@ from code_review_bot.report.phabricator import PhabricatorReporter
 from code_review_bot.revisions import ImprovementPatch
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.clang_format import ClangFormatIssue
+from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.coverage import CoverageIssue
+from code_review_bot.tasks.coverage import ZeroCoverageTask
 from code_review_bot.tasks.coverity import CoverityIssue
+from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultIssue
+from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.infer import InferIssue
+from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintIssue
+from code_review_bot.tasks.lint import MozLintTask
 
 VALID_CLANG_TIDY_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
@@ -39,7 +45,7 @@ Code analysis found 1 defect in the diff 42:
 You can run this analysis locally with:
  - `./mach clang-format -s -p dom/test.cpp` (C/C++)
 
-For your convenience, [here is a patch]({results}/clang-format-PHID-DIFF-test.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply -p0`).
+For your convenience, [here is a patch]({results}/source-test-clang-format-PHID-DIFF-test.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply -p0`).
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -48,11 +54,12 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 
 VALID_FLAKE8_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
- - 1 defect found by mozlint-py-flake8
+Code analysis found 2 defects in the diff 42:
+ - 1 defect found by eslint (Mozlint)
+ - 1 defect found by py-flake8 (Mozlint)
 
 You can run this analysis locally with:
- - `./mach lint --warnings --outgoing` (JS/Python/etc)
+ - `./mach lint --warnings --outgoing`
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -94,10 +101,10 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_MOZLINT_MESSAGE = """
 Code analysis found 2 defects in the diff 42:
- - 2 defects found by mozlint-dummy
+ - 2 defects found by dummy (Mozlint)
 
 You can run this analysis locally with:
- - `./mach lint --warnings --outgoing` (JS/Python/etc)
+ - `./mach lint --warnings --outgoing`
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -106,8 +113,8 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
 Code analysis found 2 defects in the diff 42:
- - 1 defect found by code coverage analysis
  - 1 defect found by clang-tidy
+ - 1 defect found by code coverage analysis
 
 You can run this analysis locally with:
  - `./mach static-analysis check another_test.cpp` (C/C++)
@@ -124,7 +131,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 
-def test_phabricator_clang_tidy(mock_phabricator, phab, mock_try_task):
+def test_phabricator_clang_tidy(mock_phabricator, phab, mock_try_task, mock_task):
     """
     Test Phabricator reporter publication on a mock clang-tidy issue
     """
@@ -142,7 +149,7 @@ def test_phabricator_clang_tidy(mock_phabricator, phab, mock_try_task):
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy"]}, api=api)
 
     issue = ClangTidyIssue(
-        "source-test-clang-tidy",
+        mock_task(ClangTidyTask, "source-test-clang-tidy"),
         revision,
         "another_test.cpp",
         "42",
@@ -160,7 +167,9 @@ def test_phabricator_clang_tidy(mock_phabricator, phab, mock_try_task):
     assert phab.comments[51] == [VALID_CLANG_TIDY_MESSAGE]
 
 
-def test_phabricator_clang_format(mock_config, mock_phabricator, phab, mock_try_task):
+def test_phabricator_clang_format(
+    mock_config, mock_phabricator, phab, mock_try_task, mock_task
+):
     """
     Test Phabricator reporter publication on a mock clang-format issue
     """
@@ -177,13 +186,12 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, phab, mock_try_
         }
         reporter = PhabricatorReporter({"analyzers": ["clang-format"]}, api=api)
 
-    issue = ClangFormatIssue(
-        "source-test-clang-format", "dom/test.cpp", 42, 1, revision
-    )
+    task = mock_task(ClangFormatTask, "source-test-clang-format")
+    issue = ClangFormatIssue(task, "dom/test.cpp", 42, 1, revision)
     assert issue.is_publishable()
 
     revision.improvement_patches = [
-        ImprovementPatch("clang-format", repr(revision), "Some lint fixes")
+        ImprovementPatch(task, repr(revision), "Some lint fixes")
     ]
     list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
@@ -197,9 +205,12 @@ def test_phabricator_clang_format(mock_config, mock_phabricator, phab, mock_try_
     ]
 
 
-def test_phabricator_mozlint(mock_config, mock_phabricator, phab, mock_try_task):
+def test_phabricator_mozlint(
+    mock_config, mock_phabricator, phab, mock_try_task, mock_task
+):
     """
-    Test Phabricator reporter publication on a mock mozlint issue
+    Test Phabricator reporter publication on two mock mozlint issues
+    using two different analyzers
     """
 
     with mock_phabricator as api:
@@ -210,13 +221,14 @@ def test_phabricator_mozlint(mock_config, mock_phabricator, phab, mock_try_task)
         revision.lines = {
             # Add dummy lines diff
             "python/test.py": [41, 42, 43],
+            "js/test.js": [10, 11, 12],
             "dom/test.cpp": [42],
         }
         revision.files = revision.lines.keys()
         reporter = PhabricatorReporter({}, api=api)
 
-    issue = MozLintIssue(
-        analyzer="source-test-mozlint-py-flake8",
+    issue_flake = MozLintIssue(
+        analyzer=mock_task(MozLintTask, "source-test-mozlint-py-flake8"),
         path="python/test.py",
         lineno=42,
         column=1,
@@ -226,10 +238,23 @@ def test_phabricator_mozlint(mock_config, mock_phabricator, phab, mock_try_task)
         linter="flake8",
         check="EXXX",
     )
-    assert issue.is_publishable()
+    assert issue_flake.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision, [])
-    assert len(issues) == 1
+    issue_eslint = MozLintIssue(
+        analyzer=mock_task(MozLintTask, "source-test-mozlint-eslint"),
+        path="js/test.js",
+        lineno=10,
+        column=4,
+        message="A bad error",
+        level="warning",
+        revision=revision,
+        linter="eslint",
+        check="YYY",
+    )
+    assert issue_eslint.is_publishable()
+
+    issues, patches = reporter.publish([issue_flake, issue_eslint], revision, [])
+    assert len(issues) == 2
     assert len(patches) == 0
 
     # Check the callbacks have been used to publish either a lint result + summary comment
@@ -245,10 +270,19 @@ def test_phabricator_mozlint(mock_config, mock_phabricator, phab, mock_try_task)
                     "code": "EXXX",
                     "description": "A bad bad error",
                     "line": 42,
-                    "name": "source-test-mozlint-py-flake8",
+                    "name": "py-flake8 (Mozlint)",
                     "path": "python/test.py",
                     "severity": "error",
-                }
+                },
+                {
+                    "char": 4,
+                    "code": "YYY",
+                    "description": "A bad error",
+                    "line": 10,
+                    "name": "eslint (Mozlint)",
+                    "path": "js/test.js",
+                    "severity": "warning",
+                },
             ],
             "unit": [],
             "type": "work",
@@ -256,7 +290,9 @@ def test_phabricator_mozlint(mock_config, mock_phabricator, phab, mock_try_task)
     ]
 
 
-def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task):
+def test_phabricator_coverage(
+    mock_config, mock_phabricator, phab, mock_try_task, mock_task
+):
     """
     Test Phabricator reporter publication on a mock coverage issue
     """
@@ -274,7 +310,13 @@ def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task
         }
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
 
-    issue = CoverageIssue("path/to/test.cpp", 0, "This file is uncovered", revision)
+    issue = CoverageIssue(
+        mock_task(ZeroCoverageTask, "coverage"),
+        "path/to/test.cpp",
+        0,
+        "This file is uncovered",
+        revision,
+    )
     assert issue.is_publishable()
 
     issues, patches = reporter.publish([issue], revision, [])
@@ -290,7 +332,7 @@ def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task
                     "code": "no-coverage",
                     "description": "This file is uncovered",
                     "line": 1,
-                    "name": "coverage",
+                    "name": "code coverage analysis",
                     "path": "path/to/test.cpp",
                     "severity": "warning",
                 }
@@ -305,7 +347,7 @@ def test_phabricator_coverage(mock_config, mock_phabricator, phab, mock_try_task
 
 
 def test_phabricator_clang_tidy_and_coverage(
-    mock_config, mock_phabricator, phab, mock_try_task
+    mock_config, mock_phabricator, phab, mock_try_task, mock_task
 ):
     """
     Test Phabricator reporter publication on a mock coverage issue
@@ -328,7 +370,7 @@ def test_phabricator_clang_tidy_and_coverage(
         )
 
     issue_clang_tidy = ClangTidyIssue(
-        "source-test-clang-tidy",
+        mock_task(ClangTidyTask, "source-test-clang-tidy"),
         revision,
         "another_test.cpp",
         "42",
@@ -339,7 +381,11 @@ def test_phabricator_clang_tidy_and_coverage(
     assert issue_clang_tidy.is_publishable()
 
     issue_coverage = CoverageIssue(
-        "path/to/test.cpp", 0, "This file is uncovered", revision
+        mock_task(ZeroCoverageTask, "coverage"),
+        "path/to/test.cpp",
+        0,
+        "This file is uncovered",
+        revision,
     )
     assert issue_coverage.is_publishable()
 
@@ -357,7 +403,7 @@ def test_phabricator_clang_tidy_and_coverage(
                     "code": "modernize-use-nullptr",
                     "description": "dummy message",
                     "line": 42,
-                    "name": "source-test-clang-tidy",
+                    "name": "clang-tidy",
                     "path": "another_test.cpp",
                     "severity": "warning",
                 },
@@ -365,7 +411,7 @@ def test_phabricator_clang_tidy_and_coverage(
                     "code": "no-coverage",
                     "description": "This file is uncovered",
                     "line": 1,
-                    "name": "coverage",
+                    "name": "code coverage analysis",
                     "path": "path/to/test.cpp",
                     "severity": "warning",
                 },
@@ -421,6 +467,7 @@ def test_phabricator_analyzers(
     mock_config,
     mock_phabricator,
     mock_try_task,
+    mock_task,
 ):
     """
     Test analyzers filtering on phabricator reporter
@@ -442,9 +489,15 @@ def test_phabricator_analyzers(
         )
 
     issues = [
-        ClangFormatIssue("mock-clang-format", "dom/test.cpp", 42, 1, revision),
+        ClangFormatIssue(
+            mock_task(ClangFormatTask, "mock-clang-format"),
+            "dom/test.cpp",
+            42,
+            1,
+            revision,
+        ),
         ClangTidyIssue(
-            "mock-clang-tidy",
+            mock_task(ClangTidyTask, "mock-clang-tidy"),
             revision,
             "test.cpp",
             "42",
@@ -453,7 +506,7 @@ def test_phabricator_analyzers(
             "dummy message",
         ),
         InferIssue(
-            "mock-infer",
+            mock_task(InferTask, "mock-infer"),
             {
                 "file": "test.cpp",
                 "line": 42,
@@ -465,7 +518,7 @@ def test_phabricator_analyzers(
             revision,
         ),
         MozLintIssue(
-            "mock-lint-flake8",
+            mock_task(MozLintTask, "mock-lint-flake8"),
             "test.cpp",
             1,
             "error",
@@ -475,17 +528,33 @@ def test_phabricator_analyzers(
             "EXXX",
             revision,
         ),
-        CoverageIssue("test.cpp", 0, "This file is uncovered", revision),
+        CoverageIssue(
+            mock_task(ZeroCoverageTask, "coverage"),
+            "test.cpp",
+            0,
+            "This file is uncovered",
+            revision,
+        ),
     ]
 
     assert all(i.is_publishable() for i in issues)
 
     revision.improvement_patches = [
-        ImprovementPatch("dummy", repr(revision), "Whatever"),
-        ImprovementPatch("mock-clang-tidy", repr(revision), "Some C fixes"),
-        ImprovementPatch("mock-clang-format", repr(revision), "Some lint fixes"),
-        ImprovementPatch("mock-infer", repr(revision), "Some java fixes"),
-        ImprovementPatch("mock-lint-flake8", repr(revision), "Some js fixes"),
+        ImprovementPatch(mock_task(DefaultTask, "dummy"), repr(revision), "Whatever"),
+        ImprovementPatch(
+            mock_task(ClangTidyTask, "mock-clang-tidy"), repr(revision), "Some C fixes"
+        ),
+        ImprovementPatch(
+            mock_task(ClangFormatTask, "mock-clang-format"),
+            repr(revision),
+            "Some lint fixes",
+        ),
+        ImprovementPatch(
+            mock_task(InferTask, "mock-infer"), repr(revision), "Some java fixes"
+        ),
+        ImprovementPatch(
+            mock_task(MozLintTask, "mock-lint-flake8"), repr(revision), "Some js fixes"
+        ),
     ]
     list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
@@ -494,11 +563,11 @@ def test_phabricator_analyzers(
     # Check issues & patches analyzers
     assert len(issues) == len(valid_issues)
     assert len(patches) == len(valid_patches)
-    assert [i.analyzer for i in issues] == valid_issues
-    assert [p.analyzer for p in patches] == valid_patches
+    assert [i.analyzer.name for i in issues] == valid_issues
+    assert [p.analyzer.name for p in patches] == valid_patches
 
 
-def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task):
+def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task, mock_task):
     """
     Test Phabricator UnitResult for a CoverityIssue
     """
@@ -545,7 +614,9 @@ def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task):
             },
         }
 
-        issue = CoverityIssue("mock-coverity", revision, issue_dict, "test.cpp")
+        issue = CoverityIssue(
+            mock_task(CoverityTask, "mock-coverity"), revision, issue_dict, "test.cpp"
+        )
         assert issue.is_publishable()
 
         issues, patches = reporter.publish([issue], revision, [])
@@ -571,7 +642,7 @@ def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task):
         ]
 
 
-def test_full_file(mock_config, mock_phabricator, phab, mock_try_task):
+def test_full_file(mock_config, mock_phabricator, phab, mock_try_task, mock_task):
     """
     Test Phabricator reporter supports an issue on a full file
     """
@@ -589,7 +660,7 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task):
         reporter = PhabricatorReporter(api=api)
 
     issue = DefaultIssue(
-        analyzer="full-file-analyzer",
+        analyzer=mock_task(DefaultTask, "full-file-analyzer"),
         revision=revision,
         path="xx.cpp",
         line=-1,
@@ -659,7 +730,7 @@ def test_task_failures(mock_phabricator, phab, mock_try_task, mock_treeherder):
     assert phab.comments[51] == [VALID_TASK_FAILURES_MESSAGE]
 
 
-def test_extra_errors(mock_phabricator, mock_try_task, phab):
+def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
     """
     Test Phabricator reporter publication with some errors outside of patch
     """
@@ -673,10 +744,11 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab):
         revision.files = ["path/to/file.py"]
         reporter = PhabricatorReporter({}, api=api)
 
+    task = mock_task(MozLintTask, "source-test-mozlint-dummy")
     all_issues = [
         # Warning in patch
         MozLintIssue(
-            analyzer="source-test-mozlint-dummy",
+            analyzer=task,
             path="path/to/file.py",
             column=25,
             level=Level.Warning,
@@ -688,7 +760,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab):
         ),
         # Error outside of patch
         MozLintIssue(
-            analyzer="source-test-mozlint-dummy",
+            analyzer=task,
             path="path/to/file.py",
             column=12,
             level=Level.Error,
@@ -700,7 +772,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab):
         ),
         # Warning outside of patch
         MozLintIssue(
-            analyzer="source-test-mozlint-dummy",
+            analyzer=task,
             path="path/to/file.py",
             column=1,
             level=Level.Warning,
@@ -729,7 +801,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab):
                     "code": "EYYY",
                     "description": "Some not so bad python mistake",
                     "line": 2,
-                    "name": "source-test-mozlint-dummy",
+                    "name": "dummy (Mozlint)",
                     "path": "path/to/file.py",
                     "severity": "warning",
                 },
@@ -738,7 +810,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab):
                     "code": "EXXX",
                     "description": "Some bad python typo",
                     "line": 10,
-                    "name": "source-test-mozlint-dummy",
+                    "name": "dummy (Mozlint)",
                     "path": "path/to/file.py",
                     "severity": "error",
                 },

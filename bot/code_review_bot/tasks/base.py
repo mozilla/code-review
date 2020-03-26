@@ -31,11 +31,27 @@ class AnalysisTask(object):
 
     @property
     def name(self):
+        """Short name used to identify the task"""
         return self.task["metadata"].get("name", "unknown")
+
+    @property
+    def display_name(self):
+        """
+        Longer name used to describe the task to humans
+        By default fallback to short name
+        """
+        return self.name
 
     @property
     def state(self):
         return self.status["state"]
+
+    def build_help_message(self, files):
+        """
+        An optional help message aimed at developers to reproduce the issues detection
+        A list of relative paths with issues is specified to build a precise message
+        By default it's empty (None)
+        """
 
     @classmethod
     def build_from_route(cls, index_service, queue_service):

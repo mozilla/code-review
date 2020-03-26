@@ -8,14 +8,6 @@ from code_review_bot.tasks.coverity import Reliability
 from conftest import MOCK_DIR
 
 
-class MockCoverityTask(CoverityTask):
-    def __init__(self):
-        """
-        Simply skip task loading
-        """
-        self.task = {"metadata": {"name": "mock-coverity"}}
-
-
 def mock_coverity(name):
     """
     Load a Coverity mock file, as a Taskcluster artifact payload
@@ -26,19 +18,20 @@ def mock_coverity(name):
         return {"public/code-review/coverity.json": json.load(f)}
 
 
-def test_simple(mock_revision, mock_config, log, mock_hgmo):
+def test_simple(mock_revision, mock_config, log, mock_hgmo, mock_task):
     """
     Test parsing a simple Coverity artifact
     """
 
-    task = MockCoverityTask()
+    task = mock_task(CoverityTask, "mock-coverity")
     issues = task.parse_issues(mock_coverity("simple"), mock_revision)
     assert len(issues) == 1
     assert all(map(lambda i: isinstance(i, CoverityIssue), issues))
 
     issue = issues[0]
 
-    assert issue.analyzer == "mock-coverity"
+    assert issue.analyzer == task
+    assert issue.analyzer.name == "mock-coverity"
     assert issue.revision == mock_revision
     assert issue.reliability == Reliability.Medium
     assert issue.path == "js/src/jit/BaselineCompiler.cpp"
