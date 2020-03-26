@@ -1,0 +1,81 @@
+{
+    "js/src/jit/WarpOracle.cpp": [],
+    "accessible/xul/XULAlertAccessible.cpp": [
+        {
+            "line_offset": 20,
+            "char_offset": 1244,
+            "char_length": 2,
+            "lines_modified": 2,
+            "line": 35,
+            "replacement": "\n  "
+        }
+    ],
+    "dom/canvas/ClientWebGLContext.cpp": [
+        {
+            "line_offset": 4,
+            "char_offset": 3933,
+            "char_length": 0,
+            "lines_modified": 0,
+            "line": 118,
+            "replacement": " "
+        },
+        {
+            "line_offset": 10,
+            "char_offset": 3939,
+            "char_length": 3,
+            "lines_modified": 2,
+            "line": 118,
+            "replacement": "\n    "
+        },
+        {
+            "line_offset": 54,
+            "char_offset": 3993,
+            "char_length": 3,
+            "lines_modified": 2,
+            "line": 119,
+            "replacement": "\n    "
+        },
+        {
+            "line_offset": 23,
+            "char_offset": 4016,
+            "char_length": 2,
+            "lines_modified": 2,
+            "line": 120,
+            "replacement": "\n  "
+        }
+    ],
+    "gfx/2d/Factory.cpp": [
+        {
+            "line_offset": 79,
+            "char_offset": 17220,
+            "char_length": 1,
+            "lines_modified": 1,
+            "line": 10,
+            "replacement": "\n    "
+        },
+        {
+            "line_offset": 153,
+            "char_offset": 17294,
+            "char_length": 1,
+            "lines_modified": 1,
+            "line": 616,
+            "replacement": "\n    "
+        },
+        {
+            "line_offset": 76,
+            "char_offset": 17398,
+            "char_length": 1,
+            "lines_modified": 1,
+            "line": 617,
+            "replacement": "\n                                      "
+        },
+        {
+            "line_offset": 107,
+            "char_offset": 17429,
+            "char_length": 1,
+            "lines_modified": 1,
+            "line": 617,
+            "replacement": "\n                                      "
+        }
+    ]
+}

@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import functools
+import itertools
+
 import structlog
 
 from code_review_bot import Issue
@@ -60,6 +63,18 @@ class ClangFormatIssue(Issue):
             path=self.path, line=self.line, nb_lines=self.nb_lines
         )
 
+    def merge(self, other):
+        """
+        Merge a neighboring issue with this one, updating nb of lines
+        """
+        assert isinstance(other, ClangFormatIssue)
+        assert other.path == self.path
+        assert other.line >= self.line
+
+        self.nb_lines += abs(other.line - (self.line + self.nb_lines - 1))
+        self.column = None
+        self.patch += other.patch
+
 
 class ClangFormatTask(AnalysisTask):
     """
@@ -86,19 +101,50 @@ class ClangFormatTask(AnalysisTask):
             logger.warn("Missing clang-format.json")
             return []
 
-        return [
-            ClangFormatIssue(
-                analyzer=self,
-                path=path,
-                line=issue["line"],
-                nb_lines=issue["lines_modified"],
-                column=issue["line_offset"],
-                patch=issue["replacement"],
-                revision=revision,
+        def _group(path_issues):
+            # Sort those issues by lines
+            path_issues = sorted(path_issues, key=lambda i: i.line)
+
+            def _reducer(acc, issue):
+                # Lookup previous issue in accumulated value
+                if not acc:
+                    return [issue]
+                previous = acc[-1]
+
+                if issue.line - (previous.line + previous.nb_lines - 1) > 2:
+                    # When two lines are too far apart, keep them distinct
+                    acc.append(issue)
+                else:
+                    # Merge current issue with previous one
+                    previous.merge(issue)
+
+                return acc
+
+            # Group all neighboring issues together
+            return functools.reduce(_reducer, path_issues, [])
+
+        # Build all issues by paths
+        # And group them by neighboring lines
+        issues = {
+            path: _group(
+                [
+                    ClangFormatIssue(
+                        analyzer=self,
+                        path=path,
+                        line=issue["line"],
+                        nb_lines=issue["lines_modified"],
+                        column=issue["line_offset"],
+                        patch=issue["replacement"],
+                        revision=revision,
+                    )
+                    for issue in issues
+                ]
             )
             for path, issues in artifact.items()
-            for issue in issues
-        ]
+        }
+
+        # Linearize issues
+        return list(itertools.chain(*issues.values()))
 
     def build_patches(self, artifacts):
         artifact = artifacts.get("public/code-review/clang-format.diff")
