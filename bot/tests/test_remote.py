@@ -532,7 +532,7 @@ def test_clang_format_task(
         "analyzer": "source-test-clang-format",
         "check": "invalid-styling",
         "level": "warning",
-        "message": "Reformat C/C++",
+        "message": "The change does not follow the C/C++ coding style, please reformat",
         "column": 11,
         "in_patch": False,
         "line": 1386,
@@ -545,7 +545,7 @@ def test_clang_format_task(
     assert issue.as_phabricator_lint() == {
         "char": 11,
         "code": "invalid-styling",
-        "description": "Reformat C/C++",
+        "description": "The change does not follow the C/C++ coding style, please reformat",
         "line": 1386,
         "name": "clang-format",
         "path": "test.cpp",
