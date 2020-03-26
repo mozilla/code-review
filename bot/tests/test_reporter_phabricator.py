@@ -58,7 +58,7 @@ Code analysis found 1 defect in the diff 42:
  - 1 defect found by py-flake8 (Mozlint)
 
 You can run this analysis locally with:
- - `./mach lint --warnings --outgoing` (JS/Python/etc)
+ - `./mach lint --warnings --outgoing`
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -103,7 +103,7 @@ Code analysis found 2 defects in the diff 42:
  - 2 defects found by dummy (Mozlint)
 
 You can run this analysis locally with:
- - `./mach lint --warnings --outgoing` (JS/Python/etc)
+ - `./mach lint --warnings --outgoing`
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 

@@ -126,7 +126,7 @@ class MozLintTask(AnalysisTask):
         return self.name
 
     def build_help_message(self, files):
-        return "`./mach lint --warnings --outgoing` (JS/Python/etc)"
+        return "`./mach lint --warnings --outgoing`"
 
     def parse_issues(self, artifacts, revision):
         """
