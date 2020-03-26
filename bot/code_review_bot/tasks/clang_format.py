@@ -31,6 +31,7 @@ class ClangFormatIssue(Issue):
             line,
             nb_lines,
             check="invalid-styling",
+            message="Reformat C/C++",
             column=column,
             level=Level.Warning,
         )

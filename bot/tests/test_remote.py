@@ -532,7 +532,7 @@ def test_clang_format_task(
         "analyzer": "source-test-clang-format",
         "check": "invalid-styling",
         "level": "warning",
-        "message": None,
+        "message": "Reformat C/C++",
         "column": 11,
         "in_patch": False,
         "line": 1386,
@@ -541,6 +541,15 @@ def test_clang_format_task(
         "publishable": False,
         "validates": False,
         "hash": "56f81d5190f8e1bd7a7d2380e7da6d67",
+    }
+    assert issue.as_phabricator_lint() == {
+        "char": 11,
+        "code": "invalid-styling",
+        "description": "Reformat C/C++",
+        "line": 1386,
+        "name": "clang-format",
+        "path": "test.cpp",
+        "severity": "warning",
     }
     assert len(mock_revision.improvement_patches) == 0
 
