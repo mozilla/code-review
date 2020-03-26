@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+import json
+import os.path
+
 import pytest
 
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
+from conftest import FIXTURES_DIR
 
 
 def test_expanded_macros(mock_revision, mock_task):
@@ -181,3 +185,84 @@ def test_empty_patch(patch):
         {"public/live.log": "some lines", "public/code-review/clang-format.diff": patch}
     )
     assert patches == []
+
+
+def test_grouping_issues(mock_revision, mock_task):
+    """
+    Test clang format issues group detection
+    """
+    task = mock_task(ClangFormatTask, "mock-clang-format")
+
+    # This file has 9 issues, some of them are on the same lines
+    with open(os.path.join(FIXTURES_DIR, "clang_format_groups.json")) as f:
+        artifact = json.load(f)
+
+    issues = task.parse_issues(
+        {"public/code-review/clang-format.json": artifact}, mock_revision
+    )
+
+    # The parse merge those neighboring issues to only report on relevant groups
+    assert len(issues) == 4
+
+    assert [i.as_dict() for i in issues] == [
+        {
+            "analyzer": "mock-clang-format",
+            "check": "invalid-styling",
+            "column": 20,
+            "hash": None,
+            "in_patch": False,
+            "level": "warning",
+            "line": 35,
+            "message": "The change does not follow the C/C++ coding style, please "
+            "reformat",
+            "nb_lines": 2,
+            "path": "accessible/xul/XULAlertAccessible.cpp",
+            "publishable": False,
+            "validates": False,
+        },
+        {
+            "analyzer": "mock-clang-format",
+            "check": "invalid-styling",
+            "column": None,
+            "hash": None,
+            "in_patch": False,
+            "level": "warning",
+            "line": 118,
+            "message": "The change does not follow the C/C++ coding style, please "
+            "reformat",
+            "nb_lines": 3,
+            "path": "dom/canvas/ClientWebGLContext.cpp",
+            "publishable": False,
+            "validates": True,
+        },
+        {
+            "analyzer": "mock-clang-format",
+            "check": "invalid-styling",
+            "column": 79,
+            "hash": None,
+            "in_patch": False,
+            "level": "warning",
+            "line": 10,
+            "message": "The change does not follow the C/C++ coding style, please "
+            "reformat",
+            "nb_lines": 1,
+            "path": "gfx/2d/Factory.cpp",
+            "publishable": False,
+            "validates": False,
+        },
+        {
+            "analyzer": "mock-clang-format",
+            "check": "invalid-styling",
+            "column": None,
+            "hash": None,
+            "in_patch": False,
+            "level": "warning",
+            "line": 616,
+            "message": "The change does not follow the C/C++ coding style, please "
+            "reformat",
+            "nb_lines": 2,
+            "path": "gfx/2d/Factory.cpp",
+            "publishable": False,
+            "validates": False,
+        },
+    ]
