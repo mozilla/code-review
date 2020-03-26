@@ -120,7 +120,7 @@ class MozLintTask(AnalysisTask):
     @property
     def display_name(self):
         if self.linter:
-            return f"{self.linter} (by MozLint)"
+            return f"{self.linter} (Mozlint)"
         if self.name.startswith("source-test-"):
             return self.name[12:]
         return self.name

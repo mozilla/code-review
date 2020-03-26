@@ -55,7 +55,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 VALID_FLAKE8_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
- - 1 defect found by py-flake8 (by MozLint)
+ - 1 defect found by py-flake8 (Mozlint)
 
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing` (JS/Python/etc)
@@ -100,7 +100,7 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_MOZLINT_MESSAGE = """
 Code analysis found 2 defects in the diff 42:
- - 2 defects found by dummy (by MozLint)
+ - 2 defects found by dummy (Mozlint)
 
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing` (JS/Python/etc)
@@ -254,7 +254,7 @@ def test_phabricator_mozlint(
                     "code": "EXXX",
                     "description": "A bad bad error",
                     "line": 42,
-                    "name": "py-flake8 (by MozLint)",
+                    "name": "py-flake8 (Mozlint)",
                     "path": "python/test.py",
                     "severity": "error",
                 }
@@ -776,7 +776,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
                     "code": "EYYY",
                     "description": "Some not so bad python mistake",
                     "line": 2,
-                    "name": "dummy (by MozLint)",
+                    "name": "dummy (Mozlint)",
                     "path": "path/to/file.py",
                     "severity": "warning",
                 },
@@ -785,7 +785,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
                     "code": "EXXX",
                     "description": "Some bad python typo",
                     "line": 10,
-                    "name": "dummy (by MozLint)",
+                    "name": "dummy (Mozlint)",
                     "path": "path/to/file.py",
                     "severity": "error",
                 },
