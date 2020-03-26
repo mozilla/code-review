@@ -120,9 +120,9 @@ class Reporter(object):
         stats = self.calc_stats(issues)
 
         # Build parts depending on issues
-        defects, analyzers = [], []
+        defects, analyzers = set(), set()
         for stat in stats:
-            defects.append(
+            defects.add(
                 " - {nb} found by {analyzer}".format(
                     analyzer=stat["analyzer"],
                     nb=pluralize("defect", stat["publishable"]),
@@ -130,7 +130,11 @@ class Reporter(object):
             )
             _help = stat.get("help")
             if _help is not None:
-                analyzers.append(f" - {_help}")
+                analyzers.add(f" - {_help}")
+
+        # Order both sets
+        defects = sorted(defects)
+        analyzers = sorted(analyzers)
 
         # Build top comment
         nb = len(issues)

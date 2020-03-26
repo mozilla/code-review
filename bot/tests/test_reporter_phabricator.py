@@ -54,7 +54,8 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 
 VALID_FLAKE8_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 2 defects in the diff 42:
+ - 1 defect found by eslint (Mozlint)
  - 1 defect found by py-flake8 (Mozlint)
 
 You can run this analysis locally with:
@@ -112,8 +113,8 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
 Code analysis found 2 defects in the diff 42:
- - 1 defect found by code coverage analysis
  - 1 defect found by clang-tidy
+ - 1 defect found by code coverage analysis
 
 You can run this analysis locally with:
  - `./mach static-analysis check another_test.cpp` (C/C++)
@@ -208,7 +209,8 @@ def test_phabricator_mozlint(
     mock_config, mock_phabricator, phab, mock_try_task, mock_task
 ):
     """
-    Test Phabricator reporter publication on a mock mozlint issue
+    Test Phabricator reporter publication on two mock mozlint issues
+    using two different analyzers
     """
 
     with mock_phabricator as api:
@@ -219,12 +221,13 @@ def test_phabricator_mozlint(
         revision.lines = {
             # Add dummy lines diff
             "python/test.py": [41, 42, 43],
+            "js/test.js": [10, 11, 12],
             "dom/test.cpp": [42],
         }
         revision.files = revision.lines.keys()
         reporter = PhabricatorReporter({}, api=api)
 
-    issue = MozLintIssue(
+    issue_flake = MozLintIssue(
         analyzer=mock_task(MozLintTask, "source-test-mozlint-py-flake8"),
         path="python/test.py",
         lineno=42,
@@ -235,10 +238,23 @@ def test_phabricator_mozlint(
         linter="flake8",
         check="EXXX",
     )
-    assert issue.is_publishable()
+    assert issue_flake.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision, [])
-    assert len(issues) == 1
+    issue_eslint = MozLintIssue(
+        analyzer=mock_task(MozLintTask, "source-test-mozlint-eslint"),
+        path="js/test.js",
+        lineno=10,
+        column=4,
+        message="A bad error",
+        level="warning",
+        revision=revision,
+        linter="eslint",
+        check="YYY",
+    )
+    assert issue_eslint.is_publishable()
+
+    issues, patches = reporter.publish([issue_flake, issue_eslint], revision, [])
+    assert len(issues) == 2
     assert len(patches) == 0
 
     # Check the callbacks have been used to publish either a lint result + summary comment
@@ -257,7 +273,16 @@ def test_phabricator_mozlint(
                     "name": "py-flake8 (Mozlint)",
                     "path": "python/test.py",
                     "severity": "error",
-                }
+                },
+                {
+                    "char": 4,
+                    "code": "YYY",
+                    "description": "A bad error",
+                    "line": 10,
+                    "name": "eslint (Mozlint)",
+                    "path": "js/test.js",
+                    "severity": "warning",
+                },
             ],
             "unit": [],
             "type": "work",
