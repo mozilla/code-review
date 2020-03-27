@@ -38,6 +38,15 @@ If you see a problem in this automated review, [please report it here](https://b
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
+VALID_COVERITY_MESSAGE = """
+Code analysis found 1 defect in the diff 42:
+ - 1 defect found by Coverity
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+"""
+
 VALID_CLANG_FORMAT_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
  - 1 defect found by clang-format
@@ -567,9 +576,9 @@ def test_phabricator_analyzers(
     assert [p.analyzer.name for p in patches] == valid_patches
 
 
-def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task, mock_task):
+def test_phabricator_coverity(mock_phabricator, phab, mock_try_task, mock_task):
     """
-    Test Phabricator UnitResult for a CoverityIssue
+    Test Phabricator Lint for a CoverityIssue
     """
 
     with mock_phabricator as api:
@@ -583,9 +592,7 @@ def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task, mock_task
         revision.repository_try_name = "try"
         revision.mercurial_revision = "deadbeef1234"
 
-        reporter = PhabricatorReporter(
-            {"analyzers": ["coverity"], "publish_build_errors": True}, api=api
-        )
+        reporter = PhabricatorReporter({}, api=api)
 
         issue_dict = {
             "line": 41,
@@ -637,7 +644,7 @@ def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task, mock_task
                         "description": 'Dereferencing a pointer that might be "nullptr" '
                         '"env" when calling "lookupImport".',
                         "line": 41,
-                        "name": "mock-coverity",
+                        "name": "Coverity",
                         "path": "test.cpp",
                         "severity": "error",
                     }
@@ -646,6 +653,7 @@ def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task, mock_task
                 "unit": [],
             }
         ]
+        assert phab.comments[51] == [VALID_COVERITY_MESSAGE]
 
 
 def test_full_file(mock_config, mock_phabricator, phab, mock_try_task, mock_task):

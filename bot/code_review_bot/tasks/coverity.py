@@ -154,6 +154,10 @@ class CoverityTask(AnalysisTask):
 
     artifacts = ["public/code-review/coverity.json"]
 
+    @property
+    def display_name(self):
+        return "Coverity"
+
     def parse_issues(self, artifacts, revision):
         """
         Parse issues from a pre-translated Coverity report
