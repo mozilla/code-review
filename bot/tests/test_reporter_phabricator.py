@@ -579,6 +579,10 @@ def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task, mock_task
             "test.cpp": [41, 42, 43]
         }
         revision.build_target_phid = "PHID-HMBD-deadbeef12456"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
+        revision.mercurial_revision = "deadbeef1234"
+
         reporter = PhabricatorReporter(
             {"analyzers": ["coverity"], "publish_build_errors": True}, api=api
         )
@@ -627,17 +631,19 @@ def test_phabricator_unitresult(mock_phabricator, phab, mock_try_task, mock_task
         assert phab.build_messages["PHID-HMBD-deadbeef12456"] == [
             {
                 "buildTargetPHID": "PHID-HMBD-deadbeef12456",
-                "lint": [],
-                "unit": [
+                "lint": [
                     {
-                        "details": 'Code review bot found a **build error**: \nDereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
-                        "format": "remarkup",
-                        "name": "general",
-                        "namespace": "code-review",
-                        "result": "fail",
+                        "code": "NULL_RETURNS",
+                        "description": 'Dereferencing a pointer that might be "nullptr" '
+                        '"env" when calling "lookupImport".',
+                        "line": 41,
+                        "name": "mock-coverity",
+                        "path": "test.cpp",
+                        "severity": "error",
                     }
                 ],
                 "type": "work",
+                "unit": [],
             }
         ]
 

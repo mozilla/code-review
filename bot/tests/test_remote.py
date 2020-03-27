@@ -6,8 +6,6 @@
 import pytest
 import responses
 from libmozdata.phabricator import BuildState
-from libmozdata.phabricator import UnitResult
-from libmozdata.phabricator import UnitResultState
 
 from code_review_bot import Level
 from code_review_bot import stats
@@ -696,21 +694,15 @@ The path that leads to this defect is:
         issue.as_text()
         == f"Checker reliability is high, meaning that the false positive ratio is low.\nSome error here"
     )
-    assert issue.as_phabricator_unitresult() == UnitResult(
-        namespace="code-review",
-        name="general",
-        result=UnitResultState.Fail,
-        details=f"Code review bot found a **build error**: \n{issue.message}",
-        format="remarkup",
-    )
+
     assert check_stats(
         [
             ("code-review.analysis.files", None, 2),
             ("code-review.analysis.lines", None, 2),
             ("code-review.issues", "source-test-coverity-coverity", 2),
-            ("code-review.issues.publishable", "source-test-coverity-coverity", 0),
+            ("code-review.issues.publishable", "source-test-coverity-coverity", 1),
             ("code-review.issues.paths", "source-test-coverity-coverity", 2),
-            ("code-review.analysis.issues.publishable", None, 0),
+            ("code-review.analysis.issues.publishable", None, 1),
             ("code-review.runtime.reports", None, "runtime"),
         ]
     )

@@ -66,6 +66,8 @@ class CoverityIssue(Issue):
 
         # For build errors we don't embed the stack into the message
         if self.build_error:
+            # For build errors report them as errors
+            self.level = Level.Error
             return
 
         # If we have `stack` in the `try` result then embed it in the message.
