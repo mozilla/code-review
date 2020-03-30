@@ -94,7 +94,7 @@ The path that leads to this defect is:
     assert issue.as_phabricator_lint() == {
         "code": "NULL_RETURNS",
         "line": 3703,
-        "name": "mock-coverity",
+        "name": "Coverity",
         "path": "js/src/jit/BaselineCompiler.cpp",
         "severity": "warning",
         "description": checker_desc,

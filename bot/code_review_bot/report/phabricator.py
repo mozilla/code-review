@@ -65,19 +65,16 @@ class PhabricatorReporter(Reporter):
         ]
 
         if issues or task_failures:
-            # Split issues and build errors
-            issues_only = [issue for issue in issues if not issue.is_build_error()]
-            build_errors = [issue for issue in issues if issue.is_build_error()]
 
-            if issues_only or build_errors:
+            if issues:
                 # Publish on Harbormaster all at once
                 # * All non coverage publishable issues as lint issues
                 # * All build errors as unit test results
-                self.publish_harbormaster(revision, issues_only, build_errors)
+                self.publish_harbormaster(revision, issues)
 
-            if issues_only or patches or task_failures:
+            if issues or patches or task_failures:
                 # Publish comment summarizing issues
-                self.publish_summary(revision, issues_only, patches, task_failures)
+                self.publish_summary(revision, issues, patches, task_failures)
 
             # Publish statistics
             stats.add_metric("report.phabricator.issues", len(issues))
