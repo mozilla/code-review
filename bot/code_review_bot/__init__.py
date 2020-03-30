@@ -241,10 +241,11 @@ class Issue(abc.ABC):
         """
         # Add the level to the issue message
         if self.level == Level.Error:
-            description = "This issue is an !!error!!, and will break CI."
+            # We use the IMPORTANT red block silently
+            prefix = "(IMPORTANT) ERROR:"
         else:
-            description = "This issue is a **warning**, and should not break CI."
-        description += f"\n\n{self.message}"
+            prefix = "WARNING:"
+        description = f"{prefix} {self.message}"
 
         return LintResult(
             name=self.analyzer.display_name,

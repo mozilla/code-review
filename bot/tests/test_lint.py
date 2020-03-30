@@ -88,7 +88,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo, mock_task):
         "code": "dummy rule",
         "line": 1,
         "name": "mock-lint-flake8",
-        "description": "This issue is an !!error!!, and will break CI.\n\ndummy test withUppercaseChars",
+        "description": "(IMPORTANT) ERROR: dummy test withUppercaseChars",
         "path": "test.py",
         "severity": "error",
     }

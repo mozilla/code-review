@@ -84,9 +84,7 @@ The path that leads to this defect is:
         "name": "Coverity",
         "path": "js/src/jit/BaselineCompiler.cpp",
         "severity": "warning",
-        "description": """This issue is a **warning**, and should not break CI.
-
-Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
+        "description": """WARNING: Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
 The path that leads to this defect is:
 
 - //js/src/jit/BaselineCompiler.cpp:3697//:

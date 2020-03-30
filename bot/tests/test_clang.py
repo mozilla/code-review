@@ -149,7 +149,7 @@ def test_as_markdown(mock_revision, mock_task):
         "code": "dummy-check",
         "line": 42,
         "name": "clang-tidy",
-        "description": "This issue is a **warning**, and should not break CI.\n\ndummy message",
+        "description": "WARNING: dummy message",
         "path": "test.cpp",
         "severity": "warning",
     }
