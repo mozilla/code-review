@@ -543,7 +543,7 @@ def test_clang_format_task(
     assert issue.as_phabricator_lint() == {
         "char": 11,
         "code": "invalid-styling",
-        "description": "The change does not follow the C/C++ coding style, please reformat",
+        "description": "WARNING: The change does not follow the C/C++ coding style, please reformat",
         "line": 1386,
         "name": "clang-format",
         "path": "test.cpp",

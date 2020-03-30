@@ -239,9 +239,17 @@ class Issue(abc.ABC):
         """
         Build the Phabricator LintResult instance
         """
+        # Add the level to the issue message
+        if self.level == Level.Error:
+            # We use the IMPORTANT red block silently
+            prefix = "(IMPORTANT) ERROR:"
+        else:
+            prefix = "WARNING:"
+        description = f"{prefix} {self.message}"
+
         return LintResult(
             name=self.analyzer.display_name,
-            description=self.message,
+            description=description,
             code=self.check,
             severity=self.level.value,
             path=self.path,
