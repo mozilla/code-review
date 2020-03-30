@@ -78,8 +78,32 @@ The path that leads to this defect is:
     assert issue.validates()
     assert not issue.is_publishable()
 
-    reliability = "Checker reliability is medium, meaning that the false positive ratio is medium."
-    checker_desc = """Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
+    assert issue.as_phabricator_lint() == {
+        "code": "NULL_RETURNS",
+        "line": 3703,
+        "name": "Coverity",
+        "path": "js/src/jit/BaselineCompiler.cpp",
+        "severity": "warning",
+        "description": """This issue is a **warning**, and should not break CI.
+
+Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
+The path that leads to this defect is:
+
+- //js/src/jit/BaselineCompiler.cpp:3697//:
+-- `returned_null: "GetModuleEnvironmentForScript" returns "nullptr" (checked 2 out of 2 times).`.
+
+- //js/src/jit/BaselineCompiler.cpp:3697//:
+-- `var_assigned: Assigning: "env" = "nullptr" return value from "GetModuleEnvironmentForScript".`.
+
+- //js/src/jit/BaselineCompiler.cpp:3703//:
+-- `dereference: Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".`.
+""",
+    }
+
+    assert (
+        issue.as_text()
+        == """Checker reliability is medium, meaning that the false positive ratio is medium.
+Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".
 The path that leads to this defect is:
 
 - //js/src/jit/BaselineCompiler.cpp:3697//:
@@ -91,16 +115,7 @@ The path that leads to this defect is:
 - //js/src/jit/BaselineCompiler.cpp:3703//:
 -- `dereference: Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".`.
 """
-    assert issue.as_phabricator_lint() == {
-        "code": "NULL_RETURNS",
-        "line": 3703,
-        "name": "Coverity",
-        "path": "js/src/jit/BaselineCompiler.cpp",
-        "severity": "warning",
-        "description": checker_desc,
-    }
-
-    assert issue.as_text() == reliability + "\n" + checker_desc
+    )
     assert issue.as_dict() == {
         "analyzer": "mock-coverity",
         "in_patch": False,

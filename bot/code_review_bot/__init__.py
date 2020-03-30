@@ -239,9 +239,16 @@ class Issue(abc.ABC):
         """
         Build the Phabricator LintResult instance
         """
+        # Add the level to the issue message
+        if self.level == Level.Error:
+            description = "This issue is an !!error!!, and will break CI."
+        else:
+            description = "This issue is a **warning**, and should not break CI."
+        description += f"\n\n{self.message}"
+
         return LintResult(
             name=self.analyzer.display_name,
-            description=self.message,
+            description=description,
             code=self.check,
             severity=self.level.value,
             path=self.path,

@@ -288,7 +288,7 @@ def test_phabricator_mozlint(
                 {
                     "char": 1,
                     "code": "EXXX",
-                    "description": "A bad bad error",
+                    "description": "This issue is an !!error!!, and will break CI.\n\nA bad bad error",
                     "line": 42,
                     "name": "py-flake8 (Mozlint)",
                     "path": "python/test.py",
@@ -297,7 +297,7 @@ def test_phabricator_mozlint(
                 {
                     "char": 4,
                     "code": "YYY",
-                    "description": "A bad error",
+                    "description": "This issue is a **warning**, and should not break CI.\n\nA bad error",
                     "line": 10,
                     "name": "eslint (Mozlint)",
                     "path": "js/test.js",
@@ -350,7 +350,7 @@ def test_phabricator_coverage(
             "lint": [
                 {
                     "code": "no-coverage",
-                    "description": "This file is uncovered",
+                    "description": "This issue is a **warning**, and should not break CI.\n\nThis file is uncovered",
                     "line": 1,
                     "name": "code coverage analysis",
                     "path": "path/to/test.cpp",
@@ -421,7 +421,7 @@ def test_phabricator_clang_tidy_and_coverage(
                 {
                     "char": 51,
                     "code": "modernize-use-nullptr",
-                    "description": "dummy message",
+                    "description": "This issue is a **warning**, and should not break CI.\n\ndummy message",
                     "line": 42,
                     "name": "clang-tidy",
                     "path": "another_test.cpp",
@@ -429,7 +429,7 @@ def test_phabricator_clang_tidy_and_coverage(
                 },
                 {
                     "code": "no-coverage",
-                    "description": "This file is uncovered",
+                    "description": "This issue is a **warning**, and should not break CI.\n\nThis file is uncovered",
                     "line": 1,
                     "name": "code coverage analysis",
                     "path": "path/to/test.cpp",
@@ -652,7 +652,7 @@ def test_phabricator_coverity(mock_phabricator, phab, mock_try_task, mock_task):
                 "lint": [
                     {
                         "code": "NULL_RETURNS",
-                        "description": 'Dereferencing a pointer that might be "nullptr" '
+                        "description": 'This issue is a **warning**, and should not break CI.\n\nDereferencing a pointer that might be "nullptr" '
                         '"env" when calling "lookupImport".',
                         "line": 41,
                         "name": "Coverity",
@@ -734,7 +734,7 @@ def test_phabricator_coverity_build_error(
                 "lint": [
                     {
                         "code": "NULL_RETURNS",
-                        "description": 'Dereferencing a pointer that might be "nullptr" '
+                        "description": 'This issue is an !!error!!, and will break CI.\n\nDereferencing a pointer that might be "nullptr" '
                         '"env" when calling "lookupImport".',
                         "line": 41,
                         "name": "Coverity",
@@ -799,7 +799,8 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task, mock_task
             "lint": [
                 {
                     "code": "a-huge-issue",
-                    "description": "Something bad happened on the " "whole file !",
+                    "description": "This issue is a **warning**, and should not break CI.\n\nSomething bad happened on the "
+                    "whole file !",
                     "line": 1,
                     "name": "full-file-analyzer",
                     "path": "xx.cpp",
@@ -906,7 +907,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
                 {
                     "char": 25,
                     "code": "EYYY",
-                    "description": "Some not so bad python mistake",
+                    "description": "This issue is a **warning**, and should not break CI.\n\nSome not so bad python mistake",
                     "line": 2,
                     "name": "dummy (Mozlint)",
                     "path": "path/to/file.py",
@@ -915,7 +916,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
                 {
                     "char": 12,
                     "code": "EXXX",
-                    "description": "Some bad python typo",
+                    "description": "This issue is an !!error!!, and will break CI.\n\nSome bad python typo",
                     "line": 10,
                     "name": "dummy (Mozlint)",
                     "path": "path/to/file.py",

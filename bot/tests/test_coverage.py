@@ -56,7 +56,7 @@ def test_coverage(
         "code": "no-coverage",
         "line": 1,
         "name": "code coverage analysis",
-        "description": "This file is uncovered",
+        "description": "This issue is a **warning**, and should not break CI.\n\nThis file is uncovered",
         "path": "my/path/file1.cpp",
         "severity": "warning",
     }
@@ -104,7 +104,7 @@ This file is uncovered
         "code": "no-coverage",
         "line": 1,
         "name": "code coverage analysis",
-        "description": "This file is uncovered",
+        "description": "This issue is a **warning**, and should not break CI.\n\nThis file is uncovered",
         "path": "test/dummy/thirdparty.c",
         "severity": "warning",
     }
@@ -149,7 +149,7 @@ This file is uncovered
         "code": "no-coverage",
         "line": 1,
         "name": "code coverage analysis",
-        "description": "This file is uncovered",
+        "description": "This issue is a **warning**, and should not break CI.\n\nThis file is uncovered",
         "path": "my/path/header.h",
         "severity": "warning",
     }
