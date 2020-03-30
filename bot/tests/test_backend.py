@@ -87,7 +87,7 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
             "in_patch": False,
             "level": "error",
             "line": 1,
-            "message": "WARNING: This issue is a build error!\nUnidentified symbol",
+            "message": "Unidentified symbol",
             "nb_lines": 1,
             "path": "some/file/path",
             "publishable": False,
