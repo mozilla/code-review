@@ -734,7 +734,7 @@ def test_phabricator_coverity_build_error(
                 "lint": [
                     {
                         "code": "NULL_RETURNS",
-                        "description": 'Dereferencing a pointer that might be "nullptr" '
+                        "description": 'WARNING: This issue is a build error!\nDereferencing a pointer that might be "nullptr" '
                         '"env" when calling "lookupImport".',
                         "line": 41,
                         "name": "Coverity",
