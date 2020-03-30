@@ -685,14 +685,28 @@ The path that leads to this defect is:
     assert issue.check == "UNINIT"
     assert issue.reliability == Reliability.High
     assert issue.build_error
-    assert issue.message == "Some error here"
+    assert (
+        issue.message
+        == """Some error here
+The path that leads to this defect is:
+
+- //dom/animation/Animation.cpp:61//:
+-- `path: Condition "!target.oper…", taking false branch.`.
+"""
+    )
     assert issue.is_local()
     assert not issue.is_clang_error()
     assert issue.validates()
     assert issue.is_build_error()
     assert (
         issue.as_text()
-        == f"Checker reliability is high, meaning that the false positive ratio is low.\nSome error here"
+        == f"""Checker reliability is high, meaning that the false positive ratio is low.
+Some error here
+The path that leads to this defect is:
+
+- //dom/animation/Animation.cpp:61//:
+-- `path: Condition "!target.oper…", taking false branch.`.
+"""
     )
 
     assert check_stats(

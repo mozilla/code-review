@@ -45,6 +45,7 @@ class CoverityIssue(Issue):
     """
 
     def __init__(self, analyzer, revision, issue, file_path):
+        self.build_error = issue.get("build_error", False)
         super().__init__(
             analyzer,
             revision,
@@ -52,7 +53,8 @@ class CoverityIssue(Issue):
             line=issue["line"],
             nb_lines=1,
             check=issue["flag"],
-            level=Level.Warning,
+            # Report build errors as Error
+            level=Level.Error if self.build_error else Level.Warning,
             message=issue["message"],
         )
         self.reliability = (
@@ -60,15 +62,8 @@ class CoverityIssue(Issue):
             if "reliability" in issue
             else Reliability.Unknown
         )
-        self.build_error = issue.get("build_error", False)
 
         self.state_on_server = issue["extra"]["stateOnServer"]
-
-        # For build errors we don't embed the stack into the message
-        if self.build_error:
-            # For build errors report them as errors
-            self.level = Level.Error
-            return
 
         # If we have `stack` in the `try` result then embed it in the message.
         if "stack" in issue["extra"]:
@@ -84,6 +79,15 @@ class CoverityIssue(Issue):
                     path_type=event["path_type"],
                     description=event["description"],
                 )
+
+    @property
+    def display_name(self):
+        """
+        Build error or Coverity to identify clearly the issue
+        """
+        if self.build_error:
+            return "Build Error"
+        return self.analyzer.display_name
 
     def is_clang_error(self):
         """

@@ -102,6 +102,14 @@ class Issue(abc.ABC):
         line = f"line {self.line}" if self.line is not None else "full file"
         return f"{self.analyzer.name} issue {self.check}@{self.level.value} {self.path} {line}"
 
+    @property
+    def display_name(self):
+        """
+        Issue's base name (by default analyzer's name)
+        But can be overridden by subclasses
+        """
+        return self.analyzer.display_name
+
     def build_extra_identifiers(self):
         """
         Used to add information when building an issue unique hash
@@ -248,7 +256,7 @@ class Issue(abc.ABC):
         description = f"{prefix} {self.message}"
 
         return LintResult(
-            name=self.analyzer.display_name,
+            name=self.display_name,
             description=description,
             code=self.check,
             severity=self.level.value,
