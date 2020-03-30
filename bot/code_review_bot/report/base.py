@@ -146,6 +146,11 @@ class Reporter(object):
         else:
             comment = ""
 
+        if not all(
+            revision.contains(issue) for issue in issues if issue.is_publishable()
+        ):
+            comment += "(defects might be in the parent stack)\n"
+
         # Add defects
         if defects:
             comment += "\n".join(defects) + "\n"
