@@ -150,6 +150,13 @@ class Reporter(object):
         if defects:
             comment += "\n".join(defects) + "\n"
 
+        # Add build error
+        nb_build_errors = sum(issue.is_build_error() for issue in issues)
+        if nb_build_errors > 0:
+            comment += "\nIMPORTANT: {} detected.\n".format(
+                pluralize("build error", nb_build_errors)
+            )
+
         if analyzers:
             comment += COMMENT_RUN_ANALYZERS.format(analyzers="\n".join(analyzers))
 

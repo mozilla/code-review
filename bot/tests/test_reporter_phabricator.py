@@ -47,6 +47,17 @@ If you see a problem in this automated review, [please report it here](https://b
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
+VALID_COVERITY_BUILD_ERROR_MESSAGE = """
+Code analysis found 1 defect in the diff 42:
+ - 1 defect found by Coverity
+
+IMPORTANT: 1 build error detected.
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+"""
+
 VALID_CLANG_FORMAT_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
  - 1 defect found by clang-format
@@ -599,6 +610,88 @@ def test_phabricator_coverity(mock_phabricator, phab, mock_try_task, mock_task):
             "reliability": "medium",
             "message": 'Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
             "flag": "NULL_RETURNS",
+            "build_error": False,
+            "extra": {
+                "category": "Null pointer dereferences",
+                "stateOnServer": {
+                    "ownerLdapServerName": "local",
+                    "stream": "Firefox",
+                    "cid": 95687,
+                    "cached": False,
+                    "retrievalDateTime": "2019-05-13T10:20:22+00:00",
+                    "firstDetectedDateTime": "2019-04-08T12:57:07+00:00",
+                    "presentInReferenceSnapshot": False,
+                    "components": ["js"],
+                    "customTriage": {},
+                    "triage": {
+                        "fixTarget": "Untargeted",
+                        "severity": "Unspecified",
+                        "classification": "Unclassified",
+                        "owner": "try",
+                        "legacy": "False",
+                        "action": "Undecided",
+                        "externalReference": "",
+                    },
+                },
+            },
+        }
+
+        issue = CoverityIssue(
+            mock_task(CoverityTask, "mock-coverity"), revision, issue_dict, "test.cpp"
+        )
+        assert issue.is_publishable()
+
+        issues, patches = reporter.publish([issue], revision, [])
+        assert len(issues) == 1
+        assert len(patches) == 0
+
+        # Check the callback has been used
+        assert phab.build_messages["PHID-HMBD-deadbeef12456"] == [
+            {
+                "buildTargetPHID": "PHID-HMBD-deadbeef12456",
+                "lint": [
+                    {
+                        "code": "NULL_RETURNS",
+                        "description": 'Dereferencing a pointer that might be "nullptr" '
+                        '"env" when calling "lookupImport".',
+                        "line": 41,
+                        "name": "Coverity",
+                        "path": "test.cpp",
+                        "severity": "warning",
+                    }
+                ],
+                "type": "work",
+                "unit": [],
+            }
+        ]
+        assert phab.comments[51] == [VALID_COVERITY_MESSAGE]
+
+
+def test_phabricator_coverity_build_error(
+    mock_phabricator, phab, mock_try_task, mock_task
+):
+    """
+    Test Phabricator Lint for a CoverityIssue
+    """
+
+    with mock_phabricator as api:
+        revision = Revision.from_try(mock_try_task, api)
+        revision.lines = {
+            # Add dummy lines diff
+            "test.cpp": [41, 42, 43]
+        }
+        revision.build_target_phid = "PHID-HMBD-deadbeef12456"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
+        revision.mercurial_revision = "deadbeef1234"
+
+        reporter = PhabricatorReporter({}, api=api)
+
+        issue_dict = {
+            "line": 41,
+            "reliability": "medium",
+            "message": 'Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
+            "flag": "NULL_RETURNS",
             "build_error": True,
             "extra": {
                 "category": "Null pointer dereferences",
@@ -653,7 +746,7 @@ def test_phabricator_coverity(mock_phabricator, phab, mock_try_task, mock_task):
                 "unit": [],
             }
         ]
-        assert phab.comments[51] == [VALID_COVERITY_MESSAGE]
+        assert phab.comments[51] == [VALID_COVERITY_BUILD_ERROR_MESSAGE]
 
 
 def test_full_file(mock_config, mock_phabricator, phab, mock_try_task, mock_task):
