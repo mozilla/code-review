@@ -735,7 +735,7 @@ def test_phabricator_coverity_build_error(
                         "description": '(IMPORTANT) ERROR: Dereferencing a pointer that might be "nullptr" '
                         '"env" when calling "lookupImport".',
                         "line": 41,
-                        "name": "Coverity",
+                        "name": "Build Error",
                         "path": "test.cpp",
                         "severity": "error",
                     }

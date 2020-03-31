@@ -692,7 +692,8 @@ The path that leads to this defect is:
     assert issue.is_build_error()
     assert (
         issue.as_text()
-        == f"Checker reliability is high, meaning that the false positive ratio is low.\nSome error here"
+        == f"""Checker reliability is high, meaning that the false positive ratio is low.
+Some error here"""
     )
 
     assert check_stats(

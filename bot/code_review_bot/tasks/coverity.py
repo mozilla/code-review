@@ -85,6 +85,15 @@ class CoverityIssue(Issue):
                     description=event["description"],
                 )
 
+    @property
+    def display_name(self):
+        """
+        Build error or Coverity to identify clearly the issue
+        """
+        if self.build_error:
+            return "Build Error"
+        return self.analyzer.display_name
+
     def is_clang_error(self):
         """
         Determine if the current issue is a translation unit error forwarded by Clang
