@@ -49,9 +49,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 VALID_COVERITY_BUILD_ERROR_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
- - 1 defect found by Coverity
-
-IMPORTANT: 1 build error detected.
+ - 1 build error found by Coverity
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 

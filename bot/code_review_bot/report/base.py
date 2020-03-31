@@ -85,12 +85,19 @@ class Reporter(object):
         def stats(analyzer, items):
             _items = list(items)
             paths = list({i.path for i in _items if i.is_publishable()})
+
+            publishable = sum(i.is_publishable() for i in _items)
+            build_errors = sum(i.is_build_error() for i in _items)
+
             return {
                 "analyzer": analyzer.display_name,
                 "help": analyzer.build_help_message(paths),
                 "total": len(_items),
-                "publishable": sum([i.is_publishable() for i in _items]),
+                "publishable": publishable,
                 "publishable_paths": paths,
+                # Split results for normal publishable issues and build errors
+                "nb_defects": publishable - build_errors,
+                "nb_build_errors": build_errors,
             }
 
         return [stats(analyzer, items) for analyzer, items in groups]
@@ -122,10 +129,15 @@ class Reporter(object):
         # Build parts depending on issues
         defects, analyzers = set(), set()
         for stat in stats:
+            defect_nb = []
+            if stat["nb_build_errors"] > 0:
+                defect_nb.append(pluralize("build error", stat["nb_build_errors"]))
+            if stat["nb_defects"] > 0:
+                defect_nb.append(pluralize("defect", stat["nb_defects"]))
+
             defects.add(
                 " - {nb} found by {analyzer}".format(
-                    analyzer=stat["analyzer"],
-                    nb=pluralize("defect", stat["publishable"]),
+                    analyzer=stat["analyzer"], nb=" and ".join(defect_nb)
                 )
             )
             _help = stat.get("help")
@@ -149,13 +161,6 @@ class Reporter(object):
         # Add defects
         if defects:
             comment += "\n".join(defects) + "\n"
-
-        # Add build error
-        nb_build_errors = sum(issue.is_build_error() for issue in issues)
-        if nb_build_errors > 0:
-            comment += "\nIMPORTANT: {} detected.\n".format(
-                pluralize("build error", nb_build_errors)
-            )
 
         if analyzers:
             comment += COMMENT_RUN_ANALYZERS.format(analyzers="\n".join(analyzers))
