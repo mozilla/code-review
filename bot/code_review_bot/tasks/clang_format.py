@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
+import collections
 import functools
 import itertools
 
+import requests
 import structlog
 
 from code_review_bot import Issue
@@ -18,15 +20,23 @@ ISSUE_MARKDOWN = """
 - **Lines**: from {line}, on {nb_lines} lines
 """
 
+# A white space replacement provided by clang-format
+# for a specific file, at a precise position (line+column)
+Replacement = collections.namedtuple("Replacement", "payload, offset, length")
+
+# Use two type of messages to handle fix presence
+MESSAGE_WITH_FIX = "The change does not follow the C/C++ coding style, it must be formatted as:\n\n```\n{fix}\n```"
+MESSAGE_WITHOUT_FIX = (
+    "The change does not follow the C/C++ coding style, please reformat"
+)
+
 
 class ClangFormatIssue(Issue):
     """
     An issue created by the Clang Format tool
     """
 
-    def __init__(
-        self, analyzer, path, line, nb_lines, revision, column=None, patch=None
-    ):
+    def __init__(self, analyzer, path, line, nb_lines, revision, replacement, column):
         super().__init__(
             analyzer,
             revision,
@@ -34,11 +44,14 @@ class ClangFormatIssue(Issue):
             line,
             nb_lines,
             check="invalid-styling",
-            message="The change does not follow the C/C++ coding style, please reformat",
+            message=MESSAGE_WITHOUT_FIX,
             column=column,
             level=Level.Warning,
         )
-        self.patch = patch
+
+        # An issue can be merged with others and accumulate replacements
+        assert isinstance(replacement, Replacement)
+        self.replacements = [replacement]
 
     def validates(self):
         """
@@ -73,7 +86,35 @@ class ClangFormatIssue(Issue):
 
         self.nb_lines += abs(other.line - (self.line + self.nb_lines - 1))
         self.column = None
-        self.patch += other.patch
+        self.replacements += other.replacements
+
+    def render_fix(self, file_content):
+        """
+        Apply all replacements to the source file
+        Update issue's message to showcase the patch
+        """
+        # Sort replacement from bottom to top
+        # to avoid conflicts when updating the same file
+        replacements = sorted(
+            self.replacements, key=lambda r: r.offset + r.length, reverse=True
+        )
+
+        # Apply each replacement
+        for r in replacements:
+            file_content = (
+                file_content[: r.offset]
+                + r.payload
+                + file_content[r.offset + r.length :]
+            )
+
+        # Extract the fixed version, using lines numbers
+        lines = file_content.splitlines()
+        fix = "\n".join(lines[self.line : self.line + self.nb_lines])
+
+        # Add the fix to the issue's message
+        self.message = MESSAGE_WITH_FIX.format(fix=fix)
+
+        return fix
 
 
 class ClangFormatTask(AnalysisTask):
@@ -134,7 +175,11 @@ class ClangFormatTask(AnalysisTask):
                         line=issue["line"],
                         nb_lines=issue["lines_modified"],
                         column=issue["line_offset"],
-                        patch=issue["replacement"],
+                        replacement=Replacement(
+                            issue["replacement"],
+                            issue["char_offset"],
+                            issue["char_length"],
+                        ),
                         revision=revision,
                     )
                     for issue in issues
@@ -142,6 +187,25 @@ class ClangFormatTask(AnalysisTask):
             )
             for path, issues in artifact.items()
         }
+
+        # Render the patches for each issue
+        for path, path_issues in issues.items():
+
+            # Load the file content
+            try:
+                file_content = revision.load_file(path)
+            except requests.exceptions.HTTPError as e:
+                logger.warn(
+                    "Failed to load file, clang-format issues won't have patch rendered.",
+                    path=path,
+                    error=e,
+                )
+                continue
+
+            # Render the patch using current replacements
+            # Issue's message will be updated
+            for issue in path_issues:
+                issue.render_fix(file_content)
 
         # Linearize issues
         return list(itertools.chain(*issues.values()))

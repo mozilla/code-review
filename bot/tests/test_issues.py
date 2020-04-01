@@ -5,6 +5,7 @@
 
 from code_review_bot.tasks.clang_format import ClangFormatIssue
 from code_review_bot.tasks.clang_format import ClangFormatTask
+from code_review_bot.tasks.clang_format import Replacement
 
 
 def test_allowed_paths(mock_config, mock_revision, mock_task):
@@ -17,7 +18,13 @@ def test_allowed_paths(mock_config, mock_revision, mock_task):
         # Build an issue and check its validation
         # that will trigger the path validation
         issue = ClangFormatIssue(
-            mock_task(ClangFormatTask, "mock-clang-format"), path, 1, 1, mock_revision
+            mock_task(ClangFormatTask, "mock-clang-format"),
+            path,
+            1,
+            1,
+            mock_revision,
+            replacement=Replacement(" ", 1, 1),
+            column=1,
         )
         return issue.validates()
 
@@ -45,6 +52,8 @@ def test_backend_publication(mock_revision, mock_task):
         1,
         1,
         mock_revision,
+        replacement=Replacement(" ", 1, 1),
+        column=1,
     )
     assert issue.validates()
 

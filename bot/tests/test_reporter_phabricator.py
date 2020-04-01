@@ -13,6 +13,7 @@ from code_review_bot.revisions import ImprovementPatch
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.clang_format import ClangFormatIssue
 from code_review_bot.tasks.clang_format import ClangFormatTask
+from code_review_bot.tasks.clang_format import Replacement
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.coverage import CoverageIssue
@@ -205,7 +206,15 @@ def test_phabricator_clang_format(
         reporter = PhabricatorReporter({"analyzers": ["clang-format"]}, api=api)
 
     task = mock_task(ClangFormatTask, "source-test-clang-format")
-    issue = ClangFormatIssue(task, "dom/test.cpp", 42, 1, revision)
+    issue = ClangFormatIssue(
+        task,
+        "dom/test.cpp",
+        42,
+        1,
+        revision,
+        replacement=Replacement("\n", 1, 1),
+        column=1,
+    )
     assert issue.is_publishable()
 
     revision.improvement_patches = [
@@ -220,6 +229,27 @@ def test_phabricator_clang_format(
     # Check the comment has been posted
     assert phab.comments[51] == [
         VALID_CLANG_FORMAT_MESSAGE.format(results=mock_config.taskcluster.results_dir)
+    ]
+
+    # Check the issue has been reported inline
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "char": 1,
+                    "code": "invalid-styling",
+                    "description": "WARNING: The change does not follow the C/C++ "
+                    "coding style, please reformat",
+                    "line": 42,
+                    "name": "clang-format",
+                    "path": "dom/test.cpp",
+                    "severity": "warning",
+                }
+            ],
+            "unit": [],
+            "type": "work",
+        }
     ]
 
 
@@ -513,6 +543,8 @@ def test_phabricator_analyzers(
             42,
             1,
             revision,
+            Replacement("  ", 100, 1),
+            4,
         ),
         ClangTidyIssue(
             mock_task(ClangTidyTask, "mock-clang-tidy"),

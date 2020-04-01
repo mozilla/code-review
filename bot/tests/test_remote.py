@@ -504,11 +504,11 @@ def test_clang_format_task(
                     "test.cpp": [
                         {
                             "line_offset": 11,
-                            "char_offset": 44616,
-                            "char_length": 7,
+                            "char_offset": 150,
+                            "char_length": 27,
                             "lines_modified": 2,
-                            "line": 1386,
-                            "replacement": "Multi\nlines",
+                            "line": 5,
+                            "replacement": "ADD CHARS",
                         }
                     ]
                 }
@@ -522,29 +522,38 @@ def test_clang_format_task(
     issue = issues[0]
     assert isinstance(issue, ClangFormatIssue)
     assert issue.path == "test.cpp"
-    assert issue.line == 1386
+    assert issue.line == 5
     assert issue.nb_lines == 2
-    assert issue.patch == "Multi\nlines"
     assert issue.column == 11
     assert issue.as_dict() == {
         "analyzer": "source-test-clang-format",
         "check": "invalid-styling",
         "level": "warning",
-        "message": "The change does not follow the C/C++ coding style, please reformat",
         "column": 11,
+        "message": """The change does not follow the C/C++ coding style, it must be formatted as:
+
+```
+ADD CHARS:6
+try:deadbeef123456:test.cpp:7
+```""",
         "in_patch": False,
-        "line": 1386,
+        "line": 5,
         "nb_lines": 2,
         "path": "test.cpp",
         "publishable": False,
         "validates": False,
-        "hash": "56f81d5190f8e1bd7a7d2380e7da6d67",
+        "hash": "3ca7accc2bdc06d5ac473d3051da2d1c",
     }
     assert issue.as_phabricator_lint() == {
         "char": 11,
         "code": "invalid-styling",
-        "description": "WARNING: The change does not follow the C/C++ coding style, please reformat",
-        "line": 1386,
+        "description": """WARNING: The change does not follow the C/C++ coding style, it must be formatted as:
+
+```
+ADD CHARS:6
+try:deadbeef123456:test.cpp:7
+```""",
+        "line": 5,
         "name": "clang-format",
         "path": "test.cpp",
         "severity": "warning",

@@ -187,7 +187,7 @@ def test_empty_patch(patch):
     assert patches == []
 
 
-def test_grouping_issues(mock_revision, mock_task):
+def test_grouping_issues(mock_revision, mock_task, mock_hgmo):
     """
     Test clang format issues group detection
     """
@@ -209,13 +209,17 @@ def test_grouping_issues(mock_revision, mock_task):
             "analyzer": "mock-clang-format",
             "check": "invalid-styling",
             "column": 20,
-            "hash": None,
+            "hash": "8dab42f345b5d8966e003b77a21fa595",
             "in_patch": False,
             "level": "warning",
             "line": 35,
-            "message": "The change does not follow the C/C++ coding style, please "
-            "reformat",
             "nb_lines": 2,
+            "message": """The change does not follow the C/C++ coding style, it must be formatted as:
+
+```
+try:deadbeef123456:accessible/xul/XULAlertAccessible.cpp:35
+try:deadbeef123456:accessible/xul/XULAlertAccessible.cpp:36
+```""",
             "path": "accessible/xul/XULAlertAccessible.cpp",
             "publishable": False,
             "validates": False,
@@ -224,12 +228,17 @@ def test_grouping_issues(mock_revision, mock_task):
             "analyzer": "mock-clang-format",
             "check": "invalid-styling",
             "column": None,
-            "hash": None,
+            "hash": "f9e31e82db2cf57c64593b6c24226bbf",
             "in_patch": False,
             "level": "warning",
             "line": 118,
-            "message": "The change does not follow the C/C++ coding style, please "
-            "reformat",
+            "message": """The change does not follow the C/C++ coding style, it must be formatted as:
+
+```
+    // Comment to trigger readability-else-after-return
+    const auto x = "aa";
+  }
+```""",
             "nb_lines": 3,
             "path": "dom/canvas/ClientWebGLContext.cpp",
             "publishable": False,
@@ -239,13 +248,16 @@ def test_grouping_issues(mock_revision, mock_task):
             "analyzer": "mock-clang-format",
             "check": "invalid-styling",
             "column": 79,
-            "hash": None,
+            "hash": "0f79878d4a5cb7d4c2f233ceafea9d1f",
             "in_patch": False,
             "level": "warning",
             "line": 10,
-            "message": "The change does not follow the C/C++ coding style, please "
-            "reformat",
             "nb_lines": 1,
+            "message": """The change does not follow the C/C++ coding style, it must be formatted as:
+
+```
+try:deadbeef123456:gfx/2d/Factory.cpp:11
+```""",
             "path": "gfx/2d/Factory.cpp",
             "publishable": False,
             "validates": False,
@@ -254,13 +266,17 @@ def test_grouping_issues(mock_revision, mock_task):
             "analyzer": "mock-clang-format",
             "check": "invalid-styling",
             "column": None,
-            "hash": None,
+            "hash": "0f75ebc8d2909eb182d1d90254d1a633",
             "in_patch": False,
             "level": "warning",
             "line": 616,
-            "message": "The change does not follow the C/C++ coding style, please "
-            "reformat",
             "nb_lines": 2,
+            "message": """The change does not follow the C/C++ coding style, it must be formatted as:
+
+```
+try:deadbeef123456:gfx/2d/Factory.cpp:614
+try:deadbeef123456:gfx/2d/Factory.cpp:615
+```""",
             "path": "gfx/2d/Factory.cpp",
             "publishable": False,
             "validates": False,
