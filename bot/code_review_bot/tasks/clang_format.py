@@ -28,10 +28,11 @@ Replacement = collections.namedtuple("Replacement", "payload, offset, length")
 # We need the comment between the language declaration and the code block itself
 # otherwise Phabricator will automatically remove all lines prefixed by white space
 # causing all indentation to be removed.
+# Also Phabricator needs 2 spaces to indent the following content
 MESSAGE_WITH_FIX = """The change does not follow the C/C++ coding style, it must be formatted as:
 
-lang=c++
-// Formatting change start at line {line}
+  lang=c++
+  // Formatting change start at line {line}
 {fix}
 """
 MESSAGE_WITHOUT_FIX = (

@@ -216,8 +216,8 @@ def test_grouping_issues(mock_revision, mock_task, mock_hgmo):
             "nb_lines": 2,
             "message": """The change does not follow the C/C++ coding style, it must be formatted as:
 
-lang=c++
-// Formatting change start at line 35
+  lang=c++
+  // Formatting change start at line 35
   try:deadbeef123456:accessible/xul/XULAlertAccessible.cpp:35
   try:deadbeef123456:accessible/xul/XULAlertAccessible.cpp:36
 """,
@@ -235,8 +235,8 @@ lang=c++
             "line": 118,
             "message": """The change does not follow the C/C++ coding style, it must be formatted as:
 
-lang=c++
-// Formatting change start at line 118
+  lang=c++
+  // Formatting change start at line 118
       // Comment to trigger readability-else-after-return
       const auto x = "aa";
     }
@@ -257,8 +257,8 @@ lang=c++
             "nb_lines": 1,
             "message": """The change does not follow the C/C++ coding style, it must be formatted as:
 
-lang=c++
-// Formatting change start at line 10
+  lang=c++
+  // Formatting change start at line 10
   try:deadbeef123456:gfx/2d/Factory.cpp:11
 """,
             "path": "gfx/2d/Factory.cpp",
@@ -276,8 +276,8 @@ lang=c++
             "nb_lines": 2,
             "message": """The change does not follow the C/C++ coding style, it must be formatted as:
 
-lang=c++
-// Formatting change start at line 616
+  lang=c++
+  // Formatting change start at line 616
   try:deadbeef123456:gfx/2d/Factory.cpp:614
   try:deadbeef123456:gfx/2d/Factory.cpp:615
 """,

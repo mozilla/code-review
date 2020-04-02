@@ -532,8 +532,8 @@ def test_clang_format_task(
         "column": 11,
         "message": """The change does not follow the C/C++ coding style, it must be formatted as:
 
-lang=c++
-// Formatting change start at line 5
+  lang=c++
+  // Formatting change start at line 5
   ADD CHARS:6
   try:deadbeef123456:test.cpp:7
 """,
@@ -550,8 +550,8 @@ lang=c++
         "code": "invalid-styling",
         "description": """WARNING: The change does not follow the C/C++ coding style, it must be formatted as:
 
-lang=c++
-// Formatting change start at line 5
+  lang=c++
+  // Formatting change start at line 5
   ADD CHARS:6
   try:deadbeef123456:test.cpp:7
 """,
