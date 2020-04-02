@@ -48,7 +48,7 @@ class DebugReporter(Reporter):
             "revision": revision.as_dict(),
             "issues": [issue.as_dict() for issue in issues],
             "patches": {
-                patch.analyzer: patch.url or patch.path
+                patch.analyzer.name: patch.url or patch.path
                 for patch in revision.improvement_patches
             },
             "task_failures": [
