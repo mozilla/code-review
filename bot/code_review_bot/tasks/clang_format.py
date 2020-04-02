@@ -25,7 +25,15 @@ ISSUE_MARKDOWN = """
 Replacement = collections.namedtuple("Replacement", "payload, offset, length")
 
 # Use two type of messages to handle fix presence
-MESSAGE_WITH_FIX = "The change does not follow the C/C++ coding style, it must be formatted as:\n\n```\n{fix}\n```"
+# We need the comment between the language declaration and the code block itself
+# otherwise Phabricator will automatically remove all lines prefixed by white space
+# causing all indentation to be removed.
+MESSAGE_WITH_FIX = """The change does not follow the C/C++ coding style, it must be formatted as:
+
+lang=c++
+// Formatting change start at line {line}
+{fix}
+"""
 MESSAGE_WITHOUT_FIX = (
     "The change does not follow the C/C++ coding style, please reformat"
 )
@@ -106,11 +114,14 @@ class ClangFormatIssue(Issue):
             )
 
         # Extract the fixed version, using lines numbers
+        # and prefix each line by two spaces to make it a code block on Phabricator
         lines = file_content.splitlines()
-        fix = "\n".join(lines[self.line : self.line + self.nb_lines])
+        fix = "\n".join(
+            map(lambda l: f"  {l}", lines[self.line : self.line + self.nb_lines])
+        )
 
         # Add the fix to the issue's message
-        self.message = MESSAGE_WITH_FIX.format(fix=fix)
+        self.message = MESSAGE_WITH_FIX.format(fix=fix, line=self.line)
 
         return fix
 
