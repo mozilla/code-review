@@ -68,6 +68,8 @@ class Issue(abc.ABC):
         column: int = None,
         message: str = None,
         level: Level = Level.Warning,
+        fix: str = None,
+        language: str = None,
     ):
         # Check while avoiding circular dependencies
         from code_review_bot.revisions import Revision
@@ -97,6 +99,12 @@ class Issue(abc.ABC):
 
         # Reserved payload for backend
         self.on_backend = None
+
+        # Store information when a fix is available
+        self.fix = fix
+        self.language = language
+        if self.fix is not None:
+            assert self.language is not None, "Missing fix language"
 
     def __str__(self):
         line = f"line {self.line}" if self.line is not None else "full file"
@@ -241,6 +249,7 @@ class Issue(abc.ABC):
             "validates": self.validates(),
             "publishable": self.is_publishable(),
             "hash": issue_hash,
+            "fix": self.fix,
         }
 
     def as_phabricator_lint(self):
@@ -254,6 +263,13 @@ class Issue(abc.ABC):
         else:
             prefix = "WARNING:"
         description = f"{prefix} {self.message}"
+
+        # Add a fix when available
+        # Prefix each line with 2 spaces as required by phabricator to trigger a code block
+        # with syntax highlighting
+        if self.fix is not None:
+            fix = "\n".join(f"  {l}" for l in self.fix.splitlines())
+            description += f"\n\n  lang={self.language}\n{fix}"
 
         return LintResult(
             name=self.display_name,
