@@ -36,7 +36,7 @@ class ClangFormatIssue(Issue):
         # Get the lines impacted by the patch
         old_nb, new_nb, _ = zip(*lines)
         line = min(filter(None, old_nb))
-        nb_lines = max(filter(None, old_nb)) - line
+        nb_lines = max(filter(None, old_nb)) - line + 1
 
         # Build the fix to display on reporters
         fix = "\n".join([line.decode("utf-8") for _, nb, line in lines if nb])

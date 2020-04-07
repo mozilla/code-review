@@ -59,6 +59,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
         "publishable": False,
         "validates": False,
         "hash": "28e40e8a562fa8ebea98f984abd503fd",
+        "fix": None,
     }
 
 
@@ -106,6 +107,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo, mock_task):
         "publishable": True,
         "validates": True,
         "hash": "f8d818d42677f3ffdc0be647453278b8",
+        "fix": None,
     }
 
 

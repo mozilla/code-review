@@ -51,6 +51,7 @@ def test_coverage(
         "level": "warning",
         "nb_lines": 1,
         "hash": "35268931247f488cf2a71d0b06285e76",
+        "fix": None,
     }
     assert issue.as_phabricator_lint() == {
         "code": "no-coverage",
@@ -99,6 +100,7 @@ This file is uncovered
         "level": "warning",
         "nb_lines": 1,
         "hash": "a864bee7b5876989534b28cf245e2ee0",
+        "fix": None,
     }
     assert issue.as_phabricator_lint() == {
         "code": "no-coverage",
@@ -144,6 +146,7 @@ This file is uncovered
         "level": "warning",
         "nb_lines": 1,
         "hash": "8d06f3f7063ff4ba9f42b9fe2a808dbd",
+        "fix": None,
     }
     assert issue.as_phabricator_lint() == {
         "code": "no-coverage",

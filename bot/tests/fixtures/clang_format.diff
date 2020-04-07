@@ -1,0 +1,48 @@
+--- gfx/2d/Factory.cpp	2020-03-31 13:19:38.060336000 +0000
++++ gfx/2d/Factory.cpp	2020-03-31 13:22:36.680336000 +0000
+@@ -613,8 +613,12 @@
+ #ifdef XP_DARWIN
+ // Trigger clang-format
+ already_AddRefed<ScaledFont> Factory::CreateScaledFontForMacFont(
+-    CGFontRef aCGFont, const RefPtr<UnscaledFont>& aUnscaledFont, Float aSize, const DeviceColor& aFontSmoothingBackgroundColor, bool aUseFontSmoothing, bool aApplySyntheticBold) {
+-  return MakeAndAddRef<ScaledFontMac>(aCGFont, aUnscaledFont, aSize, false, aFontSmoothingBackgroundColor, aUseFontSmoothing, aApplySyntheticBold);
++    CGFontRef aCGFont, const RefPtr<UnscaledFont>& aUnscaledFont, Float aSize,
++    const DeviceColor& aFontSmoothingBackgroundColor, bool aUseFontSmoothing,
++    bool aApplySyntheticBold) {
++  return MakeAndAddRef<ScaledFontMac>(aCGFont, aUnscaledFont, aSize, false,
++                                      aFontSmoothingBackgroundColor,
++                                      aUseFontSmoothing, aApplySyntheticBold);
+ }
+ #endif
+
+
+--- dom/canvas/ClientWebGLContext.cpp	2020-03-31 13:19:30.392336000 +0000
++++ dom/canvas/ClientWebGLContext.cpp	2020-03-31 13:22:36.280336000 +0000
+@@ -115,10 +115,10 @@
+                       aHandle.Value());
+     return mNotLost->outOfProcess->mWebGLChild->SendUpdateCompositableHandle(
+         aLayerTransaction, aHandle);
+-  }else {
+-		// Comment to trigger readability-else-after-return
+-		const auto x = "aa";
+-	}
++  } else {
++    // Comment to trigger readability-else-after-return
++    const auto x = "aa";
++  }
+   return true;
+ }
+
+
+--- accessible/xul/XULAlertAccessible.cpp	2020-03-31 13:19:24.204336000 +0000
++++ accessible/xul/XULAlertAccessible.cpp	2020-03-31 13:22:35.132336000 +0000
+@@ -33,7 +33,7 @@
+   // Screen readers need to read contents of alert, not the accessible name.
+   // If we have both some screen readers will read the alert twice.
+   aName.Truncate();
+-	if (false) return true;
++  if (false) return true;
+   return eNameOK;
+ }
+
+

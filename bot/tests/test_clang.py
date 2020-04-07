@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import json
 import os.path
 
 import pytest
@@ -107,6 +106,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task):
         "validates": True,
         "publishable": False,
         "hash": "f434c3f44cd5da419d9119f504086513",
+        "fix": None,
     }
 
 
@@ -187,36 +187,41 @@ def test_empty_patch(patch):
     assert patches == []
 
 
-def test_grouping_issues(mock_revision, mock_task):
+def test_real_patch(mock_revision, mock_task):
     """
-    Test clang format issues group detection
+    Test clang format patch parsing with a real patch
     """
     task = mock_task(ClangFormatTask, "mock-clang-format")
 
-    # This file has 9 issues, some of them are on the same lines
-    with open(os.path.join(FIXTURES_DIR, "clang_format_groups.json")) as f:
-        artifact = json.load(f)
+    with open(os.path.join(FIXTURES_DIR, "clang_format.diff")) as f:
+        artifact = f.read()
 
     issues = task.parse_issues(
-        {"public/code-review/clang-format.json": artifact}, mock_revision
+        {"public/code-review/clang-format.diff": artifact}, mock_revision
     )
 
-    # The parse merge those neighboring issues to only report on relevant groups
-    assert len(issues) == 4
+    assert len(issues) == 3
 
     assert [i.as_dict() for i in issues] == [
         {
             "analyzer": "mock-clang-format",
             "check": "invalid-styling",
-            "column": 20,
+            "column": None,
+            "fix": """    CGFontRef aCGFont, const RefPtr<UnscaledFont>& aUnscaledFont, Float aSize,
+    const DeviceColor& aFontSmoothingBackgroundColor, bool aUseFontSmoothing,
+    bool aApplySyntheticBold) {
+  return MakeAndAddRef<ScaledFontMac>(aCGFont, aUnscaledFont, aSize, false,
+                                      aFontSmoothingBackgroundColor,
+                                      aUseFontSmoothing, aApplySyntheticBold);
+}
+#endif""",
             "hash": None,
             "in_patch": False,
             "level": "warning",
-            "line": 35,
-            "message": "The change does not follow the C/C++ coding style, please "
-            "reformat",
-            "nb_lines": 2,
-            "path": "accessible/xul/XULAlertAccessible.cpp",
+            "line": 616,
+            "message": "The change does not follow the C/C++ coding style, please reformat",
+            "nb_lines": 4,
+            "path": "gfx/2d/Factory.cpp",
             "publishable": False,
             "validates": False,
         },
@@ -224,13 +229,18 @@ def test_grouping_issues(mock_revision, mock_task):
             "analyzer": "mock-clang-format",
             "check": "invalid-styling",
             "column": None,
+            "fix": """  } else {
+    // Comment to trigger readability-else-after-return
+    const auto x = "aa";
+  }
+  return true;
+}""",
             "hash": None,
             "in_patch": False,
             "level": "warning",
             "line": 118,
-            "message": "The change does not follow the C/C++ coding style, please "
-            "reformat",
-            "nb_lines": 3,
+            "message": "The change does not follow the C/C++ coding style, please reformat",
+            "nb_lines": 6,
             "path": "dom/canvas/ClientWebGLContext.cpp",
             "publishable": False,
             "validates": True,
@@ -238,30 +248,17 @@ def test_grouping_issues(mock_revision, mock_task):
         {
             "analyzer": "mock-clang-format",
             "check": "invalid-styling",
-            "column": 79,
-            "hash": None,
-            "in_patch": False,
-            "level": "warning",
-            "line": 10,
-            "message": "The change does not follow the C/C++ coding style, please "
-            "reformat",
-            "nb_lines": 1,
-            "path": "gfx/2d/Factory.cpp",
-            "publishable": False,
-            "validates": False,
-        },
-        {
-            "analyzer": "mock-clang-format",
-            "check": "invalid-styling",
             "column": None,
+            "fix": """  if (false) return true;
+  return eNameOK;
+}""",
             "hash": None,
             "in_patch": False,
             "level": "warning",
-            "line": 616,
-            "message": "The change does not follow the C/C++ coding style, please "
-            "reformat",
-            "nb_lines": 2,
-            "path": "gfx/2d/Factory.cpp",
+            "line": 36,
+            "message": "The change does not follow the C/C++ coding style, please reformat",
+            "nb_lines": 3,
+            "path": "accessible/xul/XULAlertAccessible.cpp",
             "publishable": False,
             "validates": False,
         },

@@ -16,8 +16,12 @@ def test_allowed_paths(mock_config, mock_revision, mock_task):
     def _allowed(path):
         # Build an issue and check its validation
         # that will trigger the path validation
+        lines = [
+            (1, None, b"deletion"),
+            (None, 1, b"change here"),
+        ]
         issue = ClangFormatIssue(
-            mock_task(ClangFormatTask, "mock-clang-format"), path, 1, 1, mock_revision
+            mock_task(ClangFormatTask, "mock-clang-format"), path, lines, mock_revision
         )
         return issue.validates()
 
@@ -39,11 +43,14 @@ def test_backend_publication(mock_revision, mock_task):
     Test the backend publication status modifies an issue publication
     """
 
+    lines = [
+        (1, None, b"deletion"),
+        (None, 1, b"change here"),
+    ]
     issue = ClangFormatIssue(
         mock_task(ClangFormatTask, "mock-clang-format"),
         "dom/somefile.cpp",
-        1,
-        1,
+        lines,
         mock_revision,
     )
     assert issue.validates()

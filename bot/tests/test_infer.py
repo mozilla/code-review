@@ -55,6 +55,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task):
         "publishable": False,
         "validates": True,
         "hash": "f446f72d667c04e3d9164f91af424414",
+        "fix": None,
     }
 
 

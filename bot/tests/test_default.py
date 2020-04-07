@@ -115,4 +115,5 @@ A random issue happened here
         "path": "test.cpp",
         "publishable": True,
         "validates": True,
+        "fix": None,
     }

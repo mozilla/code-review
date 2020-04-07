@@ -205,7 +205,12 @@ def test_phabricator_clang_format(
         reporter = PhabricatorReporter({"analyzers": ["clang-format"]}, api=api)
 
     task = mock_task(ClangFormatTask, "source-test-clang-format")
-    issue = ClangFormatIssue(task, "dom/test.cpp", 42, 1, revision)
+    lines = [
+        (41, 41, b"no change"),
+        (42, None, b"deletion"),
+        (None, 42, b"change here"),
+    ]
+    issue = ClangFormatIssue(task, "dom/test.cpp", lines, revision)
     assert issue.is_publishable()
 
     revision.improvement_patches = [
@@ -510,8 +515,11 @@ def test_phabricator_analyzers(
         ClangFormatIssue(
             mock_task(ClangFormatTask, "mock-clang-format"),
             "dom/test.cpp",
-            42,
-            1,
+            [
+                (41, 41, b"no change"),
+                (42, None, b"deletion"),
+                (None, 42, b"change here"),
+            ],
             revision,
         ),
         ClangTidyIssue(
