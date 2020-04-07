@@ -132,4 +132,5 @@ def test_full_file(mock_revision, mock_hgmo, mock_task):
         "path": "path/to/afile.py",
         "publishable": True,
         "validates": True,
+        "fix": None,
     }

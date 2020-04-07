@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
-import functools
-import itertools
-
+import rs_parsepatch
 import structlog
 
 from code_review_bot import Issue
@@ -24,9 +22,25 @@ class ClangFormatIssue(Issue):
     An issue created by the Clang Format tool
     """
 
-    def __init__(
-        self, analyzer, path, line, nb_lines, revision, column=None, patch=None
-    ):
+    def __init__(self, analyzer, path, lines, revision):
+        assert isinstance(lines, list)
+        assert len(lines) > 0, "No lines describing patch"
+
+        # Find position of first different line
+        try:
+            first_diff = [old != new for old, new, _ in lines].index(True)
+        except ValueError:
+            first_diff = 0
+        lines = lines[first_diff:]
+
+        # Get the lines impacted by the patch
+        old_nb, new_nb, _ = zip(*lines)
+        line = min(filter(None, old_nb))
+        nb_lines = max(filter(None, old_nb)) - line + 1
+
+        # Build the fix to display on reporters
+        fix = "\n".join([line.decode("utf-8") for _, nb, line in lines if nb])
+
         super().__init__(
             analyzer,
             revision,
@@ -34,11 +48,11 @@ class ClangFormatIssue(Issue):
             line,
             nb_lines,
             check="invalid-styling",
+            fix=fix,
+            language="c++",
             message="The change does not follow the C/C++ coding style, please reformat",
-            column=column,
             level=Level.Warning,
         )
-        self.patch = patch
 
     def validates(self):
         """
@@ -63,18 +77,6 @@ class ClangFormatIssue(Issue):
             path=self.path, line=self.line, nb_lines=self.nb_lines
         )
 
-    def merge(self, other):
-        """
-        Merge a neighboring issue with this one, updating nb of lines
-        """
-        assert isinstance(other, ClangFormatIssue)
-        assert other.path == self.path
-        assert other.line >= self.line
-
-        self.nb_lines += abs(other.line - (self.line + self.nb_lines - 1))
-        self.column = None
-        self.patch += other.patch
-
 
 class ClangFormatTask(AnalysisTask):
     """
@@ -82,10 +84,7 @@ class ClangFormatTask(AnalysisTask):
     clang-format json output
     """
 
-    artifacts = [
-        "public/code-review/clang-format.json",
-        "public/code-review/clang-format.diff",
-    ]
+    artifacts = ["public/code-review/clang-format.diff"]
 
     @property
     def display_name(self):
@@ -96,55 +95,21 @@ class ClangFormatTask(AnalysisTask):
         return f"`./mach clang-format -s -p {files}` (C/C++)"
 
     def parse_issues(self, artifacts, revision):
-        artifact = artifacts.get("public/code-review/clang-format.json")
+        artifact = artifacts.get("public/code-review/clang-format.diff")
         if artifact is None:
-            logger.warn("Missing clang-format.json")
+            logger.warn("Missing clang-format.diff")
             return []
 
-        def _group(path_issues):
-            # Sort those issues by lines
-            path_issues = sorted(path_issues, key=lambda i: i.line)
-
-            def _reducer(acc, issue):
-                # Lookup previous issue in accumulated value
-                if not acc:
-                    return [issue]
-                previous = acc[-1]
-
-                if issue.line - (previous.line + previous.nb_lines - 1) > 2:
-                    # When two lines are too far apart, keep them distinct
-                    acc.append(issue)
-                else:
-                    # Merge current issue with previous one
-                    previous.merge(issue)
-
-                return acc
-
-            # Group all neighboring issues together
-            return functools.reduce(_reducer, path_issues, [])
-
-        # Build all issues by paths
-        # And group them by neighboring lines
-        issues = {
-            path: _group(
-                [
-                    ClangFormatIssue(
-                        analyzer=self,
-                        path=path,
-                        line=issue["line"],
-                        nb_lines=issue["lines_modified"],
-                        column=issue["line_offset"],
-                        patch=issue["replacement"],
-                        revision=revision,
-                    )
-                    for issue in issues
-                ]
+        # Use all chunks provided by parsepatch
+        return [
+            ClangFormatIssue(
+                analyzer=self,
+                path=diff["filename"],
+                lines=diff["lines"],
+                revision=revision,
             )
-            for path, issues in artifact.items()
-        }
-
-        # Linearize issues
-        return list(itertools.chain(*issues.values()))
+            for diff in rs_parsepatch.get_diffs(artifact)
+        ]
 
     def build_patches(self, artifacts):
         artifact = artifacts.get("public/code-review/clang-format.diff")

@@ -471,6 +471,20 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend
     )
 
 
+CLANG_FORMAT_PATCH = """
+--- test.cpp	13:19:38.060336000 +0000
++++ test.cpp	13:22:36.680336000 +0000
+@@ -1384,4 +1384,4@@
+ some line
+ another line
+-remove
+-remove
++Multi
++lines
+
+"""
+
+
 def test_clang_format_task(
     mock_config, mock_revision, mock_workflow, mock_hgmo, mock_backend
 ):
@@ -499,20 +513,7 @@ def test_clang_format_task(
         "clang-format": {
             "name": "source-test-clang-format",
             "state": "completed",
-            "artifacts": {
-                "public/code-review/clang-format.json": {
-                    "test.cpp": [
-                        {
-                            "line_offset": 11,
-                            "char_offset": 44616,
-                            "char_length": 7,
-                            "lines_modified": 2,
-                            "line": 1386,
-                            "replacement": "Multi\nlines",
-                        }
-                    ]
-                }
-            },
+            "artifacts": {"public/code-review/clang-format.diff": CLANG_FORMAT_PATCH},
         },
     }
     mock_workflow.setup_mock_tasks(tasks)
@@ -524,14 +525,15 @@ def test_clang_format_task(
     assert issue.path == "test.cpp"
     assert issue.line == 1386
     assert issue.nb_lines == 2
-    assert issue.patch == "Multi\nlines"
-    assert issue.column == 11
+    assert issue.fix == "Multi\nlines"
+    assert issue.language == "c++"
+    assert issue.column is None
     assert issue.as_dict() == {
         "analyzer": "source-test-clang-format",
         "check": "invalid-styling",
         "level": "warning",
         "message": "The change does not follow the C/C++ coding style, please reformat",
-        "column": 11,
+        "column": None,
         "in_patch": False,
         "line": 1386,
         "nb_lines": 2,
@@ -539,17 +541,21 @@ def test_clang_format_task(
         "publishable": False,
         "validates": False,
         "hash": "56f81d5190f8e1bd7a7d2380e7da6d67",
+        "fix": "Multi\nlines",
     }
     assert issue.as_phabricator_lint() == {
-        "char": 11,
         "code": "invalid-styling",
-        "description": "WARNING: The change does not follow the C/C++ coding style, please reformat",
+        "description": """WARNING: The change does not follow the C/C++ coding style, please reformat
+
+  lang=c++
+  Multi
+  lines""",
         "line": 1386,
         "name": "clang-format",
         "path": "test.cpp",
         "severity": "warning",
     }
-    assert len(mock_revision.improvement_patches) == 0
+    assert len(mock_revision.improvement_patches) == 1
 
     assert check_stats(
         [
@@ -562,18 +568,6 @@ def test_clang_format_task(
             ("code-review.runtime.reports", None, "runtime"),
         ]
     )
-
-    # Check diffs are reported as improvement patches
-    tasks["clang-format"]["artifacts"][
-        "public/code-review/clang-format.diff"
-    ] = "A nice diff in here..."
-    mock_workflow.setup_mock_tasks(tasks)
-    issues = mock_workflow.run(mock_revision)
-    assert len(issues) == 1
-    assert len(mock_revision.improvement_patches) == 1
-    patch = mock_revision.improvement_patches[0]
-    assert patch.analyzer.name == "source-test-clang-format"
-    assert patch.content == "A nice diff in here..."
 
 
 def test_coverity_task(
@@ -788,6 +782,7 @@ def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_b
         "publishable": False,
         "validates": True,
         "hash": "02353719655edb9ba07e0bd0cacd620b",
+        "fix": None,
     }
 
 

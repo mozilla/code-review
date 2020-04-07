@@ -77,6 +77,7 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
             "path": "some/file/path",
             "publishable": False,
             "validates": False,
+            "fix": None,
         },
         {
             "analyzer": "mock-coverity",
@@ -92,6 +93,7 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
             "path": "some/file/path",
             "publishable": False,
             "validates": False,
+            "fix": None,
         },
     ]
 
@@ -199,5 +201,6 @@ def test_publication_failures(
             "path": "some/file/path",
             "publishable": False,
             "validates": False,
+            "fix": None,
         }
     ]

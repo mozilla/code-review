@@ -138,4 +138,5 @@ The path that leads to this defect is:
         "publishable": False,
         "validates": True,
         "hash": "8c10f73c6f509336236f407c3f9d312a",
+        "fix": None,
     }
