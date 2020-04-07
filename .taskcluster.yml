@@ -98,7 +98,7 @@ tasks:
             deadline: {$fromNow: '1 hour'}
             payload:
               maxRunTime: 3600
-              image: "python:${python_version}"
+              image: "python:${python_version}-slim"
               command:
                 - sh
                 - -lxce
