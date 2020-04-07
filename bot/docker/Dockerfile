@@ -1,8 +1,9 @@
-FROM python:3.8.2-alpine
+FROM python:3.8.2-slim
 
 ADD tools /src/tools
-ADD bot /src/bot
+RUN cd /src/tools && python setup.py install
 
-RUN /src/bot/docker/bootstrap.sh
+ADD bot /src/bot
+RUN cd /src/bot && python setup.py install
 
 CMD ["code-review-bot"]
