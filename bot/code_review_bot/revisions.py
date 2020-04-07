@@ -294,11 +294,6 @@ class Revision(object):
             for stat in patch_stats
         }
 
-        from pprint import pprint
-
-        pprint(patch_stats)
-        pprint(self.lines)
-
         # Shortcut to files modified
         self.files = self.lines.keys()
 
