@@ -2,7 +2,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-from parsepatch.patch import Patch
+import rs_parsepatch
 
 
 def test_phabricator(mock_config, mock_revision):
@@ -19,12 +19,30 @@ def test_phabricator(mock_config, mock_revision):
     # Patch is automatically loaded from Phabricator
     assert mock_revision.patch is not None
     assert isinstance(mock_revision.patch, str)
-    assert len(mock_revision.patch.split("\n")) == 14
-    patch = Patch.parse_patch(mock_revision.patch)
-    assert patch == {
-        "test.txt": {"touched": [], "deleted": [], "added": [2], "new": False},
-        "test.cpp": {"touched": [], "deleted": [], "added": [2], "new": False},
-    }
+    assert len(mock_revision.patch.split("\n")) == 15
+    patch = rs_parsepatch.get_diffs(mock_revision.patch)
+    assert patch == [
+        {
+            "binary": False,
+            "copied_from": None,
+            "deleted": False,
+            "filename": "test.txt",
+            "lines": [(1, 1, b"Hello World"), (None, 2, b"Second line")],
+            "modes": {},
+            "new": False,
+            "renamed_from": None,
+        },
+        {
+            "binary": False,
+            "copied_from": None,
+            "deleted": False,
+            "filename": "test.cpp",
+            "lines": [(1, 1, b"Hello World")],
+            "modes": {"new": 33188},
+            "new": True,
+            "renamed_from": None,
+        },
+    ]
 
 
 def test_clang_files(mock_revision):
