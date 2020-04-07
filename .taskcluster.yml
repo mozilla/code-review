@@ -98,12 +98,11 @@ tasks:
             deadline: {$fromNow: '1 hour'}
             payload:
               maxRunTime: 3600
-              image: "python:${python_version}-alpine"
+              image: "python:${python_version}"
               command:
                 - sh
                 - -lxce
-                - "apk add git --quiet &&
-                  git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+                - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
                   cd /src/tools && ${pip_install} . &&
                   cd /src/bot && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
                   pytest -v"
