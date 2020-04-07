@@ -102,7 +102,8 @@ tasks:
               command:
                 - sh
                 - -lxce
-                - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+                - "apt-get update -q && apt-get install -q -y --no-install-recommends git &&
+                  git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
                   cd /src/tools && ${pip_install} . &&
                   cd /src/bot && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
                   pytest -v"
