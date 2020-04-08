@@ -1,0 +1,14 @@
+diff --git a/test.txt b/test.txt
+index 557db03..5eb0bec 100644
+--- a/test.txt
++++ b/test.txt
+@@ -1 +1,2 @@
+ Hello World
++Second line
+diff --git a/test.cpp b/test.cpp
+new file mode 100644
+index 000000..5eb0bec 100644
+--- a/test.cpp
++++ b/test.cpp
+@@ -1 +1,2 @@
++Hello World

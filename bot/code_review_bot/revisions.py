@@ -8,9 +8,9 @@ import urllib.parse
 from datetime import timedelta
 
 import requests
+import rs_parsepatch
 import structlog
 from libmozdata.phabricator import PhabricatorAPI
-from parsepatch.patch import Patch
 
 from code_review_bot import Issue
 from code_review_bot import stats
@@ -269,13 +269,10 @@ class Revision(object):
         assert isinstance(self.patch, str), "Invalid patch type"
 
         # List all modified lines from current revision changes
-        patch = Patch.parse_patch(self.patch, skip_comments=False)
-        assert patch != {}, "Empty patch"
-        self.lines = {
-            # Use all changes in new files
-            filename: diff.get("touched", []) + diff.get("added", [])
-            for filename, diff in patch.items()
-        }
+        patch_stats = rs_parsepatch.get_lines(self.patch)
+        assert len(patch_stats) > 0, "Empty patch"
+
+        self.lines = {stat["filename"]: stat["added_lines"] for stat in patch_stats}
 
         # Shortcut to files modified
         self.files = self.lines.keys()
