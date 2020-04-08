@@ -43,6 +43,31 @@ def test_phabricator(mock_config, mock_revision):
             "renamed_from": None,
         },
     ]
+    patch = rs_parsepatch.get_lines(mock_revision.patch)
+    assert patch == [
+        {
+            "added_lines": [2],
+            "binary": False,
+            "copied_from": None,
+            "deleted": False,
+            "deleted_lines": [],
+            "filename": "test.txt",
+            "modes": {},
+            "new": False,
+            "renamed_from": None,
+        },
+        {
+            "added_lines": [],
+            "binary": False,
+            "copied_from": None,
+            "deleted": False,
+            "deleted_lines": [],
+            "filename": "test.cpp",
+            "modes": {"new": 33188},
+            "new": True,
+            "renamed_from": None,
+        },
+    ]
 
 
 def test_clang_files(mock_revision):

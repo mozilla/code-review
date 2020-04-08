@@ -269,30 +269,26 @@ class Revision(object):
         assert isinstance(self.patch, str), "Invalid patch type"
 
         # List all modified lines from current revision changes
-        patch_stats = rs_parsepatch.get_diffs(self.patch)
-        assert patch_stats, "Empty patch"
+        # associated with their diffs
+        # rs-parsepatch guarantees the order is the same in both lists
+        patch_stats = zip(
+            rs_parsepatch.get_lines(self.patch), rs_parsepatch.get_diffs(self.patch),
+        )
 
-        def _get_lines(file_stats):
-            if file_stats["new"]:
-                # file addition
-                return [line[1] for line in file_stats["lines"]]
+        def _get_lines(lines, diff):
+            assert lines["filename"] == diff["filename"]
+            # rs-parsepatch may provide an empty list of lines
+            # when a file is added, so we can use directly the lines
+            # provided by the diff
+            if lines["new"] is True:
+                return [l[1] for l in diff["lines"]]
             else:
-                # file modification
-                return sorted(
-                    set(
-                        [
-                            line[0] or line[1]
-                            for line in file_stats["lines"]
-                            if line[0] != line[1]
-                        ]
-                    )
-                )
+                return lines["added_lines"]
 
         self.lines = {
-            # Use all changes in new files
-            stat["filename"]: _get_lines(stat)
-            for stat in patch_stats
+            lines["filename"]: _get_lines(lines, diff) for lines, diff in patch_stats
         }
+        assert len(self.lines) > 0, "Empty patch"
 
         # Shortcut to files modified
         self.files = self.lines.keys()
