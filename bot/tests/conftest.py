@@ -180,10 +180,12 @@ def mock_phabricator(mock_config):
         content_type="application/json",
     )
 
+    with open(os.path.join(os.path.join(MOCK_DIR, "phabricator_patch.diff"))) as f:
+        test_patch = f.read()
     responses.add(
         responses.POST,
         "http://phabricator.test/api/differential.getrawdiff",
-        body=_response("diff_raw"),
+        body=json.dumps({"error_code": None, "error_info": None, "result": test_patch}),
         content_type="application/json",
     )
 

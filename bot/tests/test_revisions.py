@@ -37,7 +37,7 @@ def test_phabricator(mock_config, mock_revision):
             "copied_from": None,
             "deleted": False,
             "filename": "test.cpp",
-            "lines": [(1, 1, b"Hello World")],
+            "lines": [(None, 1, b"Hello World")],
             "modes": {"new": 33188},
             "new": True,
             "renamed_from": None,
@@ -57,7 +57,7 @@ def test_phabricator(mock_config, mock_revision):
             "renamed_from": None,
         },
         {
-            "added_lines": [],
+            "added_lines": [1],
             "binary": False,
             "copied_from": None,
             "deleted": False,
