@@ -34,6 +34,13 @@ You'll then get access to the [code review dashboard](https://earthangel-b40313e
 
 It's possible to configure alerts on your account when a metric goes under a certain level.
 
+### Heroku
+
+You'll need access to the `mozillacorporation` group on Heroku. Request on Bugzilla to be added in the mozillian group `heroku-members`. You'll then be able to login through SSO on Heroku.
+Once on Heroku, an existing admin for the code-review platform needs to upgrade your rights so you can manage the related applications.
+
+Finally you'll be able to see recent logs for the code review dynos (backend & events). That's helpful if Papertrail has issues.
+
 ### Frontend
 
 The code review frontend hosted on https://code-review.moz.tools (production) and https://code-review.testing.moz.tools (testing) offer a pretty good overview of what is going on in the system.
@@ -50,16 +57,49 @@ They will tell you if something goes wrong, as the code review bot adds a link t
 
 ## Is the platform still running ?
 
-check the frontend
+Here is a list of troubleshooting steps when you *know* that something does not work, but don't know yet which part is buggy:
 
-check the logs
-
-start from the beginning
+- Check the frontend. As mentionned above, that's the easiest and fastest way to see what's going on in real time
+- Check the logs. Start by looking for the events logs, as that's the first piece that could fail in the workflow.
+- Check events on Heroku: are the dynos running (both web & worker) ?
+- Is the redis database full ?
+- If events is behaving normally, applying revisions, pick a try job from the logs, and follow it
+- Check the decision task is creating analyzers and the code-review ending task
+- Check the analyzers create some json artifacts, and look for incoherent data in the output. Are the task in a coherent status ?
+- Check the code review hook on firefox-ci: Is it triggered ? Are there bot jobs in papertrail ? Can you find the bot task for the try task you were looking before in the logs ?
+- Check the bot execution on the job, through its Taskcluster logs. Check the build updates on Phabricator.
+- Check the backend is running, through Papertrail or Heroku logs. Is the postgresql database full ?
 
 ## Testing changes
 
-shadow mode
-
-
+When developing a new feature in the stack, it's primordial to test changes before shipping anything. You especially want to check the output on Phabricator for a known set of issues.
 
 ### Running locally on same revision
+
+As a developer on the platform, you must be able to check your code changes locally. Each project has its own way to run, but the bot is the most interesting part as that's the most *public facing* part.
+
+A simple test is to pick a known try job with a set of issues (you need to know the task group id, and the code-review issues task id). Then you can run the bot before and after your changes with the Phabricator reporter disabled so you do not pollute an existing revision.
+
+```bash
+export TRY_TASK_GROUP_ID="xxx"
+export TRY_TASK_ID="yyy"
+code-review-bot -c code-review-local-dev.yml
+```
+
+This small boot script will use a local configuration `code-review-local-dev.yml` (that's where you disable the reporters) aiming at a given task group with issues.
+
+### Using phabricator-dev
+
+You could also configure the setup above to publish on Phabricator dev : https://phabricator-dev.allizom.org
+
+If you create a dummy revision on that instance (creating a bad patch, and publishing it with moz-phab on that Phabricator instance), you will get your own treeherder job, and more importantly your own Phabricator revision on a separate server.
+
+Here is a good example: https://phabricator-dev.allizom.org/D1758
+
+The testing environment is normally configured to publish issues on that Phabricator instance.
+
+### Shadow mode
+
+It's also possible to run the code review testing instance in **shadow mode**.
+
+In that setup, the bot project has phabricator credentials for the production instance, and the Phabricator reporter disabled. It will then be triggered for every patch published in production (so a lot more than on phabricator-dev), without publishing results (or you would pollute every revision with dupes !). You can then analyze the behaviour of the bot through its logs, and its crash rate, using a real flow of patches.
