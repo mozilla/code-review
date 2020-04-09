@@ -1,0 +1,6 @@
+graph TD
+
+push --> check_lint
+push --> bot_check_tests
+check_lint --> bot_build_dind
+bot_check_tests --> bot_build_dind

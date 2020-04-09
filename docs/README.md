@@ -7,7 +7,7 @@ Here is the overall summary of available documentation:
 * [System Architecture](architecture.md) (good starting point)
 * [System Configuration](configuration.md)
 * [How to debug the code review bot](debugging.md) and other tips for maintainers
-* [CI/CD Pipeline](devops.md) with Taskcluster
+* [CI/CD Pipeline](ci-cd/README.md) with Taskcluster
 * [Phabricator](phabricator.md) integrations, lessons learned, tips & tricks
 * Projects details:
     - [backend](projects/backend.md)
