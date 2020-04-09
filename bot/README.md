@@ -47,6 +47,8 @@ Supported reporting tools are emails (for admins) and Phabricator.
 
 Each reporter configuration must contain a `reporter` key with a unique name per tool. Each tool has its own configuration requirement.
 
+You can view a [full configuration sample here](/docs/configuration.md).
+
 Phabricator credentials
 -----------------------
 
@@ -91,7 +93,7 @@ common:
     url: https://dev.phabricator.mozilla.com
     api_key: deadbeef123456
 
-code-review-bot:
+bot:
   REPORTERS:
   - reporter: phabricator
 ```
