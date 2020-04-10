@@ -27,7 +27,7 @@ The CI/CD workflow is really simple on the firefox-ci instance. On every Github 
 - `bot_check_tests` runs the bot unit tests
 - `bot_build_dind` builds the bot's Docker image using Docker In Docker (dind), stores the image as a public artifact, and the task is always indexed.
 
-That last task is interesting because it allows us to ship immediately updates for the code review bot in the Taskcluster firefox-ci instance without relying on a remote Docker repository: the image is built in Taskcluster and stays there. Other tasks can use our docker image by referencing it through the **task-image** feature.
+That last task is interesting because it allows us to ship immediately updates for the code review bot in the Taskcluster firefox-ci instance without relying on a remote Docker repository: the image is built in Taskcluster and stays there. Other tasks can use our docker image by referencing it through the [Taskcluster task-image](https://firefox-source-docs.mozilla.org/taskcluster/docker-images.html) feature.
 
 You can view that usage in the bot's [production](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-production) & [testing](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-testing) hooks.
 
