@@ -49,6 +49,14 @@ If you do not have a bunch of reviews in a normal week day on the front page und
 
 The old version using Taskcluster raw data is still available under https://code-review.moz.tools/#/tasks and will list (slowly) all the publication tasks with their ending tasks. Seeing a lot of red is never a good sign.
 
+### Integration test
+
+The repository also hosts an **integration test**. It's a Python script running daily as a Taskcluster hook to check that the whole stack is working.
+
+You can update its hook in Taskcluster, to send you an email once a revision is applied on phabricator-dev.
+
+If the daily revision from the integration test does not show up, it's a good indicator that something is broken.
+
 
 ### Human probes
 
