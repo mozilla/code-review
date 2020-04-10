@@ -36,7 +36,7 @@ It's possible to configure alerts on your account when a metric goes under a cer
 
 ### Heroku
 
-You'll need access to the `mozillacorporation` group on Heroku. Request on Bugzilla to be added in the mozillian group `heroku-members`. You'll then be able to login through SSO on Heroku.
+You'll need access to the `mozillacorporation` group on Heroku. Request on Bugzilla to be added in the mozillian group `heroku-members`. You'll then be able to login through SSO on Heroku (detailed and up to date information on [wiki.mozilla.org](https://wiki.mozilla.org/ReleaseEngineering/How_To/Heroku_CLI)).
 Once on Heroku, an existing admin for the code-review platform needs to upgrade your rights so you can manage the related applications.
 
 Finally you'll be able to see recent logs for the code review dynos (backend & events). That's helpful if Papertrail has issues.
