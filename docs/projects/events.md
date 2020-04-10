@@ -28,7 +28,7 @@ Here is a sequence diagram showcasing the main exchanges between relevant partie
 - one of the mercurial **workers** on Heroku
 - the Try server
 
-![](events.jpg)
+![](events.png)
 [Diagram source](events.mermaid)
 
 As you can see the workflow is quite complex, relying on several distributed parts. We decided to create an external library [libmozevent](https://github.com/mozilla/libmozevent) to abstract most of the exchanges.
