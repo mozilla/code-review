@@ -1,6 +1,6 @@
 # Code review Bot
 
-The publication task (or called **bot**) is a Python 3 script, running as a Taskcluster task.
+The publication task (also called **bot**) is a Python 3 script, running as a Taskcluster task.
 
 The technical information on how to get started is available in the [project README](/bot/README.md).
 
@@ -34,7 +34,7 @@ We publish only a subset of issues detected:
 - every **Error** is reported, no matter where it's detected.
 - **Warnings** that are inside the patch (modified lines of files in patch) are reported
 
-Other warnings are discarded (but still reportted in debug & backend mode)
+Other warnings are discarded (but still reported in debug and backend mode)
 
 ## Supported tasks
 
@@ -46,31 +46,31 @@ Each `code_review_bot.Issue` has a common interface to build Phabricator LintRes
 
 ### Clang-Tidy
 
-This support task `source-test-clang-tidy` from Mozilla central, and parses the custom artifact `public/code-review/clang-tidy.json`.
+This supports the `source-test-clang-tidy` task from mozilla-central, and parses the custom artifact `public/code-review/clang-tidy.json`.
 
 It will output a list of `ClangTidyIssue`, reporting static analysis warnings. A few extra filtering rules are present.
 
 ### Clang-Format
 
-This support task `source-test-clang-format` from Mozilla central, and parses the custom artifact `public/code-review/clang-tidy.diff`. (Only task to use a diff directly)
+This supports the `source-test-clang-format` task from mozilla-central, and parses the custom artifact `public/code-review/clang-tidy.diff`. (Only task to use a diff directly)
 
 It will output a list of `ClangFormatIssue`, reporting formatting warnings, with fixes provided to the developer.
 
 ### Coverity
 
-This support the Coverity integration Mozilla Central and NSS, and parses the custom artifact `public/code-review/coverity.json`.
+This supports the Coverity integration from mozilla-central and NSS, and parses the custom artifact `public/code-review/coverity.json`.
 
 It will output a list of `CoverityIssue`, reporting static analysis warnings and build errors.
 
 ### Infer
 
-This support the `source-test-infer` from Mozilla Central, and parses the custom artifact `public/code-review/infer.json`.
+This supports the `source-test-infer` from mozilla-central, and parses the custom artifact `public/code-review/infer.json`.
 
 It will output a list of `InferIssue` reporting static analysis and formatting issues in Java source code.
 
 ### Mozlint
 
-This support all the Mozlint tasks (and there are a lot!) from Mozilla central. It parses the custom artifact and mozlint json format defined in `public/code-review/mozlint.json`.
+This supports all the Mozlint tasks (and there are a lot!) from mozilla-central. It parses the custom artifact and mozlint json format defined in `public/code-review/mozlint.json`.
 
 It will output a list of `MozLintIssue` reporting on various issues for most languages in Mozilla central.
 
@@ -78,7 +78,7 @@ It will output a list of `MozLintIssue` reporting on various issues for most lan
 
 We also built a default task support & format, described in extensive details [here](/docs/analysis_format.md).
 
-This format should be used by new analyzers, as this does not require any change in the bot !
+This format should be used by new analyzers, as this does not require any change in the bot!
 
 ## Reporters
 
@@ -96,16 +96,16 @@ For more information, read the [phabricator](/docs/phabricator.md) documentation
 
 ### Debug
 
-The debug reporter lists all the issue in a public JSON artifact and send an email to admins with the full list of issues.
+The debug reporter lists all the issues in a public JSON artifact and sends an email to admins with the full list of issues.
 
 It could be deprecated now that we have better tracking and management of issues (it was the first reporter created, a long time ago).
 
 ### Build error
 
-Build errors are really bad, and we want to send an email to the developer when they occur. So this reporter simply send an email to the developer using Taskcluster notification system.
+Build errors are really bad, and we want to send an email to the developer when they occur. So this reporter simply sends an email to the developer using Taskcluster notification system.
 
 ### Backend
 
 The backend has no reporter as it's more tightly coupled to the bot system, but every issue is published on the backend.
 
-Each Issue also has a unique hash calculated, using the modified lines source code, the issue summary. It's used to be able to compare issues together.
+Each Issue also has a unique hash calculated, using the modified lines source code, the issue summary. It's used to be able to compare issues between each other.

@@ -6,13 +6,13 @@ The code review bot is not a single piece, but a distributed system using severa
 
 ## Workflow
 
-1. For every new diff on [Mozilla Phabricator instance](https://phabricator.services.mozilla.com/), an Harbormaster build is created (more details on the [Phabricator page](phabricator.md)
-2. The build triggers an HTTP request towareds the Events system hosted on Heroku.
+1. For every new diff on the [Mozilla Phabricator instance](https://phabricator.services.mozilla.com/), an Harbormaster build is created (more details on the [Phabricator page](phabricator.md)
+2. The build triggers an HTTP request towards the Events system hosted on Heroku.
 3. The Heroku web instance parses the Phabricator payload and stores the relevant information in a Redis database
-4. A pool of Heroku workers poll the Redis database, one of them retrieve the stored build,
-5. That worker then fetches the stack of patches, and try to apply them locally,
+4. A pool of Heroku workers polls the Redis database, one of them retrieves the stored build,
+5. That worker then fetches the stack of patches, and tries to apply them locally,
 6. If the stack fails to apply, an error is reported directly on the Phabricator revision,
-7. If the stack applies cleanly, it's pushed on the Try server, exactcly like a developer would do,
+7. If the stack applies cleanly, it's pushed on the Try server, exactly like a developer would do,
 8. The Try server creates a decision task on Taskcluster,
 9. The Decision tasks creates followup tasks, with code analyzers, and a custom code-review task.
 10. The code analyzers run on the stack we produced, and list potential issues in a JSON file, that is stored and shared as a Taskcluster artifact,
@@ -64,23 +64,23 @@ This has brought us several advantages:
 - we do not [ever](https://hg.mozilla.org/mozilla-central/log/tip/taskcluster/ci/code-review/kind.yml) need to update the first task, so we do not have a direct dependency on mozilla-central
 - we can update the publication code (the **bot** part) easily, just like any other Taskcluster hook payload
 - we can trigger the hook from different projects, with different rules and workflows
-- we get a trigger history for free thanks to Taskcluster hook system
-- we can run several versions of the hook in parallel (testing environment can receive the same pulse messages than production, allowing to run in *shadow mode* - see [debugging](debugging.md) for that)
+- we get a trigger history for free thanks to the Taskcluster hook system
+- we can run several versions of the hook in parallel (the testing environment can receive the same pulse messages than production, allowing to run in *shadow mode* - see [debugging](debugging.md) for that)
 
 ## Backend
 
-The backend is hosted on a single Heroku web dyno as https://api.code-review.moz.tools and linked to an Heroku postgres database. This setup would allow us to scale easily if the need arise.
+The backend is hosted on a single Heroku web dyno at https://api.code-review.moz.tools and linked to an Heroku Postgres database. This setup would allow us to scale easily if the need arises.
 
 The Django web framework is used to build an efficient REST API (with [django-rest-framework](https://www.django-rest-framework.org/)), based on the official ORM system.
 
-It's main purpose is to store issues reported by the publication task at the end of its run, so that they can be retrieved later on by the frontend, if some developer want to see the reports for any revision in more details.
+Its main purpose is to store issues reported by the publication task at the end of its run, so that they can be retrieved later on by the frontend, if some developer wants to see the reports for any revision in more details.
 
 For more information, read the [backend](backend.md) documentation.
 
 ## Frontend
 
 The frontend is a simple [Vue.js](https://vuejs.org) Single Page Application hosted under an S3+Cloudfront bucket as https://code-review.moz.tools.
-It uses the backend as its main source of information, no authentication is implemented as all information are already public (we do not support security bugs).
+It uses the backend as its main source of information, no authentication is implemented as all information is already public (we do not support security bugs).
 
 With the frontend, you can:
 - browse analysis tasks (also called reports)

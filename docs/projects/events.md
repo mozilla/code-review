@@ -33,7 +33,7 @@ Here is a sequence diagram showcasing the main exchanges between relevant partie
 
 As you can see the workflow is quite complex, relying on several distributed parts. We decided to create an external library [libmozevent](https://github.com/mozilla/libmozevent) to abstract most of the exchanges.
 
-That library hosts all the code relevant to mercurial workers, Phabricator interactions, and use a bus system to communicate between sub systems.
+That library hosts all the code relevant to mercurial workers, Phabricator interactions, and uses a bus system to communicate between sub systems.
 This allows us to have the same code run in a single process in development, but across several distributed instances in testing & production (on Heroku), linked together through a Redis database.
 
 Each subsystem has input and output queues, and just consumes input queues to get new data to work on (whatever that data may be). Once its process is done, it puts in the relevant output queues the results (it's basically a plugin system, split on a network).

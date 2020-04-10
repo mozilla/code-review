@@ -6,11 +6,11 @@ As a maintainer on the code review bot, you will face errors or bad behaviours. 
 
 ### Live logs with papertrail
 
-The 3 *back-end* projects (bot, backend & events) all use [papertrail](https://my.papertrailapp.com) to log every Python `logging` calls.
+The 3 *back-end* projects (bot, backend & events) all use [papertrail](https://my.papertrailapp.com) to log every Python `logging` call.
 
 The events are organized with a hierarchy so that you can filter:
 
-- `program:code-review` will display all code review logs from all environment
+- `program:code-review` will display all code review logs from all environments
 - `program:code-review/production` will display all code review logs from production
 - `program:code-review/production/events` will display all code review logs from events in production
 
@@ -20,7 +20,7 @@ To get access to Papertrail, you need to file a bug and ask `:catlee` for permis
 
 Every exception for the 3 *back-end* projects (bot, backend & events) are logged on the Mozilla sentry instance.
 
-To get access, you need to file a bug requesting access to the `sallt` project on https://sentry.prod.mozaws.net/ The bug should be assigned to cloudops.
+To get access, you need to file a bug requesting access to the `sallt` project on https://sentry.prod.mozaws.net/. The bug should be assigned to cloudops.
 
 Each project has its own dedicated space on Sentry, allowing you to filter and search issues.
 
@@ -43,7 +43,7 @@ Finally you'll be able to see recent logs for the code review dynos (backend & e
 
 ### Frontend
 
-The code review frontend hosted on https://code-review.moz.tools (production) and https://code-review.testing.moz.tools (testing) offer a pretty good overview of what is going on in the system.
+The code review frontend hosted on https://code-review.moz.tools (production) and https://code-review.testing.moz.tools (testing) offers a pretty good overview of what is going on in the system.
 
 If you do not have a bunch of reviews in a normal week day on the front page under 20 minutes, something is probably going haywire.
 
@@ -65,7 +65,7 @@ Here is a list of troubleshooting steps when you *know* that something does not 
 - Is the redis database full ?
 - If events is behaving normally, applying revisions, pick a try job from the logs, and follow it
 - Check the decision task is creating analyzers and the code-review ending task
-- Check the analyzers create some json artifacts, and look for incoherent data in the output. Are the task in a coherent status ?
+- Check the analyzers create some json artifacts, and look for incoherent data in the output. Are the tasks in a coherent status?
 - Check the code review hook on firefox-ci: Is it triggered ? Are there bot jobs in papertrail ? Can you find the bot task for the try task you were looking before in the logs ?
 - Check the bot execution on the job, through its Taskcluster logs. Check the build updates on Phabricator.
 - Check the backend is running, through Papertrail or Heroku logs. Is the postgresql database full ?

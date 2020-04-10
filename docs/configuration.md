@@ -175,18 +175,18 @@ events:
     access_token: yyy
 
   # Pulse authentication on the community Taskcluster instance
-  # to get messages for the risk analysis triggers
+  # to get messages for the test selection triggers
   communitytc_pulse_user: xxxx
   communitytc_pulse_password: yyy
 
-  # Phabricator usernames for whom a risk analysis will be built
-  # when they are requested as reviewers on a patch
+  # Phabricator usernames for whom a risk analysis will be triggered
+  # when they are authors or reviewers of a patch
   risk_analysis_users:
     - user-a
     - user-b
 
   # The SSH private key used to push patches on the Try server
-  # It can be setup globally for the events project, or specified per repositories
+  # It can be setup globally for the events project, or specified per repository
   ssh_key: |-
     -----BEGIN RSA PRIVATE KEY-----
     SomePrivateKeyHere

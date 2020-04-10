@@ -9,7 +9,7 @@ The main goal of the project is to publish issues on Phabricator, so we need a g
 
 Developers interact with Phabricator **Revision** objects: when they push a patch, it creates a new revision.
 
-The patch is a **Diff**, linked to a unique **Revision**. When a developer updates its patch, the **Revision** gets a new **Diff**. The latest **Diff** is displayed by default when viewing a **Revision** on Phabricator web interface.
+The patch is a **Diff**, linked to a unique **Revision**. When a developer updates its patch, the **Revision** gets a new **Diff**. The latest **Diff** is displayed by default when viewing a **Revision** on the Phabricator web interface.
 
 Phabricator instances can be configured with [Herald rules](https://secure.phabricator.com/book/phabricator/article/herald/) to react to internal events. This allows us to get a new [Harbormaster build](https://secure.phabricator.com/book/phabricator/article/harbormaster/) for every new patch.
 
@@ -23,7 +23,7 @@ The `pass` and `fail` states are final. Once reported on the build, its state ca
 
 It's possible to restart a build (as an administrator on production, as owner of the revision in testing), so you can have multiple builds per **Diff**.
 
-When some issues are detected, they are reported as **LintResult**. Phabricator will display them as a list at the top of the **Revision**, with their name, and code, linking to their place in the patch.
+When some issues are detected, they are reported as **LintResult**. Phabricator will display them as a list at the top of the **Revision**, with their name, and code, linking to their location in the patch.
 
 Unit test failures could also be reported through **UnitResult** in the same way.
 
@@ -41,7 +41,7 @@ To interact with Phabricator, we need to use their *~REST* API. It's self docume
 
 Our Phabricator API client is developed in a separate repository [libmozdata](https://github.com/mozilla/libmozdata/blob/master/libmozdata/phabricator.py), but still maintained by the same team.
 
-Please note that the Phabricator API use a *weird* style to pass parameters (only POST requests, with a JSON payload inside a dict urlencoded: use the existing client instead of writing your own.
+Please note that the Phabricator API use a *weird* style to pass parameters (only POST requests, with a JSON payload inside a dict urlencoded: use the existing client instead of writing your own).
 
 ## Endpoints
 
@@ -68,7 +68,7 @@ Phabricator uses two IDs per object: a numerical value `ID`, which is exposed to
 
 ### Search
 
-To get details about a specific object, you need to use the `xxx.search` endpoint with an ID constraints. There is no `xxx.details` endpoint. You'll see that a lot in libmozdata.
+To get details about a specific object, you need to use the `xxx.search` endpoint with an ID constraint. There is no `xxx.details` endpoint. You'll see that a lot in libmozdata.
 
 
 ### Unit tests

@@ -27,7 +27,7 @@ The CI/CD workflow is really simple on the firefox-ci instance. On every Github 
 - `bot_check_tests` runs the bot unit tests
 - `bot_build_dind` builds the bot's Docker image using Docker In Docker (dind), stores the image as a public artifact, and the task is always indexed.
 
-That last task is interesting because it allows us to ship immediately updates for the code review bot in the Taskcluster firefox-ci instance without relying on a remote Docker repository: the image is built in Taskcluster and stays there. Other tasks can use our doker image by referencing it through the **task-image** feature.
+That last task is interesting because it allows us to ship immediately updates for the code review bot in the Taskcluster firefox-ci instance without relying on a remote Docker repository: the image is built in Taskcluster and stays there. Other tasks can use our docker image by referencing it through the **task-image** feature.
 
 You can view that usage in the bot's [production](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-production) & [testing](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-testing) hooks.
 
@@ -73,7 +73,7 @@ On every Github push (branch, pull request, tag), we run the following tasks:
 - `backend_build` builds the backend's Docker image using img and a privileged worker, and stores it as a public artifact
 - `events_build` builds the events's Docker image using img and a privileged worker, and stores it as a public artifact
 - `integration_build` builds the integration's Docker image using img and a privileged worker, and stores it as a public artifact
-- `frontend_build` builds the frontend static files and store them as Taskcluster artifacts
+- `frontend_build` builds the frontend static files and stores them as Taskcluster artifacts
 
 On a tag push, we trigger another task:
 
@@ -84,4 +84,4 @@ On a deployment (push on `testing` or `production`), we trigger those deployment
 - `backend_deploy` deploys the backend docker image on Heroku web dyno
 - `events_deploy` deploys the events docker image on Heroku web & worker dynos
 - `integration_deploy` pushes the integration docker image on a docker registry
-- `integration_hook` update the integration Taskcluster hook to use the new docker image
+- `integration_hook` updates the integration Taskcluster hook to use the new docker image
