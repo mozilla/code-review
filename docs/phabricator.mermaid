@@ -1,0 +1,6 @@
+graph TD
+	Revision --> Diff
+  Revision --> Comment
+  Diff --> build[Harbormaster Build]
+  build --> LintResult
+  build --> UnitResult
