@@ -59,7 +59,7 @@ They will tell you if something goes wrong, as the code review bot adds a link t
 
 Here is a list of troubleshooting steps when you *know* that something does not work, but don't know yet which part is buggy:
 
-- Check the frontend. As mentionned above, that's the easiest and fastest way to see what's going on in real time
+- Check the frontend. As mentioned above, that's the easiest and fastest way to see what's going on in real time
 - Check the logs. Start by looking for the events logs, as that's the first piece that could fail in the workflow.
 - Check events on Heroku: are the dynos running (both web & worker) ?
 - Is the redis database full ?
