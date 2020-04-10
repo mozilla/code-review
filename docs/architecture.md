@@ -19,9 +19,9 @@ The code review bot is not a single piece, but a distributed system using severa
 9. The Decision tasks creates followup tasks, with code analyzers, and a custom code-review task.
 10. The code analyzers run on the stack we produced, and list potential issues in a JSON file, that is stored and shared as a Taskcluster artifact,
 11. The final code-review task is triggered once all analyzers complete and just sends a Pulse message.
-12. The pulse messages triggers our own task hosted in a Taskcluster hook
+12. The pulse messages triggers our own task hosted in a Taskcluster hook (see [bot](projects/bot.md) for more information)
 13. That task retrieves all the analyzers artifacts with issues, filters them, and updates the Phabricator build, reporting potential issues.
-14. That same task also publishes the issues on our backend hosted on Heroku.
+14. That same task also publishes the issues on our backend hosted on Heroku (see [backend](projects/backend.md) for more information).
 
 The whole workflow takes about 12 to 15 minutes on average for a given revision.
 
