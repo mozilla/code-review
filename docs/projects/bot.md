@@ -1,6 +1,6 @@
 # Code review Bot
 
-The publication task (also called **bot**) is a Python 3 script, running as a Taskcluster task.
+The publication task (also called **bot**) is a Python script, running as a Taskcluster task.
 
 The technical information on how to get started is available in the [project README](/bot/README.md).
 

@@ -1,6 +1,6 @@
 # Code review Events
 
-This is a Python 3 distributed application, split between a public API endpoint and mercurial workers, all running in the same Heroku application.
+This is a Python distributed application, split between a public API endpoint and mercurial workers, all running in the same Heroku application.
 
 The technical information on how to get started is available in the [project README](/events/README.md).
 

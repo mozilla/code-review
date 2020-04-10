@@ -1,6 +1,6 @@
 # Code review Backend
 
-This is a Python 3 REST API, powered by [Django](https://docs.djangoproject.com/) and [django-rest-framework](https://www.django-rest-framework.org/).
+This is a Python REST API, powered by [Django](https://docs.djangoproject.com/) and [django-rest-framework](https://www.django-rest-framework.org/).
 
 The technical information on how to get started is available in the [project README](/backend/README.md).
 
