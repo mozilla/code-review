@@ -4,6 +4,8 @@ The code review bot is not a single piece, but a distributed system using severa
 
 ![](architecture.png)
 
+[Source](architecture.drawio) to use on [draw.io](https://app.diagrams.net/).
+
 ## Workflow
 
 1. For every new diff on the [Mozilla Phabricator instance](https://phabricator.services.mozilla.com/), an Harbormaster build is created (more details on the [Phabricator page](phabricator.md)
