@@ -55,4 +55,6 @@ TODO: explain a bit Issue models
 
 ## Endpoints
 
-TODO: table with all endpoints (generated ?)
+All endpoints are described in the generated [OpenAPI documentation](https://api.code-review.moz.tools/docs).
+
+The OpenAPI raw file is available as [JSON](https://api.code-review.moz.tools/docs.json) and [YAML](https://api.code-review.moz.tools/docs.yaml)
