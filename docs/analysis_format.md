@@ -37,7 +37,7 @@ Here is an example of an analysis using this format:
 }
 ```
 
-We have built a validation tool, available in this repository as `bot/tools/validator.py`. It has no extra dependencies, and can run using any Python 3 version. You can download it directly on your computer to troubleshoot your payloads:
+We have built a validation tool, available in this repository as `bot/tools/validator.py`. It has no extra dependencies, and can run using any Python version. You can download it directly on your computer to troubleshoot your payloads:
 
 ```
 wget https://raw.githubusercontent.com/mozilla/code-review/master/bot/tools/validator.py

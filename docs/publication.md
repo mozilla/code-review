@@ -39,5 +39,5 @@ We have [plans](https://bugzilla.mozilla.org/show_bug.cgi?id=1555721) to remove 
 2. Check that your task is present in the task group published by the code review bot as `Treeherder jobs`
 3. Check that your task produces the expected analysis artifact
 4. Check that the `code-review-issues` is present in that task group (for mozilla-central tasks)
-5. Check that your test diff is available on [our dashboard](https://static-analysis.moz.tools/) by searching its revision ID or title (it can take several seconds to load all the tasks available)
+5. Check that your test diff is available on [our dashboard](https://code-review.moz.tools/) by searching its revision ID or title (it can take several seconds to load all the tasks available)
 6. Reach out to us, see [README](../README.md) for contact info

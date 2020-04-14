@@ -1,0 +1,12 @@
+graph TD
+  pulse[Pulse Trigger] -- task id --> new
+  new[New bot task] --> tasks
+  tasks{List all tasks} -->|artifact| clang-tidy
+  tasks{List all tasks} -->|artifact| mozlint
+  tasks{List all tasks} -->|artifact| analyzer-X
+  clang-tidy --> issues[List of issues]
+  mozlint --> issues
+  analyzer-X --> issues
+  issues --> reporters{Publication}
+  reporters --> Phabricator
+  reporters --> Mail
