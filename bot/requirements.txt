@@ -1,5 +1,5 @@
 -e ../tools #egg=code-review-tools
-influxdb==5.2.3
+influxdb==5.3.0
 libmozdata==0.1.65
 pyyaml==5.3.1
 rs-parsepatch==0.3.1
