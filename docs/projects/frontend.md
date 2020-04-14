@@ -1,6 +1,6 @@
 # Code Review Frontend
 
-The frontend is a Single Page Application, built with [Vue.JS](https://vuejs.org), using [vuex](https://vuex.vuejs.org/) as a store to get reactive programming share across components.
+The frontend is a Single Page Application, built with [Vue.JS](https://vuejs.org), using [vuex](https://vuex.vuejs.org/) as a store for data shared across components in the application.
 
 It's really a pretty simple application, not much complexity:
 - few views, and few components
