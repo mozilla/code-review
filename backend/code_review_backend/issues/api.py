@@ -218,6 +218,7 @@ class IssueCheckStats(generics.ListAPIView):
             )
             .prefetch_related("diff", "diff_revision", "diff__revision__repository")
         )
+
         # Filter issues by date
         since = self.request.query_params.get("since")
         if since is not None:
@@ -268,6 +269,15 @@ class IssueCheckHistory(generics.ListAPIView):
         check = self.request.query_params.get("check")
         if check:
             queryset = queryset.filter(check=check)
+
+        # Filter by date
+        since = self.request.query_params.get("since")
+        if since is not None:
+            try:
+                since = datetime.strptime(since, "%Y-%m-%d").date()
+            except ValueError:
+                raise APIException(detail="invalid since date - should be YYYY-MM-DD")
+            queryset = queryset.filter(date__gte=since)
 
         return queryset.order_by("date")
 
