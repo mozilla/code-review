@@ -146,7 +146,8 @@ export default new Vuex.Store({
 
         // Load next stats
         if (resp.data.next !== null) {
-          state.dispatch('load_stats', { url: resp.data.next, since: params.since })
+          // Do not propagate since, as it's already included in the next
+          state.dispatch('load_stats', { url: resp.data.next })
         }
       })
     },

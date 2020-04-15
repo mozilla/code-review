@@ -45,8 +45,14 @@ export default {
     this.$store.dispatch('load_history')
   },
   methods: {
-    load_stats () {
-      this.$store.dispatch('load_stats', { since: this.since })
+    load_stats (reset) {
+      let payload = {}
+      if (reset === true) {
+        this.set(this, 'since', null)
+      } else {
+        payload.since = this.since
+      }
+      this.$store.dispatch('load_stats', payload)
     },
     use_filter (name, value) {
       // Store new filter value
@@ -119,6 +125,12 @@ export default {
 
 <template>
   <div>
+    <p>
+      <label>Issues since:</label>
+      <input class="input" type="date" v-model="since" v-on:change="load_stats()" />
+      <button class="button" v-on:click="load_stats(true)">Since beginning</button>
+    </p>
+
     <Progress name="Statistics" />
 
     <chartist v-if="history !== null"
@@ -126,11 +138,6 @@ export default {
         :data="history"
         :options="chartOptions" >
     </chartist>
-
-    <p>
-      <label>Issues since:</label>
-      <input class="input" type="date" v-model="since" v-on:change="load_stats()" />
-    </p>
 
     <div v-if="stats">
       <table class="table is-fullwidth" v-if="stats">
