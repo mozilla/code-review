@@ -8,4 +8,7 @@ RUN cd /src/events && python setup.py install
 
 RUN /src/tools/docker/bootstrap-mercurial.sh
 
+# Setup jemalloc to manage Ram more efficiently on Heroku
+ENV LD_PRELOAD="libjemalloc.so.2"
+
 CMD ["code-review-events"]
