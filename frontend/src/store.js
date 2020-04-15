@@ -140,6 +140,9 @@ export default new Vuex.Store({
         params.since = payload.since
       }
 
+      // Remove null values from params
+      Object.entries(params).forEach(([k, v]) => { if (v === null) delete params[k] })
+
       axios.get(url, { params }).then(resp => {
         // Store new stats
         state.commit('add_stats', resp.data)
@@ -231,6 +234,9 @@ export default new Vuex.Store({
     load_history (state, payload) {
       let url = this.state.backend_url + '/v1/check/history/'
       let params = payload || {}
+
+      // Reset
+      state.commit('use_history', [])
 
       // Remove null values from params
       Object.entries(params).forEach(([k, v]) => { if (v === null) delete params[k] })

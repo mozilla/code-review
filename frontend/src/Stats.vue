@@ -46,8 +46,8 @@ export default {
   methods: {
     load (reset) {
       let payload = {}
-      if (reset === true) {
-        this.set(this, 'since', null)
+      if (reset === true || this.since === '') {
+        this.$set(this, 'since', null)
       } else {
         payload.since = this.since
       }
@@ -130,15 +130,19 @@ export default {
 
 <template>
   <div>
-    <div class="field">
-      <label class="label">Issues since:</label>
-      <div class="control">
-        <input class="input" type="date" v-model="since" v-on:change="load()" />
-        <button class="button" v-on:click="load(true)">Since beginning</button>
+    <Progress name="Statistics" />
+
+    <div>
+      <label>Issues created since:</label>
+      <div class="field has-addons">
+        <div class="control">
+          <input class="input" type="date" v-model="since" v-on:change="load()" />
+        </div>
+        <div class="control">
+          <button class="button is-info" v-on:click="load(true)">Beginning</button>
+        </div>
       </div>
     </div>
-
-    <Progress name="Statistics" />
 
     <chartist v-if="history !== null"
         type="Line"
