@@ -205,14 +205,29 @@ class IssueCheckStats(generics.ListAPIView):
     """
 
     serializer_class = IssueCheckStatsSerializer
-    queryset = (
-        Issue.objects.values("analyzer", "check", "diff__revision__repository__slug")
-        .annotate(total=Count("id"))
-        .annotate(
-            publishable=Count("id", filter=Q(in_patch=True) | Q(level=LEVEL_ERROR))
+
+    def get_queryset(self):
+
+        queryset = (
+            Issue.objects.values(
+                "analyzer", "check", "diff__revision__repository__slug"
+            )
+            .annotate(total=Count("id"))
+            .annotate(
+                publishable=Count("id", filter=Q(in_patch=True) | Q(level=LEVEL_ERROR))
+            )
+            .prefetch_related("diff", "diff_revision", "diff__revision__repository")
         )
-        .order_by("-total")
-    )
+        # Filter issues by date
+        since = self.request.query_params.get("since")
+        if since is not None:
+            try:
+                since = datetime.strptime(since, "%Y-%m-%d").date()
+            except ValueError:
+                raise APIException(detail="invalid since date - should be YYYY-MM-DD")
+            queryset = queryset.filter(diff__created__gte=since)
+
+        return queryset.order_by("-total")
 
 
 class IssueCheckHistory(generics.ListAPIView):
