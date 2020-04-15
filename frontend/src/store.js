@@ -129,20 +129,25 @@ export default new Vuex.Store({
       })
     },
 
-    load_stats (state, url) {
-      if (url === null) {
-        return
-      } else if (url === undefined) {
+    load_stats (state, payload) {
+      if (payload.url === undefined) {
         state.commit('reset_stats')
-        url = this.state.backend_url + '/v1/check/stats/'
+      }
+      const url = payload.url || this.state.backend_url + '/v1/check/stats/'
+
+      let params = {}
+      if (payload.since !== undefined) {
+        params.since = payload.since
       }
 
-      axios.get(url).then(resp => {
+      axios.get(url, { params }).then(resp => {
         // Store new stats
         state.commit('add_stats', resp.data)
 
         // Load next stats
-        state.dispatch('load_stats', resp.data.next)
+        if (resp.data.next !== null) {
+          state.dispatch('load_stats', { url: resp.data.next, since: params.since })
+        }
       })
     },
 

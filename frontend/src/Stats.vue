@@ -10,8 +10,14 @@ export default {
     mixins.date
   ],
   data () {
+    // Set default to since one month back
+    let since = new Date()
+    since.setMonth(since.getMonth() - 1)
+    since = since.toISOString().substring(0, 10)
+
     return {
       // Data filters
+      since: since,
       analyzer: null,
       repository: null,
       check: null,
@@ -35,10 +41,13 @@ export default {
   },
   components: { Progress, Choice },
   mounted () {
-    this.$store.dispatch('load_stats')
+    this.load_stats()
     this.$store.dispatch('load_history')
   },
   methods: {
+    load_stats () {
+      this.$store.dispatch('load_stats', { since: this.since })
+    },
     use_filter (name, value) {
       // Store new filter value
       this.$set(this, name, value)
@@ -117,6 +126,11 @@ export default {
         :data="history"
         :options="chartOptions" >
     </chartist>
+
+    <p>
+      <label>Issues since:</label>
+      <input class="input" type="date" v-model="since" v-on:change="load_stats()" />
+    </p>
 
     <div v-if="stats">
       <table class="table is-fullwidth" v-if="stats">
