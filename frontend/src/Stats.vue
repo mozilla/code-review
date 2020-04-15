@@ -41,18 +41,22 @@ export default {
   },
   components: { Progress, Choice },
   mounted () {
-    this.load_stats()
-    this.$store.dispatch('load_history')
+    this.load()
   },
   methods: {
-    load_stats (reset) {
+    load (reset) {
       let payload = {}
       if (reset === true) {
         this.set(this, 'since', null)
       } else {
         payload.since = this.since
       }
+
+      // Stats since provided date
       this.$store.dispatch('load_stats', payload)
+
+      // History since provided date
+      this.$store.dispatch('load_history', payload)
     },
     use_filter (name, value) {
       // Store new filter value
@@ -62,7 +66,8 @@ export default {
       this.$store.dispatch('load_history', {
         repository: this.repository,
         analyzer: this.analyzer,
-        check: this.check
+        check: this.check,
+        since: this.since
       })
     },
     sort_by (column) {
@@ -125,11 +130,13 @@ export default {
 
 <template>
   <div>
-    <p>
-      <label>Issues since:</label>
-      <input class="input" type="date" v-model="since" v-on:change="load_stats()" />
-      <button class="button" v-on:click="load_stats(true)">Since beginning</button>
-    </p>
+    <div class="field">
+      <label class="label">Issues since:</label>
+      <div class="control">
+        <input class="input" type="date" v-model="since" v-on:change="load()" />
+        <button class="button" v-on:click="load(true)">Since beginning</button>
+      </div>
+    </div>
 
     <Progress name="Statistics" />
 
