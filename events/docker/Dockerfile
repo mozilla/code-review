@@ -10,5 +10,6 @@ RUN /src/tools/docker/bootstrap-mercurial.sh
 
 # Setup jemalloc to manage Ram more efficiently on Heroku
 ENV LD_PRELOAD="libjemalloc.so.2"
+ENV MALLOC_CONF="narenas:1"
 
 CMD ["code-review-events"]
