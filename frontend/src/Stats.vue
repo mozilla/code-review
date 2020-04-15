@@ -10,8 +10,14 @@ export default {
     mixins.date
   ],
   data () {
+    // Set default to since one month back
+    let since = new Date()
+    since.setMonth(since.getMonth() - 1)
+    since = since.toISOString().substring(0, 10)
+
     return {
       // Data filters
+      since: since,
       analyzer: null,
       repository: null,
       check: null,
@@ -35,10 +41,23 @@ export default {
   },
   components: { Progress, Choice },
   mounted () {
-    this.$store.dispatch('load_stats')
-    this.$store.dispatch('load_history')
+    this.load()
   },
   methods: {
+    load (reset) {
+      let payload = {}
+      if (reset === true || this.since === '') {
+        this.$set(this, 'since', null)
+      } else {
+        payload.since = this.since
+      }
+
+      // Stats since provided date
+      this.$store.dispatch('load_stats', payload)
+
+      // History since provided date
+      this.$store.dispatch('load_history', payload)
+    },
     use_filter (name, value) {
       // Store new filter value
       this.$set(this, name, value)
@@ -47,7 +66,8 @@ export default {
       this.$store.dispatch('load_history', {
         repository: this.repository,
         analyzer: this.analyzer,
-        check: this.check
+        check: this.check,
+        since: this.since
       })
     },
     sort_by (column) {
@@ -111,6 +131,18 @@ export default {
 <template>
   <div>
     <Progress name="Statistics" />
+
+    <div>
+      <label>Issues created since:</label>
+      <div class="field has-addons">
+        <div class="control">
+          <input class="input" type="date" v-model="since" v-on:change="load()" />
+        </div>
+        <div class="control">
+          <button class="button is-info" v-on:click="load(true)">Beginning</button>
+        </div>
+      </div>
+    </div>
 
     <chartist v-if="history !== null"
         type="Line"

@@ -129,20 +129,29 @@ export default new Vuex.Store({
       })
     },
 
-    load_stats (state, url) {
-      if (url === null) {
-        return
-      } else if (url === undefined) {
+    load_stats (state, payload) {
+      if (payload.url === undefined) {
         state.commit('reset_stats')
-        url = this.state.backend_url + '/v1/check/stats/'
+      }
+      const url = payload.url || this.state.backend_url + '/v1/check/stats/'
+
+      let params = {}
+      if (payload.since !== undefined) {
+        params.since = payload.since
       }
 
-      axios.get(url).then(resp => {
+      // Remove null values from params
+      Object.entries(params).forEach(([k, v]) => { if (v === null) delete params[k] })
+
+      axios.get(url, { params }).then(resp => {
         // Store new stats
         state.commit('add_stats', resp.data)
 
         // Load next stats
-        state.dispatch('load_stats', resp.data.next)
+        if (resp.data.next !== null) {
+          // Do not propagate since, as it's already included in the next
+          state.dispatch('load_stats', { url: resp.data.next })
+        }
       })
     },
 
@@ -225,6 +234,9 @@ export default new Vuex.Store({
     load_history (state, payload) {
       let url = this.state.backend_url + '/v1/check/history/'
       let params = payload || {}
+
+      // Reset
+      state.commit('use_history', [])
 
       // Remove null values from params
       Object.entries(params).forEach(([k, v]) => { if (v === null) delete params[k] })

@@ -10,6 +10,8 @@ from django.db.models import Q
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
 from django.urls import path
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
 from rest_framework import generics
 from rest_framework import mixins
 from rest_framework import routers
@@ -30,6 +32,14 @@ from code_review_backend.issues.serializers import IssueCheckStatsSerializer
 from code_review_backend.issues.serializers import IssueSerializer
 from code_review_backend.issues.serializers import RepositorySerializer
 from code_review_backend.issues.serializers import RevisionSerializer
+
+
+class CachedView(object):
+    """Helper to bring DRF caching to GET methods"""
+
+    @method_decorator(cache_page(1800))
+    def get(self, *args, **kwargs):
+        return super().get(*args, **kwargs)
 
 
 class CreateListRetrieveViewSet(
@@ -150,7 +160,7 @@ class IssueViewSet(viewsets.ModelViewSet):
         )
 
 
-class IssueCheckDetails(generics.ListAPIView):
+class IssueCheckDetails(CachedView, generics.ListAPIView):
     """
     List all the issues found by a specific analyzer check in a repository
     """
@@ -198,24 +208,40 @@ class IssueCheckDetails(generics.ListAPIView):
         return queryset
 
 
-class IssueCheckStats(generics.ListAPIView):
+class IssueCheckStats(CachedView, generics.ListAPIView):
     """
     List all analyzer checks per repository aggregated with
     their total number of issues
     """
 
     serializer_class = IssueCheckStatsSerializer
-    queryset = (
-        Issue.objects.values("analyzer", "check", "diff__revision__repository__slug")
-        .annotate(total=Count("id"))
-        .annotate(
-            publishable=Count("id", filter=Q(in_patch=True) | Q(level=LEVEL_ERROR))
+
+    def get_queryset(self):
+
+        queryset = (
+            Issue.objects.values(
+                "analyzer", "check", "diff__revision__repository__slug"
+            )
+            .annotate(total=Count("id"))
+            .annotate(
+                publishable=Count("id", filter=Q(in_patch=True) | Q(level=LEVEL_ERROR))
+            )
+            .prefetch_related("diff", "diff_revision", "diff__revision__repository")
         )
-        .order_by("-total")
-    )
+
+        # Filter issues by date
+        since = self.request.query_params.get("since")
+        if since is not None:
+            try:
+                since = datetime.strptime(since, "%Y-%m-%d").date()
+            except ValueError:
+                raise APIException(detail="invalid since date - should be YYYY-MM-DD")
+            queryset = queryset.filter(diff__created__gte=since)
+
+        return queryset.order_by("-total")
 
 
-class IssueCheckHistory(generics.ListAPIView):
+class IssueCheckHistory(CachedView, generics.ListAPIView):
     """
     Historical usage per day of an issue checks
     * globally
@@ -253,6 +279,15 @@ class IssueCheckHistory(generics.ListAPIView):
         check = self.request.query_params.get("check")
         if check:
             queryset = queryset.filter(check=check)
+
+        # Filter by date
+        since = self.request.query_params.get("since")
+        if since is not None:
+            try:
+                since = datetime.strptime(since, "%Y-%m-%d").date()
+            except ValueError:
+                raise APIException(detail="invalid since date - should be YYYY-MM-DD")
+            queryset = queryset.filter(date__gte=since)
 
         return queryset.order_by("date")
 
