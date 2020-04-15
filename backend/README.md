@@ -66,6 +66,14 @@ To restore the dump, use the following command (using the password used to start
 pg_restore --verbose --clean --no-acl --no-owner -h localhost -U postgres -d code_review latest.dump
 ```
 
+It's also possible to use a direct one-step command from Heroku, but you need to have a compatible version of pg_dump on your system (moght be tricky in some scenarios):
+
+```
+heroku pg:pull  postgresql-concave-XXX --app code-review-backend-production postgresql://postgres@localhost:5432/prod
+```
+The postgresql database name can be found through the CLI `pg:info` tool, or on the Heroku dashboard. More information on the [official documentation](https://devcenter.heroku.com/articles/heroku-postgresql#pg-push-and-pg-pull)
+
+
 Finally you can use that database with the backend as:
 
 ```
