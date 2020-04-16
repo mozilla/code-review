@@ -3,7 +3,7 @@ MERCURIAL_VERSION="5.3"
 VERSION_CONTROL_TOOLS_REV="2f7b4df4a928"
 
 apt-get update
-apt-get install --no-install-recommends -y curl python-dev gcc openssh-client
+apt-get install --no-install-recommends -y curl python-dev gcc openssh-client libjemalloc2
 
 pip install --disable-pip-version-check --quiet --no-cache-dir mercurial==$MERCURIAL_VERSION
 
