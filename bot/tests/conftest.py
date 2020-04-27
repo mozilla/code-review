@@ -653,16 +653,6 @@ def mock_backend(mock_backend_secret):
     return revisions, diffs, issues
 
 
-@pytest.fixture
-def mock_treeherder():
-    responses.add(
-        responses.GET,
-        "https://treeherder.mozilla.org/api/jobdetail/",
-        body=json.dumps({"results": [{"job_id": 1234}]}),
-        content_type="application/json",
-    )
-
-
 class MockPhabricator(object):
     """
     A Mock Phabricator API server using responses

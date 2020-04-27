@@ -110,7 +110,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 VALID_TASK_FAILURES_MESSAGE = """
-The analysis task [mock-infer](https://treeherder.mozilla.org/#/jobs?repo=try&revision=aabbccddee&selectedJob=1234) failed, but we could not detect any issue.
+The analysis task [mock-infer](https://treeherder.mozilla.org/#/jobs?repo=try&revision=aabbccddee&selectedTaskRun=ab3NrysvSZyEwsOHL2MZfw-0) failed, but we could not detect any issue.
 Please check this task manually.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
@@ -819,7 +819,7 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task, mock_task
     ]
 
 
-def test_task_failures(mock_phabricator, phab, mock_try_task, mock_treeherder):
+def test_task_failures(mock_phabricator, phab, mock_try_task):
     """
     Test Phabricator reporter publication with some task failures
     """

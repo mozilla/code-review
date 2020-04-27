@@ -496,7 +496,7 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
 
 
 @pytest.mark.asyncio
-async def test_got_try_task_end(PhabricatorMock, mock_taskcluster, mock_treeherder):
+async def test_got_try_task_end(PhabricatorMock, mock_taskcluster):
     bus = MessageBus()
     build = PhabricatorBuild(
         MockRequest(
@@ -605,40 +605,13 @@ async def test_got_try_task_end(PhabricatorMock, mock_taskcluster, mock_treeherd
         "details": None,
     }
 
-    with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-        rsps.add(
-            responses.GET,
-            "https://treeherder.mozilla.org/api/jobdetail/?job_guid=5b648c67-76d8-4de6-a706-af9636951e1c/0",
-            body=mock_treeherder("jobdetail.json"),
-            content_type="application/json",
-        )
-
-        payload["body"]["status"]["state"] = "failed"
-        await bugbug_utils.got_try_task_end(payload)
-        mode, build_, extras = await bus.receive(QUEUE_PHABRICATOR_RESULTS)
-        assert mode == "test_result"
-        assert build_ == build
-        assert extras == {
-            "name": "test-linux64-shippable/opt-awsy-tp6-e10s",
-            "result": UnitResultState.Fail,
-            "details": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=028980a035fb3e214f7645675a01a52234aad0fe&selectedJob=277665740",
-        }
-
-    with responses.RequestsMock(assert_all_requests_are_fired=True) as rsps:
-        rsps.add(
-            responses.GET,
-            "https://treeherder.mozilla.org/api/jobdetail/?job_guid=5b648c67-76d8-4de6-a706-af9636951e1c/0",
-            body=mock_treeherder("jobdetail_empty.json"),
-            content_type="application/json",
-        )
-
-        payload["body"]["status"]["state"] = "failed"
-        await bugbug_utils.got_try_task_end(payload)
-        mode, build_, extras = await bus.receive(QUEUE_PHABRICATOR_RESULTS)
-        assert mode == "test_result"
-        assert build_ == build
-        assert extras == {
-            "name": "test-linux64-shippable/opt-awsy-tp6-e10s",
-            "result": UnitResultState.Fail,
-            "details": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=028980a035fb3e214f7645675a01a52234aad0fe",
-        }
+    payload["body"]["status"]["state"] = "failed"
+    await bugbug_utils.got_try_task_end(payload)
+    mode, build_, extras = await bus.receive(QUEUE_PHABRICATOR_RESULTS)
+    assert mode == "test_result"
+    assert build_ == build
+    assert extras == {
+        "name": "test-linux64-shippable/opt-awsy-tp6-e10s",
+        "result": UnitResultState.Fail,
+        "details": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=028980a035fb3e214f7645675a01a52234aad0fe&selectedTaskRun=W2SMZ3bYTeanBq-WNpUeHA-0",
+    }
