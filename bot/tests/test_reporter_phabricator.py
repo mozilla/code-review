@@ -56,6 +56,18 @@ If you see a problem in this automated review, [please report it here](https://b
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
+VALID_BUILD_ERROR_MESSAGE = """
+Code analysis found 1 defect in the diff 42:
+ - 1 build error found by clang-tidy
+
+You can run this analysis locally with:
+ - `./mach static-analysis check dom/animation/Animation.cpp` (C/C++)
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+"""
+
 VALID_CLANG_FORMAT_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
  - 1 defect found by clang-format
@@ -671,6 +683,68 @@ def test_phabricator_coverity(mock_phabricator, phab, mock_try_task, mock_task):
             }
         ]
         assert phab.comments[51] == [VALID_COVERITY_MESSAGE]
+
+
+def test_phabricator_clang_tidy_build_error(
+    mock_phabricator, phab, mock_try_task, mock_task
+):
+    """
+    Test Phabricator Lint for a ClangTidyIssue with build error
+    """
+
+    from code_review_bot import Level
+
+    with mock_phabricator as api:
+        revision = Revision.from_try(mock_try_task, api)
+        revision.lines = {
+            # Add dummy lines diff
+            "test.cpp": [41, 42, 43]
+        }
+        revision.build_target_phid = "PHID-HMBD-deadbeef12456"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
+        revision.mercurial_revision = "deadbeef1234"
+
+        reporter = PhabricatorReporter({}, api=api)
+
+        issue = ClangTidyIssue(
+            analyzer=mock_task(ClangTidyTask, "mock-clang-tidy"),
+            revision=revision,
+            path="dom/animation/Animation.cpp",
+            line=57,
+            column=46,
+            check="clang-diagnostic-error",
+            level=Level.Error,
+            message="Some Error Message",
+            publish=True,
+        )
+
+        assert issue.is_publishable()
+
+        issues, patches = reporter.publish([issue], revision, [])
+        assert len(issues) == 1
+        assert len(patches) == 0
+
+        # Check the callback has been used
+        assert phab.build_messages["PHID-HMBD-deadbeef12456"] == [
+            {
+                "buildTargetPHID": "PHID-HMBD-deadbeef12456",
+                "lint": [
+                    {
+                        "code": "clang-diagnostic-error",
+                        "description": "(IMPORTANT) ERROR: Some Error Message",
+                        "line": 57,
+                        "char": 46,
+                        "name": "Build Error",
+                        "path": "dom/animation/Animation.cpp",
+                        "severity": "error",
+                    }
+                ],
+                "type": "work",
+                "unit": [],
+            }
+        ]
+        assert phab.comments[51] == [VALID_BUILD_ERROR_MESSAGE]
 
 
 def test_phabricator_coverity_build_error(

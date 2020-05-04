@@ -40,6 +40,11 @@ ISSUE_NOTE_MARKDOWN = """
 ```
 """
 
+ERROR_MARKDOWN = """
+**Message**: ```{message}```
+**Location**: {location}
+"""
+
 CLANG_MACRO_DETECTION = re.compile(r"^expanded from macro")
 
 
@@ -57,6 +62,7 @@ class ClangTidyIssue(Issue):
         column,
         check,
         message,
+        level=Level.Warning,
         reliability=Reliability.Unknown,
         reason=None,
         publish=True,
@@ -71,13 +77,31 @@ class ClangTidyIssue(Issue):
             nb_lines=1,  # Only 1 line affected on clang-tidy
             check=check,
             column=int(column),
-            level=Level.Warning,
+            level=level,
             message=message,
         )
         self.notes = []
         self.reliability = reliability
         self.publishable_check = publish
         self.reason = reason
+
+    def is_build_error(self):
+        return True if self.level == Level.Error else False
+
+    def as_error(self):
+        assert self.is_build_error(), "ClangTidyIssue is not a build error."
+
+        return ERROR_MARKDOWN.format(
+            message=self.message, location="{}:{}".format(self.path, self.line)
+        )
+
+    @property
+    def display_name(self):
+        """
+        Display name to identify clearly if it's static-analysis issue or a
+        build error
+        """
+        return "Build Error" if self.is_build_error() else self.analyzer.display_name
 
     def validates(self):
         """
@@ -172,6 +196,7 @@ class ClangTidyTask(AnalysisTask):
                 line=warning["line"],
                 column=warning["column"],
                 check=warning["flag"],
+                level=Level(warning.get("type", "warning")),
                 message=warning["message"],
                 reliability=Reliability(warning["reliability"])
                 if "reliability" in warning
