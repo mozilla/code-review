@@ -94,12 +94,6 @@ class CoverityIssue(Issue):
             return "Build Error"
         return self.analyzer.display_name
 
-    def is_clang_error(self):
-        """
-        Determine if the current issue is a translation unit error forwarded by Clang
-        """
-        return "RW.CLANG" in self.check
-
     def is_local(self):
         """
         The given coverity issue should be only locally stored and not in the
@@ -139,7 +133,7 @@ class CoverityIssue(Issue):
             publishable=self.is_publishable() and "yes" or "no",
             is_local=self.is_local() and "yes" or "no",
             reliability=self.reliability.value,
-            is_clang_error=self.is_clang_error() and "yes" or "no",
+            is_clang_error=self.is_build_error() and "yes" or "no",
         )
 
     def as_error(self):

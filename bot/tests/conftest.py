@@ -21,6 +21,8 @@ from libmozdata.phabricator import PhabricatorAPI
 from code_review_bot import stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
+from code_review_bot.tasks.clang_tidy import ClangTidyIssue
+from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.coverity import CoverityIssue
 from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
@@ -123,6 +125,30 @@ def mock_coverity_issues(mock_revision, mock_task):
                 "flag": "flag",
             },
             "some/file/path",
+        )
+        for i in range(2)
+    ]
+
+
+@pytest.fixture
+def mock_clang_tidy_issues(mock_revision, mock_task):
+    """
+    Build a list of clang-tidy issues
+    """
+
+    from code_review_bot import Level
+
+    return [
+        ClangTidyIssue(
+            analyzer=mock_task(ClangTidyTask, "mock-clang-tidy"),
+            revision=mock_revision,
+            path="dom/animation/Animation.cpp",
+            line=57,
+            column=46,
+            level=Level("error") if i % 2 else Level("warning"),
+            check="clanck.checker",
+            message="Some Error Message",
+            publish=True,
         )
         for i in range(2)
     ]

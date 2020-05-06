@@ -80,6 +80,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task):
     """
     Test text export for ClangTidyIssue
     """
+    from code_review_bot import Level
     from code_review_bot import Reliability
 
     issue = ClangTidyIssue(
@@ -90,6 +91,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task):
         "51",
         "dummy-check",
         "dummy message withUppercaseChars",
+        Level.Warning,
         Reliability.Low,
     )
 
@@ -114,6 +116,7 @@ def test_as_markdown(mock_revision, mock_task):
     """
     Test markdown generation for ClangTidyIssue
     """
+    from code_review_bot import Level
     from code_review_bot import Reliability
 
     issue = ClangTidyIssue(
@@ -124,6 +127,7 @@ def test_as_markdown(mock_revision, mock_task):
         "51",
         "dummy-check",
         "dummy message",
+        Level.Warning,
         Reliability.High,
     )
 

@@ -425,7 +425,8 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend
                                     {
                                         "column": 51,
                                         "line": 987,
-                                        "flag": "checker.YYY",
+                                        "type": "error",
+                                        "flag": "clang-diagnostic-error",
                                         # No reliability !
                                         "message": "some harder issue with c++",
                                         "filename": "test.cpp",
@@ -448,16 +449,17 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend
     assert issue.check == "checker.XXX"
     assert issue.reliability == Reliability.High
     assert issue.message == "some hard issue with c++"
+    assert not issue.is_build_error()
 
     issue = issues[1]
     assert isinstance(issue, ClangTidyIssue)
     assert issue.path == "test.cpp"
     assert issue.line == 987
     assert issue.column == 51
-    assert issue.check == "checker.YYY"
+    assert issue.check == "clang-diagnostic-error"
     assert issue.reliability == Reliability.Unknown
     assert issue.message == "some harder issue with c++"
-
+    assert issue.is_build_error()
     assert check_stats(
         [
             ("code-review.analysis.files", None, 2),
@@ -668,7 +670,6 @@ The path that leads to this defect is:
 -- `path: Condition \"!target.oper…", taking false branch.`.\n"""
     )
     assert issue.is_local()
-    assert not issue.is_clang_error()
     assert issue.validates()
     assert not issue.is_build_error()
 
@@ -678,10 +679,8 @@ The path that leads to this defect is:
     assert issue.line == 123
     assert issue.check == "UNINIT"
     assert issue.reliability == Reliability.High
-    assert issue.build_error
     assert issue.message == "Some error here"
     assert issue.is_local()
-    assert not issue.is_clang_error()
     assert issue.validates()
     assert issue.is_build_error()
     assert (
