@@ -85,6 +85,10 @@ class ClangTidyIssue(Issue):
         self.publishable_check = publish
         self.reason = reason
 
+        # For build errors always publish
+        if self.is_build_error():
+            self.publishable_check = True
+
     def is_build_error(self):
         return True if self.level == Level.Error else False
 

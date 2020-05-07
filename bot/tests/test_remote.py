@@ -465,9 +465,9 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend
             ("code-review.analysis.files", None, 2),
             ("code-review.analysis.lines", None, 2),
             ("code-review.issues", "source-test-clang-tidy", 2),
-            ("code-review.issues.publishable", "source-test-clang-tidy", 0),
+            ("code-review.issues.publishable", "source-test-clang-tidy", 1),
             ("code-review.issues.paths", "source-test-clang-tidy", 1),
-            ("code-review.analysis.issues.publishable", None, 0),
+            ("code-review.analysis.issues.publishable", None, 1),
             ("code-review.runtime.reports", None, "runtime"),
         ]
     )
