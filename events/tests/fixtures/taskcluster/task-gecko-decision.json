@@ -85,7 +85,7 @@
     "notify": {
       "email": {
         "link": {
-          "text": "Treeherder Jobs",
+          "text": "CI (Treeherder) Jobs",
           "href": "https://treeherder.mozilla.org/#/jobs?repo=try&revision=eec1748dad2ec002e4d9c71f926ccb67a3b88d73"
         },
         "subject": "Thank you for your try submission of eec1748dad2ec002e4d9c71f926ccb67a3b88d73. It's the best!",

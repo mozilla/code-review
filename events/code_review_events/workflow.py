@@ -202,7 +202,7 @@ class CodeReview(PhabricatorActions):
             self.api.create_harbormaster_uri(
                 build.target_phid,
                 "treeherder",
-                "Treeherder Jobs",
+                "CI (Treeherder) Jobs",
                 extras["treeherder_url"],
             )
 
