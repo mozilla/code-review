@@ -167,36 +167,3 @@ def test_mail_builderrors(
     r.publish(mock_clang_tidy_issues, mock_revision, [])
 
     assert log.has("Send build error email", to="test@mozilla.com")
-
-
-def test_mail_builderrors_coverity(
-    log, mock_config, mock_coverity_issues, mock_revision, mock_taskcluster_config
-):
-    """
-    Test mail_builderrors sending through Taskcluster for coverity
-    """
-    from code_review_bot.report.mail_builderrors import BuildErrorsReporter
-
-    def _check_email(request):
-        payload = json.loads(request.body)
-
-        assert payload["subject"] == "Code Review bot found 2 build errors on D51"
-        assert payload["address"] == "test@mozilla.com"
-        assert payload["content"] == MAIL_CONTENT_BUILD_ERRORS
-
-        return (200, {}, "")  # ack
-
-    # Add mock taskcluster email to check output
-    responses.add_callback(
-        responses.POST,
-        "http://taskcluster.test/api/notify/v1/email",
-        callback=_check_email,
-    )
-
-    # Publish email
-    conf = {"emails": ["test@mozilla.com"]}
-    r = BuildErrorsReporter(conf)
-
-    r.publish(mock_coverity_issues, mock_revision, [])
-
-    assert log.has("Send build error email", to="test@mozilla.com")

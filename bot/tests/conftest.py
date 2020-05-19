@@ -119,7 +119,6 @@ def mock_coverity_issues(mock_revision, mock_task):
             {
                 "reliability": "high",
                 "line": i,
-                "build_error": i % 2,
                 "message": "Unidentified symbol",
                 "extra": {"category": "bug", "stateOnServer": []},
                 "flag": "flag",

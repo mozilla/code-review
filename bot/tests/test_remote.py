@@ -620,32 +620,7 @@ def test_coverity_task(
                                         },
                                     }
                                 ]
-                            },
-                            "dom/something.cpp": {
-                                "warnings": [
-                                    {
-                                        "line": 123,
-                                        "flag": "UNINIT",
-                                        "reliability": "high",
-                                        "build_error": True,
-                                        "message": "Some error here",
-                                        "extra": {
-                                            "category": "Nice bug",
-                                            "stateOnServer": {
-                                                "presentInReferenceSnapshot": False
-                                            },
-                                            "stack": [
-                                                {
-                                                    "line_number": 61,
-                                                    "description": 'Condition "!target.oper…", taking false branch.',
-                                                    "file_path": "dom/animation/Animation.cpp",
-                                                    "path_type": "path",
-                                                }
-                                            ],
-                                        },
-                                    }
-                                ]
-                            },
+                            }
                         }
                     }
                 },
@@ -653,14 +628,13 @@ def test_coverity_task(
         }
     )
     issues = mock_workflow.run(mock_revision)
-    assert len(issues) == 2
+    assert len(issues) == 1
     issue = issues[0]
     assert isinstance(issue, CoverityIssue)
     assert issue.path == "test.cpp"
     assert issue.line == 66
     assert issue.check == "UNINIT"
     assert issue.reliability == Reliability.High
-    assert not issue.build_error
     assert (
         issue.message
         == """Using uninitialized value "a".
@@ -671,32 +645,15 @@ The path that leads to this defect is:
     )
     assert issue.is_local()
     assert issue.validates()
-    assert not issue.is_build_error()
-
-    issue = issues[1]
-    assert isinstance(issue, CoverityIssue)
-    assert issue.path == "dom/something.cpp"
-    assert issue.line == 123
-    assert issue.check == "UNINIT"
-    assert issue.reliability == Reliability.High
-    assert issue.message == "Some error here"
-    assert issue.is_local()
-    assert issue.validates()
-    assert issue.is_build_error()
-    assert (
-        issue.as_text()
-        == f"""Checker reliability is high, meaning that the false positive ratio is low.
-Some error here"""
-    )
 
     assert check_stats(
         [
             ("code-review.analysis.files", None, 2),
             ("code-review.analysis.lines", None, 2),
-            ("code-review.issues", "source-test-coverity-coverity", 2),
-            ("code-review.issues.publishable", "source-test-coverity-coverity", 1),
-            ("code-review.issues.paths", "source-test-coverity-coverity", 2),
-            ("code-review.analysis.issues.publishable", None, 1),
+            ("code-review.issues", "source-test-coverity-coverity", 1),
+            ("code-review.issues.publishable", "source-test-coverity-coverity", 0),
+            ("code-review.issues.paths", "source-test-coverity-coverity", 1),
+            ("code-review.analysis.issues.publishable", None, 0),
             ("code-review.runtime.reports", None, "runtime"),
         ]
     )
