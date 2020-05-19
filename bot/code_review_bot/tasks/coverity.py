@@ -19,14 +19,8 @@ ISSUE_MARKDOWN = """
 - **Location**: {location}
 - **Coverity check**: {check}
 - **Publishable **: {publishable}
-- **Is Clang Error**: {is_clang_error}
 - **Is Local**: {is_local}
 - **Reliability**: {reliability} (false positive risk)
-"""
-
-ERROR_MARKDOWN = """
-**Message**: ```{message}```
-**Location**: {location}
 """
 
 ISSUE_ELEMENT_IN_STACK = """
@@ -60,15 +54,8 @@ class CoverityIssue(Issue):
             if "reliability" in issue
             else Reliability.Unknown
         )
-        self.build_error = issue.get("build_error", False)
 
         self.state_on_server = issue["extra"]["stateOnServer"]
-
-        # For build errors we don't embed the stack into the message
-        if self.build_error:
-            # For build errors report them as errors
-            self.level = Level.Error
-            return
 
         # If we have `stack` in the `try` result then embed it in the message.
         if "stack" in issue["extra"]:
@@ -88,10 +75,8 @@ class CoverityIssue(Issue):
     @property
     def display_name(self):
         """
-        Build error or Coverity to identify clearly the issue
+        Set the display name as `Coverity`
         """
-        if self.build_error:
-            return "Build Error"
         return self.analyzer.display_name
 
     def is_local(self):
@@ -133,21 +118,7 @@ class CoverityIssue(Issue):
             publishable=self.is_publishable() and "yes" or "no",
             is_local=self.is_local() and "yes" or "no",
             reliability=self.reliability.value,
-            is_clang_error=self.is_build_error() and "yes" or "no",
         )
-
-    def as_error(self):
-        assert self.build_error, "CoverityIssue is not a build error."
-
-        return ERROR_MARKDOWN.format(
-            message=self.message, location="{}:{}".format(self.path, self.line)
-        )
-
-    def is_build_error(self):
-        """
-        Return True if Coverity intercepted a build error forwarded by clang.
-        """
-        return self.build_error
 
 
 class CoverityTask(AnalysisTask):
