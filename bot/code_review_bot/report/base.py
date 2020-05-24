@@ -17,7 +17,7 @@ You can run this analysis locally with:
 """
 COMMENT_COVERAGE = """
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
-Should they have tests, or are they dead code ?
+Should they have tests, or are they dead code?
 
  - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
