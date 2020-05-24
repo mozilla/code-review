@@ -12,7 +12,7 @@ repos:
     hooks:
     - id: black
   - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.9
+    rev: 3.8.2
     hooks:
       - id: flake8
         additional_dependencies:
@@ -21,7 +21,7 @@ repos:
           - 'flake8-debugger==3.1.0'
           - 'flake8-mypy==17.8.0'
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v2.5.0
+    rev: v3.1.0
     hooks:
       - id: check-ast
       - id: check-docstring-first
@@ -37,12 +37,12 @@ repos:
       - id: check-json
       - id: requirements-txt-fixer
   - repo: https://github.com/codespell-project/codespell
-    rev: v1.16.0
+    rev: v1.17.1
     hooks:
       - id: codespell
         exclude_types: [json]
   - repo: https://github.com/marco-c/taskcluster_yml_validator
-    rev: v0.0.5
+    rev: v0.0.6
     hooks:
       - id: taskcluster_yml
   - repo: https://github.com/asottile/yesqa

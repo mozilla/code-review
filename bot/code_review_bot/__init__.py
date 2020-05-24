@@ -268,7 +268,7 @@ class Issue(abc.ABC):
         # Prefix each line with 2 spaces as required by phabricator to trigger a code block
         # with syntax highlighting
         if self.fix is not None:
-            fix = "\n".join(f"  {l}" for l in self.fix.splitlines())
+            fix = "\n".join(f"  {line}" for line in self.fix.splitlines())
             description += f"\n\n  lang={self.language}\n{fix}"
 
         return LintResult(
