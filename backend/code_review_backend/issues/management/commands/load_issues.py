@@ -137,7 +137,7 @@ class Command(BaseCommand):
                         )
                     except taskcluster.exceptions.TaskclusterRestFailure as e:
                         if e.status_code == 404:
-                            logging.info(f"Missing artifact")
+                            logging.info("Missing artifact")
                             continue
                         raise
 

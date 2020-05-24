@@ -30,7 +30,7 @@ class StatsAPITestCase(APITestCase):
 
         # Create a revision
         revision = self.repo.revisions.create(
-            id=10, phid=f"PHID-DREV-arev", title=f"Revision A", bugzilla_id=None
+            id=10, phid="PHID-DREV-arev", title="Revision A", bugzilla_id=None
         )
 
         # Create some diffs
