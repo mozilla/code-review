@@ -177,7 +177,7 @@ class CodeReview(PhabricatorActions):
                 namespace="code-review",
                 name="mercurial",
                 result=UnitResultState.Fail,
-                details="WARNING: The code review bot failed to apply your patch to mozilla-central.\n\n```{}```".format(
+                details="WARNING: The code review bot failed to apply your patch.\n\n```{}```".format(
                     extras["message"]
                 ),
                 format="remarkup",
