@@ -16,6 +16,7 @@ from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.upload import DocUploadTask
 
 
 class MockRevision(Revision):

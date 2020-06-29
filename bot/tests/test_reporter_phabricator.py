@@ -25,6 +25,8 @@ from code_review_bot.tasks.infer import InferIssue
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintIssue
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.upload import DocUploadIssue
+from code_review_bot.tasks.upload import DocUploadTask
 
 VALID_CLANG_TIDY_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
