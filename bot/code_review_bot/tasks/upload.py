@@ -5,6 +5,7 @@ import structlog
 from code_review_bot import Issue
 from code_review_bot import Level
 from code_review_bot.config import settings
+from code_review_bot import taskcluster
 from code_review_bot.tasks.base import AnalysisTask
 from code_review_bot.report.base import Reporter
 from libmozdata.phabricator import PhabricatorAPI
@@ -86,6 +87,18 @@ class DocUploadTask(AnalysisTask):
             )
             for diff in rs_parsepatch.get_diffs(artifact)
         ]
+
+    def upload_link(self, artifacts, revision):
+        phabricator = taskcluster.secrets["PHABRICATOR"]
+        phabricator_api = PhabricatorAPI(phabricator["api_key"], phabricator["url"])
+        assert isinstance(phabricator_api, PhabricatorAPI)
+        artifact = artifacts.get("public/link-to-uploaded-doc.json")
+        link_to_doc = artifact.get("Doc")
+        comment = COMMENT_LINK_TO_DOC.format(link_to_doc=link_to_doc)
+        self.phabricator_api.comment(
+            revision.id,
+            comment,
+        )
 
 
 class DocUploadReporter(Reporter):
