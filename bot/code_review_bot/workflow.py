@@ -391,6 +391,8 @@ class Workflow(object):
             return CoverityTask(task_id, task_status)
         elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
+        elif name == "source-test-doc-upload":
+            return DocUploadTask(task_id, task_status)
         elif settings.autoland_group_id is not None and not name.startswith(
             "source-test-"
         ):
