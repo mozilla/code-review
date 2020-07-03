@@ -3,11 +3,8 @@ import rs_parsepatch
 import structlog
 
 from code_review_bot import Issue
-from code_review_bot import Level
-from code_review_bot.config import settings
 from code_review_bot import taskcluster
 from code_review_bot.tasks.base import AnalysisTask
-from code_review_bot.report.base import Reporter
 from libmozdata.phabricator import PhabricatorAPI
 
 logger = structlog.get_logger(__name__)
@@ -99,36 +96,3 @@ class DocUploadTask(AnalysisTask):
             revision.id,
             comment,
         )
-
-
-class DocUploadReporter(Reporter):
-
-    def __init__(self, configuration={}, *args, **kwargs):
-        if kwargs.get("api") is not None:
-            self.setup_api(kwargs["api"])
-
-        self.analyzers_skipped = configuration.get("analyzers_skipped", [])
-        assert isinstance(
-            self.analyzers_skipped, list
-        ), "analyzers_skipped must be a list"
-
-        self.frontend_diff_url = configuration.get(
-            "frontend_diff_url", "https://code-review.moz.tools/#/diff/{diff_id}"
-        )
-
-    def setup_api(self, api):
-        assert isinstance(api, PhabricatorAPI)
-        self.api = api
-        logger.info("Phabricator reporter enabled")
-
-    def publish_s3_link(self, revision):
-        """
-        Summarize publishable issues through Phabricator comment
-        """
-        # link_to_doc get from artifact
-        comment = COMMENT_LINK_TO_DOC.format(link_to_doc=link_to_doc)
-        self.api.comment(
-            revision.id,
-            comment,
-        )
-        logger.info("Published S3 doc link")
