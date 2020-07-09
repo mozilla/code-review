@@ -31,7 +31,7 @@ Code analysis found 1 defect in the diff 42:
  - 1 defect found by clang-tidy
 
 You can run this analysis locally with:
- - `./mach static-analysis check another_test.cpp` (C/C++)
+ - `./mach static-analysis check --outgoing` (C/C++)
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -52,7 +52,7 @@ Code analysis found 1 defect in the diff 42:
  - 1 build error found by clang-tidy
 
 You can run this analysis locally with:
- - `./mach static-analysis check dom/animation/Animation.cpp` (C/C++)
+ - `./mach static-analysis check --outgoing` (C/C++)
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -138,7 +138,7 @@ Code analysis found 2 defects in the diff 42:
  - 1 defect found by code coverage analysis
 
 You can run this analysis locally with:
- - `./mach static-analysis check another_test.cpp` (C/C++)
+ - `./mach static-analysis check --outgoing` (C/C++)
 
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
 Should they have tests, or are they dead code?
