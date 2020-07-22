@@ -1,2 +1,2 @@
 django-debug-toolbar==2.2
-pre-commit==1.18.3
+pre-commit==2.6.0
