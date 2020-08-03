@@ -32,6 +32,9 @@ logger = structlog.get_logger(__name__)
 TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
 
+COMMENT_LINK_TO_DOC = """
+We think you might have touched the doc files, generated doc can be accessed [here]({link_to_doc}).
+"""
 
 class Workflow(object):
     """
@@ -323,6 +326,12 @@ class Workflow(object):
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
+                    if 'public/firefox-source-docs-url.txt' in artifacts:
+                        link_to_doc = artifacts['public/firefox-source-docs-url.txt'].decode('UTF-8')
+                        self.phabricator.comment(
+                            revision.id,
+                            COMMENT_LINK_TO_DOC.format(link_to_doc=link_to_doc),
+                        )
                     task_issues = task.parse_issues(artifacts, revision)
                     logger.info(
                         "Found {} issues".format(len(task_issues)),
