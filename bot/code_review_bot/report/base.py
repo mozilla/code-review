@@ -6,6 +6,7 @@
 import itertools
 
 from code_review_bot.tasks.coverage import CoverageIssue
+from code_review_bot.tasks.upload import DocUploadIssue
 from code_review_tools import treeherder
 
 COMMENT_FAILURE = """
@@ -35,7 +36,9 @@ Please check this task manually.
 FRONTEND_LINKS = """
 You can view these defects on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
 """
-
+COMMENT_LINK_TO_DOC = """
+We think you might have touched the doc files, generated doc can be accessed [here]({link_to_doc}).
+"""
 
 class Reporter(object):
     """
@@ -108,6 +111,7 @@ class Reporter(object):
         issues,
         bug_report_url,
         frontend_url,
+        # link_to_doc,
         patches=[],
         task_failures=[],
     ):
@@ -182,6 +186,9 @@ class Reporter(object):
         # Add coverage reporting details when a coverage issue is published
         if CoverageIssue in issue_classes:
             comment += COMMENT_COVERAGE
+
+        # if DocUploadIssue in issue_classes:
+        #     comment += COMMENT_LINK_TO_DOC.format(link_to_doc=link_to_doc)
 
         assert comment != "", "Empty comment"
 

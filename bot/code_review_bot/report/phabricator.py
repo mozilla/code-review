@@ -6,12 +6,14 @@
 from typing import List
 
 import structlog
+from code_review_bot import taskcluster
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import Issue
 from code_review_bot import stats
 from code_review_bot.report.base import Reporter
+from code_review_bot.tasks.upload import DocUploadTask
 
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
@@ -37,6 +39,15 @@ class PhabricatorReporter(Reporter):
         self.frontend_diff_url = configuration.get(
             "frontend_diff_url", "https://code-review.moz.tools/#/diff/{diff_id}"
         )
+        # self.index_service = taskcluster.get_service("index")
+
+        # self.queue_service = taskcluster.get_service("queue")
+
+        # self.task = DocUploadTask.build_from_route(self.index_service, self.queue_service)
+        # self.artifacts = self.task.load_artifacts(self.queue_service)
+        # if self.artifacts is not None and 'public/firefox-source-docs-url.txt' in self.artifacts:
+        #     self.link_to_doc = self.artifacts['public/firefox-source-docs-url.txt'].decode('UTF-8')
+
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
@@ -118,6 +129,8 @@ class PhabricatorReporter(Reporter):
                 bug_report_url=BUG_REPORT_URL,
                 frontend_url=self.frontend_diff_url.format(diff_id=revision.diff_id),
                 task_failures=task_failures,
+                # link_to_doc=self.link_to_doc,
             ),
         )
         logger.info("Published phabricator summary")
+

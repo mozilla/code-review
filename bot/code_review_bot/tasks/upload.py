@@ -23,10 +23,6 @@ ISSUE_MARKDOWN = """
 ```
 """
 
-COMMENT_LINK_TO_DOC = """
-Generated Doc can be accessed [here]({link_to_doc}).
-"""
-
 
 class DocUploadIssue(Issue):
     def validates(self):
@@ -85,14 +81,3 @@ class DocUploadTask(AnalysisTask):
             for diff in rs_parsepatch.get_diffs(artifact)
         ]
 
-    def upload_link(self, artifacts, revision):
-        phabricator = taskcluster.secrets["PHABRICATOR"]
-        phabricator_api = PhabricatorAPI(phabricator["api_key"], phabricator["url"])
-        assert isinstance(phabricator_api, PhabricatorAPI)
-        artifact = artifacts.get("public/firefox-source-docs-url.txt")
-        link_to_doc = artifact.get("Doc")
-        comment = COMMENT_LINK_TO_DOC.format(link_to_doc=link_to_doc)
-        self.phabricator_api.comment(
-            revision.id,
-            comment,
-        )
