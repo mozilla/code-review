@@ -36,6 +36,7 @@ FRONTEND_LINKS = """
 You can view these defects on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
 """
 
+
 class Reporter(object):
     """
     Common interface to post reports on a website
