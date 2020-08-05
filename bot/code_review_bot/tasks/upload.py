@@ -3,9 +3,9 @@ import rs_parsepatch
 import structlog
 
 from code_review_bot import Issue
+from code_review_bot import Level
 from code_review_bot import taskcluster
 from code_review_bot.tasks.base import AnalysisTask
-from libmozdata.phabricator import PhabricatorAPI
 
 logger = structlog.get_logger(__name__)
 
@@ -70,7 +70,6 @@ class DocUploadTask(AnalysisTask):
             logger.warn("Missing firefox-source-docs-url.txt")
             return []
 
-        # Use all chunks provided by parsepatch
         return [
             DocUploadIssue(
                 analyzer=self,
@@ -81,3 +80,12 @@ class DocUploadTask(AnalysisTask):
             for diff in rs_parsepatch.get_diffs(artifact)
         ]
 
+    def get_link(self, artifacts):
+        artifact = artifacts.get("public/firefox-source-docs-url.txt")
+        if artifact is None:
+            logger.warn("Missing firefox-source-docs-url.txt")
+            return []
+
+        assert isinstance(artifact, bytes), "link extracted from artifact should be bytes"
+        link_to_doc = artifact.decode("utf-8")
+        return link_to_doc
