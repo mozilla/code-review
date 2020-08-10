@@ -11,7 +11,7 @@
     "chartist": "^0.11.4",
     "vue": "^2.6.11",
     "vue-chartist": "^2.3.1",
-    "vue-router": "^3.3.4",
+    "vue-router": "^3.4.2",
     "vue-template-compiler": "^2.6.11",
     "vuex": "^3.5.1"
   },
