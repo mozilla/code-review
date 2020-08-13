@@ -24,7 +24,7 @@ ISSUE_MARKDOWN = """
 """
 
 
-class DocUploadIssue(Issue):
+class DefaultIssue(Issue):
     def validates(self):
         """
         Default issues are valid as long as they match the format
@@ -68,17 +68,8 @@ class DocUploadTask(AnalysisTask):
         artifact = artifacts.get("public/firefox-source-docs-url.txt")
         if artifact is None:
             logger.warn("Missing firefox-source-docs-url.txt")
-            return []
 
-        return [
-            DocUploadIssue(
-                analyzer=self,
-                path=diff["filename"],
-                lines=diff["lines"],
-                revision=revision,
-            )
-            for diff in rs_parsepatch.get_diffs(artifact)
-        ]
+        return []
 
     def get_link(self, artifacts):
         artifact = artifacts.get("public/firefox-source-docs-url.txt")
