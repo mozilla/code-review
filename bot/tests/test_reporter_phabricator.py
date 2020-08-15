@@ -49,6 +49,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 
 VALID_BUILD_ERROR_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
+(defects might be in the parent stack)
  - 1 build error found by clang-tidy
 
 You can run this analysis locally with:
@@ -122,6 +123,7 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_MOZLINT_MESSAGE = """
 Code analysis found 2 defects in the diff 42:
+(defects might be in the parent stack)
  - 2 defects found by dummy (Mozlint)
 
 You can run this analysis locally with:
