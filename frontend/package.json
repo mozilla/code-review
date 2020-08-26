@@ -6,7 +6,7 @@
   "description": "Mozilla Code Review frontend",
   "main": "index.js",
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.20.0",
     "bulma": "^0.9.0",
     "chartist": "^0.11.4",
     "vue": "^2.6.11",
