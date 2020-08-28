@@ -1,5 +1,5 @@
 {
-  "provisionerId": "proj-relman",
+  "provisionerId": "proj-bugbug",
   "workerType": "compute-large",
   "schedulerId": "-",
   "taskGroupId": "YLQ4U2buQhG4sY74l-vrbw",
@@ -8,8 +8,8 @@
   "routes": [
     "notify.email.release-mgmt-analysis@mozilla.com.on-failed",
     "notify.irc-channel.#bugbug.on-failed",
-    "index.project.relman.bugbug.test_select.latest",
-    "index.project.relman.bugbug.test_select.diff.125397"
+    "index.project.bugbug.test_select.latest",
+    "index.project.bugbug.test_select.diff.125397"
   ],
   "priority": "lowest",
   "retries": 5,
@@ -17,7 +17,7 @@
   "deadline": "2019-11-22T15:19:35.085Z",
   "expires": "2019-12-22T13:19:35.085Z",
   "scopes": [
-    "assume:hook-id:project-relman/bugbug-test-select"
+    "assume:hook-id:project-bugbug/bugbug-test-select"
   ],
   "payload": {
     "artifacts": {
@@ -41,7 +41,7 @@
       "125397"
     ],
     "env": {
-      "TC_SECRET_ID": "project/relman/bugbug/production",
+      "TC_SECRET_ID": "project/bugbug/production",
       "TAG": "v0.0.157"
     },
     "features": {
