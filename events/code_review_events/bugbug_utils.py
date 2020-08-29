@@ -152,7 +152,7 @@ class BugbugUtils:
                 return
 
             task = self.community_tc["hooks"].triggerHook(
-                "project-relman",
+                "project-bugbug",
                 "bugbug-classify-patch",
                 {
                     "PHABRICATOR_DEPLOYMENT": self.phabricator_deployment,
@@ -165,7 +165,7 @@ class BugbugUtils:
             # Send task to monitoring
             await self.bus.send(
                 QUEUE_MONITORING_COMMUNITY,
-                ("project-relman", "bugbug-classify-patch", task_id),
+                ("project-bugbug", "bugbug-classify-patch", task_id),
             )
         except Exception as e:
             logger.error("Failed to trigger risk analysis task", error=str(e))
@@ -190,7 +190,7 @@ class BugbugUtils:
                 return
 
             task = self.community_tc["hooks"].triggerHook(
-                "project-relman",
+                "project-bugbug",
                 "bugbug-test-select",
                 {
                     "PHABRICATOR_DEPLOYMENT": self.phabricator_deployment,
@@ -208,7 +208,7 @@ class BugbugUtils:
             # Send task to monitoring
             await self.bus.send(
                 QUEUE_MONITORING_COMMUNITY,
-                ("project-relman", "bugbug-test-select", task_id),
+                ("project-bugbug", "bugbug-test-select", task_id),
             )
         except Exception as e:
             logger.error("Failed to trigger test selection task", error=str(e))
