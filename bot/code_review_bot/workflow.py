@@ -16,6 +16,7 @@ from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
+from code_review_bot.report.phabricator import PhabricatorReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask
 from code_review_bot.tasks.clang_format import ClangFormatTask
@@ -94,7 +95,7 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures = self.find_issues(revision, settings.try_group_id)
+        issues, task_failures, link_to_doc = self.find_issues(revision, settings.try_group_id)
         if not issues and not task_failures:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
@@ -105,7 +106,7 @@ class Workflow(object):
         self.backend_api.publish_issues(issues, revision)
 
         # Publish all issues
-        self.publish(revision, issues, task_failures)
+        self.publish(revision, issues, task_failures, link_to_doc)
 
         return issues
 
@@ -166,7 +167,7 @@ class Workflow(object):
         else:
             logger.info("No issues for that autoland revision")
 
-    def publish(self, revision, issues, task_failures):
+    def publish(self, revision, issues, task_failures, link_to_doc):
         """
         Publish issues on selected reporters
         """
@@ -192,7 +193,10 @@ class Workflow(object):
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
-                reporter.publish(issues, revision, task_failures)
+                if isinstance(reporter, PhabricatorReporter):
+                    reporter.publish(issues, revision, task_failures, link_to_doc)
+                else:
+                    reporter.publish(issues, revision, task_failures)
 
         self.index(
             revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
@@ -305,7 +309,7 @@ class Workflow(object):
             task = tasks[dependencies[0]]
             if task["task"]["metadata"]["name"] == "Gecko Decision Task":
                 logger.warn("Only dependency is a Decision Task, skipping analysis")
-                return [], []
+                return [], [], ""
 
         # Add zero-coverage task
         if self.zero_coverage_enabled:
@@ -328,10 +332,7 @@ class Workflow(object):
                 if artifacts is not None:
                     if 'public/firefox-source-docs-url.txt' in artifacts:
                         link_to_doc = artifacts['public/firefox-source-docs-url.txt'].decode('UTF-8')
-                        self.phabricator.comment(
-                            revision.id,
-                            COMMENT_LINK_TO_DOC.format(link_to_doc=link_to_doc),
-                        )
+
                     task_issues = task.parse_issues(artifacts, revision)
                     logger.info(
                         "Found {} issues".format(len(task_issues)),
@@ -372,7 +373,7 @@ class Workflow(object):
                 )
                 raise
 
-        return issues, task_failures
+        return issues, task_failures, link_to_doc
 
     def build_task(self, task_status):
         """
