@@ -1,10 +1,7 @@
 # -*- coding: utf-8 -*-
-import rs_parsepatch
 import structlog
 
 from code_review_bot import Issue
-from code_review_bot import Level
-from code_review_bot import taskcluster
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
@@ -77,6 +74,8 @@ class DocUploadTask(AnalysisTask):
             logger.warn("Missing firefox-source-docs-url.txt")
             return []
 
-        assert isinstance(artifact, bytes), "link extracted from artifact should be bytes"
+        assert isinstance(
+            artifact, bytes
+        ), "link extracted from artifact should be bytes"
         link_to_doc = artifact.decode("utf-8")
         return link_to_doc

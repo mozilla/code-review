@@ -39,6 +39,7 @@ COMMENT_LINK_TO_DOC = """
 We think you might have touched the doc files, generated doc can be accessed [here]({link_to_doc}).
 """
 
+
 class Reporter(object):
     """
     Common interface to post reports on a website

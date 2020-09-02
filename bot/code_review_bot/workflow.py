@@ -37,6 +37,7 @@ COMMENT_LINK_TO_DOC = """
 We think you might have touched the doc files, generated doc can be accessed [here]({link_to_doc}).
 """
 
+
 class Workflow(object):
     """
     Full static analysis workflow
@@ -95,7 +96,9 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures, link_to_doc = self.find_issues(revision, settings.try_group_id)
+        issues, task_failures, link_to_doc = self.find_issues(
+            revision, settings.try_group_id
+        )
         if not issues and not task_failures and not link_to_doc:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
@@ -330,8 +333,10 @@ class Workflow(object):
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
-                    if 'public/firefox-source-docs-url.txt' in artifacts:
-                        link_to_doc = artifacts['public/firefox-source-docs-url.txt'].decode('UTF-8')
+                    if "public/firefox-source-docs-url.txt" in artifacts:
+                        link_to_doc = artifacts[
+                            "public/firefox-source-docs-url.txt"
+                        ].decode("UTF-8")
 
                     task_issues = task.parse_issues(artifacts, revision)
                     logger.info(

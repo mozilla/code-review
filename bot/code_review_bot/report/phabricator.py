@@ -6,7 +6,6 @@
 from typing import List
 
 import structlog
-from code_review_bot import taskcluster
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
@@ -75,7 +74,9 @@ class PhabricatorReporter(Reporter):
 
             if issues or patches or task_failures or link_to_doc:
                 # Publish comment summarizing issues
-                self.publish_summary(revision, issues, patches, task_failures, link_to_doc)
+                self.publish_summary(
+                    revision, issues, patches, task_failures, link_to_doc
+                )
 
             # Publish statistics
             stats.add_metric("report.phabricator.issues", len(issues))
@@ -123,4 +124,3 @@ class PhabricatorReporter(Reporter):
             ),
         )
         logger.info("Published phabricator summary")
-
