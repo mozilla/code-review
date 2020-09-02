@@ -170,7 +170,7 @@ class Workflow(object):
         else:
             logger.info("No issues for that autoland revision")
 
-    def publish(self, revision, issues, task_failures, link_to_doc=None):
+    def publish(self, revision, issues, task_failures, link_to_doc):
         """
         Publish issues on selected reporters
         """
@@ -321,6 +321,7 @@ class Workflow(object):
         # Find issues and patches in dependencies
         issues = []
         task_failures = []
+        link_to_doc = ""
         for dep in dependencies:
             try:
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
