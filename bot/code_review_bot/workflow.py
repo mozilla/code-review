@@ -167,7 +167,7 @@ class Workflow(object):
         else:
             logger.info("No issues for that autoland revision")
 
-    def publish(self, revision, issues, task_failures, link_to_doc):
+    def publish(self, revision, issues, task_failures, link_to_doc=None):
         """
         Publish issues on selected reporters
         """
