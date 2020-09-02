@@ -65,7 +65,7 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if issues or task_failures:
+        if issues or task_failures or link_to_doc:
 
             if issues:
                 # Publish on Harbormaster all at once
