@@ -96,7 +96,7 @@ class Workflow(object):
 
         # Find issues on remote tasks
         issues, task_failures, link_to_doc = self.find_issues(revision, settings.try_group_id)
-        if not issues and not task_failures:
+        if not issues and not task_failures and not link_to_doc:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
             self.update_status(revision, BuildState.Pass)
