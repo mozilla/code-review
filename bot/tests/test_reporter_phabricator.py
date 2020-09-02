@@ -925,6 +925,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
 
     assert phab.comments[51] == [VALID_MOZLINT_MESSAGE]
 
+
 def test_phabricator_doc_upload(
     mock_config, mock_phabricator, phab, mock_try_task, mock_task
 ):
@@ -943,7 +944,12 @@ def test_phabricator_doc_upload(
         }
         reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
 
-    reporter.publish([], revision, [], "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html")
+    reporter.publish(
+        [],
+        revision,
+        [],
+        "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html",
+    )
 
     # Check the comment has been posted
     assert phab.comments[51] == [VALID_DOC_UPLOAD_MESSAGE]
