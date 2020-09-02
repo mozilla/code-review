@@ -43,7 +43,7 @@ class PhabricatorReporter(Reporter):
         self.api = api
         logger.info("Phabricator reporter enabled")
 
-    def publish(self, issues, revision, task_failures, link_to_doc):
+    def publish(self, issues, revision, task_failures, link_to_doc=None):
         """
         Publish issues on Phabricator:
         * publishable issues use lint results
