@@ -67,15 +67,3 @@ class DocUploadTask(AnalysisTask):
             logger.warn("Missing firefox-source-docs-url.txt")
 
         return []
-
-    def get_link(self, artifacts):
-        artifact = artifacts.get("public/firefox-source-docs-url.txt")
-        if artifact is None:
-            logger.warn("Missing firefox-source-docs-url.txt")
-            return []
-
-        assert isinstance(
-            artifact, bytes
-        ), "link extracted from artifact should be bytes"
-        link_to_doc = artifact.decode("utf-8")
-        return link_to_doc
