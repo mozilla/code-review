@@ -36,7 +36,7 @@ FRONTEND_LINKS = """
 You can view these defects on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
 """
 COMMENT_LINK_TO_DOC = """
-We think you might have touched the doc files, generated doc can be accessed [here]({link_to_doc}).
+You have touched the documentation, you can find it rendered [here]({link_to_doc}).
 """
 
 

@@ -152,7 +152,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 VALID_DOC_UPLOAD_MESSAGE = """
-We think you might have touched the doc files, generated doc can be accessed [here](http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html).
+You have touched the documentation, you can find it rendered [here](http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html).
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """
