@@ -1,19 +1,19 @@
 {
   "name": "code-review-frontend",
-  "version": "1.2.3",
+  "version": "1.2.5",
   "repository": "https://github.com/mozilla/code-review",
   "author": "",
   "description": "Mozilla Code Review frontend",
   "main": "index.js",
   "dependencies": {
-    "axios": "^0.19.2",
+    "axios": "^0.20.0",
     "bulma": "^0.9.0",
     "chartist": "^0.11.4",
-    "vue": "^2.6.11",
+    "vue": "^2.6.12",
     "vue-chartist": "^2.3.1",
-    "vue-router": "^3.3.4",
-    "vue-template-compiler": "^2.6.11",
-    "vuex": "^3.4.0"
+    "vue-router": "^3.4.3",
+    "vue-template-compiler": "^2.6.12",
+    "vuex": "^3.5.1"
   },
   "devDependencies": {
     "@neutrinojs/mocha": "^8.3.0",

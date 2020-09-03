@@ -177,14 +177,14 @@ async def test_start_test_selection(PhabricatorMock, mock_taskcluster):
 
         rsps.add_callback(
             responses.POST,
-            "http://community_taskcluster.test/api/hooks/v1/hooks/project-relman/bugbug-test-select/trigger",
+            "http://community_taskcluster.test/api/hooks/v1/hooks/project-bugbug/bugbug-test-select/trigger",
             callback=trigger_hook_callback,
         )
 
         await bugbug_utils.start_test_selection(build, "MyRevision")
 
         group_id, hook_id, task_id = await bus.receive(QUEUE_MONITORING_COMMUNITY)
-        assert group_id == "project-relman"
+        assert group_id == "project-bugbug"
         assert hook_id == "bugbug-test-select"
         assert task_id == "xxx"
 
@@ -262,19 +262,19 @@ async def test_got_bugbug_test_select_end(PhabricatorMock, mock_taskcluster):
     payload = {
         "routing": {
             "exchange": "exchange/taskcluster-queue/v1/task-completed",
-            "key": "primary.OhtlizLqT9ah2jVkUL-yvg.0.community-tc-workers-google.8155538221748661937.proj-relman.compute-large.-.OhtlizLqT9ah2jVkUL-yvg._",
+            "key": "primary.OhtlizLqT9ah2jVkUL-yvg.0.community-tc-workers-google.8155538221748661937.proj-bugbug.compute-large.-.OhtlizLqT9ah2jVkUL-yvg._",
             "other_routes": [
                 b"route.notify.email.release-mgmt-analysis@mozilla.com.on-failed",
                 b"route.notify.irc-channel.#bugbug.on-failed",
-                b"route.index.project.relman.bugbug.test_select.latest",
-                f"route.index.project.relman.bugbug.test_select.diff.{diffId}".encode(),
-                b"route.project.relman.bugbug.test_select",
+                b"route.index.project.bugbug.test_select.latest",
+                f"route.index.project.bugbug.test_select.diff.{diffId}".encode(),
+                b"route.project.bugbug.test_select",
             ],
         },
         "body": {
             "status": {
                 "taskId": "bugbug-test-select",
-                "provisionerId": "proj-relman",
+                "provisionerId": "proj-bugbug",
                 "workerType": "compute-large",
                 "schedulerId": "-",
                 "taskGroupId": "HDnvYOibTMS8h_5Qzv6fWg",
