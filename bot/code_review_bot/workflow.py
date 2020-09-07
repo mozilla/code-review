@@ -302,7 +302,7 @@ class Workflow(object):
             task = tasks[dependencies[0]]
             if task["task"]["metadata"]["name"] == "Gecko Decision Task":
                 logger.warn("Only dependency is a Decision Task, skipping analysis")
-                return [], [], ""
+                return [], [], []
 
         # Add zero-coverage task
         if self.zero_coverage_enabled:

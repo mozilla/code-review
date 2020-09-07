@@ -105,7 +105,7 @@ class PhabricatorReporter(Reporter):
             nb_unit=len(unit_issues),
         )
 
-    def publish_summary(self, revision, issues, patches, task_failures, links=None):
+    def publish_summary(self, revision, issues, patches, task_failures, links):
         """
         Summarize publishable issues through Phabricator comment
         """
