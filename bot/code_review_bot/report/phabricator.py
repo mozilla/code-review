@@ -74,9 +74,7 @@ class PhabricatorReporter(Reporter):
 
             if issues or patches or task_failures or links:
                 # Publish comment summarizing issues
-                self.publish_summary(
-                    revision, issues, patches, task_failures, links
-                )
+                self.publish_summary(revision, issues, patches, task_failures, links)
 
             # Publish statistics
             stats.add_metric("report.phabricator.issues", len(issues))

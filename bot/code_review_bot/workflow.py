@@ -91,9 +91,7 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures, links = self.find_issues(
-            revision, settings.try_group_id
-        )
+        issues, task_failures, links = self.find_issues(revision, settings.try_group_id)
         if not issues and not task_failures and not links:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
