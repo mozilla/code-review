@@ -24,7 +24,7 @@ class DebugReporter(Reporter):
         assert os.path.isdir(output_dir), "Invalid output dir"
         self.report_path = os.path.join(output_dir, "report.json")
 
-    def publish(self, issues, revision, task_failures):
+    def publish(self, issues, revision, task_failures, link_to_doc=None):
         """
         Display issues choices
         """
