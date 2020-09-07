@@ -32,10 +32,6 @@ logger = structlog.get_logger(__name__)
 TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
 
-COMMENT_LINK_TO_DOC = """
-We think you might have touched the doc files, generated doc can be accessed [here]({link_to_doc}).
-"""
-
 
 class Workflow(object):
     """
@@ -95,10 +91,10 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures, link_to_doc = self.find_issues(
+        issues, task_failures, links = self.find_issues(
             revision, settings.try_group_id
         )
-        if not issues and not task_failures and not link_to_doc:
+        if not issues and not task_failures and not links:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
             self.update_status(revision, BuildState.Pass)
@@ -108,7 +104,7 @@ class Workflow(object):
         self.backend_api.publish_issues(issues, revision)
 
         # Publish all issues
-        self.publish(revision, issues, task_failures, link_to_doc)
+        self.publish(revision, issues, task_failures, links)
 
         return issues
 
@@ -169,7 +165,7 @@ class Workflow(object):
         else:
             logger.info("No issues for that autoland revision")
 
-    def publish(self, revision, issues, task_failures, link_to_doc):
+    def publish(self, revision, issues, task_failures, links):
         """
         Publish issues on selected reporters
         """
@@ -195,7 +191,7 @@ class Workflow(object):
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
-                reporter.publish(issues, revision, task_failures, link_to_doc)
+                reporter.publish(issues, revision, task_failures, links)
 
         self.index(
             revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
@@ -317,7 +313,7 @@ class Workflow(object):
         # Find issues and patches in dependencies
         issues = []
         task_failures = []
-        link_to_doc = ""
+        links = []
         for dep in dependencies:
             try:
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
@@ -343,8 +339,9 @@ class Workflow(object):
                     for patch in task_patches:
                         revision.add_improvement_patch(task, patch)
 
-                    if task.build_link(artifacts):
-                        link_to_doc = task.build_link(artifacts)
+                    link = task.build_link(artifacts)
+                    if link:
+                        links.append(link)
 
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
@@ -373,7 +370,7 @@ class Workflow(object):
                 )
                 raise
 
-        return issues, task_failures, link_to_doc
+        return issues, task_failures, links
 
     def build_task(self, task_status):
         """

@@ -43,7 +43,7 @@ class PhabricatorReporter(Reporter):
         self.api = api
         logger.info("Phabricator reporter enabled")
 
-    def publish(self, issues, revision, task_failures, link_to_doc=None):
+    def publish(self, issues, revision, task_failures, links):
         """
         Publish issues on Phabricator:
         * publishable issues use lint results
@@ -64,7 +64,7 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if issues or task_failures or link_to_doc:
+        if issues or task_failures or links:
 
             if issues:
                 # Publish on Harbormaster all at once
@@ -72,10 +72,10 @@ class PhabricatorReporter(Reporter):
                 # * All build errors as unit test results
                 self.publish_harbormaster(revision, issues)
 
-            if issues or patches or task_failures or link_to_doc:
+            if issues or patches or task_failures or links:
                 # Publish comment summarizing issues
                 self.publish_summary(
-                    revision, issues, patches, task_failures, link_to_doc
+                    revision, issues, patches, task_failures, links
                 )
 
             # Publish statistics
@@ -107,7 +107,7 @@ class PhabricatorReporter(Reporter):
             nb_unit=len(unit_issues),
         )
 
-    def publish_summary(self, revision, issues, patches, task_failures, link_to_doc):
+    def publish_summary(self, revision, issues, patches, task_failures, links=None):
         """
         Summarize publishable issues through Phabricator comment
         """
@@ -120,7 +120,7 @@ class PhabricatorReporter(Reporter):
                 bug_report_url=BUG_REPORT_URL,
                 frontend_url=self.frontend_diff_url.format(diff_id=revision.diff_id),
                 task_failures=task_failures,
-                link_to_doc=link_to_doc,
+                links=links,
             ),
         )
         logger.info("Published phabricator summary")

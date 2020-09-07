@@ -111,7 +111,7 @@ class Reporter(object):
         issues,
         bug_report_url,
         frontend_url,
-        link_to_doc,
+        links,
         patches=[],
         task_failures=[],
     ):
@@ -187,8 +187,8 @@ class Reporter(object):
         if CoverageIssue in issue_classes:
             comment += COMMENT_COVERAGE
 
-        if link_to_doc:
-            comment += COMMENT_LINK_TO_DOC.format(link_to_doc=link_to_doc)
+        if links:
+            comment += COMMENT_LINK_TO_DOC.format(link_to_doc=links[0])
 
         assert comment != "", "Empty comment"
 
