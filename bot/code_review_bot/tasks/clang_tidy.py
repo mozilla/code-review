@@ -184,8 +184,7 @@ class ClangTidyTask(AnalysisTask):
         return "clang-tidy"
 
     def build_help_message(self, files):
-        files = " ".join(files)
-        return f"`./mach static-analysis check {files}` (C/C++)"
+        return "`./mach static-analysis check --outgoing` (C/C++)"
 
     def parse_issues(self, artifacts, revision):
         return [

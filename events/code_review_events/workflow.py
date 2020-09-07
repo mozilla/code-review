@@ -303,7 +303,7 @@ class Events(object):
                         QUEUE_PULSE_BUGBUG_TEST_SELECT: [
                             (
                                 "exchange/taskcluster-queue/v1/task-completed",
-                                ["route.project.relman.bugbug.test_select"],
+                                ["route.project.bugbug.test_select"],
                             )
                         ]
                     },
