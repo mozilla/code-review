@@ -43,7 +43,7 @@ def test_publication(tmpdir, mock_issues, mock_revision):
     task = InferTask("someTaskId", status)
 
     r = DebugReporter(report_dir)
-    r.publish(mock_issues, mock_revision, [task])
+    r.publish(mock_issues, mock_revision, [task], [])
 
     assert os.path.exists(report_path)
     with open(report_path) as f:
