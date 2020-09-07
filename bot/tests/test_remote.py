@@ -64,8 +64,8 @@ def test_baseline(mock_config, mock_revision, mock_workflow, mock_backend, mock_
     - an analyzer in failed status
     - with some issues in its log
     """
-    from code_review_bot.tasks.lint import MozLintIssue
     from code_review_bot.tasks.coverage import CoverageIssue
+    from code_review_bot.tasks.lint import MozLintIssue
 
     # We run on a mock TC, with a try source
     if mock_config.taskcluster.local:
