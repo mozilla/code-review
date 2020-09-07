@@ -421,7 +421,9 @@ def test_phabricator_clang_tidy_and_coverage(
     )
     assert issue_coverage.is_publishable()
 
-    issues, patches = reporter.publish([issue_clang_tidy, issue_coverage], revision, [], [])
+    issues, patches = reporter.publish(
+        [issue_clang_tidy, issue_coverage], revision, [], []
+    )
     assert len(issues) == 2
     assert len(patches) == 0
 
@@ -948,7 +950,9 @@ def test_phabricator_doc_upload(
         [],
         revision,
         [],
-        ["http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"],
+        [
+            "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
+        ],
     )
 
     # Check the comment has been posted
