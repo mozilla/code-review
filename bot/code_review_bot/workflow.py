@@ -23,9 +23,9 @@ from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.coverage import ZeroCoverageTask
 from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
+from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
-from code_review_bot.tasks.docupload import DocUploadTask
 
 logger = structlog.get_logger(__name__)
 
