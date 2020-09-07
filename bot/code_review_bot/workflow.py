@@ -16,7 +16,6 @@ from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
-from code_review_bot.report.phabricator import PhabricatorReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask
 from code_review_bot.tasks.clang_format import ClangFormatTask
@@ -26,7 +25,7 @@ from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
-from code_review_bot.tasks.upload import DocUploadTask
+from code_review_bot.tasks.docupload import DocUploadTask
 
 logger = structlog.get_logger(__name__)
 
@@ -196,10 +195,7 @@ class Workflow(object):
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
-                if isinstance(reporter, PhabricatorReporter):
-                    reporter.publish(issues, revision, task_failures, link_to_doc)
-                else:
-                    reporter.publish(issues, revision, task_failures)
+                reporter.publish(issues, revision, task_failures, link_to_doc)
 
         self.index(
             revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
