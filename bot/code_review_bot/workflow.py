@@ -318,7 +318,6 @@ class Workflow(object):
         issues = []
         task_failures = []
         link_to_doc = ""
-        docupload_artifact_path = "public/firefox-source-docs-url.txt"
         for dep in dependencies:
             try:
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
@@ -331,9 +330,6 @@ class Workflow(object):
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
-                    if docupload_artifact_path in artifacts:
-                        link_to_doc = artifacts[docupload_artifact_path].decode("UTF-8")
-
                     task_issues = task.parse_issues(artifacts, revision)
                     logger.info(
                         "Found {} issues".format(len(task_issues)),
@@ -346,6 +342,9 @@ class Workflow(object):
                     task_patches = task.build_patches(artifacts)
                     for patch in task_patches:
                         revision.add_improvement_patch(task, patch)
+
+                    if task.build_link(artifacts):
+                        link_to_doc = task.build_link(artifacts)
 
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
