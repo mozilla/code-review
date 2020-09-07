@@ -5,20 +5,6 @@ from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
 
-ISSUE_MARKDOWN = """
-## issue {analyzer}
-
-- **Path**: {path}
-- **Level**: {level}
-- **Check**: {check}
-- **Line**: {line}
-- **Publishable**: {publishable}
-
-```
-{message}
-```
-"""
-
 
 class DocUploadTask(AnalysisTask):
     """
@@ -41,8 +27,8 @@ class DocUploadTask(AnalysisTask):
     def build_link(self, artifacts):
         artifact = artifacts.get("public/firefox-source-docs-url.txt")
         if artifact is None:
-            logger.warn("Missing or empty firefox-source-docs-url.txt")
-            return []
+            logger.warn("Missing firefox-source-docs-url.txt")
+            return ""
 
         link_to_doc = artifact.decode("utf-8")
         return link_to_doc
