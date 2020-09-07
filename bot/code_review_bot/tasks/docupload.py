@@ -18,10 +18,6 @@ class DocUploadTask(AnalysisTask):
         return "doc-upload"
 
     def parse_issues(self, artifacts, revision):
-        artifact = artifacts.get("public/firefox-source-docs-url.txt")
-        if artifact is None:
-            logger.warn("Missing firefox-source-docs-url.txt")
-
         return []
 
     def build_link(self, artifacts):
@@ -30,5 +26,4 @@ class DocUploadTask(AnalysisTask):
             logger.warn("Missing firefox-source-docs-url.txt")
             return ""
 
-        link_to_doc = artifact.decode("utf-8")
-        return link_to_doc
+        return artifact.decode("utf-8")
