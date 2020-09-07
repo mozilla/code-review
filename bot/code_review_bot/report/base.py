@@ -187,7 +187,9 @@ class Reporter(object):
         if CoverageIssue in issue_classes:
             comment += COMMENT_COVERAGE
 
+        # For now, we assume there is only one task that creates a link, the doc-upload task.
         if links:
+            assert len(links) == 1
             comment += COMMENT_LINK_TO_DOC.format(link_to_doc=links[0])
 
         assert comment != "", "Empty comment"
