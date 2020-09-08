@@ -23,6 +23,7 @@ from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.coverage import ZeroCoverageTask
 from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
+from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
 
@@ -90,8 +91,8 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures = self.find_issues(revision, settings.try_group_id)
-        if not issues and not task_failures:
+        issues, task_failures, links = self.find_issues(revision, settings.try_group_id)
+        if not issues and not task_failures and not links:
             logger.info("No issues, stopping there.")
             self.index(revision, state="done", issues=0)
             self.update_status(revision, BuildState.Pass)
@@ -101,7 +102,7 @@ class Workflow(object):
         self.backend_api.publish_issues(issues, revision)
 
         # Publish all issues
-        self.publish(revision, issues, task_failures)
+        self.publish(revision, issues, task_failures, links)
 
         return issues
 
@@ -162,7 +163,7 @@ class Workflow(object):
         else:
             logger.info("No issues for that autoland revision")
 
-    def publish(self, revision, issues, task_failures):
+    def publish(self, revision, issues, task_failures, links):
         """
         Publish issues on selected reporters
         """
@@ -188,7 +189,7 @@ class Workflow(object):
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
-                reporter.publish(issues, revision, task_failures)
+                reporter.publish(issues, revision, task_failures, links)
 
         self.index(
             revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
@@ -301,7 +302,7 @@ class Workflow(object):
             task = tasks[dependencies[0]]
             if task["task"]["metadata"]["name"] == "Gecko Decision Task":
                 logger.warn("Only dependency is a Decision Task, skipping analysis")
-                return [], []
+                return [], [], []
 
         # Add zero-coverage task
         if self.zero_coverage_enabled:
@@ -310,6 +311,7 @@ class Workflow(object):
         # Find issues and patches in dependencies
         issues = []
         task_failures = []
+        links = []
         for dep in dependencies:
             try:
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
@@ -334,6 +336,10 @@ class Workflow(object):
                     task_patches = task.build_patches(artifacts)
                     for patch in task_patches:
                         revision.add_improvement_patch(task, patch)
+
+                    link = task.build_link(artifacts)
+                    if link:
+                        links.append(link)
 
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
@@ -362,7 +368,7 @@ class Workflow(object):
                 )
                 raise
 
-        return issues, task_failures
+        return issues, task_failures, links
 
     def build_task(self, task_status):
         """
@@ -390,6 +396,8 @@ class Workflow(object):
             return CoverityTask(task_id, task_status)
         elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
+        elif name == "source-test-doc-upload":
+            return DocUploadTask(task_id, task_status)
         elif settings.autoland_group_id is not None and not name.startswith(
             "source-test-"
         ):

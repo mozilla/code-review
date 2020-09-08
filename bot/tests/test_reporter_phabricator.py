@@ -151,6 +151,12 @@ If you see a problem in this automated review, [please report it here](https://b
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
+VALID_DOC_UPLOAD_MESSAGE = """
+You have touched the documentation, you can find it rendered [here](http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html) for a week.
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+"""
+
 
 def test_phabricator_clang_tidy(mock_phabricator, phab, mock_try_task, mock_task):
     """
@@ -180,7 +186,7 @@ def test_phabricator_clang_tidy(mock_phabricator, phab, mock_try_task, mock_task
     )
     assert issue.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision, [])
+    issues, patches = reporter.publish([issue], revision, [], [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -221,7 +227,7 @@ def test_phabricator_clang_format(
     ]
     list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
-    issues, patches = reporter.publish([issue], revision, [])
+    issues, patches = reporter.publish([issue], revision, [], [])
     assert len(issues) == 1
     assert len(patches) == 1
 
@@ -279,7 +285,7 @@ def test_phabricator_mozlint(
     )
     assert issue_eslint.is_publishable()
 
-    issues, patches = reporter.publish([issue_flake, issue_eslint], revision, [])
+    issues, patches = reporter.publish([issue_flake, issue_eslint], revision, [], [])
     assert len(issues) == 2
     assert len(patches) == 0
 
@@ -345,7 +351,7 @@ def test_phabricator_coverage(
     )
     assert issue.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision, [])
+    issues, patches = reporter.publish([issue], revision, [], [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -415,7 +421,9 @@ def test_phabricator_clang_tidy_and_coverage(
     )
     assert issue_coverage.is_publishable()
 
-    issues, patches = reporter.publish([issue_clang_tidy, issue_coverage], revision, [])
+    issues, patches = reporter.publish(
+        [issue_clang_tidy, issue_coverage], revision, [], []
+    )
     assert len(issues) == 2
     assert len(patches) == 0
 
@@ -587,7 +595,7 @@ def test_phabricator_analyzers(
     ]
     list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
-    issues, patches = reporter.publish(issues, revision, [])
+    issues, patches = reporter.publish(issues, revision, [], [])
 
     # Check issues & patches analyzers
     assert len(issues) == len(valid_issues)
@@ -650,7 +658,7 @@ def test_phabricator_coverity(mock_phabricator, phab, mock_try_task, mock_task):
         )
         assert issue.is_publishable()
 
-        issues, patches = reporter.publish([issue], revision, [])
+        issues, patches = reporter.publish([issue], revision, [], [])
         assert len(issues) == 1
         assert len(patches) == 0
 
@@ -712,7 +720,7 @@ def test_phabricator_clang_tidy_build_error(
 
         assert issue.is_publishable()
 
-        issues, patches = reporter.publish([issue], revision, [])
+        issues, patches = reporter.publish([issue], revision, [], [])
         assert len(issues) == 1
         assert len(patches) == 0
 
@@ -772,7 +780,7 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task, mock_task
     assert revision.has_file(issue.path)
     assert revision.contains(issue)
 
-    issues, patches = reporter.publish([issue], revision, [])
+    issues, patches = reporter.publish([issue], revision, [], [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -819,7 +827,7 @@ def test_task_failures(mock_phabricator, phab, mock_try_task):
         "status": {"runs": [{"runId": 0}]},
     }
     task = ClangTidyTask("ab3NrysvSZyEwsOHL2MZfw", status)
-    issues, patches = reporter.publish([], revision, [task])
+    issues, patches = reporter.publish([], revision, [task], [])
     assert len(issues) == 0
     assert len(patches) == 0
 
@@ -881,7 +889,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
         ),
     ]
 
-    published_issues, patches = reporter.publish(all_issues, revision, [])
+    published_issues, patches = reporter.publish(all_issues, revision, [], [])
     assert len(published_issues) == 2
     assert len(patches) == 0
 
@@ -918,3 +926,34 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
     ]
 
     assert phab.comments[51] == [VALID_MOZLINT_MESSAGE]
+
+
+def test_phabricator_doc_upload(
+    mock_config, mock_phabricator, phab, mock_try_task, mock_task
+):
+    """
+    Test Phabricator reporter publication on a mock clang-format issue
+    """
+
+    with mock_phabricator as api:
+        revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
+        revision.lines = {
+            # Add dummy lines diff
+            "test.rst": [41, 42, 43],
+        }
+        reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
+
+    reporter.publish(
+        [],
+        revision,
+        [],
+        [
+            "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
+        ],
+    )
+
+    # Check the comment has been posted
+    assert phab.comments[51] == [VALID_DOC_UPLOAD_MESSAGE]

@@ -128,3 +128,11 @@ class AnalysisTask(object):
         Output is a list of tuple (patch name as str, patch content as str)
         """
         return []
+
+    def build_link(self, artifacts):
+        """
+        Some analyzers can provide a link in a form of a string
+        The link is stored in a txt file
+        Output is a string
+        """
+        return ""
