@@ -1,2 +1,2 @@
-django-debug-toolbar==2.2
+django-debug-toolbar==3.0
 pre-commit==2.7.1
