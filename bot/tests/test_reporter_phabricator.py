@@ -15,6 +15,8 @@ from code_review_bot.tasks.clang_format import ClangFormatIssue
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
+from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
+from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
 from code_review_bot.tasks.coverage import CoverageIssue
 from code_review_bot.tasks.coverage import ZeroCoverageTask
 from code_review_bot.tasks.coverity import CoverityIssue
@@ -155,6 +157,26 @@ VALID_DOC_UPLOAD_MESSAGE = """
 You have touched the documentation, you can find it rendered [here](http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html) for a week.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+"""
+
+VALID_EXTERNAL_TIDY_MESSAGE = """
+Code analysis found 1 defect in the diff 42:
+ - 1 defect found by private static analysis
+
+You can run this analysis locally with:
+ - Unfortunately, private static analysis can not be reproduced locally.
+
+#### Private Static Analysis warning
+
+- **Message**: dummy message
+- **Location**: another_test.cpp:42:51
+- **Clang check**: modernize-use-nullptr
+- **in an expanded Macro**: no
+
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 
@@ -957,3 +979,39 @@ def test_phabricator_doc_upload(
 
     # Check the comment has been posted
     assert phab.comments[51] == [VALID_DOC_UPLOAD_MESSAGE]
+
+
+def test_phabricator_external_tidy(mock_phabricator, phab, mock_try_task, mock_task):
+    """
+    Test Phabricator reporter publication on a mock external-tidy issue
+    """
+
+    with mock_phabricator as api:
+        revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
+        revision.lines = {
+            # Add dummy lines diff
+            "another_test.cpp": [41, 42, 43]
+        }
+        revision.files = ["another_test.cpp"]
+        reporter = PhabricatorReporter({"analyzers": ["clang-tidy-external"]}, api=api)
+
+    issue = ExternalTidyIssue(
+        mock_task(ExternalTidyTask, "source-test-clang-external"),
+        revision,
+        "another_test.cpp",
+        "42",
+        "51",
+        "modernize-use-nullptr",
+        "dummy message",
+    )
+    assert issue.is_publishable()
+
+    issues, patches = reporter.publish([issue], revision, [], [])
+    assert len(issues) == 1
+    assert len(patches) == 0
+
+    # Check the comment has been posted
+    assert phab.comments[51] == [VALID_EXTERNAL_TIDY_MESSAGE]

@@ -12,6 +12,7 @@ from code_review_bot.config import Settings
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
+from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
 from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.infer import InferTask
@@ -87,6 +88,8 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     [
         ("source-test-clang-tidy", ClangTidyTask, False),
         ("source-test-clang-tidy", ClangTidyTask, True),
+        ("source-test-clang-tidy-external", ExternalTidyTask, False),
+        ("source-test-clang-tidy-external", ExternalTidyTask, True),
         ("source-test-mozlint-eslint", MozLintTask, False),
         ("source-test-mozlint-eslint", MozLintTask, True),
         ("source-test-mozlint-whatever", MozLintTask, False),
