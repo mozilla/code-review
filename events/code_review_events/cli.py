@@ -53,6 +53,7 @@ def main():
             repositories=[],
             user_blacklist=[],
             autoland_enabled=False,
+            skippable_files=[],
         ),
         local_secrets=yaml.safe_load(args.configuration)
         if args.configuration
