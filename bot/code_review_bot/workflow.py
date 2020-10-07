@@ -20,6 +20,7 @@ from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
+from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
 from code_review_bot.tasks.coverage import ZeroCoverageTask
 from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
@@ -398,6 +399,8 @@ class Workflow(object):
             return InferTask(task_id, task_status)
         elif name == "source-test-doc-upload":
             return DocUploadTask(task_id, task_status)
+        elif name == "source-test-clang-tidy-external":
+            return ExternalTidyTask(task_id, task_status)
         elif settings.autoland_group_id is not None and not name.startswith(
             "source-test-"
         ):

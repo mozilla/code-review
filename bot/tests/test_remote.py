@@ -800,3 +800,72 @@ def test_zero_coverage_option(mock_config, mock_revision, mock_workflow, mock_ba
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 1
     assert isinstance(issues[0], CoverageIssue)
+
+
+def test_external_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend):
+    """
+    Test a remote workflow with a clang-tidy-externak analyzer
+    """
+    from code_review_bot import Reliability
+    from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
+
+    mock_workflow.setup_mock_tasks(
+        {
+            "decision": {
+                "image": "taskcluster/decision:XXX",
+                "env": {
+                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                    "GECKO_HEAD_REV": "deadbeef1235",
+                },
+            },
+            "remoteTryTask": {"dependencies": ["clang-tidy-external"]},
+            "clang-tidy-external": {
+                "name": "source-test-clang-tidy-external",
+                "state": "completed",
+                "artifacts": {
+                    "public/code-review/clang-tidy.json": {
+                        "files": {
+                            "test.cpp": {
+                                "hash": "e409f05a10574adb8d4zdcb631f8e3bb",
+                                "warnings": [
+                                    {
+                                        "filename": "test.cpp",
+                                        "line": 12,
+                                        "column": 34,
+                                        "message": "some hard issue with c++",
+                                        "flag": "checker.XXX",
+                                        "type": "warning",
+                                        "reliability": "high",
+                                        "publish": True,
+                                    },
+                                ],
+                            }
+                        }
+                    }
+                },
+            },
+        }
+    )
+    issues = mock_workflow.run(mock_revision)
+    assert len(issues) == 1
+    issue = issues[0]
+    assert isinstance(issue, ExternalTidyIssue)
+    assert issue.path == "test.cpp"
+    assert issue.line == 12
+    assert issue.column == 34
+    assert issue.check == "checker.XXX"
+    assert issue.reliability == Reliability.High
+    assert issue.message == "some hard issue with c++"
+    assert not issue.is_build_error()
+
+    assert check_stats(
+        [
+            ("code-review.analysis.files", None, 2),
+            ("code-review.analysis.lines", None, 2),
+            ("code-review.issues", "source-test-clang-tidy-external", 1),
+            ("code-review.issues.publishable", "source-test-clang-tidy-external", 0),
+            ("code-review.issues.paths", "source-test-clang-tidy-external", 1),
+            ("code-review.analysis.issues.publishable", None, 0),
+            ("code-review.runtime.reports", None, "runtime"),
+        ]
+    )

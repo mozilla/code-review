@@ -5,6 +5,7 @@
 
 import itertools
 
+from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
 from code_review_bot.tasks.coverage import CoverageIssue
 from code_review_tools import treeherder
 
@@ -168,6 +169,11 @@ class Reporter(object):
 
         if analyzers:
             comment += COMMENT_RUN_ANALYZERS.format(analyzers="\n".join(analyzers))
+
+        for tidy_external_issue in filter(
+            lambda i: isinstance(i, ExternalTidyIssue), issues
+        ):
+            comment += tidy_external_issue.as_markdown_for_phab()
 
         for patch in patches:
             comment += COMMENT_DIFF_DOWNLOAD.format(
