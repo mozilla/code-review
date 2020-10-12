@@ -362,7 +362,7 @@ class Events(object):
                     cache_root,
                     default_ssh_key=taskcluster_config.secrets["ssh_key"],
                 ),
-                skippable_files=taskcluster_config.secrets["skipped_files"],
+                skippable_files=taskcluster_config.secrets["skippable_files"],
             )
             self.mercurial.register(self.bus)
 
