@@ -75,7 +75,6 @@ If you see a problem in this automated review, [please report it here](https://b
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
-
 VALID_FLAKE8_MESSAGE = """
 Code analysis found 2 defects in the diff 42:
  - 1 defect found by eslint (Mozlint)
@@ -88,7 +87,6 @@ If you see a problem in this automated review, [please report it here](https://b
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
-
 
 VALID_COVERAGE_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
@@ -120,7 +118,6 @@ Please check this task manually.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """
-
 
 VALID_MOZLINT_MESSAGE = """
 Code analysis found 2 defects in the diff 42:
@@ -164,13 +161,13 @@ Code analysis found 1 defect in the diff 42:
  - 1 defect found by private static analysis
 
 You can run this analysis locally with:
- - Unfortunately, private static analysis can not be reproduced locally.
+ - For private static analysis, please see [our private docs in Mana](https://mana.mozilla.org/wiki/pages/viewpage.action?pageId=130909687), if you cannot access this resource, ask your reviewer to help you resolve the issue.
 
 #### Private Static Analysis warning
 
 - **Message**: dummy message
-- **Location**: another_test.cpp:42:51
-- **Clang check**: modernize-use-nullptr
+- **Location**: another_test.cpp:43:9
+- **Clang check**: mozilla-civet-private-checker-1
 - **in an expanded Macro**: no
 
 
@@ -529,7 +526,6 @@ def test_phabricator_analyzers(
     Test analyzers filtering on phabricator reporter
     """
     with mock_phabricator as api:
-
         # Skip commenting on phabricator
         # we only care about filtering issues
         api.comment = unittest.mock.Mock(return_value=True)
@@ -998,18 +994,33 @@ def test_phabricator_external_tidy(mock_phabricator, phab, mock_try_task, mock_t
         revision.files = ["another_test.cpp"]
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy-external"]}, api=api)
 
-    issue = ExternalTidyIssue(
+    issue_clang_diagnostic = ExternalTidyIssue(
         mock_task(ExternalTidyTask, "source-test-clang-external"),
         revision,
         "another_test.cpp",
         "42",
         "51",
-        "modernize-use-nullptr",
+        "clang-diagnostic-unused-variable",
         "dummy message",
+        publish=False,
     )
-    assert issue.is_publishable()
+    issue_civet_warning = ExternalTidyIssue(
+        mock_task(ExternalTidyTask, "source-test-clang-external"),
+        revision,
+        "another_test.cpp",
+        "43",
+        "9",
+        "mozilla-civet-private-checker-1",
+        "dummy message",
+        publish=True,
+    )
 
-    issues, patches = reporter.publish([issue], revision, [], [])
+    assert issue_civet_warning.is_publishable()
+    assert not issue_clang_diagnostic.is_publishable()
+
+    issues, patches = reporter.publish(
+        [issue_civet_warning, issue_clang_diagnostic], revision, [], []
+    )
     assert len(issues) == 1
     assert len(patches) == 0
 
