@@ -2,4 +2,4 @@
 influxdb==5.3.0
 libmozdata==0.1.68
 pyyaml==5.3.1
-rs-parsepatch==0.3.2
+rs-parsepatch==0.3.3
