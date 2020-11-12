@@ -88,8 +88,8 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
     [
         ("source-test-clang-tidy", ClangTidyTask, False),
         ("source-test-clang-tidy", ClangTidyTask, True),
-        ("source-test-clang-tidy-external", ExternalTidyTask, False),
-        ("source-test-clang-tidy-external", ExternalTidyTask, True),
+        ("source-test-clang-external", ExternalTidyTask, False),
+        ("source-test-clang-external", ExternalTidyTask, True),
         ("source-test-mozlint-eslint", MozLintTask, False),
         ("source-test-mozlint-eslint", MozLintTask, True),
         ("source-test-mozlint-whatever", MozLintTask, False),

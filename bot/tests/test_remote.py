@@ -820,7 +820,7 @@ def test_external_tidy_task(mock_config, mock_revision, mock_workflow, mock_back
             },
             "remoteTryTask": {"dependencies": ["clang-tidy-external"]},
             "clang-tidy-external": {
-                "name": "source-test-clang-tidy-external",
+                "name": "source-test-clang-external",
                 "state": "completed",
                 "artifacts": {
                     "public/code-review/clang-tidy.json": {
@@ -833,10 +833,9 @@ def test_external_tidy_task(mock_config, mock_revision, mock_workflow, mock_back
                                         "line": 12,
                                         "column": 34,
                                         "message": "some hard issue with c++",
-                                        "flag": "checker.XXX",
+                                        "flag": "mozilla-civet-private-checker-1",
                                         "type": "warning",
                                         "reliability": "high",
-                                        "publish": True,
                                     },
                                 ],
                             }
@@ -853,7 +852,7 @@ def test_external_tidy_task(mock_config, mock_revision, mock_workflow, mock_back
     assert issue.path == "test.cpp"
     assert issue.line == 12
     assert issue.column == 34
-    assert issue.check == "checker.XXX"
+    assert issue.check == "mozilla-civet-private-checker-1"
     assert issue.reliability == Reliability.High
     assert issue.message == "some hard issue with c++"
     assert not issue.is_build_error()
@@ -862,9 +861,9 @@ def test_external_tidy_task(mock_config, mock_revision, mock_workflow, mock_back
         [
             ("code-review.analysis.files", None, 2),
             ("code-review.analysis.lines", None, 2),
-            ("code-review.issues", "source-test-clang-tidy-external", 1),
-            ("code-review.issues.publishable", "source-test-clang-tidy-external", 0),
-            ("code-review.issues.paths", "source-test-clang-tidy-external", 1),
+            ("code-review.issues", "source-test-clang-external", 1),
+            ("code-review.issues.publishable", "source-test-clang-external", 0),
+            ("code-review.issues.paths", "source-test-clang-external", 1),
             ("code-review.analysis.issues.publishable", None, 0),
             ("code-review.runtime.reports", None, "runtime"),
         ]

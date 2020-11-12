@@ -42,10 +42,12 @@ ERROR_MARKDOWN = """
 
 CLANG_MACRO_DETECTION = re.compile(r"^expanded from macro")
 
+BUILD_HELP_MSG = """For private static analysis, please see [our private docs in Mana](https://mana.mozilla.org/wiki/pages/viewpage.action?pageId=130909687), if you cannot access this resource, ask your reviewer to help you resolve the issue."""
+
 
 class ExternalTidyIssue(ClangTidyIssue):
     """
-    An issue reported by source-test-clang-tidy-external
+    An issue reported by source-test-clang-external
     """
 
     def as_error(self):
@@ -130,7 +132,7 @@ class ExternalTidyIssue(ClangTidyIssue):
 
 class ExternalTidyTask(ClangTidyTask):
     """
-    Support issues from source-test clang-tidy-external tasks
+    Support issues from source-test clang-external tasks
     """
 
     # Note this is currently in fact using the same file name as the
@@ -143,7 +145,7 @@ class ExternalTidyTask(ClangTidyTask):
         return "private static analysis"
 
     def build_help_message(self, files):
-        return "Unfortunately, private static analysis can not be reproduced locally."
+        return BUILD_HELP_MSG
 
     def parse_issues(self, artifacts, revision):
         issues = [
@@ -160,7 +162,8 @@ class ExternalTidyTask(ClangTidyTask):
                 if "reliability" in warning
                 else Reliability.Unknown,
                 reason=warning.get("reason"),
-                publish=warning.get("publish"),
+                publish=warning.get("publish")
+                and warning["flag"].startswith("mozilla-civet-"),
             )
             for artifact in artifacts.values()
             for path, items in artifact["files"].items()

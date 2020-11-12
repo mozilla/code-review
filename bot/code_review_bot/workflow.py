@@ -399,7 +399,7 @@ class Workflow(object):
             return InferTask(task_id, task_status)
         elif name == "source-test-doc-upload":
             return DocUploadTask(task_id, task_status)
-        elif name == "source-test-clang-tidy-external":
+        elif name == "source-test-clang-external":
             return ExternalTidyTask(task_id, task_status)
         elif settings.autoland_group_id is not None and not name.startswith(
             "source-test-"
