@@ -50,6 +50,9 @@ class ExternalTidyIssue(ClangTidyIssue):
     An issue reported by source-test-clang-external
     """
 
+    def is_build_error(self):
+        return False
+
     def as_error(self):
         assert self.is_build_error(), "ExternalTidyIssue is not a build error."
 
