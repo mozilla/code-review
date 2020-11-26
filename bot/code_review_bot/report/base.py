@@ -37,7 +37,7 @@ FRONTEND_LINKS = """
 You can view these defects on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
 """
 COMMENT_LINK_TO_DOC = """
-You have touched the documentation, you can find it rendered [here]({link_to_doc}) for a week.
+You have touched the documentation in diff {diff_id}, you can find it rendered [here]({link_to_doc}) for a week.
 """
 
 
@@ -196,7 +196,9 @@ class Reporter(object):
         # For now, we assume there is only one task that creates a link, the doc-upload task.
         if links:
             assert len(links) == 1
-            comment += COMMENT_LINK_TO_DOC.format(link_to_doc=links[0])
+            comment += COMMENT_LINK_TO_DOC.format(
+                link_to_doc=links[0], diff_id=revision.diff_id
+            )
 
         assert comment != "", "Empty comment"
 
