@@ -3,7 +3,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from datetime import date
 from datetime import datetime
+from datetime import timedelta
 
 from django.db.models import Count
 from django.db.models import Q
@@ -93,7 +95,9 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         diffs = (
-            Diff.objects.all()
+            Diff.objects
+            # Because of the perf. hit filter issues that are not older than today - 3 months.
+            .filter(created__gte=date.today() - timedelta(days=90))
             .prefetch_related(
                 "issues", "revision", "revision__repository", "repository"
             )
