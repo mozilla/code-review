@@ -9,4 +9,4 @@ raven==6.10.0
 structlog==20.2.0
 taskcluster==39.2.0
 treeherder-client==5.0.0
-yarl==1.3.0
+yarl==1.6.3
