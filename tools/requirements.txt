@@ -4,7 +4,7 @@ async-timeout==3.0.1
 # Limit idna to avid conflicts
 idna>=2.5,<2.11
 logbook==1.5.3
-multidict==4.5.2
+multidict==5.1.0
 raven==6.10.0
 structlog==20.2.0
 taskcluster==39.2.0
