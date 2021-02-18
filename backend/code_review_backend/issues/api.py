@@ -240,7 +240,11 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
                 since = datetime.strptime(since, "%Y-%m-%d").date()
             except ValueError:
                 raise APIException(detail="invalid since date - should be YYYY-MM-DD")
-            queryset = queryset.filter(diff__created__gte=since)
+        else:
+            # Because of the perf. hit filter, issues that are not older than today - 3 months.
+            since = date.today() - timedelta(days=90)
+
+        queryset = queryset.filter(diff__created__gte=since)
 
         return queryset.order_by("-total")
 
