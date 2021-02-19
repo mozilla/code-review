@@ -6,7 +6,7 @@ idna>=2.5,<2.11
 logbook==1.5.3
 multidict==5.1.0
 raven==6.10.0
-structlog==20.2.0
+structlog==21.1.0
 taskcluster==40.0.3
 treeherder-client==5.0.0
 yarl==1.6.3
