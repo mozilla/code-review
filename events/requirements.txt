@@ -1,4 +1,5 @@
 -e ../tools #egg=code-review-tools
+google-auth<2.0dev,>=1.21.1
 json-e==4.3.0
 jsonschema==3.2.0
 libmozdata==0.1.68
