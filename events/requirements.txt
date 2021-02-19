@@ -1,6 +1,6 @@
 -e ../tools #egg=code-review-tools
 json-e==4.3.0
 jsonschema==3.2.0
-libmozdata==0.1.68
+libmozdata==0.1.69
 libmozevent==1.1.6
 pyyaml==5.4.1
