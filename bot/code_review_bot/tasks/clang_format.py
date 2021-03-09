@@ -92,7 +92,7 @@ class ClangFormatTask(AnalysisTask):
 
     def build_help_message(self, files):
         files = " ".join(files)
-        return f"`./mach clang-format -s -p {files}` (C/C++)"
+        return f"`./mach clang-format -p {files}`"
 
     def parse_issues(self, artifacts, revision):
         artifact = artifacts.get("public/code-review/clang-format.diff")

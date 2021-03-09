@@ -66,7 +66,7 @@ Code analysis found 1 defect in the diff 42:
  - 1 defect found by clang-format
 
 You can run this analysis locally with:
- - `./mach clang-format -s -p dom/test.cpp` (C/C++)
+ - `./mach clang-format -p dom/test.cpp`
 
 For your convenience, [here is a patch]({results}/source-test-clang-format-PHID-DIFF-test.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply -p0`).
 
