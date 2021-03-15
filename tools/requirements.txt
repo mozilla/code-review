@@ -7,6 +7,6 @@ logbook==1.5.3
 multidict==5.1.0
 raven==6.10.0
 structlog==21.1.0
-taskcluster==41.0.2
+taskcluster==42.1.1
 treeherder-client==5.0.0
 yarl==1.6.3
