@@ -11,6 +11,7 @@ from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 from taskcluster.utils import stringDate
 
+from code_review_bot import Level
 from code_review_bot import stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND
@@ -179,6 +180,9 @@ class Workflow(object):
         # Report issues publication stats
         nb_issues = len(issues)
         nb_publishable = len([i for i in issues if i.is_publishable()])
+        nb_publishable_errors = sum(
+            1 for i in issues if i.is_publishable() and i.level == Level.Error
+        )
         self.index(
             revision,
             state="analyzed",
@@ -199,7 +203,9 @@ class Workflow(object):
         # Publish final HarborMaster state
         self.update_status(
             revision,
-            BuildState.Fail if nb_publishable > 0 or task_failures else BuildState.Pass,
+            BuildState.Fail
+            if nb_publishable_errors > 0 or task_failures
+            else BuildState.Pass,
         )
 
     def index(self, revision, **kwargs):
