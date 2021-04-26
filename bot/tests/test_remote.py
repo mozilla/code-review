@@ -148,6 +148,8 @@ def test_baseline(mock_config, mock_revision, mock_workflow, mock_backend, mock_
         ]
     )
 
+    assert mock_revision._state == BuildState.Fail
+
 
 def test_no_failed(mock_config, mock_revision, mock_workflow, mock_backend):
     """
@@ -171,6 +173,7 @@ def test_no_failed(mock_config, mock_revision, mock_workflow, mock_backend):
     )
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 0
+    assert mock_revision._state == BuildState.Pass
 
 
 def test_no_issues(mock_config, mock_revision, mock_workflow, mock_backend):
@@ -212,6 +215,112 @@ def test_no_issues(mock_config, mock_revision, mock_workflow, mock_backend):
     assert mock_revision._state == BuildState.Pass
 
 
+def test_build_status_fail_on_error(
+    mock_config, mock_revision, mock_workflow, mock_backend
+):
+    """
+    Test a remote workflow with an error causes the build to be reported as failing
+    """
+    mock_workflow.setup_mock_tasks(
+        {
+            "decision": {
+                "image": "taskcluster/decision:XXX",
+                "env": {
+                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                    "GECKO_HEAD_REV": "deadbeef1234",
+                },
+            },
+            "remoteTryTask": {"dependencies": ["mozlint"]},
+            "mozlint": {
+                "name": "source-test-mozlint-dummy",
+                "state": "failed",
+                "artifacts": {
+                    "public/code-review/mozlint.json": {
+                        "test.cpp": [
+                            {
+                                "path": "test.cpp",
+                                "lineno": 42,
+                                "column": 51,
+                                "level": "error",
+                                "linter": "flake8",
+                                "rule": "E001",
+                                "message": "dummy issue",
+                            }
+                        ],
+                        "test2.cpp": [
+                            {
+                                "path": "test2.cpp",
+                                "lineno": 42,
+                                "column": 51,
+                                "level": "warning",
+                                "linter": "flake8",
+                                "rule": "E001",
+                                "message": "dummy issue",
+                            }
+                        ],
+                    }
+                },
+            },
+        }
+    )
+    issues = mock_workflow.run(mock_revision)
+    assert len(issues) == 2
+    assert mock_revision._state == BuildState.Fail
+
+
+def test_build_status_pass_on_warning(
+    mock_config, mock_revision, mock_workflow, mock_backend
+):
+    """
+    Test a remote workflow with no errors causes the build to be reported as passing
+    """
+    mock_workflow.setup_mock_tasks(
+        {
+            "decision": {
+                "image": "taskcluster/decision:XXX",
+                "env": {
+                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                    "GECKO_HEAD_REV": "deadbeef1234",
+                },
+            },
+            "remoteTryTask": {"dependencies": ["mozlint"]},
+            "mozlint": {
+                "name": "source-test-mozlint-dummy",
+                "state": "failed",
+                "artifacts": {
+                    "public/code-review/mozlint.json": {
+                        "test.cpp": [
+                            {
+                                "path": "test.cpp",
+                                "lineno": 42,
+                                "column": 51,
+                                "level": "warning",
+                                "linter": "flake8",
+                                "rule": "E001",
+                                "message": "dummy issue",
+                            }
+                        ],
+                        "test2.cpp": [
+                            {
+                                "path": "test2.cpp",
+                                "lineno": 42,
+                                "column": 51,
+                                "level": "warning",
+                                "linter": "flake8",
+                                "rule": "E001",
+                                "message": "dummy issue",
+                            }
+                        ],
+                    }
+                },
+            },
+        }
+    )
+    issues = mock_workflow.run(mock_revision)
+    assert len(issues) == 2
+    assert mock_revision._state == BuildState.Pass
+
+
 def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with an unsupported analyzer (not mozlint)
@@ -240,6 +349,7 @@ def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_ba
     )
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 0
+    assert mock_revision._state == BuildState.Fail
 
 
 def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
@@ -387,6 +497,8 @@ def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_backend):
         ]
     )
 
+    assert mock_revision._state == BuildState.Fail
+
 
 def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend):
     """
@@ -471,6 +583,8 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend
             ("code-review.runtime.reports", None, "runtime"),
         ]
     )
+
+    assert mock_revision._state == BuildState.Pass
 
 
 CLANG_FORMAT_PATCH = """
@@ -571,6 +685,8 @@ def test_clang_format_task(
         ]
     )
 
+    assert mock_revision._state == BuildState.Pass
+
 
 def test_coverity_task(
     mock_config, mock_revision, mock_workflow, mock_backend, mock_hgmo
@@ -658,6 +774,8 @@ The path that leads to this defect is:
         ]
     )
 
+    assert mock_revision._state == BuildState.Pass
+
 
 def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_backend):
     """
@@ -741,6 +859,8 @@ def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_b
         "fix": None,
     }
 
+    assert mock_revision._state == BuildState.Pass
+
 
 def test_no_tasks(mock_config, mock_revision, mock_workflow, mock_backend):
     """
@@ -763,6 +883,7 @@ def test_no_tasks(mock_config, mock_revision, mock_workflow, mock_backend):
     )
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 0
+    assert mock_revision._state == BuildState.Pass
 
 
 def test_zero_coverage_option(mock_config, mock_revision, mock_workflow, mock_backend):
@@ -795,11 +916,13 @@ def test_zero_coverage_option(mock_config, mock_revision, mock_workflow, mock_ba
     mock_workflow.zero_coverage_enabled = False
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 0
+    assert mock_revision._state == BuildState.Pass
 
     mock_workflow.zero_coverage_enabled = True
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 1
     assert isinstance(issues[0], CoverageIssue)
+    assert mock_revision._state == BuildState.Pass
 
 
 def test_external_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend):
@@ -868,3 +991,5 @@ def test_external_tidy_task(mock_config, mock_revision, mock_workflow, mock_back
             ("code-review.runtime.reports", None, "runtime"),
         ]
     )
+
+    assert mock_revision._state == BuildState.Pass
