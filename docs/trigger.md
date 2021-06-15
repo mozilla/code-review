@@ -13,7 +13,7 @@ attributes:
   code-review: true
 ```
 
-Here is an example for [clang tasks](https://hg.mozilla.org/mozilla-central/file/tip/taskcluster/ci/source-test/clang.yml#l12)
+Here is an example for [clang tasks](https://hg.mozilla.org/mozilla-central/file/177ac92fb734b80f07c04710ec70f0b89a073351/taskcluster/ci/source-test/clang.yml#l12)
 
 Ask the [linter-reviewers group](https://phabricator.services.mozilla.com/project/view/119/) for review on that step, especially if you add a task in a different namespace than `source-test`
 
