@@ -15,7 +15,7 @@ attributes:
 
 Here is an example for [clang tasks](https://hg.mozilla.org/mozilla-central/file/tip/taskcluster/ci/source-test/clang.yml#l12)
 
-Ask [bastien](https://phabricator.services.mozilla.com/p/bastien/) for review on that step, especially if you add a task in a different namespace than `source-test`
+Ask the [linter-reviewers group](https://phabricator.services.mozilla.com/project/view/119/) for review on that step, especially if you add a task in a different namespace than `source-test`
 
 ## Step for NSS
 
