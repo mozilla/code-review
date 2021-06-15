@@ -36,6 +36,7 @@ repos:
         args: ['--django']
       - id: check-json
       - id: requirements-txt-fixer
+      - id: check-vcs-permalinks
   - repo: https://github.com/codespell-project/codespell
     rev: v1.17.1
     hooks:
