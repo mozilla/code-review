@@ -49,7 +49,7 @@ tasks:
 
     taskboot_image: "mozilla/taskboot:0.2.2"
 
-    pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
+    pip_install: "pip install --disable-pip-version-check --no-cache-dir"
     python_version: "3.8"
 
     provisionerId:
