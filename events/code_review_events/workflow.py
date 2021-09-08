@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import signal
 
 import structlog
 from libmozdata.phabricator import BuildState
@@ -49,11 +50,16 @@ class CodeReview(PhabricatorActions):
     def __init__(self, publish=False, user_blacklist=[], *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.publish = publish
+        # We cache the current build that is send through the bus, in the event that
+        # a SIGTERM is sent we capture it feed process_build.
+        self.build_cache = None
         logger.info(
             "Phabricator publication is {}".format(
                 self.publish and "enabled" or "disabled"
             )
         )
+
+        signal.signal(signal.SIGTERM, self.handle_signal)
 
         # Load the blacklisted users
         if user_blacklist:
@@ -105,6 +111,8 @@ class CodeReview(PhabricatorActions):
         assert build is not None, "Invalid payload"
         assert isinstance(build, PhabricatorBuild)
 
+        self.build_cache = build
+
         # Update its state
         self.update_state(build)
 
@@ -137,6 +145,13 @@ class CodeReview(PhabricatorActions):
         elif build.state == PhabricatorBuildState.Queued:
             # Requeue when nothing changed for now
             await self.bus.send(QUEUE_WEB_BUILDS, build)
+
+        # Build has been sent to the bus
+        self.build_cache = None
+
+    def handle_signal(self, *args):
+        if self.build_cache is not None:
+            self.process_build(self.build_cache)
 
     def is_blacklisted(self, revision: dict):
         """Check if the revision author is in blacklisted"""
