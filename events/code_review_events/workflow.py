@@ -59,8 +59,6 @@ class CodeReview(PhabricatorActions):
             )
         )
 
-        signal.signal(signal.SIGTERM, self.handle_signal)
-
         # Load the blacklisted users
         if user_blacklist:
             self.user_blacklist = {
@@ -78,6 +76,9 @@ class CodeReview(PhabricatorActions):
         self.bus = bus
         self.bus.add_queue(QUEUE_PHABRICATOR_RESULTS)
         self.bus.add_queue(QUEUE_MERCURIAL_APPLIED)
+
+    def cached_build(self):
+        return self.build_cache
 
     def get_repositories(self, repositories, cache_root, default_ssh_key=None):
         """
@@ -148,10 +149,6 @@ class CodeReview(PhabricatorActions):
 
         # Build has been sent to the bus
         self.build_cache = None
-
-    def handle_signal(self, *args):
-        if self.build_cache is not None:
-            self.process_build(self.build_cache)
 
     def is_blacklisted(self, revision: dict):
         """Check if the revision author is in blacklisted"""
@@ -285,6 +282,9 @@ class Events(object):
             "test_selection_enabled", False
         )
 
+        # Register SIGTERM callback in case the Events process is terminated
+        signal.signal(signal.SIGTERM, self.handle_signal)
+
         # Run webserver & pulse on web dyno or single instance
         if not heroku.in_dyno() or heroku.in_web_dyno():
 
@@ -411,6 +411,18 @@ class Events(object):
             self.community_monitoring = None
             self.bugbug_utils = None
             logger.info("Skipping workers consumers")
+
+    def handle_signal(self, *args):
+        if isinstance(self.workflow, CodeReview) is False:
+            return
+
+        logger.info("Events: received SIGTERM")
+        if self.workflow.cached_build() is not None:
+            logger.info(
+                "Events: having unprocessed build",
+                build=str(self.workflow.cached_build()),
+            )
+            self.workflow.process_build(self.workflow.cached_build())
 
     def run(self):
         consumers = []
