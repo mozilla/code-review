@@ -1,11 +1,41 @@
 # -*- coding: utf-8 -*-
+
 import pytest
 from libmozdata.phabricator import BuildState
+from libmozdata.phabricator import ConduitError
 from libmozdata.phabricator import UnitResultState
 from libmozevent.bus import MessageBus
 from libmozevent.phabricator import PhabricatorBuild
 
+from code_review_events import QUEUE_BUGBUG
+from code_review_events import QUEUE_MERCURIAL
+from code_review_events.workflow import LANDO_FAILURE_HG_MESSAGE
+from code_review_events.workflow import LANDO_FAILURE_MESSAGE
+from code_review_events.workflow import LANDO_WARNING_MESSAGE
 from code_review_events.workflow import CodeReview
+
+MOCK_LANDO_API_URL = "http://api.lando.test"
+MOCK_LANDO_TOKEN = "Some Test Token"
+
+
+class MockLandoWarnings(object):
+    """
+    LandoWarnings Mock class
+    """
+
+    def __init__(self, api_url, api_key):
+        self.api_url = api_url
+        self.api_key = api_key
+        self.revision_id = None
+
+    def add_warning(self, warning, revision_id, diff_id):
+        self.revision_id = revision_id
+        self.diff_id = diff_id
+        self.warning = warning
+
+    def del_all_warnings(self, revision_id, diff_id):
+        self.revision_id = revision_id
+        self.diff_id = diff_id
 
 
 class MockURL:
@@ -32,6 +62,8 @@ async def test_blacklist(PhabricatorMock, mock_taskcluster):
 
     with PhabricatorMock as phab:
         client = CodeReview(
+            lando_url=None,
+            lando_publish_generic_failure=False,
             user_blacklist=["baduser123"],
             url="http://phabricator.test/api/",
             api_key="fakekey",
@@ -61,7 +93,11 @@ async def test_publish_results_success_mode(PhabricatorMock, mock_taskcluster):
 
     with PhabricatorMock as phab:
         client = CodeReview(
-            publish=True, url="http://phabricator.test/api/", api_key="fakekey"
+            lando_url=None,
+            lando_publish_generic_failure=False,
+            publish=True,
+            url="http://phabricator.test/api/",
+            api_key="fakekey",
         )
         client.register(bus)
 
@@ -90,7 +126,11 @@ async def test_publish_results_test_result_mode(PhabricatorMock, mock_taskcluste
 
     with PhabricatorMock as phab:
         client = CodeReview(
-            publish=True, url="http://phabricator.test/api/", api_key="fakekey"
+            lando_url=None,
+            lando_publish_generic_failure=False,
+            publish=True,
+            url="http://phabricator.test/api/",
+            api_key="fakekey",
         )
         client.register(bus)
 
@@ -172,7 +212,11 @@ def test_repositories(PhabricatorMock, mock_taskcluster, tmpdir):
     ]
     with PhabricatorMock:
         client = CodeReview(
-            publish=True, url="http://phabricator.test/api/", api_key="fakekey"
+            lando_url=None,
+            lando_publish_generic_failure=False,
+            publish=True,
+            url="http://phabricator.test/api/",
+            api_key="fakekey",
         )
         repositories = client.get_repositories(
             configuration, tmpdir, default_ssh_key="DEFAULT FAKE KEY"
@@ -191,3 +235,159 @@ def test_repositories(PhabricatorMock, mock_taskcluster, tmpdir):
     nss = repositories["PHID-REPO-nss"]
     assert nss.name == "nss"
     assert open(nss.ssh_key_path).read() == "custom NSS secret key"
+
+
+@pytest.mark.asyncio
+async def test_publish_results_lando_success(PhabricatorMock, mock_taskcluster):
+    bus = MessageBus()
+    build = PhabricatorBuild(
+        MockRequest(
+            diff="125397",
+            repo="PHID-REPO-saax4qdxlbbhahhp2kg5",
+            revision="36474",
+            target="PHID-HMBT-icusvlfibcebizyd33op",
+        )
+    )
+
+    with PhabricatorMock as phab:
+        client = CodeReview(
+            lando_url=None,
+            lando_publish_generic_failure=True,
+            publish=True,
+            url="http://phabricator.test/api/",
+            api_key="fakekey",
+        )
+        client.register(bus)
+
+        client.publish_lando = True
+        client.lando_warnings = MockLandoWarnings(MOCK_LANDO_API_URL, MOCK_LANDO_TOKEN)
+
+        client.bus.add_queue(QUEUE_BUGBUG)
+        client.bus.add_queue(QUEUE_MERCURIAL)
+
+        phab.update_state(build)
+
+        await client.process_build(build)
+
+        assert client.lando_warnings.revision_id == build.revision["id"]
+        assert client.lando_warnings.diff_id == build.diff_id
+        assert client.lando_warnings.warning == LANDO_WARNING_MESSAGE
+
+        await client.publish_results(
+            (
+                "success",
+                build,
+                {"treeherder_url": "https://treeherder.org/", "revision": "123"},
+            )
+        )
+
+        # Verify lando warning when mercurial failure occurs
+        with pytest.raises(ConduitError):
+            await client.publish_results(
+                (
+                    "fail:mercurial",
+                    build,
+                    {
+                        "treeherder_url": "https://treeherder.org/",
+                        "revision": "123",
+                        "message": "failure message",
+                    },
+                )
+            )
+        assert client.lando_warnings.warning == LANDO_FAILURE_HG_MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_publish_results_fail(PhabricatorMock, mock_taskcluster):
+    bus = MessageBus()
+    build = PhabricatorBuild(
+        MockRequest(
+            diff="125397",
+            repo="PHID-REPO-saax4qdxlbbhahhp2kg5",
+            revision="36474",
+            target="PHID-HMBT-icusvlfibcebizyd33op",
+        )
+    )
+
+    with PhabricatorMock as phab:
+        client = CodeReview(
+            lando_url=None,
+            lando_publish_generic_failure=True,
+            publish=True,
+            url="http://phabricator.test/api/",
+            api_key="fakekey",
+        )
+        client.register(bus)
+
+        client.publish_lando = True
+        client.lando_warnings = MockLandoWarnings(MOCK_LANDO_API_URL, MOCK_LANDO_TOKEN)
+
+        client.bus.add_queue(QUEUE_BUGBUG)
+        client.bus.add_queue(QUEUE_MERCURIAL)
+
+        phab.update_state(build)
+
+        await client.process_build(build)
+
+        # Verify lando warning when mercurial failure occurs
+        with pytest.raises(ConduitError):
+            await client.publish_results(
+                (
+                    "fail:mercurial",
+                    build,
+                    {
+                        "treeherder_url": "https://treeherder.org/",
+                        "revision": "123",
+                        "message": "failure message",
+                    },
+                )
+            )
+        assert client.lando_warnings.warning == LANDO_FAILURE_HG_MESSAGE
+
+
+@pytest.mark.asyncio
+async def test_publish_results_lando_general_fail(PhabricatorMock, mock_taskcluster):
+    bus = MessageBus()
+    build = PhabricatorBuild(
+        MockRequest(
+            diff="125397",
+            repo="PHID-REPO-saax4qdxlbbhahhp2kg5",
+            revision="36474",
+            target="PHID-HMBT-icusvlfibcebizyd33op",
+        )
+    )
+
+    with PhabricatorMock as phab:
+        client = CodeReview(
+            lando_url=None,
+            lando_publish_generic_failure=True,
+            publish=True,
+            url="http://phabricator.test/api/",
+            api_key="fakekey",
+        )
+        client.register(bus)
+
+        client.publish_lando = True
+        client.lando_warnings = MockLandoWarnings(MOCK_LANDO_API_URL, MOCK_LANDO_TOKEN)
+
+        client.bus.add_queue(QUEUE_BUGBUG)
+        client.bus.add_queue(QUEUE_MERCURIAL)
+
+        phab.update_state(build)
+
+        await client.process_build(build)
+
+        # Verify lando warning when general failure occurs
+        with pytest.raises(ConduitError):
+            await client.publish_results(
+                (
+                    "fail:general",
+                    build,
+                    {
+                        "treeherder_url": "https://treeherder.org/",
+                        "revision": "123",
+                        "message": "failure message",
+                    },
+                )
+            )
+        assert client.lando_warnings.warning == LANDO_FAILURE_MESSAGE

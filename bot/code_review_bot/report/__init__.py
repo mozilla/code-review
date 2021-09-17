@@ -5,6 +5,7 @@
 
 import structlog
 
+from code_review_bot.report.lando import LandoReporter
 from code_review_bot.report.mail import MailReporter
 from code_review_bot.report.mail_builderrors import BuildErrorsReporter
 from code_review_bot.report.phabricator import PhabricatorReporter
@@ -18,6 +19,7 @@ def get_reporters(configuration):
     """
     assert isinstance(configuration, list)
     reporters = {
+        "lando": LandoReporter,
         "mail": MailReporter,
         "build_error": BuildErrorsReporter,
         "phabricator": PhabricatorReporter,

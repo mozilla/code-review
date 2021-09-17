@@ -2,6 +2,7 @@
 import asyncio
 
 import structlog
+from libmozdata.lando import LandoWarnings
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import UnitResult
 from libmozdata.phabricator import UnitResultState
@@ -39,6 +40,14 @@ PULSE_TASK_GROUP_RESOLVED = "exchange/taskcluster-queue/v1/task-group-resolved"
 PULSE_TASK_COMPLETED = "exchange/taskcluster-queue/v1/task-completed"
 PULSE_TASK_FAILED = "exchange/taskcluster-queue/v1/task-failed"
 
+LANDO_WARNING_MESSAGE = "Static analysis and linting are still in progress."
+LANDO_FAILURE_MESSAGE = (
+    "Static analysis and linting did not run due to a generic failure."
+)
+LANDO_FAILURE_HG_MESSAGE = (
+    "Static analysis and linting did not run due to failure in applying the patch."
+)
+
 
 class CodeReview(PhabricatorActions):
     """
@@ -46,7 +55,15 @@ class CodeReview(PhabricatorActions):
     and pushing on Try repositories
     """
 
-    def __init__(self, publish=False, user_blacklist=[], *args, **kwargs):
+    def __init__(
+        self,
+        lando_url,
+        lando_publish_generic_failure,
+        publish=False,
+        user_blacklist=[],
+        *args,
+        **kwargs,
+    ):
         super().__init__(*args, **kwargs)
         self.publish = publish
         logger.info(
@@ -54,6 +71,17 @@ class CodeReview(PhabricatorActions):
                 self.publish and "enabled" or "disabled"
             )
         )
+
+        self.publish_lando = True if lando_url is not None else False
+        self.lando_publish_failure = lando_publish_generic_failure
+        if self.publish_lando:
+            logger.info("Publishing warnings to lando is enabled!")
+            self.lando_warnings = LandoWarnings(
+                api_url=lando_url,
+                api_key=kwargs["api_key"],
+            )
+            if self.lando_publish_failure:
+                logger.info("Publishing all failures to lando is enabled!")
 
         # Load the blacklisted users
         if user_blacklist:
@@ -134,6 +162,20 @@ class CodeReview(PhabricatorActions):
             # Send to bugbug workflow
             await self.bus.send(QUEUE_BUGBUG, build)
 
+            # Send Build in progress to Lando
+            if self.publish_lando:
+                logger.info(
+                    "Begin publishing init warning message to lando.",
+                    revision=build.revision["id"],
+                    diff=build.diff_id,
+                )
+                try:
+                    self.lando_warnings.add_warning(
+                        LANDO_WARNING_MESSAGE, build.revision["id"], build.diff_id
+                    )
+                except Exception as ex:
+                    logger.error(str(ex))
+
         elif build.state == PhabricatorBuildState.Queued:
             # Requeue when nothing changed for now
             await self.bus.send(QUEUE_WEB_BUILDS, build)
@@ -168,6 +210,21 @@ class CodeReview(PhabricatorActions):
                 format="remarkup",
                 duration=extras.get("duration", 0),
             )
+            if self.lando_publish_failure:
+                # Send general failure message to Lando
+                if self.publish_lando:
+                    logger.info(
+                        "Publishing code review failure.",
+                        revision=build.revision["id"],
+                        diff=build.diff_id,
+                    )
+                    try:
+                        self.lando_warnings.add_warning(
+                            LANDO_FAILURE_MESSAGE, build.revision["id"], build.diff_id
+                        )
+                    except Exception as ex:
+                        logger.error(str(ex))
+
             self.api.update_build_target(
                 build.target_phid, BuildState.Fail, unit=[failure]
             )
@@ -183,6 +240,19 @@ class CodeReview(PhabricatorActions):
                 format="remarkup",
                 duration=extras.get("duration", 0),
             )
+            # Send mercurial message to Lando
+            if self.publish_lando:
+                logger.info(
+                    "Publishing code review hg failure.",
+                    revision=build.revision["id"],
+                    diff=build.diff_id,
+                )
+                try:
+                    self.lando_warnings.add_warning(
+                        LANDO_FAILURE_HG_MESSAGE, build.revision["id"], build.diff_id
+                    )
+                except Exception as ex:
+                    logger.error(str(ex))
             self.api.update_build_target(
                 build.target_phid, BuildState.Fail, unit=[failure]
             )
@@ -343,9 +413,20 @@ class Events(object):
             self.bus.add_queue(QUEUE_PULSE_TRY_TASK_END, redis=True)
             self.bus.add_queue(QUEUE_WEB_BUILDS, redis=True)
 
+        # Lando publishing warnings
+        lando_url = None
+        lando_publish_generic_failure = False
+        if taskcluster_config.secrets["LANDO"].get("publish", False):
+            lando_url = taskcluster_config.secrets["LANDO"]["url"]
+            lando_publish_generic_failure = taskcluster_config.secrets["LANDO"][
+                "publish_failure"
+            ]
+
         # Run work processes on worker dyno or single instance
         if not heroku.in_dyno() or heroku.in_worker_dyno():
             self.workflow = CodeReview(
+                lando_url=lando_url,
+                lando_publish_generic_failure=lando_publish_generic_failure,
                 api_key=taskcluster_config.secrets["PHABRICATOR"]["api_key"],
                 url=taskcluster_config.secrets["PHABRICATOR"]["url"],
                 publish=publish,

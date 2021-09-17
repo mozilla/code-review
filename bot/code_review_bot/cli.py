@@ -9,6 +9,7 @@ import sys
 
 import structlog
 import yaml
+from libmozdata.lando import LandoWarnings
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
 
@@ -108,6 +109,16 @@ def main():
     phabricator_api = PhabricatorAPI(phabricator["api_key"], phabricator["url"])
     if phabricator_reporting_enabled:
         reporters["phabricator"].setup_api(phabricator_api)
+
+    # lando the Lando API
+    lando_reporting_enabled = "lando" in reporters
+    if lando_reporting_enabled:
+        if taskcluster.secrets["LANDO"].get("publish", False):
+            lando_api = LandoWarnings(
+                api_url=taskcluster.secrets["LANDO"]["url"],
+                api_key=phabricator["api_key"],
+            )
+            reporters["lando"].setup_api(lando_api)
 
     # Load unique revision
     try:
