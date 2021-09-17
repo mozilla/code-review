@@ -475,6 +475,7 @@ def mock_workflow(mock_config, mock_phabricator, mock_taskcluster_config):
     class MockWorkflow(Workflow):
         def __init__(self):
             self.reporters = {}
+            self.lando_api = None
             self.phabricator_api = None
             self.index_service = mock_taskcluster_config.get_service("index")
             self.queue_service = mock_taskcluster_config.get_service("queue")
