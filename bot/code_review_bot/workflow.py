@@ -29,6 +29,7 @@ from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
 
 logger = structlog.get_logger(__name__)
 
@@ -418,6 +419,8 @@ class Workflow(object):
             return DocUploadTask(task_id, task_status)
         elif name == "source-test-clang-external":
             return ExternalTidyTask(task_id, task_status)
+        elif name == "source-test-taskgraph-diff":
+            return TaskGraphDiffTask(task_id, task_status)
         elif settings.autoland_group_id is not None and not name.startswith(
             "source-test-"
         ):

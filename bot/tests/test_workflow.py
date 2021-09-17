@@ -17,6 +17,7 @@ from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
 
 
 class MockRevision(Revision):
@@ -100,6 +101,8 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
         ("source-test-coverity-coverity", CoverityTask, True),
         ("source-test-infer-infer", InferTask, False),
         ("source-test-infer-infer", InferTask, True),
+        ("source-test-taskgraph-diff", TaskGraphDiffTask, False),
+        ("source-test-taskgraph-diff", TaskGraphDiffTask, True),
         ("source-test-unsupported", DefaultTask, False),
         ("source-test-unsupported", DefaultTask, True),
         # On autoland, we only support source-test tasks

@@ -28,6 +28,7 @@ from code_review_bot.tasks.infer import InferIssue
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintIssue
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
 
 VALID_CLANG_TIDY_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
@@ -161,7 +162,7 @@ If you see a problem in this automated review, [please report it here](https://b
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
-VALID_DOC_UPLOAD_MESSAGE = """
+VALID_NOTICE_MESSAGE = """
 {notice}
 
 ---
@@ -959,9 +960,55 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
     assert phab.comments[51] == [VALID_MOZLINT_MESSAGE]
 
 
-def test_phabricator_doc_upload(
-    mock_config, mock_phabricator, phab, mock_try_task, mock_task
-):
+def test_phabricator_notices(mock_phabricator, phab, mock_try_task):
+    """
+    Test Phabricator reporter publication on a mock clang-format issue
+    """
+
+    with mock_phabricator as api:
+        revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
+        revision.lines = {
+            # Add dummy lines diff
+            "test.rst": [41, 42, 43],
+        }
+        reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
+
+    doc_url = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
+    notices = [COMMENT_LINK_TO_DOC.format(diff_id=42, doc_url=doc_url)]
+    reporter.publish(
+        [],
+        revision,
+        [],
+        notices,
+    )
+
+    # Check the comment has been posted
+    assert phab.comments[51] == [VALID_NOTICE_MESSAGE.format(notice=notices[0].strip())]
+
+    # Test a comment with multiple notices
+    link = "[diff](http://example.com/diff.txt)"
+    notices.append(
+        COMMENT_TASKGRAPH_DIFF.format(diff_id=42, s="", have="has", markdown_links=link)
+    )
+
+    phab.comments[51] = []
+    reporter.publish(
+        [],
+        revision,
+        [],
+        notices,
+    )
+
+    # Check the comment has been posted
+    assert phab.comments[51] == [
+        VALID_NOTICE_MESSAGE.format(notice="\n---\n".join(notices).strip())
+    ]
+
+
+def test_phabricator_tgdiff(mock_phabricator, phab, mock_try_task):
     """
     Test Phabricator reporter publication on a mock clang-format issue
     """
@@ -987,9 +1034,7 @@ def test_phabricator_doc_upload(
     )
 
     # Check the comment has been posted
-    assert phab.comments[51] == [
-        VALID_DOC_UPLOAD_MESSAGE.format(notice=doc_notice.strip())
-    ]
+    assert phab.comments[51] == [VALID_NOTICE_MESSAGE.format(notice=doc_notice.strip())]
 
 
 def test_phabricator_external_tidy(mock_phabricator, phab, mock_try_task, mock_task):
