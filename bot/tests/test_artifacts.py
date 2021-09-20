@@ -7,13 +7,18 @@ from code_review_bot.tasks.base import AnalysisTask
 from conftest import MockQueue
 
 
+class TestTask(AnalysisTask):
+    def parse_issues(*args, **kwargs):
+        return []
+
+
 def test_loading_artifacts(log):
     """
     Test Taskcluster artifacts loading workflow
     """
     assert log.events == []
 
-    task = AnalysisTask(
+    task = TestTask(
         "testTask",
         {
             "task": {"metadata": {"name": "test-task"}},
