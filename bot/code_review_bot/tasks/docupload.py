@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
 import structlog
 
-from code_review_bot.tasks.base import AnalysisTask
+from code_review_bot.tasks.base import NoticeTask
 
 logger = structlog.get_logger(__name__)
 
 
-class DocUploadTask(AnalysisTask):
+class DocUploadTask(NoticeTask):
     """
     Support doc-upload tasks
     """
@@ -16,9 +16,6 @@ class DocUploadTask(AnalysisTask):
     @property
     def display_name(self):
         return "doc-upload"
-
-    def parse_issues(self, artifacts, revision):
-        return []
 
     def build_link(self, artifacts):
         artifact = artifacts.get("public/firefox-source-docs-url.txt")

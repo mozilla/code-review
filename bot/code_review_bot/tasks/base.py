@@ -3,7 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 
 import structlog
 
@@ -133,6 +134,18 @@ class AnalysisTask(BaseTask, ABC):
         """
         return []
 
+    @abstractmethod
+    def parse_issues(self, artifacts, revision):
+        """
+        Given list of artifacts, return a list of Issue objects.
+        """
+
+
+class NoticeTask(BaseTask, ABC):
+    """
+    A task that simply displays information.
+    """
+
     def build_link(self, artifacts):
         """
         Some analyzers can provide a link in a form of a string
@@ -140,9 +153,3 @@ class AnalysisTask(BaseTask, ABC):
         Output is a string
         """
         return ""
-
-    @abstractmethod
-    def parse_issues(self, artifacts, revision):
-        """
-        Given list of artifacts, return a list of Issue objects.
-        """

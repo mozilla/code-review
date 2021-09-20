@@ -19,6 +19,7 @@ from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask
+from code_review_bot.tasks.base import NoticeTask
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
@@ -337,22 +338,24 @@ class Workflow(object):
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
-                    task_issues = task.parse_issues(artifacts, revision)
-                    logger.info(
-                        "Found {} issues".format(len(task_issues)),
-                        task=task.name,
-                        id=task.id,
-                    )
-                    stats.report_task(task, task_issues)
-                    issues += task_issues
+                    if isinstance(task, AnalysisTask):
+                        task_issues = task.parse_issues(artifacts, revision)
+                        logger.info(
+                            "Found {} issues".format(len(task_issues)),
+                            task=task.name,
+                            id=task.id,
+                        )
+                        stats.report_task(task, task_issues)
+                        issues += task_issues
 
-                    task_patches = task.build_patches(artifacts)
-                    for patch in task_patches:
-                        revision.add_improvement_patch(task, patch)
+                        task_patches = task.build_patches(artifacts)
+                        for patch in task_patches:
+                            revision.add_improvement_patch(task, patch)
 
-                    link = task.build_link(artifacts)
-                    if link:
-                        links.append(link)
+                    elif isinstance(task, NoticeTask):
+                        link = task.build_link(artifacts)
+                        if link:
+                            links.append(link)
 
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
