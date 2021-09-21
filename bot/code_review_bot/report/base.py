@@ -24,6 +24,7 @@ Should they have tests, or are they dead code?
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 """
 BUG_REPORT = """
+---
 If you see a problem in this automated review, [please report it here]({bug_report_url}).
 """
 COMMENT_DIFF_DOWNLOAD = """
@@ -35,9 +36,6 @@ Please check this task manually.
 """
 FRONTEND_LINKS = """
 You can view these defects on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
-"""
-COMMENT_LINK_TO_DOC = """
-You have touched the documentation in diff {diff_id}, you can find it rendered [here]({link_to_doc}) for a week.
 """
 
 
@@ -112,7 +110,7 @@ class Reporter(object):
         issues,
         bug_report_url,
         frontend_url,
-        links,
+        notices,
         patches=[],
         task_failures=[],
     ):
@@ -193,12 +191,9 @@ class Reporter(object):
         if CoverageIssue in issue_classes:
             comment += COMMENT_COVERAGE
 
-        # For now, we assume there is only one task that creates a link, the doc-upload task.
-        if links:
-            assert len(links) == 1
-            comment += COMMENT_LINK_TO_DOC.format(
-                link_to_doc=links[0], diff_id=revision.diff_id
-            )
+        if notices:
+            # The '---' creates a horizontal rule in Phabricator's markdown
+            comment += "\n---\n".join(notices)
 
         assert comment != "", "Empty comment"
 

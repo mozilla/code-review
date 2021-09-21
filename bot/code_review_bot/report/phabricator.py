@@ -43,7 +43,7 @@ class PhabricatorReporter(Reporter):
         self.api = api
         logger.info("Phabricator reporter enabled")
 
-    def publish(self, issues, revision, task_failures, links):
+    def publish(self, issues, revision, task_failures, notices):
         """
         Publish issues on Phabricator:
         * publishable issues use lint results
@@ -64,7 +64,7 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if issues or task_failures or links:
+        if issues or task_failures or notices:
 
             if issues:
                 # Publish on Harbormaster all at once
@@ -72,9 +72,9 @@ class PhabricatorReporter(Reporter):
                 # * All build errors as unit test results
                 self.publish_harbormaster(revision, issues)
 
-            if issues or patches or task_failures or links:
+            if issues or patches or task_failures or notices:
                 # Publish comment summarizing issues
-                self.publish_summary(revision, issues, patches, task_failures, links)
+                self.publish_summary(revision, issues, patches, task_failures, notices)
 
             # Publish statistics
             stats.add_metric("report.phabricator.issues", len(issues))
@@ -105,7 +105,7 @@ class PhabricatorReporter(Reporter):
             nb_unit=len(unit_issues),
         )
 
-    def publish_summary(self, revision, issues, patches, task_failures, links):
+    def publish_summary(self, revision, issues, patches, task_failures, notices):
         """
         Summarize publishable issues through Phabricator comment
         """
@@ -118,7 +118,7 @@ class PhabricatorReporter(Reporter):
                 bug_report_url=BUG_REPORT_URL,
                 frontend_url=self.frontend_diff_url.format(diff_id=revision.diff_id),
                 task_failures=task_failures,
-                links=links,
+                notices=notices,
             ),
         )
         logger.info("Published phabricator summary")

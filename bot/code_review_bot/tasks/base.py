@@ -146,10 +146,8 @@ class NoticeTask(BaseTask, ABC):
     A task that simply displays information.
     """
 
-    def build_link(self, artifacts):
+    @abstractmethod
+    def build_notice(self, artifacts, revision):
         """
-        Some analyzers can provide a link in a form of a string
-        The link is stored in a txt file
-        Output is a string
+        Return multiline string containing information to display.
         """
-        return ""
