@@ -100,9 +100,6 @@ class Workflow(object):
             self.update_status(revision, BuildState.Pass)
             return []
 
-        # Publish issues on backend to retrieve their comparison state
-        self.backend_api.publish_issues(issues, revision)
-
         # Publish all issues
         self.publish(revision, issues, task_failures, links)
 
@@ -177,12 +174,21 @@ class Workflow(object):
             else:
                 patch.publish()
 
+        # Publish issues on backend to retrieve their comparison state
+        # Only publish warnings due to a backend timeout
+        publishable_errors = [
+            issue
+            for issue in issues
+            if issue.is_publishable() and issue.level == Level.Error
+        ]
+
+        self.backend_api.publish_issues(publishable_errors, revision)
+
         # Report issues publication stats
         nb_issues = len(issues)
         nb_publishable = len([i for i in issues if i.is_publishable()])
-        nb_publishable_errors = sum(
-            1 for i in issues if i.is_publishable() and i.level == Level.Error
-        )
+        nb_publishable_errors = len(publishable_errors)
+
         self.index(
             revision,
             state="analyzed",
