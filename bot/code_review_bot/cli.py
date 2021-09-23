@@ -12,6 +12,8 @@ import yaml
 from libmozdata.lando import LandoWarnings
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
+from libmozdata.phabricator import UnitResult
+from libmozdata.phabricator import UnitResultState
 
 from code_review_bot import AnalysisException
 from code_review_bot import stats
@@ -162,6 +164,7 @@ def main():
             w.ingest_autoland(revision)
         else:
             w.run(revision)
+
     except Exception as e:
         # Log errors to papertrail
         logger.error("Static analysis failure", revision=revision, error=e)
@@ -175,6 +178,19 @@ def main():
 
         # Update Harbormaster status
         w.update_status(revision, state=BuildState.Fail)
+
+        failure = UnitResult(
+            namespace="code-review",
+            name="general",
+            result=UnitResultState.Broken,
+            details="WARNING: A generic error occurred in the code review bot.",
+            format="remarkup",
+            duration=0,
+        )
+
+        w.phabricator.update_build_target(
+            revision.target_phid, BuildState.Fail, unit=[failure]
+        )
 
         # Then raise to mark task as erroneous
         raise
