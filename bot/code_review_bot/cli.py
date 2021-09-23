@@ -12,6 +12,8 @@ import yaml
 from libmozdata.lando import LandoWarnings
 from libmozdata.phabricator import BuildState
 from libmozdata.phabricator import PhabricatorAPI
+from libmozdata.phabricator import UnitResult
+from libmozdata.phabricator import UnitResultState
 
 from code_review_bot import AnalysisException
 from code_review_bot import stats
@@ -24,6 +26,11 @@ from code_review_bot.workflow import Workflow
 from code_review_tools.log import init_logger
 
 logger = structlog.get_logger(__name__)
+
+
+LANDO_FAILURE_MESSAGE = (
+    "Static analysis and linting did not run due to a generic failure."
+)
 
 
 def parse_cli():
@@ -112,12 +119,17 @@ def main():
 
     # lando the Lando API
     lando_reporting_enabled = "lando" in reporters
+    lando_api = None
+    lando_publish_generic_failure = False
     if lando_reporting_enabled:
         if taskcluster.secrets["LANDO"].get("publish", False):
             lando_api = LandoWarnings(
                 api_url=taskcluster.secrets["LANDO"]["url"],
                 api_key=phabricator["api_key"],
             )
+            lando_publish_generic_failure = taskcluster.secrets["LANDO"][
+                "publish_failure"
+            ]
             reporters["lando"].setup_api(lando_api)
 
     # Load unique revision
@@ -173,8 +185,33 @@ def main():
             extras["error_message"] = str(e)
         w.index(revision, state="error", **extras)
 
-        # Update Harbormaster status
-        w.update_status(revision, state=BuildState.Fail)
+        # Update Phabricator
+        failure = UnitResult(
+            namespace="code-review",
+            name="general",
+            result=UnitResultState.Broken,
+            details="WARNING: A generic error occurred in the code review bot.",
+            format="remarkup",
+            duration=0,
+        )
+
+        w.phabricator.update_build_target(
+            revision.build_target_phid, BuildState.Fail, unit=[failure]
+        )
+
+        # Also update lando
+        if lando_publish_generic_failure:
+            try:
+                lando_api.lando_api.del_all_warnings(
+                    revision=revision.id, diff=revision.diff["id"]
+                )
+                lando_api.add_warning(
+                    LANDO_FAILURE_MESSAGE,
+                    revision=revision.id,
+                    diff=revision.diff["id"],
+                )
+            except Exception as ex:
+                logger.error(str(ex))
 
         # Then raise to mark task as erroneous
         raise
