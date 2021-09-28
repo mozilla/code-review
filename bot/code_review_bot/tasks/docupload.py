@@ -6,7 +6,9 @@ from code_review_bot.tasks.base import NoticeTask
 logger = structlog.get_logger(__name__)
 
 COMMENT_LINK_TO_DOC = """
-You have touched the documentation in diff {diff_id}, you can find it rendered [here]({doc_url}) for a week.
+NOTE: Documentation was modified in diff {diff_id}
+
+It can be previewed [here]({doc_url}) for one week.
 """
 
 
