@@ -19,6 +19,7 @@ from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask
+from code_review_bot.tasks.base import NoticeTask
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
@@ -28,6 +29,7 @@ from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
 
 logger = structlog.get_logger(__name__)
 
@@ -93,15 +95,17 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures, links = self.find_issues(revision, settings.try_group_id)
-        if not issues and not task_failures and not links:
-            logger.info("No issues, stopping there.")
+        issues, task_failures, notices = self.find_issues(
+            revision, settings.try_group_id
+        )
+        if not issues and not task_failures and not notices:
+            logger.info("No issues or notices, stopping there.")
             self.index(revision, state="done", issues=0)
             self.update_status(revision, BuildState.Pass)
             return []
 
         # Publish all issues
-        self.publish(revision, issues, task_failures, links)
+        self.publish(revision, issues, task_failures, notices)
 
         return issues
 
@@ -162,7 +166,7 @@ class Workflow(object):
         else:
             logger.info("No issues for that autoland revision")
 
-    def publish(self, revision, issues, task_failures, links):
+    def publish(self, revision, issues, task_failures, notices):
         """
         Publish issues on selected reporters
         """
@@ -200,7 +204,7 @@ class Workflow(object):
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
-                reporter.publish(issues, revision, task_failures, links)
+                reporter.publish(issues, revision, task_failures, notices)
 
         self.index(
             revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
@@ -324,7 +328,7 @@ class Workflow(object):
         # Find issues and patches in dependencies
         issues = []
         task_failures = []
-        links = []
+        notices = []
         for dep in dependencies:
             try:
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
@@ -337,22 +341,24 @@ class Workflow(object):
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
-                    task_issues = task.parse_issues(artifacts, revision)
-                    logger.info(
-                        "Found {} issues".format(len(task_issues)),
-                        task=task.name,
-                        id=task.id,
-                    )
-                    stats.report_task(task, task_issues)
-                    issues += task_issues
+                    if isinstance(task, AnalysisTask):
+                        task_issues = task.parse_issues(artifacts, revision)
+                        logger.info(
+                            "Found {} issues".format(len(task_issues)),
+                            task=task.name,
+                            id=task.id,
+                        )
+                        stats.report_task(task, task_issues)
+                        issues += task_issues
 
-                    task_patches = task.build_patches(artifacts)
-                    for patch in task_patches:
-                        revision.add_improvement_patch(task, patch)
+                        task_patches = task.build_patches(artifacts)
+                        for patch in task_patches:
+                            revision.add_improvement_patch(task, patch)
 
-                    link = task.build_link(artifacts)
-                    if link:
-                        links.append(link)
+                    elif isinstance(task, NoticeTask):
+                        notice = task.build_notice(artifacts, revision)
+                        if notice:
+                            notices.append(notice)
 
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
@@ -381,7 +387,7 @@ class Workflow(object):
                 )
                 raise
 
-        return issues, task_failures, links
+        return issues, task_failures, notices
 
     def build_task(self, task_status):
         """
@@ -413,6 +419,8 @@ class Workflow(object):
             return DocUploadTask(task_id, task_status)
         elif name == "source-test-clang-external":
             return ExternalTidyTask(task_id, task_status)
+        elif name == "source-test-taskgraph-diff":
+            return TaskGraphDiffTask(task_id, task_status)
         elif settings.autoland_group_id is not None and not name.startswith(
             "source-test-"
         ):

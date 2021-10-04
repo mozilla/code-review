@@ -23,10 +23,12 @@ from code_review_bot.tasks.coverity import CoverityIssue
 from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultIssue
 from code_review_bot.tasks.default import DefaultTask
+from code_review_bot.tasks.docupload import COMMENT_LINK_TO_DOC
 from code_review_bot.tasks.infer import InferIssue
 from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintIssue
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
 
 VALID_CLANG_TIDY_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
@@ -35,6 +37,7 @@ Code analysis found 1 defect in the diff 42:
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
@@ -44,6 +47,7 @@ VALID_COVERITY_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
  - 1 defect found by Coverity
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
@@ -56,6 +60,7 @@ Code analysis found 1 defect in the diff 42:
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
@@ -70,6 +75,7 @@ You can run this analysis locally with:
 
 For your convenience, [here is a patch]({results}/source-test-clang-format-PHID-DIFF-test.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply -p0`).
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
@@ -83,6 +89,7 @@ Code analysis found 2 defects in the diff 42:
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
@@ -98,6 +105,7 @@ Should they have tests, or are they dead code?
  - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
@@ -107,6 +115,7 @@ VALID_DEFAULT_MESSAGE = """
 Code analysis found 1 defect in the diff 42:
  - 1 defect found by full-file-analyzer
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
@@ -116,6 +125,7 @@ VALID_TASK_FAILURES_MESSAGE = """
 The analysis task [mock-infer](https://treeherder.mozilla.org/#/jobs?repo=try&revision=aabbccddee&selectedTaskRun=ab3NrysvSZyEwsOHL2MZfw-0) failed, but we could not detect any issue.
 Please check this task manually.
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """
 
@@ -126,6 +136,7 @@ Code analysis found 2 defects in the diff 42:
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
@@ -145,14 +156,16 @@ Should they have tests, or are they dead code?
  - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
-VALID_DOC_UPLOAD_MESSAGE = """
-You have touched the documentation in diff 42, you can find it rendered [here](http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html) for a week.
+VALID_NOTICE_MESSAGE = """
+{notice}
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """
 
@@ -171,6 +184,7 @@ You can run this analysis locally with:
 - **in an expanded Macro**: no
 
 
+---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
@@ -946,9 +960,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
     assert phab.comments[51] == [VALID_MOZLINT_MESSAGE]
 
 
-def test_phabricator_doc_upload(
-    mock_config, mock_phabricator, phab, mock_try_task, mock_task
-):
+def test_phabricator_notices(mock_phabricator, phab, mock_try_task):
     """
     Test Phabricator reporter publication on a mock clang-format issue
     """
@@ -964,17 +976,65 @@ def test_phabricator_doc_upload(
         }
         reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
 
+    doc_url = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
+    notices = [COMMENT_LINK_TO_DOC.format(diff_id=42, doc_url=doc_url)]
     reporter.publish(
         [],
         revision,
         [],
-        [
-            "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
-        ],
+        notices,
     )
 
     # Check the comment has been posted
-    assert phab.comments[51] == [VALID_DOC_UPLOAD_MESSAGE]
+    assert phab.comments[51] == [VALID_NOTICE_MESSAGE.format(notice=notices[0].strip())]
+
+    # Test a comment with multiple notices
+    link = "[diff](http://example.com/diff.txt)"
+    notices.append(
+        COMMENT_TASKGRAPH_DIFF.format(diff_id=42, s="", have="has", markdown_links=link)
+    )
+
+    phab.comments[51] = []
+    reporter.publish(
+        [],
+        revision,
+        [],
+        notices,
+    )
+
+    # Check the comment has been posted
+    assert phab.comments[51] == [
+        VALID_NOTICE_MESSAGE.format(notice="\n---\n".join(notices).strip())
+    ]
+
+
+def test_phabricator_tgdiff(mock_phabricator, phab, mock_try_task):
+    """
+    Test Phabricator reporter publication on a mock clang-format issue
+    """
+
+    with mock_phabricator as api:
+        revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
+        revision.lines = {
+            # Add dummy lines diff
+            "test.rst": [41, 42, 43],
+        }
+        reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
+
+    doc_url = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
+    doc_notice = COMMENT_LINK_TO_DOC.format(diff_id=42, doc_url=doc_url)
+    reporter.publish(
+        [],
+        revision,
+        [],
+        [doc_notice],
+    )
+
+    # Check the comment has been posted
+    assert phab.comments[51] == [VALID_NOTICE_MESSAGE.format(notice=doc_notice.strip())]
 
 
 def test_phabricator_external_tidy(mock_phabricator, phab, mock_try_task, mock_task):

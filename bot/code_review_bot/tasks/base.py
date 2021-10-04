@@ -3,16 +3,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from abc import ABC
+from abc import abstractmethod
+
 import structlog
 
 logger = structlog.get_logger(__name__)
 
 
-class AnalysisTask(object):
-    """
-    An analysis CI task running on Taskcluster
-    """
-
+class BaseTask:
     artifacts = []
     route = None
     valid_states = ("completed", "failed")
@@ -45,13 +44,6 @@ class AnalysisTask(object):
     @property
     def state(self):
         return self.status["state"]
-
-    def build_help_message(self, files):
-        """
-        An optional help message aimed at developers to reproduce the issues detection
-        A list of relative paths with issues is specified to build a precise message
-        By default it's empty (None)
-        """
 
     @classmethod
     def build_from_route(cls, index_service, queue_service):
@@ -121,6 +113,19 @@ class AnalysisTask(object):
 
         return out
 
+
+class AnalysisTask(BaseTask, ABC):
+    """
+    An analysis CI task running on Taskcluster
+    """
+
+    def build_help_message(self, files):
+        """
+        An optional help message aimed at developers to reproduce the issues detection
+        A list of relative paths with issues is specified to build a precise message
+        By default it's empty (None)
+        """
+
     def build_patches(self, artifacts):
         """
         Some analyzers can provide a patch applicable by developers
@@ -129,10 +134,20 @@ class AnalysisTask(object):
         """
         return []
 
-    def build_link(self, artifacts):
+    @abstractmethod
+    def parse_issues(self, artifacts, revision):
         """
-        Some analyzers can provide a link in a form of a string
-        The link is stored in a txt file
-        Output is a string
+        Given list of artifacts, return a list of Issue objects.
         """
-        return ""
+
+
+class NoticeTask(BaseTask, ABC):
+    """
+    A task that simply displays information.
+    """
+
+    @abstractmethod
+    def build_notice(self, artifacts, revision):
+        """
+        Return multiline string containing information to display.
+        """

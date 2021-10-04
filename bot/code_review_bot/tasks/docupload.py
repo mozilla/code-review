@@ -1,12 +1,18 @@
 # -*- coding: utf-8 -*-
 import structlog
 
-from code_review_bot.tasks.base import AnalysisTask
+from code_review_bot.tasks.base import NoticeTask
 
 logger = structlog.get_logger(__name__)
 
+COMMENT_LINK_TO_DOC = """
+NOTE: Documentation was modified in diff {diff_id}
 
-class DocUploadTask(AnalysisTask):
+It can be previewed [here]({doc_url}) for one week.
+"""
+
+
+class DocUploadTask(NoticeTask):
     """
     Support doc-upload tasks
     """
@@ -17,13 +23,11 @@ class DocUploadTask(AnalysisTask):
     def display_name(self):
         return "doc-upload"
 
-    def parse_issues(self, artifacts, revision):
-        return []
-
-    def build_link(self, artifacts):
+    def build_notice(self, artifacts, revision):
         artifact = artifacts.get("public/firefox-source-docs-url.txt")
         if artifact is None:
             logger.warn("Missing firefox-source-docs-url.txt")
             return ""
 
-        return artifact.decode("utf-8")
+        doc_url = artifact.decode("utf-8")
+        return COMMENT_LINK_TO_DOC.format(diff_id=revision.diff_id, doc_url=doc_url)
