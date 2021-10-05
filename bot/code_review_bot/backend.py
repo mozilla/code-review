@@ -61,6 +61,10 @@ class BackendAPI(object):
         }
         backend_revision = self.create("/v1/revision/", data)
 
+        # If we are dealing with None `backend_revision` bail out
+        if backend_revision is None:
+            return
+
         # Create diff attached to revision on backend
         data = {
             "id": revision.diff_id,
@@ -70,6 +74,11 @@ class BackendAPI(object):
             "repository": revision.repository,
         }
         backend_diff = self.create(backend_revision["diffs_url"], data)
+
+        # If we are dealing with a None `backend_revision` bail out
+        if backend_diff is None:
+            revision.issues_url = None
+            return
 
         # Store the issues url on the revision
         revision.issues_url = backend_diff["issues_url"]
@@ -82,7 +91,12 @@ class BackendAPI(object):
             logger.warn("Skipping issues publication on backend")
             return
 
-        assert revision.issues_url is not None, "Missing issues_url on revision"
+        if revision.issues_url is None:
+            logger.warn(
+                "Missing issues_url on revision",
+            )
+            return
+
         published = 0
         for issue in issues:
             payload = issue.as_dict()
@@ -91,14 +105,11 @@ class BackendAPI(object):
                     "Missing issue hash, cannot publish on backend", issue=str(issue)
                 )
                 continue
-
-            try:
-                issue.on_backend = self.create(revision.issues_url, payload)
+            issue.on_backend = self.create(revision.issues_url, payload)
+            if issue.on_backend is not None:
                 published += 1
-            except Exception as e:
-                logger.warn(
-                    "Failed backend publication", issue=str(issue), error=str(e)
-                )
+            else:
+                logger.warn("Failed backend publication", issue=str(issue))
 
         total = len(issues)
         if published < total:
@@ -132,7 +143,7 @@ class BackendAPI(object):
         response = requests.post(url_post, json=data, auth=auth)
         if not response.ok:
             logger.warn("Backend rejected the payload: {}".format(response.content))
-        response.raise_for_status()
+            return None
         out = response.json()
         logger.info("Created item on backend", url=url_post, id=out["id"])
         return out
