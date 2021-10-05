@@ -202,13 +202,9 @@ def main():
         # Also update lando
         if lando_publish_generic_failure:
             try:
-                lando_api.lando_api.del_all_warnings(
-                    revision=revision.id, diff=revision.diff["id"]
-                )
+                lando_api.del_all_warnings(revision.id, revision.diff["id"])
                 lando_api.add_warning(
-                    LANDO_FAILURE_MESSAGE,
-                    revision=revision.id,
-                    diff=revision.diff["id"],
+                    LANDO_FAILURE_MESSAGE, revision.id, revision.diff["id"]
                 )
             except Exception as ex:
                 logger.error(str(ex))
