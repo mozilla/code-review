@@ -8,6 +8,7 @@ from urllib.parse import unquote
 
 import structlog
 
+from code_review_bot import taskcluster as tc_config
 from code_review_bot.tasks.base import NoticeTask
 
 logger = structlog.get_logger(__name__)
@@ -45,7 +46,10 @@ class TaskGraphDiffTask(NoticeTask):
             return
 
         logger.info("List artifacts", task_id=self.id)
+        orig_root_url = queue_service.options["rootUrl"]
         try:
+            # Make sure we avoid using the proxy URL.
+            queue_service.options["rootUrl"] = tc_config.default_url
             self.artifact_urls = {
                 a["name"]: queue_service.buildUrl(
                     "getArtifact", self.id, self.run_id, a["name"]
@@ -61,6 +65,8 @@ class TaskGraphDiffTask(NoticeTask):
                 error=e,
             )
             return
+        finally:
+            queue_service.options["rootUrl"] = orig_root_url
 
         # We don't actually want the contents of these artifacts, just their
         # urls (which are now stored in `self.artifact_urls`).
