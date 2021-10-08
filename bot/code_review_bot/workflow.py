@@ -100,9 +100,6 @@ class Workflow(object):
         )
         if not issues and not task_failures and not notices:
             logger.info("No issues or notices, stopping there.")
-            self.index(revision, state="done", issues=0)
-            self.update_status(revision, BuildState.Pass)
-            return []
 
         # Publish all issues
         self.publish(revision, issues, task_failures, notices)

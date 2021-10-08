@@ -44,6 +44,10 @@ class MailReporter(Reporter):
         Send an email to administrators
         """
 
+        # For no issues do not publish anything
+        if len(issues) == 0:
+            return
+
         # Build stats display for all issues
         # One line per issues class
         stats = "\n".join(
