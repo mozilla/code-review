@@ -8,7 +8,7 @@ import pytest
 from code_review_bot.backend import BackendAPI
 
 
-def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgmo):
+def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_hgmo):
     """
     Test publication of issues on the backend
     """
@@ -55,8 +55,8 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
     assert len(issues) == 0
 
     # Let's publish them
-    published = r.publish_issues(mock_coverity_issues, mock_revision)
-    assert published == len(mock_coverity_issues) == 2
+    published = r.publish_issues(mock_clang_tidy_issues, mock_revision)
+    assert published == len(mock_clang_tidy_issues) == 2
 
     # Check the issues in the backend
     assert len(issues) == 1
@@ -64,35 +64,35 @@ def test_publication(mock_coverity_issues, mock_revision, mock_backend, mock_hgm
     assert len(issues[42]) == 2
     assert issues[42] == [
         {
-            "analyzer": "mock-coverity",
-            "check": "flag",
-            "column": None,
-            "hash": "3731a6559c9a72d09f4bad85db3f0416",
+            "analyzer": "mock-clang-tidy",
+            "check": "clanck.checker",
+            "column": 46,
+            "hash": "8ab67a6518302144cb375f04f3f17c8a",
             "id": "9f6aa76a-623d-5096-82ed-876b01f9fbce",
             "in_patch": False,
             "level": "warning",
-            "line": None,
-            "message": "Unidentified symbol",
+            "line": 57,
+            "message": "Some Error Message",
             "nb_lines": 1,
-            "path": "some/file/path",
+            "path": "dom/animation/Animation.cpp",
             "publishable": False,
-            "validates": False,
+            "validates": True,
             "fix": None,
         },
         {
-            "analyzer": "mock-coverity",
-            "check": "flag",
-            "column": None,
-            "hash": "1fcc4d02d6184028f40b48e877be62b4",
+            "analyzer": "mock-clang-tidy",
+            "check": "clanck.checker",
+            "column": 46,
+            "hash": "1ca389dd8fa5cce3bbd496bc228daaaf",
             "id": "98d7e3b0-e903-57e3-9973-d11d3a9849f4",
             "in_patch": False,
-            "level": "warning",
-            "line": 1,
-            "message": "Unidentified symbol",
+            "level": "error",
+            "line": 57,
+            "message": "Some Error Message",
             "nb_lines": 1,
-            "path": "some/file/path",
-            "publishable": False,
-            "validates": False,
+            "path": "dom/animation/Animation.cpp",
+            "publishable": True,
+            "validates": True,
             "fix": None,
         },
     ]
@@ -130,7 +130,7 @@ def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
     }
 
 
-def test_repo_url(mock_coverity_issues, mock_revision, mock_backend, mock_hgmo):
+def test_repo_url(mock_revision, mock_backend, mock_hgmo):
     """
     Check that the backend client verifies repositories are URLs
     """
@@ -154,7 +154,7 @@ def test_repo_url(mock_coverity_issues, mock_revision, mock_backend, mock_hgmo):
 
 
 def test_publication_failures(
-    mock_coverity_issues, mock_revision, mock_backend, mock_hgmo
+    mock_clang_tidy_issues, mock_revision, mock_backend, mock_hgmo
 ):
     """
     Test publication of issues on the backend with some bad urls
@@ -174,12 +174,12 @@ def test_publication_failures(
     assert r.enabled is True
 
     # Use a bad relative path in last issue
-    mock_coverity_issues[-1].path = "../../../bad/path.cpp"
-    assert mock_coverity_issues[0].path == "some/file/path"
+    mock_clang_tidy_issues[-1].path = "../../../bad/path.cpp"
+    assert mock_clang_tidy_issues[0].path == "dom/animation/Animation.cpp"
 
     # Only one issue should be published as the bad one is ignored
     mock_revision.issues_url = "http://code-review-backend.test/v1/diff/42/issues/"
-    published = r.publish_issues(mock_coverity_issues, mock_revision)
+    published = r.publish_issues(mock_clang_tidy_issues, mock_revision)
     assert published == 1
 
     # Check the issues in the backend
@@ -188,19 +188,19 @@ def test_publication_failures(
     assert len(issues[42]) == 1
     assert issues[42] == [
         {
-            "analyzer": "mock-coverity",
-            "check": "flag",
-            "column": None,
-            "hash": "3731a6559c9a72d09f4bad85db3f0416",
+            "analyzer": "mock-clang-tidy",
+            "check": "clanck.checker",
+            "column": 46,
+            "hash": "8ab67a6518302144cb375f04f3f17c8a",
             "id": "9f6aa76a-623d-5096-82ed-876b01f9fbce",
             "in_patch": False,
             "level": "warning",
-            "line": None,
-            "message": "Unidentified symbol",
+            "line": 57,
+            "message": "Some Error Message",
             "nb_lines": 1,
-            "path": "some/file/path",
+            "path": "dom/animation/Animation.cpp",
             "publishable": False,
-            "validates": False,
+            "validates": True,
             "fix": None,
         }
     ]

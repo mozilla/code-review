@@ -24,7 +24,6 @@ from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
 from code_review_bot.tasks.coverage import ZeroCoverageTask
-from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.infer import InferTask
@@ -408,8 +407,6 @@ class Workflow(object):
             return ClangTidyTask(task_id, task_status)
         elif name == "source-test-clang-format":
             return ClangFormatTask(task_id, task_status)
-        elif name in ("source-test-coverity-coverity", "coverity"):
-            return CoverityTask(task_id, task_status)
         elif name == "source-test-infer-infer":
             return InferTask(task_id, task_status)
         elif name == "source-test-doc-upload":

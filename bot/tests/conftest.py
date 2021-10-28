@@ -23,8 +23,6 @@ from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
-from code_review_bot.tasks.coverity import CoverityIssue
-from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultTask
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")
@@ -104,29 +102,6 @@ def mock_task():
         return cls(f"{name}-ID", {"task": {"metadata": {"name": name}}, "status": {}})
 
     return _build
-
-
-@pytest.fixture
-def mock_coverity_issues(mock_revision, mock_task):
-    """
-    Build a list of Coverity issues
-    """
-
-    return [
-        CoverityIssue(
-            mock_task(CoverityTask, "mock-coverity"),
-            mock_revision,
-            {
-                "reliability": "high",
-                "line": i,
-                "message": "Unidentified symbol",
-                "extra": {"category": "bug", "stateOnServer": []},
-                "flag": "flag",
-            },
-            "some/file/path",
-        )
-        for i in range(2)
-    ]
 
 
 @pytest.fixture

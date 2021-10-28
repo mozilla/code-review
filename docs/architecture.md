@@ -50,7 +50,6 @@ We currently support several analyzers used in Mozilla central:
 
 - clang-format
 - clang-tidy
-- coverity
 - infer
 - mozlint (bringing a huge list of analyzers like flake8, eslint, rustfmt, ...)
 
