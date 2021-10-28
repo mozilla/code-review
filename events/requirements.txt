@@ -7,4 +7,4 @@ libmozdata==0.1.73
 libmozevent==1.1.10
 python-hglib==2.6.2
 pytoml==0.1.21
-pyyaml==5.4.1
+pyyaml==6.0
