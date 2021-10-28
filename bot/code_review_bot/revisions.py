@@ -375,19 +375,6 @@ class Revision(object):
 
         return any(_is_idl(f) for f in self.files)
 
-    @property
-    def has_infer_files(self):
-        """
-        Check if this revision has any file that might
-        be a Java file
-        """
-
-        def _is_infer(filename):
-            _, ext = os.path.splitext(filename)
-            return ext.lower() in settings.java_extensions
-
-        return any(_is_infer(f) for f in self.files)
-
     def add_improvement_patch(self, analyzer, content):
         """
         Save an improvement patch, and make it available

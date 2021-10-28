@@ -19,13 +19,9 @@ from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
 from code_review_bot.tasks.coverage import CoverageIssue
 from code_review_bot.tasks.coverage import ZeroCoverageTask
-from code_review_bot.tasks.coverity import CoverityIssue
-from code_review_bot.tasks.coverity import CoverityTask
 from code_review_bot.tasks.default import DefaultIssue
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import COMMENT_LINK_TO_DOC
-from code_review_bot.tasks.infer import InferIssue
-from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintIssue
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
@@ -36,16 +32,6 @@ Code analysis found 1 defect in the diff 42:
 
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
-
----
-If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
-
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
-"""
-
-VALID_COVERITY_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
- - 1 defect found by Coverity
 
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+UPDATE&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
@@ -122,7 +108,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 VALID_TASK_FAILURES_MESSAGE = """
-The analysis task [mock-infer](https://treeherder.mozilla.org/#/jobs?repo=try&revision=aabbccddee&selectedTaskRun=ab3NrysvSZyEwsOHL2MZfw-0) failed, but we could not detect any issue.
+The analysis task [mock-clang-tidy](https://treeherder.mozilla.org/#/jobs?repo=try&revision=aabbccddee&selectedTaskRun=ab3NrysvSZyEwsOHL2MZfw-0) failed, but we could not detect any issue.
 Please check this task manually.
 
 ---
@@ -501,7 +487,6 @@ def test_phabricator_clang_tidy_and_coverage(
             [
                 "mock-clang-format",
                 "mock-clang-tidy",
-                "mock-infer",
                 "mock-lint-flake8",
                 "coverage",
             ],
@@ -509,21 +494,20 @@ def test_phabricator_clang_tidy_and_coverage(
                 "dummy",
                 "mock-clang-tidy",
                 "mock-clang-format",
-                "mock-infer",
                 "mock-lint-flake8",
             ],
         ),
         # Skip clang-tidy
         (
             ["mock-clang-tidy"],
-            ["mock-clang-format", "mock-infer", "mock-lint-flake8", "coverage"],
-            ["dummy", "mock-clang-format", "mock-infer", "mock-lint-flake8"],
+            ["mock-clang-format", "mock-lint-flake8", "coverage"],
+            ["dummy", "mock-clang-format", "mock-lint-flake8"],
         ),
         # Skip clang-tidy and mozlint
         (
             ["mock-clang-format", "mock-clang-tidy"],
-            ["mock-infer", "mock-lint-flake8", "coverage"],
-            ["dummy", "mock-infer", "mock-lint-flake8"],
+            ["mock-lint-flake8", "coverage"],
+            ["dummy", "mock-lint-flake8"],
         ),
     ],
 )
@@ -574,18 +558,6 @@ def test_phabricator_analyzers(
             "modernize-use-nullptr",
             "dummy message",
         ),
-        InferIssue(
-            mock_task(InferTask, "mock-infer"),
-            {
-                "file": "test.cpp",
-                "line": 42,
-                "column": 1,
-                "bug_type": "dummy",
-                "kind": "WARNING",
-                "qualifier": "dummy message.",
-            },
-            revision,
-        ),
         MozLintIssue(
             mock_task(MozLintTask, "mock-lint-flake8"),
             "test.cpp",
@@ -619,9 +591,6 @@ def test_phabricator_analyzers(
             "Some lint fixes",
         ),
         ImprovementPatch(
-            mock_task(InferTask, "mock-infer"), repr(revision), "Some java fixes"
-        ),
-        ImprovementPatch(
             mock_task(MozLintTask, "mock-lint-flake8"), repr(revision), "Some js fixes"
         ),
     ]
@@ -634,86 +603,6 @@ def test_phabricator_analyzers(
     assert len(patches) == len(valid_patches)
     assert [i.analyzer.name for i in issues] == valid_issues
     assert [p.analyzer.name for p in patches] == valid_patches
-
-
-def test_phabricator_coverity(mock_phabricator, phab, mock_try_task, mock_task):
-    """
-    Test Phabricator Lint for a CoverityIssue
-    """
-
-    with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
-        revision.lines = {
-            # Add dummy lines diff
-            "test.cpp": [41, 42, 43]
-        }
-        revision.build_target_phid = "PHID-HMBD-deadbeef12456"
-        revision.repository = "https://hg.mozilla.org/try"
-        revision.repository_try_name = "try"
-        revision.mercurial_revision = "deadbeef1234"
-
-        reporter = PhabricatorReporter({}, api=api)
-
-        issue_dict = {
-            "line": 41,
-            "reliability": "medium",
-            "message": 'Dereferencing a pointer that might be "nullptr" "env" when calling "lookupImport".',
-            "flag": "NULL_RETURNS",
-            "build_error": False,
-            "extra": {
-                "category": "Null pointer dereferences",
-                "stateOnServer": {
-                    "ownerLdapServerName": "local",
-                    "stream": "Firefox",
-                    "cid": 95687,
-                    "cached": False,
-                    "retrievalDateTime": "2019-05-13T10:20:22+00:00",
-                    "firstDetectedDateTime": "2019-04-08T12:57:07+00:00",
-                    "presentInReferenceSnapshot": False,
-                    "components": ["js"],
-                    "customTriage": {},
-                    "triage": {
-                        "fixTarget": "Untargeted",
-                        "severity": "Unspecified",
-                        "classification": "Unclassified",
-                        "owner": "try",
-                        "legacy": "False",
-                        "action": "Undecided",
-                        "externalReference": "",
-                    },
-                },
-            },
-        }
-
-        issue = CoverityIssue(
-            mock_task(CoverityTask, "mock-coverity"), revision, issue_dict, "test.cpp"
-        )
-        assert issue.is_publishable()
-
-        issues, patches = reporter.publish([issue], revision, [], [])
-        assert len(issues) == 1
-        assert len(patches) == 0
-
-        # Check the callback has been used
-        assert phab.build_messages["PHID-HMBD-deadbeef12456"] == [
-            {
-                "buildTargetPHID": "PHID-HMBD-deadbeef12456",
-                "lint": [
-                    {
-                        "code": "NULL_RETURNS",
-                        "description": 'WARNING: Dereferencing a pointer that might be "nullptr" '
-                        '"env" when calling "lookupImport".',
-                        "line": 41,
-                        "name": "Coverity",
-                        "path": "test.cpp",
-                        "severity": "warning",
-                    }
-                ],
-                "type": "work",
-                "unit": [],
-            }
-        ]
-        assert phab.comments[51] == [VALID_COVERITY_MESSAGE]
 
 
 def test_phabricator_clang_tidy_build_error(
@@ -855,7 +744,7 @@ def test_task_failures(mock_phabricator, phab, mock_try_task):
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy"]}, api=api)
 
     status = {
-        "task": {"metadata": {"name": "mock-infer"}},
+        "task": {"metadata": {"name": "mock-clang-tidy"}},
         "status": {"runs": [{"runId": 0}]},
     }
     task = ClangTidyTask("ab3NrysvSZyEwsOHL2MZfw", status)
