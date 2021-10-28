@@ -2,7 +2,7 @@
 
 ## Build analysis output
 
-The code-review bot currently supports 6 different formats to report issues (clang-tidy, clang-format, zero coverage, infer and mozlint).
+The code-review bot currently supports 6 different formats to report issues (clang-tidy, clang-format, zero coverage and mozlint).
 We are in the process of standardizing toward [a single format described here](analysis_format.md).
 
 ### Taskcluster artifacts

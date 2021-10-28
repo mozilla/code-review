@@ -7,7 +7,6 @@ import pytest
 import responses
 from libmozdata.phabricator import BuildState
 
-from code_review_bot import Level
 from code_review_bot import stats
 
 
@@ -684,91 +683,6 @@ def test_clang_format_task(
             ("code-review.runtime.reports", None, "runtime"),
         ]
     )
-
-    assert mock_revision._state == BuildState.Pass
-
-
-def test_infer_task(mock_config, mock_revision, mock_workflow, mock_hgmo, mock_backend):
-    """
-    Test a remote workflow with an infer analyzer
-    """
-    from code_review_bot.tasks.infer import InferIssue
-
-    mock_workflow.setup_mock_tasks(
-        {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                },
-            },
-            "remoteTryTask": {"dependencies": ["infer"]},
-            "infer": {
-                "name": "source-test-infer-infer",
-                "state": "completed",
-                "artifacts": {
-                    "public/code-review/infer.json": [
-                        {
-                            "bug_class": "PROVER",
-                            "kind": "error",
-                            "bug_type": "THREAD_SAFETY_VIOLATION",
-                            "qualifier": "Read/Write race.",
-                            "severity": "HIGH",
-                            "visibility": "user",
-                            "line": 1196,
-                            "column": -1,
-                            "procedure": "void Bad.Function(Test,int)",
-                            "procedure_id": "org.mozilla.geckoview.somewhere(, mock_workflow):void",
-                            "procedure_start_line": 0,
-                            "file": "mobile/android/geckoview/src/main/java/org/mozilla/test.java",
-                            "bug_trace": [
-                                {
-                                    "level": 0,
-                                    "filename": "mobile/android/geckoview/src/main/java/org/mozilla/test.java",
-                                    "line_number": 1196,
-                                    "column_number": -1,
-                                    "description": "<Read trace>",
-                                }
-                            ],
-                            "key": "GeckoSession.java|test|THREAD_SAFETY_VIOLATION",
-                            "node_key": "9c5d6d9028928346cc4fb44cced5dea1",
-                            "hash": "b008b0dd2b74e6036fa2105f7e54458e",
-                            "bug_type_hum": "Thread Safety Violation",
-                            "censored_reason": "",
-                            "access": "reallyLongHash",
-                        }
-                    ]
-                },
-            },
-        }
-    )
-    issues = mock_workflow.run(mock_revision)
-    assert len(issues) == 1
-    issue = issues[0]
-    assert isinstance(issue, InferIssue)
-    assert issue.path == "mobile/android/geckoview/src/main/java/org/mozilla/test.java"
-    assert issue.line == 1196
-    assert issue.column == -1
-    assert issue.check == "THREAD_SAFETY_VIOLATION"
-    assert issue.level == Level.Warning
-    assert issue.message == "Read/Write race."
-    assert issue.nb_lines == 1
-    assert issue.as_dict() == {
-        "analyzer": "source-test-infer-infer",
-        "check": "THREAD_SAFETY_VIOLATION",
-        "column": -1,
-        "in_patch": False,
-        "level": "warning",
-        "line": 1196,
-        "message": "Read/Write race.",
-        "nb_lines": 1,
-        "path": "mobile/android/geckoview/src/main/java/org/mozilla/test.java",
-        "publishable": False,
-        "validates": True,
-        "hash": "02353719655edb9ba07e0bd0cacd620b",
-        "fix": None,
-    }
 
     assert mock_revision._state == BuildState.Pass
 

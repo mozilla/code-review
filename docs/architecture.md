@@ -50,7 +50,6 @@ We currently support several analyzers used in Mozilla central:
 
 - clang-format
 - clang-tidy
-- infer
 - mozlint (bringing a huge list of analyzers like flake8, eslint, rustfmt, ...)
 
 All those analyzers output a different JSON payload, hence the need for different implementations. But we also have a [default format](analysis_format.md) that is recommended if you want to add a new analyzer.

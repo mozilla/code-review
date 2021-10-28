@@ -14,7 +14,6 @@ from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
 from code_review_bot.tasks.default import DefaultTask
-from code_review_bot.tasks.infer import InferTask
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
 
@@ -96,8 +95,6 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
         ("source-test-mozlint-whatever", MozLintTask, True),
         ("source-test-clang-format", ClangFormatTask, False),
         ("source-test-clang-format", ClangFormatTask, True),
-        ("source-test-infer-infer", InferTask, False),
-        ("source-test-infer-infer", InferTask, True),
         ("source-test-taskgraph-diff", TaskGraphDiffTask, False),
         ("source-test-taskgraph-diff", TaskGraphDiffTask, True),
         ("source-test-unsupported", DefaultTask, False),
