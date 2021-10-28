@@ -1,5 +1,5 @@
 -e ../tools #egg=code-review-tools
 influxdb==5.3.1
 libmozdata==0.1.73
-pyyaml==5.4.1
+pyyaml==6.0
 rs-parsepatch==0.3.3
