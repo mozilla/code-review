@@ -56,18 +56,6 @@ This supports the `source-test-clang-format` task from mozilla-central, and pars
 
 It will output a list of `ClangFormatIssue`, reporting formatting warnings, with fixes provided to the developer.
 
-### Coverity
-
-This supports the Coverity integration from mozilla-central and NSS, and parses the custom artifact `public/code-review/coverity.json`.
-
-It will output a list of `CoverityIssue`, reporting static analysis warnings and build errors.
-
-### Infer
-
-This supports the `source-test-infer` from mozilla-central, and parses the custom artifact `public/code-review/infer.json`.
-
-It will output a list of `InferIssue` reporting static analysis and formatting issues in Java source code.
-
 ### Mozlint
 
 This supports all the Mozlint tasks (and there are a lot!) from mozilla-central. It parses the custom artifact and mozlint json format defined in `public/code-review/mozlint.json`.

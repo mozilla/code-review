@@ -21,4 +21,4 @@ Ask the [linter-reviewers group](https://phabricator.services.mozilla.com/projec
 
 [NSS](https://phabricator.services.mozilla.com/source/nss/) is already integrated in the code-review bot workflow, using its own decision task (no taskgraph here).
 
-To add a new analyzer, you'll need to add a task in `automation/taskcluster/graph/src/extend.js`, with the tag `code-review`. You can lookup the `coverity` for a sample implementation.
+To add a new analyzer, you'll need to add a task in `automation/taskcluster/graph/src/extend.js`, with the tag `code-review`. You can lookup the `clang-tidy` for a sample implementation.
