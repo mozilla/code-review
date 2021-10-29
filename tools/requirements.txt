@@ -10,4 +10,4 @@ rs_parsepatch==0.3.3
 structlog==21.2.0
 taskcluster==44.2.2
 treeherder-client==5.0.0
-yarl==1.6.3
+yarl==1.7.0
