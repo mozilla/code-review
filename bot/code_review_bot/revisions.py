@@ -61,7 +61,7 @@ class ImprovementPatch(object):
         ), "Only publish on online Taskcluster tasks"
         self.url = taskcluster.upload_artifact(
             "public/patch/{}".format(self.name),
-            self.content,
+            str(self.content, "utf-8"),
             content_type="text/plain; charset=utf-8",  # Displays instead of download
             ttl=timedelta(days=days_ttl - 1),
         )
