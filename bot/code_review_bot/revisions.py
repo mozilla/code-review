@@ -326,7 +326,6 @@ class Revision(object):
         # Get modified lines for this issue
         modified_lines = self.lines.get(issue.path)
         if modified_lines is None:
-            logger.warn("Issue path is not in revision", path=issue.path, revision=self)
             return False
 
         # Empty line means full file
