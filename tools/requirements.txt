@@ -8,6 +8,6 @@ multidict==6.0.2
 raven==6.10.0
 rs_parsepatch==0.3.3
 structlog==21.5.0
-taskcluster==44.8.4
+taskcluster==44.13.5
 treeherder-client==5.0.0
 yarl==1.7.2
