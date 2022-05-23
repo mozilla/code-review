@@ -160,7 +160,7 @@ def publish(repo_dir, repo_callsign, revision):
 
     # Parse output to get the revision url on the last line
     last_line = output.splitlines()[-1]
-    match = re.search(fr"^-> ({base_url}D\d+)$", last_line.decode("utf-8"))
+    match = re.search(rf"^-> ({base_url}D\d+)$", last_line.decode("utf-8"))
     assert match is not None, f"No revision found in moz-phab output:\n{output}"
 
     return match.group(1)
