@@ -3,7 +3,7 @@ aioredis==2.0.1
 -e ../tools #egg=code-review-tools
 json-e==4.4.3
 jsonschema==4.6.0
-libmozdata==0.1.73
+libmozdata==0.1.77
 libmozevent==1.1.13
 python-hglib==2.6.2
 pytoml==0.1.21
