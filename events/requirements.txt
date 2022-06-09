@@ -1,4 +1,4 @@
-aioamqp==0.14.0
+aioamqp==0.15.0
 aioredis==2.0.1
 -e ../tools #egg=code-review-tools
 json-e==4.4.3
