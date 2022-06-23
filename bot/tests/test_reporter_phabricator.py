@@ -27,7 +27,7 @@ from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
 
 VALID_CLANG_TIDY_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](?id=42):
  - 1 defect found by clang-tidy
 
 You can run this analysis locally with:
@@ -40,7 +40,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 VALID_BUILD_ERROR_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](?id=42):
  - 1 build error found by clang-tidy
 
 You can run this analysis locally with:
@@ -53,7 +53,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 VALID_CLANG_FORMAT_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](?id=42):
  - 1 defect found by clang-format
 
 You can run this analysis locally with:
@@ -68,7 +68,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 VALID_FLAKE8_MESSAGE = """
-Code analysis found 2 defects in the diff 42:
+Code analysis found 2 defects in the diff [42](?id=42):
  - 1 defect found by eslint (Mozlint)
  - 1 defect found by py-flake8 (Mozlint)
 
@@ -82,7 +82,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 VALID_COVERAGE_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](?id=42):
  - 1 defect found by code coverage analysis
 
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
@@ -98,7 +98,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 VALID_DEFAULT_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](?id=42):
  - 1 defect found by full-file-analyzer
 
 ---
@@ -116,7 +116,7 @@ If you see a problem in this automated review, [please report it here](https://b
 """
 
 VALID_MOZLINT_MESSAGE = """
-Code analysis found 2 defects in the diff 42:
+Code analysis found 2 defects in the diff [42](?id=42):
  - 2 defects found by dummy (Mozlint)
 
 You can run this analysis locally with:
@@ -129,7 +129,7 @@ You can view these defects on [the code-review frontend](https://code-review.moz
 """
 
 VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
-Code analysis found 2 defects in the diff 42:
+Code analysis found 2 defects in the diff [42](?id=42):
  - 1 defect found by clang-tidy
  - 1 defect found by code coverage analysis
 
@@ -156,7 +156,7 @@ If you see a problem in this automated review, [please report it here](https://b
 """
 
 VALID_EXTERNAL_TIDY_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](?id=42):
  - 1 defect found by private static analysis
 
 You can run this analysis locally with:

@@ -19,7 +19,7 @@ from code_review_tools import treeherder
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
 COMMENT_FAILURE = """
-Code analysis found {defects_total} in the diff {diff_id}:
+Code analysis found {defects_total} in the diff [{diff_id}](?id={diff_id}):
 """
 
 COMMENT_RUN_ANALYZERS = """
