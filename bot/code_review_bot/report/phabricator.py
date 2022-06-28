@@ -3,6 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from os.path import join as path_join
 from typing import List
 
 import structlog
@@ -19,7 +20,7 @@ from code_review_tools import treeherder
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
 COMMENT_FAILURE = """
-Code analysis found {defects_total} in the diff [{diff_id}](?id={diff_id}):
+Code analysis found {defects_total} in the diff [{diff_id}]({phabricator_diff_url}):
 """
 
 COMMENT_RUN_ANALYZERS = """
@@ -50,7 +51,7 @@ Please check this task manually.
 """
 
 FRONTEND_LINKS = """
-You can view these defects in the Diff Detail section of [Phabricator diff {diff_id}](?id={diff_id}), on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
+You can view these defects in the Diff Detail section of [Phabricator diff {diff_id}]({phabricator_diff_url}), on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
 """
 
 
@@ -75,6 +76,12 @@ class PhabricatorReporter(Reporter):
 
         self.frontend_diff_url = configuration.get(
             "frontend_diff_url", "https://code-review.moz.tools/#/diff/{diff_id}"
+        )
+        self.phabricator_diff_url = path_join(
+            configuration.get(
+                "phabricator_base_url", "https://phabricator.services.mozilla.com"
+            ),
+            "differential/diff/{diff_id}/",
         )
 
     def setup_api(self, api):
@@ -209,12 +216,20 @@ class PhabricatorReporter(Reporter):
         defects = sorted(defects)
         analyzers = sorted(analyzers)
 
+        # Comment with an absolute link to the revision diff in Phabricator
+        # Relative links are not supported in comment and non readable in related emails
+        phabricator_diff_url = self.phabricator_diff_url.format(
+            diff_id=revision.diff_id
+        )
+
         # Build top comment
         nb = len(issues)
 
         if nb > 0:
             comment = COMMENT_FAILURE.format(
-                defects_total=pluralize("defect", nb), diff_id=revision.diff_id
+                defects_total=pluralize("defect", nb),
+                diff_id=revision.diff_id,
+                phabricator_diff_url=phabricator_diff_url,
             )
         else:
             comment = ""
@@ -265,6 +280,7 @@ class PhabricatorReporter(Reporter):
                 frontend_url=frontend_url,
                 treeherder_url=treeherder_url,
                 diff_id=revision.diff_id,
+                phabricator_diff_url=phabricator_diff_url,
             )
 
         return comment
