@@ -50,7 +50,7 @@ Please check this task manually.
 """
 
 FRONTEND_LINKS = """
-You can view these defects on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
+You can view these defects in the Diff Detail section of [Phabricator diff {diff_id}](?id={diff_id}), on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
 """
 
 
@@ -262,7 +262,9 @@ class PhabricatorReporter(Reporter):
                 revision.repository_try_name, revision.mercurial_revision
             )
             comment += FRONTEND_LINKS.format(
-                frontend_url=frontend_url, treeherder_url=treeherder_url
+                frontend_url=frontend_url,
+                treeherder_url=treeherder_url,
+                diff_id=revision.diff_id,
             )
 
         return comment
