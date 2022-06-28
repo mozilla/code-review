@@ -1,0 +1,37 @@
+{
+  "cacheDirectory": true,
+  "presets": [
+    [
+      "babel-preset-env",
+      {
+        "debug": false,
+        "useBuiltIns": true,
+        "modules": false,
+        "exclude": [
+          "transform-regenerator",
+          "transform-async-to-generator"
+        ],
+        "targets": {
+          "browsers": [
+            "last 2 Chrome versions",
+            "last 2 Firefox versions",
+            "last 2 Edge versions",
+            "last 2 Opera versions",
+            "last 2 Safari versions",
+            "last 2 iOS versions"
+          ]
+        }
+      }
+    ]
+  ],
+  "plugins": [
+    [
+      "fast-async",
+      {
+        "spec": true
+      }
+    ],
+    "syntax-dynamic-import",
+    "transform-object-rest-spread"
+  ]
+}
