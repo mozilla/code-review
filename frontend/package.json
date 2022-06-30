@@ -19,6 +19,8 @@
     "@neutrinojs/mocha": "^8.3.0",
     "@neutrinojs/standardjs": "^8.3.0",
     "@neutrinojs/vue": "^8.3.0",
+    "babel-loader": "^8.2.5",
+    "babel-plugin-fast-async": "^6.1.2",
     "neutrino": "^8.3.0"
   },
   "scripts": {
