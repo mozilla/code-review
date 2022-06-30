@@ -334,9 +334,9 @@ def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_ba
                     "GECKO_HEAD_REV": "deadbeef1234",
                 },
             },
-            "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
-            "analyzer-A": {},
-            "analyzer-B": {
+            "remoteTryTask": {"dependencies": ["analyzer-X", "analyzer-Y"]},
+            "analyzer-X": {},
+            "analyzer-Y": {
                 "name": "custom-analyzer-from-vendor",
                 "state": "failed",
                 "artifacts": {
