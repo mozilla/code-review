@@ -16,18 +16,14 @@
     "vuex": "^3.6.2"
   },
   "devDependencies": {
-    "@neutrinojs/mocha": "^8.3.0",
-    "@neutrinojs/standardjs": "^8.3.0",
-    "@neutrinojs/vue": "^8.3.0",
-    "babel-loader": "^8.2.5",
-    "babel-plugin-fast-async": "^6.1.2",
-    "neutrino": "^8.3.0"
+    "babel-loader": "^7.1.0",
+    "babel-plugin-fast-async": "^6.1.2"
   },
   "scripts": {
-    "build": "neutrino build",
-    "start": "neutrino start",
-    "lint": "neutrino lint",
-    "test": "neutrino test"
+    "build": "node ./node_modules/webpack/bin/webpack.js",
+    "start": "node ./node_modules/webpack/bin/webpack.js serve",
+    "lint": "node ./node_modules/eslint/bin/eslint.js",
+    "test": "node ./node_modules/jest/bin/jest"
   },
   "keywords": [],
   "license": "MPLv2"
