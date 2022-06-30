@@ -3,8 +3,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from os.path import join as path_join
 from typing import List
+from urllib.parse import urljoin
 
 import structlog
 from libmozdata.phabricator import BuildState
@@ -77,7 +77,7 @@ class PhabricatorReporter(Reporter):
         self.frontend_diff_url = configuration.get(
             "frontend_diff_url", "https://code-review.moz.tools/#/diff/{diff_id}"
         )
-        self.phabricator_diff_url = path_join(
+        self.phabricator_diff_url = urljoin(
             configuration.get(
                 "phabricator_base_url", "https://phabricator.services.mozilla.com"
             ),
