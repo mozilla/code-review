@@ -87,7 +87,7 @@ class Command(BaseCommand):
                 nb_lines=i.get("nb_lines", 1),
                 char=i.get("char"),
                 level=i.get("level", "warning"),
-                check=i.get("kind") or i.get("check"),
+                analyzer_check=i.get("kind") or i.get("check"),
                 message=i.get("message"),
                 analyzer=i["analyzer"],
                 hash=i["hash"],

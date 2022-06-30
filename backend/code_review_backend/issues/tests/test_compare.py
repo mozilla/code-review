@@ -56,7 +56,7 @@ class CompareAPITestCase(APITestCase):
             level="warning",
             message=None,
             analyzer="analyzer-x",
-            check="check-y",
+            analyzer_check="check-y",
             hash=self.build_hash(hash_id),
         )
 
@@ -96,7 +96,7 @@ class CompareAPITestCase(APITestCase):
         data = {
             "line": 10,
             "analyzer": "analyzer-x",
-            "check": "check-y",
+            "analyzer_check": "check-y",
             "level": "error",
             "path": "path/to/file",
             "hash": self.build_hash(1),

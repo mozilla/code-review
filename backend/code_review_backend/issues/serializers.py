@@ -155,7 +155,7 @@ class IssueSerializer(serializers.ModelSerializer):
             "nb_lines",
             "char",
             "level",
-            "check",
+            "analyzer_check",
             "message",
             "new_for_revision",
             "in_patch",
@@ -183,7 +183,7 @@ class IssueCheckStatsSerializer(serializers.Serializer):
 
     repository = serializers.CharField(source="diff__revision__repository__slug")
     analyzer = serializers.CharField()
-    check = serializers.CharField()
+    analyzer_check = serializers.CharField()
     total = serializers.IntegerField()
     publishable = serializers.IntegerField(default=0)
 

@@ -167,11 +167,15 @@ if "DJANGO_DOCKER" in os.environ:
     STATIC_ROOT = "/static"
 
     # Enable GZip and cache, and build a manifest during collectstatic
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+    STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
     # Collect static in production mode
     DEBUG = False
 
+# Setup CSRF trusted origins explicitly as it's needed from Django 4
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    "CSRF_TRUSTED_ORIGINS", "http://localhost:8000,http://localhost:8010"
+).split(",")
 
 # Internal logging setup
 LOGGING = {
@@ -228,6 +232,9 @@ if "DYNO" in os.environ:
 
         # Setup Cors allowed domains
         CORS_ORIGIN_WHITELIST = taskcluster.secrets.get("cors-domains", [])
+
+        # Setup CSRF trusted origins
+        CSRF_TRUSTED_ORIGINS = taskcluster.secrets.get("csrf-trusted-origins", [])
 
         # Override Phabricator instance
         if "PHABRICATOR" in taskcluster.secrets:

@@ -93,7 +93,7 @@ class Issue(models.Model):
     nb_lines = models.PositiveIntegerField(null=True)
     char = models.PositiveIntegerField(null=True)
     level = models.CharField(max_length=20, choices=ISSUE_LEVELS)
-    check = models.CharField(max_length=250, null=True)
+    analyzer_check = models.CharField(max_length=250, null=True)
     message = models.TextField(null=True)
     analyzer = models.CharField(max_length=50)
 

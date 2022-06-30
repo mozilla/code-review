@@ -29,7 +29,7 @@ class RevisionAdmin(admin.ModelAdmin):
 
 class IssueAdmin(admin.ModelAdmin):
     list_filter = ("analyzer",)
-    list_display = ("id", "path", "line", "level", "analyzer", "check", "diff")
+    list_display = ("id", "path", "line", "level", "analyzer", "analyzer_check", "diff")
 
 
 admin.site.register(Repository, RepositoryAdmin)

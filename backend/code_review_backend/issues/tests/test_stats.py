@@ -57,7 +57,7 @@ class StatsAPITestCase(APITestCase):
                 level="warning",
                 message=None,
                 analyzer=analyzers[i % len(analyzers)],
-                check=checks[i % len(checks)],
+                analyzer_check=checks[i % len(checks)],
                 hash=uuid.uuid4().hex,
             )
 
@@ -72,7 +72,7 @@ class StatsAPITestCase(APITestCase):
                 level="warning",
                 message=None,
                 analyzer=analyzers[i % len(analyzers)],
-                check=checks[i % len(checks)],
+                analyzer_check=checks[i % len(checks)],
                 hash=uuid.uuid4().hex,
             )
 
@@ -92,105 +92,105 @@ class StatsAPITestCase(APITestCase):
                 "results": [
                     {
                         "analyzer": "analyzer-X",
-                        "check": "check-1",
+                        "analyzer_check": "check-1",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-X",
-                        "check": "check-1000",
+                        "analyzer_check": "check-1000",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-Y",
-                        "check": None,
+                        "analyzer_check": None,
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-Y",
-                        "check": "check-10",
+                        "analyzer_check": "check-10",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-Z",
-                        "check": "check-42",
+                        "analyzer_check": "check-42",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-X",
-                        "check": None,
+                        "analyzer_check": None,
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-X",
-                        "check": "check-10",
+                        "analyzer_check": "check-10",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-X",
-                        "check": "check-42",
+                        "analyzer_check": "check-42",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Y",
-                        "check": "check-1",
+                        "analyzer_check": "check-1",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Y",
-                        "check": "check-1000",
+                        "analyzer_check": "check-1000",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Y",
-                        "check": "check-42",
+                        "analyzer_check": "check-42",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Z",
-                        "check": None,
+                        "analyzer_check": None,
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Z",
-                        "check": "check-1",
+                        "analyzer_check": "check-1",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Z",
-                        "check": "check-10",
+                        "analyzer_check": "check-10",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Z",
-                        "check": "check-1000",
+                        "analyzer_check": "check-1000",
                         "publishable": 0,
                         "repository": "myrepo",
                         "total": 33,
@@ -217,7 +217,7 @@ class StatsAPITestCase(APITestCase):
 
             # Base fields
             self.assertEqual(issue["analyzer"], "analyzer-X")
-            self.assertEqual(issue["check"], "check-1")
+            self.assertEqual(issue["analyzer_check"], "check-1")
             self.assertEqual(issue["level"], "warning")
             self.assertIsNone(issue["message"])
             self.assertIsNone(issue["in_patch"])
