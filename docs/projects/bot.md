@@ -154,7 +154,7 @@ Then you have two ways to retrieve the desired information.
 3. Click on the first Indexed Task.
 4. Under the **Data** label you'll have a JSON payload containing both needed information, `try_task_id` and `try_group_id`.
 
-> Example
+***Example***
 1. On https://phabricator.services.mozilla.com/D150515, here `diff_id=150515`
 2. Go to https://firefox-ci-tc.services.mozilla.com/tasks/index/project.relman.production.code-review.phabricator.150515
 3. On https://firefox-ci-tc.services.mozilla.com/tasks/index/project.relman.production.code-review.phabricator.150515/AUAnqdfRTPq64aBFHS0g3Q
