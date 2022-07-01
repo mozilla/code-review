@@ -1,11 +1,10 @@
 {
-  "cacheDirectory": true,
   "presets": [
     [
-      "babel-preset-env",
+      "@babel/preset-env",
       {
         "debug": false,
-        "useBuiltIns": true,
+        "useBuiltIns": false,
         "modules": false,
         "exclude": [
           "transform-regenerator",
@@ -31,7 +30,6 @@
         "spec": true
       }
     ],
-    "syntax-dynamic-import",
-    "transform-object-rest-spread"
+    "@babel/plugin-syntax-dynamic-import"
   ]
 }

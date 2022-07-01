@@ -66,40 +66,11 @@ const commonConfig = {
                 'mjs',
               ],
               failOnError: true,
-              formatter: function(results) {
-                  let errors = 0;
-                  let warnings = 0;
-                  let fixableErrors = 0;
-                  let fixableWarnings = 0;
-
-                  const resultsWithMessages = results.filter(result => result.messages.length > 0);
-
-                  let output = resultsWithMessages.reduce((resultsOutput, result) => {
-                      const messages = result.messages.map(message => `${formatMessage(message, result)}\n\n`);
-
-                      errors += result.errorCount;
-                      warnings += result.warningCount;
-                      fixableErrors += result.fixableErrorCount;
-                      fixableWarnings += result.fixableWarningCount;
-
-                      return resultsOutput.concat(messages);
-                  }, []).join("\n");
-
-                  output += "\n";
-                  output += formatSummary(errors, warnings, fixableErrors, fixableWarnings);
-
-                  return (errors + warnings) > 0 ? output : "";
-              },
               globals: [
                 'process'
               ],
               parser: 'vue-eslint-parser',
               parserOptions: {
-                ecmaFeatures: {
-                  generators: true,
-                  impliedStrict: true,
-                  objectLiteralDuplicateProperties: false
-                },
                 ecmaVersion: 2017,
                 parser: 'babel-eslint',
                 sourceType: 'module'
@@ -241,43 +212,6 @@ const commonConfig = {
               loaders: {
                 js: {
                   loader: 'babel-loader',
-                  options: {
-                    cacheDirectory: true,
-                    plugins: [
-                      [
-                        'fast-async',
-                        {
-                          spec: true
-                        }
-                      ],
-                      'syntax-dynamic-import',
-                      'transform-object-rest-spread'
-                    ],
-                    presets: [
-                      [
-                        'babel-preset-env',
-                        {
-                          debug: false,
-                          exclude: [
-                            'transform-regenerator',
-                            'transform-async-to-generator'
-                          ],
-                          modules: false,
-                          targets: {
-                            browsers: [
-                              'last 2 Chrome versions',
-                              'last 2 Firefox versions',
-                              'last 2 Edge versions',
-                              'last 2 Opera versions',
-                              'last 2 Safari versions',
-                              'last 2 iOS versions'
-                            ]
-                          },
-                          useBuiltIns: true
-                        }
-                      ]
-                    ]
-                  }
                 }
               }
             }
