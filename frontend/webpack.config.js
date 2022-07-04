@@ -15,20 +15,16 @@ const common = {
     extensions: ['.js', '.vue']
   },
 
-  // Where webpack outputs the assets and bundles
   output: {
     path: path.resolve(__dirname, 'build'),
     filename: '[name].bundle.js',
     publicPath: '/'
   },
 
-  // Customize the webpack build process
   plugins: [
 
     new VueLoaderPlugin(),
 
-    // Generates an HTML file from a template
-    // Generates deprecation warning: https://github.com/jantimon/html-webpack-plugin/issues/1501
     new HtmlWebpackPlugin({
       title: 'Mozilla Code Review Bot',
       filename: 'index.html',
@@ -50,7 +46,6 @@ const common = {
     })
   ],
 
-  // Determine how modules within the project are treated
   module: {
     rules: [
       {
@@ -89,7 +84,6 @@ const development = {
 
   devtool: 'eval-cheap-module-source-map',
 
-  // Enable local web server
   devServer: {
     port: 8010,
     hot: true,
