@@ -16,10 +16,10 @@ export default {
     },
     paths () {
       // Load all issues
-      let paths = new Set()
-      for (let diff of this.revision.diffs) {
-        let issues = this.$store.state.issues[diff.id] || []
-        for (let issue of issues) {
+      const paths = new Set()
+      for (const diff of this.revision.diffs) {
+        const issues = this.$store.state.issues[diff.id] || []
+        for (const issue of issues) {
           paths.add(issue.path)
         }
       }
@@ -29,7 +29,7 @@ export default {
   },
   methods: {
     path_issues (diffId, path) {
-      let issues = this.$store.state.issues[diffId] || []
+      const issues = this.$store.state.issues[diffId] || []
       return issues.filter(issue => issue.path === path)
     }
   }

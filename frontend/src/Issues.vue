@@ -32,13 +32,13 @@ export default {
   },
   mounted () {
     // Update filters from query string
-    let newForRevision = parseInt(this.$route.query.issue)
+    const newForRevision = parseInt(this.$route.query.issue)
     this.filters.publishable = isNaN(newForRevision) ? null : this.choices.publishable[newForRevision]
     this.filters.path = this.$route.query.path || null
     this.filters.analyzer = this.$route.query.analyzer || null
 
     // Load diff
-    var diff = this.$store.dispatch('load_diff', this.$route.params.diffId)
+    const diff = this.$store.dispatch('load_diff', this.$route.params.diffId)
     diff.then(
       (response) => {
         this.$set(this, 'state', 'loaded')
@@ -54,12 +54,12 @@ export default {
     },
     paths () {
       // List sorted unique paths as choices
-      let uniquePaths = new Set(this.all_issues.map(i => i.path))
+      const uniquePaths = new Set(this.all_issues.map(i => i.path))
       return [...uniquePaths].sort()
     },
     analyzers () {
       // List sorted unique analyzers as choices
-      let uniqueAnalyzers = new Set(this.all_issues.map(i => i.analyzer))
+      const uniqueAnalyzers = new Set(this.all_issues.map(i => i.analyzer))
       return [...uniqueAnalyzers].sort()
     },
     nb_publishable () {

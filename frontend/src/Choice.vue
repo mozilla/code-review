@@ -25,8 +25,8 @@ import mixins from './mixins.js'
 
 export default {
   props: {
-    'name': String,
-    'choices': Array
+    name: String,
+    choices: Array
   },
   mixins: [
     mixins.query
@@ -48,7 +48,7 @@ export default {
   computed: {
     current () {
       let current = null
-      let choice = this.choice || this.$route.query[this.name]
+      const choice = this.choice || this.$route.query[this.name]
       if (choice && this.choices) {
         current = this.choices.find(c => c === choice || c.value === choice)
         if (!current) {
