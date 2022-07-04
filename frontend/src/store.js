@@ -7,7 +7,7 @@ const TASKCLUSTER_DIFF_INDEX = 'https://index.taskcluster.net/v1/task/project.re
 
 export default new Vuex.Store({
   state: {
-    backend_url: process.env.BACKEND_URL,
+    backend_url: BACKEND_URL,
     tasks: [],
     diffs: {},
     stats: null,
@@ -86,7 +86,7 @@ export default new Vuex.Store({
     // Load Phabricator diffs from our backend
     // Load a single page at once, providing pagination state
     load_diffs (state, payload) {
-      let url = payload.url || this.state.backend_url + '/v1/diff/'
+      let url = payload.url || BACKEND_URL + '/v1/diff/'
 
       let params = payload.query || {}
       return axios.get(url, { params: params }).then(resp => {
@@ -96,7 +96,7 @@ export default new Vuex.Store({
 
     // Load a specific diff and its issues
     load_diff (state, diffId) {
-      let url = this.state.backend_url + '/v1/diff/' + diffId
+      let url = BACKEND_URL + '/v1/diff/' + diffId
       state.commit('use_diff', null)
       return axios.get(url).then(resp => {
         state.commit('use_diff', resp.data)
@@ -133,7 +133,7 @@ export default new Vuex.Store({
       if (payload.url === undefined) {
         state.commit('reset_stats')
       }
-      const url = payload.url || this.state.backend_url + '/v1/check/stats/'
+      const url = payload.url || BACKEND_URL + '/v1/check/stats/'
 
       let params = {}
       if (payload.since !== undefined) {
@@ -157,7 +157,7 @@ export default new Vuex.Store({
 
     // Store new issues for that check
     load_check_issues (state, payload) {
-      const url = payload.url || this.state.backend_url + `/v1/check/${payload.repository}/${payload.analyzer}/${payload.check}/`
+      const url = payload.url || BACKEND_URL + `/v1/check/${payload.repository}/${payload.analyzer}/${payload.check}/`
       let params = {}
       if (payload.publishable !== undefined) {
         params.publishable = payload.publishable
@@ -171,7 +171,7 @@ export default new Vuex.Store({
     },
 
     load_repositories (state, payload) {
-      let url = this.state.backend_url + '/v1/repository/'
+      let url = BACKEND_URL + '/v1/repository/'
 
       return axios.get(url).then(resp => {
         // Assume we only have one page here
@@ -189,8 +189,8 @@ export default new Vuex.Store({
     // Load a specific revision and its diffs
     load_revision (state, payload) {
       return Promise.all([
-        axios.get(this.state.backend_url + '/v1/revision/' + payload.id),
-        axios.get(this.state.backend_url + '/v1/revision/' + payload.id + '/diffs/')
+        axios.get(BACKEND_URL + '/v1/revision/' + payload.id),
+        axios.get(BACKEND_URL + '/v1/revision/' + payload.id + '/diffs/')
       ]).then(([respRevision, respDiffs]) => {
         // Store revision & diffs data
         state.commit('use_revision', {
@@ -232,7 +232,7 @@ export default new Vuex.Store({
     },
 
     load_history (state, payload) {
-      let url = this.state.backend_url + '/v1/check/history/'
+      let url = BACKEND_URL + '/v1/check/history/'
       let params = payload || {}
 
       // Reset

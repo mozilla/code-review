@@ -52,13 +52,20 @@ const common = {
     // Generates an HTML file from a template
     // Generates deprecation warning: https://github.com/jantimon/html-webpack-plugin/issues/1501
     new HtmlWebpackPlugin({
-      title: 'Code Review Bot',
+      title: 'Mozilla Code Review Bot',
       filename: 'index.html',
+			template: './src/index.html',
     }),
 
     new webpack.ProvidePlugin({
       process: 'process/browser',
     }),
+
+		// Define backend url as constant
+		// using an environment variable with fallback for devs
+		new webpack.DefinePlugin({
+			'BACKEND_URL': JSON.stringify(process.env.BACKEND_URL || 'http://localhost:8000'),
+		}),
   ],
 
   // Determine how modules within the project are treated
@@ -96,7 +103,7 @@ const development = {
 
 	// Enable local web server
   devServer: {
-    port: 8000,
+    port: 8010,
     hot: true,
     historyApiFallback: true,
     open: true,
