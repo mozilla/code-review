@@ -6,6 +6,7 @@ module.exports =           {
 	],
   globals: {
     process: true,
+    BACKEND_URL: true,
   },
 
 	parser: 'vue-eslint-parser',
@@ -16,7 +17,7 @@ module.exports =           {
 			objectLiteralDuplicateProperties: false
 		},
 		ecmaVersion: 2017,
-		parser: 'babel-eslint',
+		parser: '@babel/eslint-parser',
 		sourceType: 'module'
 	},
 	plugins: [
