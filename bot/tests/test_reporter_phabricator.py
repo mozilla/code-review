@@ -27,7 +27,7 @@ from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
 
 VALID_CLANG_TIDY_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-tidy
 
 You can run this analysis locally with:
@@ -36,11 +36,11 @@ You can run this analysis locally with:
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/), on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_BUILD_ERROR_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 build error found by clang-tidy
 
 You can run this analysis locally with:
@@ -49,11 +49,11 @@ You can run this analysis locally with:
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/), on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_CLANG_FORMAT_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-format
 
 You can run this analysis locally with:
@@ -64,11 +64,11 @@ For your convenience, [here is a patch]({results}/source-test-clang-format-PHID-
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/), on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_FLAKE8_MESSAGE = """
-Code analysis found 2 defects in the diff 42:
+Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by eslint (Mozlint)
  - 1 defect found by py-flake8 (Mozlint)
 
@@ -78,11 +78,11 @@ You can run this analysis locally with:
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/), on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_COVERAGE_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by code coverage analysis
 
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
@@ -94,17 +94,17 @@ Should they have tests, or are they dead code?
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/), on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_DEFAULT_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by full-file-analyzer
 
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/), on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_TASK_FAILURES_MESSAGE = """
@@ -116,7 +116,7 @@ If you see a problem in this automated review, [please report it here](https://b
 """
 
 VALID_MOZLINT_MESSAGE = """
-Code analysis found 2 defects in the diff 42:
+Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 2 defects found by dummy (Mozlint)
 
 You can run this analysis locally with:
@@ -125,11 +125,11 @@ You can run this analysis locally with:
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/), on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
-Code analysis found 2 defects in the diff 42:
+Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-tidy
  - 1 defect found by code coverage analysis
 
@@ -145,7 +145,7 @@ Should they have tests, or are they dead code?
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/), on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 VALID_NOTICE_MESSAGE = """
@@ -156,7 +156,7 @@ If you see a problem in this automated review, [please report it here](https://b
 """
 
 VALID_EXTERNAL_TIDY_MESSAGE = """
-Code analysis found 1 defect in the diff 42:
+Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by private static analysis
 
 You can run this analysis locally with:
@@ -173,7 +173,7 @@ You can run this analysis locally with:
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/), on [the code-review frontend](https://code-review.moz.tools/#/diff/42) and on [Treeherder](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadbeef1234).
 """
 
 
