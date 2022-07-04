@@ -16,10 +16,6 @@
     "vuex": "^3.6.2"
   },
   "devDependencies": {
-    "@neutrinojs/mocha": "^8.3.0",
-    "@neutrinojs/standardjs": "^8.3.0",
-    "@neutrinojs/vue": "^8.3.0",
-    "neutrino": "^8.3.0"
   },
   "scripts": {
     "build": "neutrino build",
