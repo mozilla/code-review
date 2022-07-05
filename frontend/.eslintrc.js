@@ -22,7 +22,6 @@ module.exports =           {
 	},
 	plugins: [
 		'babel',
-		'standard',
 		'vue'
 	],
 	rules: {
