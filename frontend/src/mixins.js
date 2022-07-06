@@ -3,14 +3,14 @@ export default {
     methods: {
       update_query (name, value) {
         console.log('update query', name, value)
-        var query = Object.assign({}, this.$route.query)
+        const query = Object.assign({}, this.$route.query)
         if (value !== null && value !== '') {
           query[name] = value
         } else if (name in query) {
           delete query[name]
         }
         if (this.$router) {
-          this.$router.push({ 'query': query })
+          this.$router.push({ query })
         }
       }
     }
@@ -32,8 +32,8 @@ export default {
     filters: {
       // Display time since elapsed in a human format
       since (datetime) {
-        var dspStep = (t, name) => {
-          let x = Math.round(t)
+        const dspStep = (t, name) => {
+          const x = Math.round(t)
           if (x === 0) {
             return ''
           }
@@ -41,15 +41,15 @@ export default {
         }
 
         let diff = (new Date() - new Date(datetime)) / 1000
-        let steps = [
+        const steps = [
           [60, 'second'],
           [60, 'minute'],
           [24, 'hour'],
           [30, 'day'],
           [12, 'month']
         ]
-        var prev = ''
-        for (let [t, name] of steps) {
+        let prev = ''
+        for (const [t, name] of steps) {
           if (diff > t) {
             prev = dspStep(diff % t, name)
             diff = diff / t

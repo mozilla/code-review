@@ -72,14 +72,14 @@ export default {
       return this.$store.state.diffs.results
     },
     repositories () {
-      let repos = this.$store.state.repositories || []
+      const repos = this.$store.state.repositories || []
       return repos.map(r => r.slug)
     }
   },
   filters: {
     treeherder_url (diff) {
-      let rev = diff.mercurial_hash
-      let tryRepo = diff.revision.repository === 'nss' ? 'nss-try' : 'try'
+      const rev = diff.mercurial_hash
+      const tryRepo = diff.revision.repository === 'nss' ? 'nss-try' : 'try'
       return `https://treeherder.mozilla.org/#/jobs?repo=${tryRepo}&revision=${rev}`
     },
     short_repo (url) {

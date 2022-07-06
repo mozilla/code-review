@@ -3,7 +3,7 @@ export default {
   name: 'App',
   computed: {
     backend_url () {
-      return this.$store.state.backend_url
+      return BACKEND_URL
     }
   }
 }

@@ -17,7 +17,7 @@ export default {
 
     return {
       // Data filters
-      since: since,
+      since,
       analyzer: null,
       repository: null,
       check: null,
@@ -45,7 +45,7 @@ export default {
   },
   methods: {
     load (reset) {
-      let payload = {}
+      const payload = {}
       if (reset === true || this.since === '') {
         this.$set(this, 'since', null)
       } else {

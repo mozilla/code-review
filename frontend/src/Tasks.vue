@@ -15,7 +15,7 @@ export default {
     }
   },
   components: {
-    Choice: Choice
+    Choice
   },
   data: function () {
     return {
@@ -69,7 +69,7 @@ export default {
       // Filter by revision
       if (this.filters.revision !== null) {
         tasks = _.filter(tasks, t => {
-          let payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid + t.data.id + t.data.diff_id
+          const payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid + t.data.id + t.data.diff_id
           return payload.toLowerCase().indexOf(this.filters.revision.toLowerCase()) !== -1
         })
       }
@@ -83,7 +83,7 @@ export default {
       return this.$store.state.tasks ? this.$store.state.tasks.length : 0
     },
     states () {
-      let currentTasks = this.$store.state.tasks
+      const currentTasks = this.$store.state.tasks
       const states = currentTasks.reduce((states, task) => {
         if (states[task.data.state] === undefined) {
           states[task.data.state] = 0
@@ -94,12 +94,12 @@ export default {
 
       // Order states by their nb, and calc percents
       return Object.keys(states).map(state => {
-        let nb = states[state]
+        const nb = states[state]
         return {
-          'key': state,
-          'name': state.startsWith('error.') ? 'error: ' + state.substring(6) : state,
-          'nb': nb,
-          'percent': currentTasks && currentTasks.length > 0 ? Math.round(nb * 100 / currentTasks.length) : 0
+          key: state,
+          name: state.startsWith('error.') ? 'error: ' + state.substring(6) : state,
+          nb,
+          percent: currentTasks && currentTasks.length > 0 ? Math.round(nb * 100 / currentTasks.length) : 0
         }
       }).sort((x, y) => { return y.nb - x.nb })
     },
