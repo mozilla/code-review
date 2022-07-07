@@ -143,6 +143,7 @@ class IssueSerializer(serializers.ModelSerializer):
     """
 
     publishable = serializers.BooleanField(read_only=True)
+    check = serializers.CharField(source="analyzer_check", required=False)
 
     class Meta:
         model = Issue
@@ -155,7 +156,7 @@ class IssueSerializer(serializers.ModelSerializer):
             "nb_lines",
             "char",
             "level",
-            "analyzer_check",
+            "check",
             "message",
             "new_for_revision",
             "in_patch",
@@ -183,7 +184,7 @@ class IssueCheckStatsSerializer(serializers.Serializer):
 
     repository = serializers.CharField(source="diff__revision__repository__slug")
     analyzer = serializers.CharField()
-    analyzer_check = serializers.CharField()
+    check = serializers.CharField(source="analyzer_check")
     total = serializers.IntegerField()
     publishable = serializers.IntegerField(default=0)
 

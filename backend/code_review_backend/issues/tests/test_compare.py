@@ -96,7 +96,7 @@ class CompareAPITestCase(APITestCase):
         data = {
             "line": 10,
             "analyzer": "analyzer-x",
-            "analyzer_check": "check-y",
+            "check": "check-y",
             "level": "error",
             "path": "path/to/file",
             "hash": self.build_hash(1),

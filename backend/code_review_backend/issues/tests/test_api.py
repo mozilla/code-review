@@ -149,7 +149,7 @@ class CreationAPITestCase(APITestCase):
             {
                 "analyzer": "remote-flake8",
                 "char": None,
-                "analyzer_check": None,
+                "check": None,
                 "hash": "somemd5hash",
                 "level": "error",
                 "line": 1,
