@@ -51,7 +51,7 @@ Please check this task manually.
 """
 
 FRONTEND_LINKS = """
-You can view these defects in the Diff Detail section of [Phabricator diff {diff_id}]({phabricator_diff_url}), on [the code-review frontend]({frontend_url}) and on [Treeherder]({treeherder_url}).
+You can view these defects in the Diff Detail section of [Phabricator diff {diff_id}]({phabricator_diff_url}).
 """
 
 
@@ -162,7 +162,6 @@ class PhabricatorReporter(Reporter):
                 issues=issues,
                 patches=patches,
                 bug_report_url=BUG_REPORT_URL,
-                frontend_url=self.frontend_diff_url.format(diff_id=revision.diff_id),
                 task_failures=task_failures,
                 notices=notices,
             ),
@@ -174,7 +173,6 @@ class PhabricatorReporter(Reporter):
         revision,
         issues,
         bug_report_url,
-        frontend_url,
         notices,
         patches=[],
         task_failures=[],
@@ -273,12 +271,7 @@ class PhabricatorReporter(Reporter):
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
         if defects:
-            treeherder_url = treeherder.get_job_url(
-                revision.repository_try_name, revision.mercurial_revision
-            )
             comment += FRONTEND_LINKS.format(
-                frontend_url=frontend_url,
-                treeherder_url=treeherder_url,
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
             )
