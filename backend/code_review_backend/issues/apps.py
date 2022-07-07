@@ -7,4 +7,4 @@ from django.apps import AppConfig
 
 
 class IssuesConfig(AppConfig):
-    name = "issues"
+    name = "code_review_backend.issues"

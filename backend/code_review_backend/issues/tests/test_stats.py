@@ -57,7 +57,7 @@ class StatsAPITestCase(APITestCase):
                 level="warning",
                 message=None,
                 analyzer=analyzers[i % len(analyzers)],
-                check=checks[i % len(checks)],
+                analyzer_check=checks[i % len(checks)],
                 hash=uuid.uuid4().hex,
             )
 
@@ -72,7 +72,7 @@ class StatsAPITestCase(APITestCase):
                 level="warning",
                 message=None,
                 analyzer=analyzers[i % len(analyzers)],
-                check=checks[i % len(checks)],
+                analyzer_check=checks[i % len(checks)],
                 hash=uuid.uuid4().hex,
             )
 

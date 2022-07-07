@@ -180,7 +180,7 @@ class IssueCheckDetails(CachedView, generics.ListAPIView):
                 | Q(diff__revision__repository__slug=repo)
             )
             .filter(analyzer=self.kwargs["analyzer"])
-            .filter(check=self.kwargs["check"])
+            .filter(analyzer_check=self.kwargs["check"])
             .prefetch_related(
                 "diff",
                 "diff__repository",
@@ -224,7 +224,7 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
 
         queryset = (
             Issue.objects.values(
-                "analyzer", "check", "diff__revision__repository__slug"
+                "analyzer", "analyzer_check", "diff__revision__repository__slug"
             )
             .annotate(total=Count("id"))
             .annotate(
@@ -286,7 +286,7 @@ class IssueCheckHistory(CachedView, generics.ListAPIView):
         # Filter by check
         check = self.request.query_params.get("check")
         if check:
-            queryset = queryset.filter(check=check)
+            queryset = queryset.filter(analyzer_check=check)
 
         # Filter by date
         since = self.request.query_params.get("since")
