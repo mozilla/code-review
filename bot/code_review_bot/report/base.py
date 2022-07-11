@@ -5,6 +5,8 @@
 
 import itertools
 
+from code_review_bot import Level
+
 
 class Reporter(object):
     """
@@ -67,6 +69,8 @@ class Reporter(object):
                 # Split results for normal publishable issues and build errors
                 "nb_defects": publishable - build_errors,
                 "nb_build_errors": build_errors,
+                "nb_warnings": sum(i.level == Level.Warning for i in _items),
+                "nb_errors": sum(i.level == Level.Error for i in _items),
             }
 
         return [stats(analyzer, items) for analyzer, items in groups]

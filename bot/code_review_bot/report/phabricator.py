@@ -23,6 +23,14 @@ COMMENT_FAILURE = """
 Code analysis found {defects_total} in the diff [{diff_id}]({phabricator_diff_url}):
 """
 
+COMMENT_WARNINGS = """
+WARNING: Found {nb_warnings} (warning level) that can be dismissed.
+"""
+
+COMMENT_ERRORS = """
+IMPORTANT: Found {nb_errors} (error level) that must be fixed before landing.
+"""
+
 COMMENT_RUN_ANALYZERS = """
 You can run this analysis locally with:
 {analyzers}
@@ -194,6 +202,8 @@ class PhabricatorReporter(Reporter):
 
         # Build parts depending on issues
         defects, analyzers = set(), set()
+        total_warnings = 0
+        total_errors = 0
         for stat in stats:
             defect_nb = []
             if stat["nb_build_errors"] > 0:
@@ -209,6 +219,9 @@ class PhabricatorReporter(Reporter):
             _help = stat.get("help")
             if _help is not None:
                 analyzers.add(f" - {_help}")
+
+            total_warnings += stat["nb_warnings"]
+            total_errors += stat["nb_errors"]
 
         # Order both sets
         defects = sorted(defects)
@@ -235,6 +248,16 @@ class PhabricatorReporter(Reporter):
         # Add defects
         if defects:
             comment += "\n".join(defects) + "\n"
+
+        # Add colored warning section
+        if total_warnings:
+            comment += COMMENT_WARNINGS.format(
+                nb_warnings=pluralize("issue", total_warnings)
+            )
+
+        # Add colored error section
+        if total_errors:
+            comment += COMMENT_ERRORS.format(nb_errors=pluralize("issue", total_errors))
 
         if analyzers:
             comment += COMMENT_RUN_ANALYZERS.format(analyzers="\n".join(analyzers))

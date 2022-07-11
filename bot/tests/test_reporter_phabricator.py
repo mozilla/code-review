@@ -30,6 +30,8 @@ VALID_CLANG_TIDY_MESSAGE = """
 Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-tidy
 
+WARNING: Found 1 issue (warning level) that can be dismissed.
+
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
 
@@ -43,6 +45,8 @@ VALID_BUILD_ERROR_MESSAGE = """
 Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 build error found by clang-tidy
 
+IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
+
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
 
@@ -55,6 +59,8 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 VALID_CLANG_FORMAT_MESSAGE = """
 Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-format
+
+WARNING: Found 1 issue (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach clang-format -p dom/test.cpp`
@@ -72,6 +78,10 @@ Code analysis found 2 defects in the diff [42](https://phabricator.services.mozi
  - 1 defect found by eslint (Mozlint)
  - 1 defect found by py-flake8 (Mozlint)
 
+WARNING: Found 1 issue (warning level) that can be dismissed.
+
+IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
+
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
 
@@ -84,6 +94,8 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 VALID_COVERAGE_MESSAGE = """
 Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by code coverage analysis
+
+WARNING: Found 1 issue (warning level) that can be dismissed.
 
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
 Should they have tests, or are they dead code?
@@ -100,6 +112,8 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 VALID_DEFAULT_MESSAGE = """
 Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by full-file-analyzer
+
+WARNING: Found 1 issue (warning level) that can be dismissed.
 
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
@@ -119,6 +133,10 @@ VALID_MOZLINT_MESSAGE = """
 Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 2 defects found by dummy (Mozlint)
 
+WARNING: Found 1 issue (warning level) that can be dismissed.
+
+IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
+
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
 
@@ -132,6 +150,8 @@ VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
 Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-tidy
  - 1 defect found by code coverage analysis
+
+WARNING: Found 2 issues (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
@@ -158,6 +178,8 @@ If you see a problem in this automated review, [please report it here](https://b
 VALID_EXTERNAL_TIDY_MESSAGE = """
 Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by private static analysis
+
+WARNING: Found 1 issue (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - For private static analysis, please see [our private docs in Mana](https://mana.mozilla.org/wiki/pages/viewpage.action?pageId=130909687), if you cannot access this resource, ask your reviewer to help you resolve the issue.
