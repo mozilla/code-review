@@ -18,6 +18,7 @@ import pytest
 import responses
 from libmozdata.phabricator import PhabricatorAPI
 
+from code_review_bot import Level
 from code_review_bot import stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
@@ -75,6 +76,7 @@ def mock_issues(mock_task):
             self.nb = nb
             self.path = "/path/to/file"
             self.analyzer = task
+            self.level = Level.Error if self.nb % 2 else Level.Warning
 
         def as_markdown(self):
             return "This is the mock issue n°{}".format(self.nb)

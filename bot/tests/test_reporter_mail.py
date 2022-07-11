@@ -132,6 +132,8 @@ def test_mail(
             "publishable_paths": ["/path/to/file"],
             "nb_build_errors": 2,
             "nb_defects": 1,
+            "nb_warnings": 3,
+            "nb_errors": 2,
         }
     ]
 
