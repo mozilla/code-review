@@ -7,6 +7,7 @@ from datetime import date
 from datetime import datetime
 from datetime import timedelta
 
+from django.conf import settings
 from django.db.models import Count
 from django.db.models import Q
 from django.db.models.functions import TruncDate
@@ -292,10 +293,22 @@ class IssueCheckHistory(CachedView, generics.ListAPIView):
         since = self.request.query_params.get("since")
         if since is not None:
             try:
-                since = datetime.strptime(since, "%Y-%m-%d").date()
+                since = datetime.strptime(since, "%Y-%m-%d")
             except ValueError:
                 raise APIException(detail="invalid since date - should be YYYY-MM-DD")
-            queryset = queryset.filter(date__gte=since)
+
+            if "postgresql" in settings.DATABASES["default"]["ENGINE"]:
+                # Use a specific WHERE clause to compare the creation date.
+                # Casting the date as its natural data type (timestamptz) allow Postgres to perform an
+                # index scan on small data ranges (depending on available memory), which is much faster.
+                # Overall performance is improved in practice, even if the planned cost is higher when
+                # aggregating on the whole table.
+                since_date = since.strftime("%Y-%m-%d")
+                queryset = queryset.extra(
+                    where=[f"created::timestamptz >= '{since_date}'::timestamptz"]
+                )
+            else:
+                queryset = queryset.filter(date__gte=since.date())
 
         return queryset.order_by("date")
 
