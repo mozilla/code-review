@@ -174,19 +174,17 @@ class Workflow(object):
                 patch.publish()
 
         # Publish issues on backend to retrieve their comparison state
-        # Only publish warnings due to a backend timeout
-        publishable_errors = [
-            issue
-            for issue in issues
-            if issue.is_publishable() and issue.level == Level.Error
-        ]
+        # Only publish errors and "in patch" warnings due to a backend timeout
+        publishable_issues = [i for i in issues if i.is_publishable()]
 
-        self.backend_api.publish_issues(publishable_errors, revision)
+        self.backend_api.publish_issues(publishable_issues, revision)
 
         # Report issues publication stats
         nb_issues = len(issues)
-        nb_publishable = len([i for i in issues if i.is_publishable()])
-        nb_publishable_errors = len(publishable_errors)
+        nb_publishable = len(publishable_issues)
+        nb_publishable_errors = len(
+            [i for i in publishable_issues if i.level == Level.Error]
+        )
 
         self.index(
             revision,
