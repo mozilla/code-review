@@ -126,13 +126,23 @@ class PhabricatorReporter(Reporter):
                 # * All build errors as unit test results
                 self.publish_harbormaster(revision, issues)
 
-            if issues or patches or task_failures or notices:
-                # Publish comment summarizing issues
-                self.publish_summary(revision, issues, patches, task_failures, notices)
+            all_diffs = self.api.search_diffs(revision_phid=revision.phid)
+            newer_diffs = [diff for diff in all_diffs if diff["id"] > revision.diff_id]
+            # If a newer diff already exists we don't want to publish a comment on Phabricator
+            if newer_diffs:
+                logger.warning(
+                    "A newer diff exists on this patch, skipping the comment publication"
+                )
+            else:
+                if issues or patches or task_failures or notices:
+                    # Publish comment summarizing issues
+                    self.publish_summary(
+                        revision, issues, patches, task_failures, notices
+                    )
 
-            # Publish statistics
-            stats.add_metric("report.phabricator.issues", len(issues))
-            stats.add_metric("report.phabricator")
+                # Publish statistics
+                stats.add_metric("report.phabricator.issues", len(issues))
+                stats.add_metric("report.phabricator")
         else:
             logger.info("No issues to publish on phabricator")
 
