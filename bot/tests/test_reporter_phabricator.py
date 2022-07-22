@@ -7,6 +7,7 @@ import os
 import unittest
 
 import pytest
+from structlog.testing import capture_logs
 
 from code_review_bot import Level
 from code_review_bot.report.phabricator import PhabricatorReporter
@@ -1000,7 +1001,7 @@ def test_phabricator_external_tidy(mock_phabricator, phab, mock_try_task, mock_t
     assert phab.comments[51] == [VALID_EXTERNAL_TIDY_MESSAGE]
 
 
-def test_phabricator_newer_diff(mock_phabricator, phab, mock_try_task):
+def test_phabricator_newer_diff(mock_phabricator, phab, mock_try_task, mock_task):
     """
     Test Phabricator reporter publication won't be called when a newer diff exists for the patch
     """
@@ -1012,19 +1013,61 @@ def test_phabricator_newer_diff(mock_phabricator, phab, mock_try_task):
         revision.repository_try_name = "try"
         revision.lines = {
             # Add dummy lines diff
-            "test.rst": [41, 42, 43],
+            "test.txt": [0],
+            "path/to/test.cpp": [0],
+            "dom/test.cpp": [42],
         }
-        reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
+        reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
 
-    os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
-    doc_url = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
-    doc_notice = COMMENT_LINK_TO_DOC.format(diff_id=42, doc_url=doc_url)
-    reporter.publish(
-        [],
+    issue = CoverageIssue(
+        mock_task(ZeroCoverageTask, "coverage"),
+        "path/to/test.cpp",
+        0,
+        "This file is uncovered",
         revision,
-        [],
-        [doc_notice],
     )
+    assert issue.is_publishable()
+
+    with capture_logs() as cap_logs:
+        os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
+
+        issues, patches = reporter.publish([issue], revision, [], [])
+
+        assert cap_logs == [
+            # Log from PhabricatorReporter.publish_harbormaster(), it was still called
+            {
+                "event": "Updated Harbormaster build state with issues",
+                "log_level": "info",
+                "nb_lint": 1,
+                "nb_unit": 0,
+            },
+            {
+                "event": "A newer diff exists on this patch, skipping the comment publication",
+                "log_level": "warning",
+            },
+        ]
+
+    assert len(issues) == 1
+    assert len(patches) == 0
+
+    # Check the lint results
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "buildTargetPHID": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "code": "no-coverage",
+                    "description": "WARNING: This file is uncovered",
+                    "line": 1,
+                    "name": "code coverage analysis",
+                    "path": "path/to/test.cpp",
+                    "severity": "warning",
+                }
+            ],
+            "type": "work",
+            "unit": [],
+        }
+    ]
 
     # Check the comment hasn't been posted
     assert phab.comments[51] == []
