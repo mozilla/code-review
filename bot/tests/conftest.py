@@ -151,6 +151,9 @@ def mock_phabricator(mock_config):
         for values in params.get("constraints", {}).values():
             name += values
 
+        if os.environ.get("SPECIAL_NAME"):
+            name[1] = os.environ["SPECIAL_NAME"]
+
         content = _response("_".join(name))
 
         return (200, {"Content-Type": "application/json"}, content)
