@@ -248,7 +248,9 @@ class PhabricatorReporter(Reporter):
 
         # Add extra hint when errors are published outside of the patch
         defects_details = ""
-        external_failures_count = sum(
+        # Only display the hint when the revision has parents in his stack
+        rev_parents_count = len(self.api.load_parents(revision.phid))
+        external_failures_count = rev_parents_count and sum(
             1
             for issue in issues
             if issue.is_publishable() and not revision.contains(issue)
