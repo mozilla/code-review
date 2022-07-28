@@ -132,7 +132,7 @@ If you see a problem in this automated review, [please report it here](https://b
 """
 
 VALID_MOZLINT_MESSAGE = """
-Code analysis found 2 defects (some in a parent revision) in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects (1 in a parent revision) in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 2 defects found by dummy (Mozlint)
 
 WARNING: Found 1 issue (warning level) that can be dismissed.

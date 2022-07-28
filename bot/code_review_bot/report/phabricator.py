@@ -248,13 +248,15 @@ class PhabricatorReporter(Reporter):
 
         # Add extra hint when errors are published outside of the patch
         defects_details = ""
-        if any(
-            issue.is_publishable() and not revision.contains(issue) for issue in issues
-        ):
-            if nb == 1:
-                defects_details = " (in a parent revision)"
-            else:
-                defects_details = " (some in a parent revision)"
+        external_failures_count = sum(
+            1
+            for issue in issues
+            if issue.is_publishable() and not revision.contains(issue)
+        )
+        if nb == 1 and external_failures_count == 1:
+            defects_details = " (in a parent revision)"
+        elif nb > 1 and external_failures_count > 0:
+            defects_details = f" ({external_failures_count} in a parent revision)"
 
         if nb > 0:
             comment = COMMENT_FAILURE.format(
