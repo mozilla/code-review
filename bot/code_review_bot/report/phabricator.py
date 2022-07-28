@@ -20,7 +20,7 @@ from code_review_tools import treeherder
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
 COMMENT_FAILURE = """
-Code analysis found {defects_total} in the diff [{diff_id}]({phabricator_diff_url}):
+Code analysis found {defects_total}{defects_details} in the diff [{diff_id}]({phabricator_diff_url}):
 """
 
 COMMENT_WARNINGS = """
@@ -246,9 +246,20 @@ class PhabricatorReporter(Reporter):
         # Build top comment
         nb = len(issues)
 
+        # Add extra hint when errors are published outside of the patch
+        defects_details = ""
+        if any(
+            issue.is_publishable() and not revision.contains(issue) for issue in issues
+        ):
+            if nb == 1:
+                defects_details = " (in a parent revision)"
+            else:
+                defects_details = " (some in a parent revision)"
+
         if nb > 0:
             comment = COMMENT_FAILURE.format(
                 defects_total=pluralize("defect", nb),
+                defects_details=defects_details,
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
             )
@@ -308,5 +319,4 @@ class PhabricatorReporter(Reporter):
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
             )
-
         return comment
