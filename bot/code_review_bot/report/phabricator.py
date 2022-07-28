@@ -20,7 +20,7 @@ from code_review_tools import treeherder
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
 COMMENT_FAILURE = """
-Code analysis found {defects_total} in the diff [{diff_id}]({phabricator_diff_url}):
+Code analysis found {defects_total}{defects_details} in the diff [{diff_id}]({phabricator_diff_url}):
 """
 
 COMMENT_WARNINGS = """
@@ -246,9 +246,24 @@ class PhabricatorReporter(Reporter):
         # Build top comment
         nb = len(issues)
 
+        # Add extra hint when errors are published outside of the patch
+        defects_details = ""
+        # Only display the hint when the revision has parents in his stack
+        rev_parents_count = len(self.api.load_parents(revision.phid))
+        external_failures_count = rev_parents_count and sum(
+            1
+            for issue in issues
+            if issue.is_publishable() and not revision.contains(issue)
+        )
+        if nb == 1 and external_failures_count == 1:
+            defects_details = " (in a parent revision)"
+        elif nb > 1 and external_failures_count > 0:
+            defects_details = f" ({external_failures_count} in a parent revision)"
+
         if nb > 0:
             comment = COMMENT_FAILURE.format(
                 defects_total=pluralize("defect", nb),
+                defects_details=defects_details,
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
             )
@@ -308,5 +323,4 @@ class PhabricatorReporter(Reporter):
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
             )
-
         return comment
