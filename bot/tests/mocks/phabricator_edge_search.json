@@ -1,6 +1,8 @@
 {
     "result": {
         "data": [
+          {"destinationPHID": 1},
+          {"destinationPHID": 2}
         ],
         "maps": {},
         "query": {
