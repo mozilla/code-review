@@ -42,6 +42,7 @@ def setup_papertrail(project_name, channel, PAPERTRAIL_HOST, PAPERTRAIL_PORT):
     )
     papertrail.setLevel(logging.INFO)
     papertrail.setFormatter(formatter)
+    # This filter is used to add the 'app_name' value to all logs to be formatted
     papertrail.addFilter(AppNameFilter(project_name, channel))
     root.addHandler(papertrail)
 
@@ -60,10 +61,14 @@ def setup_sentry(name, channel, dsn):
     else:
         site = "unknown"
 
+    # This integration allows sentry to catch logs from logging and process them
+    # By default, the 'event_level' is set to ERROR, we are defining it to WARNING
     sentry_logging = LoggingIntegration(
-        level=logging.INFO,  # Capture info and above as breadcrumbs
-        event_level=logging.WARNING,  # Send warnings as events
+        level=logging.INFO,  # Capture INFO and above as breadcrumbs
+        event_level=logging.WARNING,  # Send WARNINGs as events
     )
+    # sentry_sdk will automatically retrieve the 'extra' attribute from logs and
+    # add contained values as Additional Data on the dashboard of the Sentry issue
     sentry_sdk.init(
         dsn=dsn,
         integrations=[sentry_logging],
@@ -75,7 +80,7 @@ def setup_sentry(name, channel, dsn):
 
     if task_id is not None:
         # Add a Taskcluster task id when available
-        # It will be shown in the Additional Data section on the dashboard
+        # It will be shown in a new section called Task on the dashboard
         sentry_sdk.set_context("task", {"task_id": task_id})
 
 
@@ -111,6 +116,9 @@ def init_logger(
         structlog.stdlib.PositionalArgumentsFormatter(),
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
+        # Transpose the 'event_dict' from structlog into keyword arguments for logging.log
+        # E.g.: 'event' become 'msg' and, at the end, all remaining values from 'event_dict'
+        # are added as 'extra'
         structlog.stdlib.render_to_log_kwargs,
     ]
 
