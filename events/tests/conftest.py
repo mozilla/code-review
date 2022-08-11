@@ -77,8 +77,8 @@ def PhabricatorMock():
 
     def _send_message(request):
         params = _phab_params(request)
-        assert "buildTargetPHID" in params
-        name = "message-{}-{}".format(params["buildTargetPHID"], params["type"])
+        assert "receiver" in params
+        name = "message-{}-{}".format(params["receiver"], params["type"])
         if params["unit"]:
             name += "-unit"
         if params["lint"]:
