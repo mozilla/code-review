@@ -338,7 +338,7 @@ def test_phabricator_mozlint(
     ]
     assert phab.build_messages["PHID-HMBT-test"] == [
         {
-            "buildTargetPHID": "PHID-HMBT-test",
+            "receiver": "PHID-HMBT-test",
             "lint": [
                 {
                     "char": 1,
@@ -401,7 +401,7 @@ def test_phabricator_coverage(
     # Check the lint results
     assert phab.build_messages["PHID-HMBT-test"] == [
         {
-            "buildTargetPHID": "PHID-HMBT-test",
+            "receiver": "PHID-HMBT-test",
             "lint": [
                 {
                     "code": "no-coverage",
@@ -473,7 +473,7 @@ def test_phabricator_clang_tidy_and_coverage(
     # Check the lint results
     assert phab.build_messages["PHID-HMBT-test"] == [
         {
-            "buildTargetPHID": "PHID-HMBT-test",
+            "receiver": "PHID-HMBT-test",
             "lint": [
                 {
                     "char": 51,
@@ -672,7 +672,7 @@ def test_phabricator_clang_tidy_build_error(
         # Check the callback has been used
         assert phab.build_messages["PHID-HMBD-deadbeef12456"] == [
             {
-                "buildTargetPHID": "PHID-HMBD-deadbeef12456",
+                "receiver": "PHID-HMBD-deadbeef12456",
                 "lint": [
                     {
                         "code": "clang-diagnostic-error",
@@ -737,7 +737,7 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task, mock_task
     # Check the inline callback has been used
     assert phab.build_messages["PHID-HMBT-test"] == [
         {
-            "buildTargetPHID": "PHID-HMBT-test",
+            "receiver": "PHID-HMBT-test",
             "lint": [
                 {
                     "code": "a-huge-issue",
@@ -844,7 +844,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
     # - a lint result for the warning inside patch
     assert phab.build_messages["PHID-HMBT-test"] == [
         {
-            "buildTargetPHID": "PHID-HMBT-test",
+            "receiver": "PHID-HMBT-test",
             "lint": [
                 {
                     "char": 25,
@@ -1053,7 +1053,7 @@ def test_phabricator_newer_diff(mock_phabricator, phab, mock_try_task, mock_task
     # Check the lint results
     assert phab.build_messages["PHID-HMBT-test"] == [
         {
-            "buildTargetPHID": "PHID-HMBT-test",
+            "receiver": "PHID-HMBT-test",
             "lint": [
                 {
                     "code": "no-coverage",

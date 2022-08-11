@@ -733,12 +733,10 @@ class MockPhabricator(object):
 
     def build_message(self, request):
         """Set a new state on a Harbormaster build"""
-        params = self.parse_request(
-            request, ("buildTargetPHID", "lint", "unit", "type")
-        )
+        params = self.parse_request(request, ("receiver", "lint", "unit", "type"))
 
         # Store the message on the build
-        self.build_messages[params["buildTargetPHID"]].append(params)
+        self.build_messages[params["receiver"]].append(params)
 
         # Outputs dummy empty response
         return (
