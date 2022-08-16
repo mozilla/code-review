@@ -84,6 +84,26 @@ def setup_sentry(name, channel, dsn):
         sentry_sdk.set_context("task", {"task_id": task_id})
 
 
+class RenameAttrsProcessor(structlog.processors.KeyValueRenderer):
+    """
+    Rename event_dict keys that will attempt to overwrite LogRecord common
+    attributes during structlog.stdlib.render_to_log_kwargs processing
+    """
+
+    def __call__(self, logger, method_name, event_dict):
+        to_rename = [
+            key
+            for key in event_dict
+            if key in sentry_sdk.integrations.logging.COMMON_RECORD_ATTRS
+        ]
+
+        for key in to_rename:
+            event_dict[f"{key}_"] = event_dict[key]
+            event_dict.pop(key)
+
+        return event_dict
+
+
 def init_logger(
     project_name,
     channel=None,
@@ -116,6 +136,7 @@ def init_logger(
         structlog.stdlib.PositionalArgumentsFormatter(),
         structlog.processors.StackInfoRenderer(),
         structlog.processors.format_exc_info,
+        RenameAttrsProcessor(),
         # Transpose the 'event_dict' from structlog into keyword arguments for logging.log
         # E.g.: 'event' become 'msg' and, at the end, all remaining values from 'event_dict'
         # are added as 'extra'
