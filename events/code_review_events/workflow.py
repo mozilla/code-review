@@ -269,6 +269,22 @@ class CodeReview(PhabricatorActions):
             )
 
         elif mode == "success":
+            if build.missing_base_revision:
+                warning = UnitResult(
+                    namespace="code-review",
+                    name="mercurial",
+                    result=UnitResultState.Fail,
+                    details="WARNING: The base revision of your patch is not available in the current repository.\nYour patch has been rebased on central (revision {}): issues may be positioned on the wrong lines.".format(
+                        build.revision["id"]
+                    ),
+                )
+                self.api.update_build_target(
+                    build.target_phid, BuildState.Work, unit=[warning]
+                )
+                logger.debug(
+                    "Missing base revision on PhabricatorBuild, adding a warning to Unit Tests section on Phabricator"
+                )
+
             self.api.create_harbormaster_uri(
                 build.target_phid,
                 "treeherder",
