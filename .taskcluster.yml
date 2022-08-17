@@ -295,17 +295,13 @@ tasks:
                   GIT_REPOSITORY: ${repository}
                   GIT_REVISION: ${head_rev}
                 command:
-                  - taskboot
-                  - build
-                  - --image
-                  - mozilla/code-review
-                  - --tag
-                  - "${channel}"
-                  - --tag
+                  - bash
+                  - backend/build.sh
                   - "${head_rev}"
-                  - --write
-                  - /backend.tar
-                  - backend/Dockerfile
+                  - "${head_branch}"
+                  - "${repository}"
+                  - "${taskcluster_root_url}/tasks/{$eval: as_slugid('backend_build')}"
+                  - "${channel}"
                 artifacts:
                   public/code-review-backend.tar:
                     expires: {$fromNow: '2 weeks'}
