@@ -291,17 +291,11 @@ tasks:
                   privileged: true
                 maxRunTime: 3600
                 image: "${taskboot_image}"
-                env:
-                  GIT_REPOSITORY: ${repository}
-                  GIT_REVISION: ${head_rev}
                 command:
-                  - bash
-                  - backend/build.sh
-                  - "${head_rev}"
-                  - "${head_branch}"
-                  - "${repository}"
-                  - "${taskcluster_root_url}/tasks/{$eval: as_slugid('backend_build')}"
-                  - "${channel}"
+                  - /bin/sh
+                  - -lxce
+                  - "git clone --quiet ${repository} /code-review && cd /code-review && git checkout ${head_rev} -b build &&
+                    /bin/sh backend/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
                 artifacts:
                   public/code-review-backend.tar:
                     expires: {$fromNow: '2 weeks'}
