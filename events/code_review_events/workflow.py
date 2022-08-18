@@ -270,10 +270,13 @@ class CodeReview(PhabricatorActions):
 
         elif mode == "success":
             if build.missing_base_revision:
+                # Publish a warning message on Phabricator in the Unit Tests section,
+                # as done for other warnings/errors from the bot, since this section
+                # is centered and at the top of the page.
                 warning = UnitResult(
                     namespace="code-review",
                     name="mercurial",
-                    result=UnitResultState.Fail,
+                    result=UnitResultState.Unsound,
                     details="WARNING: The base revision of your patch is not available in the current repository.\nYour patch has been rebased on central (revision {}): issues may be positioned on the wrong lines.".format(
                         build.revision["id"]
                     ),
