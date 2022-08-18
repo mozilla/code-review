@@ -294,8 +294,8 @@ tasks:
                 command:
                   - /bin/sh
                   - -lxce
-                  - "git clone --quiet ${repository} /code-review && cd /code-review && git checkout ${head_rev} -b build &&
-                    /bin/sh backend/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
+                  - "git clone --quiet ${repository} /code-review && cd /code-review && git checkout ${head_rev} -b build
+                    && backend/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
                 artifacts:
                   public/code-review-backend.tar:
                     expires: {$fromNow: '2 weeks'}
