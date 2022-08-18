@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "rest_framework",
+    "dockerflow.django",
     "code_review_backend.issues",
     "drf_yasg",
 ]
@@ -71,6 +72,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    "dockerflow.django.middleware.DockerflowMiddleware",
 ]
 
 ROOT_URLCONF = "code_review_backend.app.urls"
@@ -181,10 +183,27 @@ CSRF_TRUSTED_ORIGINS = os.getenv(
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "formatters": {
+        "json": {
+            "()": "dockerflow.logging.JsonLogFormatter",
+            "logger_name": "code_review_backend",
+        },
+    },
+    "handlers": {
+        "console": {"class": "logging.StreamHandler"},
+        "json": {
+            "class": "logging.StreamHandler",
+            "formatter": "json",
+            "level": "DEBUG",
+        },
+    },
     "loggers": {
         "django": {"handlers": ["console"], "level": "INFO"},
         "code_review_backend": {"handlers": ["console"], "level": "INFO"},
+        "request.summary": {
+            "handlers": ["json"],
+            "level": "DEBUG",
+        },
     },
 }
 
