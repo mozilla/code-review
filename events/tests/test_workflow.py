@@ -6,6 +6,7 @@ from libmozdata.phabricator import ConduitError
 from libmozdata.phabricator import UnitResultState
 from libmozevent.bus import MessageBus
 from libmozevent.phabricator import PhabricatorBuild
+from structlog.testing import capture_logs
 
 from code_review_events import QUEUE_BUGBUG
 from code_review_events import QUEUE_MERCURIAL
@@ -110,6 +111,56 @@ async def test_publish_results_success_mode(PhabricatorMock, mock_taskcluster):
                 {"treeherder_url": "https://treeherder.org/", "revision": "123"},
             )
         )
+
+
+@pytest.mark.asyncio
+async def test_publish_results_success_mode_missing_base_rev(
+    PhabricatorMock, mock_taskcluster
+):
+    bus = MessageBus()
+    build = PhabricatorBuild(
+        MockRequest(
+            diff="125397",
+            repo="PHID-REPO-saax4qdxlbbhahhp2kg5",
+            revision="36474",
+            target="PHID-HMBT-icusvlfibcebizyd33op",
+        )
+    )
+    build.missing_base_revision = True
+
+    with PhabricatorMock as phab:
+        client = CodeReview(
+            lando_url=None,
+            lando_publish_generic_failure=False,
+            publish=True,
+            url="http://phabricator.test/api/",
+            api_key="fakekey",
+        )
+        client.register(bus)
+
+        phab.update_state(build)
+
+        with capture_logs() as cap_logs:
+            await client.publish_results(
+                (
+                    "success",
+                    build,
+                    {"treeherder_url": "https://treeherder.org/", "revision": "123"},
+                )
+            )
+
+            assert cap_logs == [
+                {
+                    "event": "Publishing a Phabricator build update",
+                    "log_level": "debug",
+                    "mode": "success",
+                    "build": build,
+                },
+                {
+                    "event": "Missing base revision on PhabricatorBuild, adding a warning to Unit Tests section on Phabricator",
+                    "log_level": "debug",
+                },
+            ]
 
 
 @pytest.mark.asyncio
