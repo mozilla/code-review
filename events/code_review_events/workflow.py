@@ -574,7 +574,16 @@ class Events(object):
 
         if consumers:
             # Run all tasks concurrently
-            run_tasks(consumers)
+            try:
+                run_tasks(consumers)
+            except asyncio.CancelledError:
+                # Either a task raised an unexpected exception or we received a SIGTERM (Heroku
+                # kills dynos at least once a day on prod). Whenever it might happen, we should
+                # put Redis messages back in their queues and exit gracefully
+                logger.warning(
+                    "Tasks have been cancelled, restoring non processed messages"
+                )
+                self.bus.restore_redis_messages()
         else:
             # Keep the web server process running
             asyncio.get_event_loop().run_forever()
