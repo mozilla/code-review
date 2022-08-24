@@ -98,8 +98,8 @@ class CodeReview(PhabricatorActions):
 
     def register(self, bus):
         self.bus = bus
-        self.bus.add_queue(QUEUE_PHABRICATOR_RESULTS)
-        self.bus.add_queue(QUEUE_MERCURIAL_APPLIED)
+        self.bus.add_queue(QUEUE_PHABRICATOR_RESULTS, redis=True)
+        self.bus.add_queue(QUEUE_MERCURIAL_APPLIED, redis=True)
 
     def get_repositories(self, repositories, cache_root, default_ssh_key=None):
         """
