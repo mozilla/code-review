@@ -504,21 +504,11 @@ class Events(object):
         if self.workflow:
             consumers += [
                 # Process Phabricator build received from webserver
-                self.bus.run(
-                    self.workflow.process_build, QUEUE_WEB_BUILDS, sequential=False
-                ),
+                self.bus.run(self.workflow.process_build, QUEUE_WEB_BUILDS),
                 # Publish results on Phabricator
-                self.bus.run(
-                    self.workflow.publish_results,
-                    QUEUE_PHABRICATOR_RESULTS,
-                    sequential=False,
-                ),
+                self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS),
                 # Trigger autoland tasks
-                self.bus.run(
-                    self.workflow.trigger_autoland,
-                    QUEUE_PULSE_AUTOLAND,
-                    sequential=False,
-                ),
+                self.bus.run(self.workflow.trigger_autoland, QUEUE_PULSE_AUTOLAND),
                 # Send to phabricator results publication for normal processing and to bugbug for further analysis
                 self.bus.dispatch(
                     QUEUE_MERCURIAL_APPLIED,
@@ -528,23 +518,14 @@ class Events(object):
 
         if self.bugbug_utils:
             consumers += [
+                self.bus.run(self.bugbug_utils.process_build, QUEUE_BUGBUG),
+                self.bus.run(self.bugbug_utils.process_push, QUEUE_BUGBUG_TRY_PUSH),
                 self.bus.run(
-                    self.bugbug_utils.process_build, QUEUE_BUGBUG, sequential=False
-                ),
-                self.bus.run(
-                    self.bugbug_utils.process_push,
-                    QUEUE_BUGBUG_TRY_PUSH,
-                    sequential=False,
-                ),
-                self.bus.run(
-                    self.bugbug_utils.got_try_task_end,
-                    QUEUE_PULSE_TRY_TASK_END,
-                    sequential=False,
+                    self.bugbug_utils.got_try_task_end, QUEUE_PULSE_TRY_TASK_END
                 ),
                 self.bus.run(
                     self.bugbug_utils.got_bugbug_test_select_end,
                     QUEUE_PULSE_BUGBUG_TEST_SELECT,
-                    sequential=False,
                 ),
             ]
 
