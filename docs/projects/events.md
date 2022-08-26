@@ -39,3 +39,11 @@ This allows us to have the same code run in a single process in development, but
 Each subsystem has input and output queues, and just consumes input queues to get new data to work on (whatever that data may be). Once its process is done, it puts in the relevant output queues the results (it's basically a plugin system, split on a network).
 
 A big advantage of that system is that the high level code in this repository is relatively simple, and mainly *plugs* the right subsystems together. It's also easier to create unit tests for each subsystem, as you can interact with their queues.
+
+## TERM signal handling
+
+On production, Heroku dynos are restarted at least once a day.
+When this occurs, we should catch the prior SIGTERM, stop any consumer and restore the message their were processing in the Redis queue.
+
+This solution is handled by the `libmozevent.utils.run_tasks` helper. It requires all message consumers to use Redis queues, and prevent them from running in parallel mode.
+Sequential mode has a minimal impact on the Code Review Events workflow, as it is unlikely to have two pipelines running at the exact same point.
