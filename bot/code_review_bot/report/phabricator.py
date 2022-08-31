@@ -12,6 +12,7 @@ from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import Issue
 from code_review_bot import stats
+from code_review_bot.backend import BackendAPI
 from code_review_bot.report.base import Reporter
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
 from code_review_bot.tasks.coverage import CoverageIssue
@@ -91,11 +92,58 @@ class PhabricatorReporter(Reporter):
             ),
             "differential/diff/{diff_id}/",
         )
+        # Setup Code Review backend API client
+        self.backend_api = BackendAPI()
 
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
         self.api = api
         logger.info("Phabricator reporter enabled")
+
+    def group_issues(self, former_diff_id, issues):
+        """
+        Group new issues according to their evolution from
+        the previous diff on the same revision.
+        Returns a tuple containing groups of issues:
+          * New issues, that did not exist on the former diff
+          * Unresolved issues, that are present on both diffs
+          * Closed issues, that were present in the previous diff and are now gone
+        """
+        if not self.backend_api.enabled:
+            logger.warning(
+                "Backend API must be enabled to compare issues with previous diff {former_diff_id}."
+            )
+            return issues, [], []
+
+        # Retrieve issues related to the previous diff
+        try:
+            previous_issues = self.backend_api.list_diff_issues(former_diff_id)
+        except Exception as e:
+            logger.warning(
+                f"An error occurred listing issues on previous diff {former_diff_id}: {e}. "
+                "Each issue will be considered as a new case."
+            )
+            previous_issues = []
+
+        previous_issues = {issue.hash: issue for issue in previous_issues}
+
+        # Compare current issues with the previous ones
+        new, unresolved = [], []
+        for issue in issues:
+            if not issue.on_backend:
+                # An error occurred storing the issue on the backend, no comparison is possible
+                new.append(issue)
+                continue
+            issue_hash = issue.on_backend["hash"]
+            if issue_hash in previous_issues:
+                unresolved.append(issue)
+                del previous_issues[issue_hash]
+            else:
+                new.append(issue)
+
+        closed = list(previous_issues.values())
+
+        return new, unresolved, closed
 
     def publish(self, issues, revision, task_failures, notices):
         """
@@ -106,11 +154,10 @@ class PhabricatorReporter(Reporter):
 
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
-        new_issues = [
+        issues = [
             issue
             for issue in issues
             if issue.is_publishable()
-            and issue.new_for_revision()
             and issue.analyzer.name not in self.analyzers_skipped
         ]
         patches = [
@@ -119,33 +166,52 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if new_issues or task_failures or notices:
+        # Retrieve all diffs for the current revision
+        rev_diffs = self.api.search_diffs(revision_phid=revision.phid)
 
+        if any(diff["id"] > revision.diff_id for diff in rev_diffs):
+            logger.warning(
+                "A newer diff exists on this patch, skipping the comment publication"
+            )
+            return issues, patches
+
+        older_diff_ids = [
+            diff["id"] for diff in rev_diffs if diff["id"] < revision.diff_id
+        ]
+        if older_diff_ids:
+            former_diff_id = sorted(older_diff_ids)[-1]
+            new_issues, unresolved_issues, closed_issues = self.group_issues(
+                former_diff_id, issues
+            )
+        else:
+            new_issues, unresolved_issues, closed_issues = issues, [], []
+
+        if not new_issues and not closed_issues:
+            # Nothing changed, no issue have been opened or closed
+            logger.warning(
+                f"No new issues, skipping the comment publication ({len(unresolved_issues)} issues are unresolved)"
+            )
+
+        # Report new issues, with the number of unresolved/closed issues compared to the previous diff
+        elif new_issues or task_failures or notices:
             if new_issues:
                 # Publish new patch's issues on Harbormaster, all at once, as lint issues
                 self.publish_harbormaster(revision, new_issues)
 
-            all_diffs = self.api.search_diffs(revision_phid=revision.phid)
-            newer_diffs = [diff for diff in all_diffs if diff["id"] > revision.diff_id]
-            # If a newer diff already exists we don't want to publish a comment on Phabricator
-            if newer_diffs:
-                logger.warning(
-                    "A newer diff exists on this patch, skipping the comment publication"
-                )
+            # Publish comment summarizing issues
+            self.publish_summary(
+                revision,
+                new_issues,
+                patches,
+                task_failures,
+                notices,
+                unresolved=len(unresolved_issues),
+                closed=len(closed_issues),
+            )
 
-            else:
-                if new_issues or patches or task_failures or notices:
-
-                    # Publish comment summarizing issues
-                    self.publish_summary(
-                        revision, new_issues, patches, task_failures, notices
-                    )
-
-                # Publish statistics
-                stats.add_metric("report.phabricator.issues", len(new_issues))
-                stats.add_metric("report.phabricator")
-        else:
-            logger.info("No issues to publish on phabricator")
+            # Publish statistics
+            stats.add_metric("report.phabricator.issues", len(new_issues))
+            stats.add_metric("report.phabricator")
 
         return issues, patches
 
