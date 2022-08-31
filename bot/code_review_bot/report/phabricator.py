@@ -104,12 +104,13 @@ class PhabricatorReporter(Reporter):
         * build errors are displayed as unit test results
         """
 
-        # Use only publishable issues and patches
-        # and avoid publishing a patch from a de-activated analyzer
-        issues = [
+        # Use only new and publishable issues and patches
+        # Avoid publishing a patch from a de-activated analyzer
+        new_issues = [
             issue
             for issue in issues
             if issue.is_publishable()
+            and issue.new_for_revision()
             and issue.analyzer.name not in self.analyzers_skipped
         ]
         patches = [
@@ -118,13 +119,11 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if issues or task_failures or notices:
+        if new_issues or task_failures or notices:
 
-            if issues:
-                # Publish on Harbormaster all at once
-                # * All non coverage publishable issues as lint issues
-                # * All build errors as unit test results
-                self.publish_harbormaster(revision, issues)
+            if new_issues:
+                # Publish new patch's issues on Harbormaster, all at once, as lint issues
+                self.publish_harbormaster(revision, new_issues)
 
             all_diffs = self.api.search_diffs(revision_phid=revision.phid)
             newer_diffs = [diff for diff in all_diffs if diff["id"] > revision.diff_id]
@@ -133,15 +132,17 @@ class PhabricatorReporter(Reporter):
                 logger.warning(
                     "A newer diff exists on this patch, skipping the comment publication"
                 )
+
             else:
-                if issues or patches or task_failures or notices:
+                if new_issues or patches or task_failures or notices:
+
                     # Publish comment summarizing issues
                     self.publish_summary(
-                        revision, issues, patches, task_failures, notices
+                        revision, new_issues, patches, task_failures, notices
                     )
 
                 # Publish statistics
-                stats.add_metric("report.phabricator.issues", len(issues))
+                stats.add_metric("report.phabricator.issues", len(new_issues))
                 stats.add_metric("report.phabricator")
         else:
             logger.info("No issues to publish on phabricator")
