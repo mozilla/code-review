@@ -32,6 +32,10 @@ COMMENT_ERRORS = """
 IMPORTANT: Found {nb_errors} (error level) that must be fixed before landing.
 """
 
+COMMENT_DIFF_FOLLOWUP = (
+    "compared to the previous diff [{diff_id}]({phabricator_diff_url})."
+)
+
 COMMENT_RUN_ANALYZERS = """
 You can run this analysis locally with:
 {analyzers}
@@ -125,7 +129,7 @@ class PhabricatorReporter(Reporter):
             )
             previous_issues = []
 
-        previous_issues = {issue.hash: issue for issue in previous_issues}
+        previous_issues = {issue["hash"]: issue for issue in previous_issues}
 
         # Compare current issues with the previous ones
         new, unresolved = [], []
@@ -178,6 +182,7 @@ class PhabricatorReporter(Reporter):
         older_diff_ids = [
             diff["id"] for diff in rev_diffs if diff["id"] < revision.diff_id
         ]
+        former_diff_id = None
         if older_diff_ids:
             former_diff_id = sorted(older_diff_ids)[-1]
             new_issues, unresolved_issues, closed_issues = self.group_issues(
@@ -205,6 +210,7 @@ class PhabricatorReporter(Reporter):
                 patches,
                 task_failures,
                 notices,
+                former_diff_id=former_diff_id,
                 unresolved=len(unresolved_issues),
                 closed=len(closed_issues),
             )
@@ -236,7 +242,17 @@ class PhabricatorReporter(Reporter):
             nb_unit=len(unit_issues),
         )
 
-    def publish_summary(self, revision, issues, patches, task_failures, notices):
+    def publish_summary(
+        self,
+        revision,
+        issues,
+        patches,
+        task_failures,
+        notices,
+        former_diff_id,
+        unresolved,
+        closed,
+    ):
         """
         Summarize publishable issues through Phabricator comment
         """
@@ -249,6 +265,9 @@ class PhabricatorReporter(Reporter):
                 bug_report_url=BUG_REPORT_URL,
                 task_failures=task_failures,
                 notices=notices,
+                former_diff_id=former_diff_id,
+                unresolved=unresolved,
+                closed=closed,
             ),
         )
         logger.info("Published phabricator summary")
@@ -261,6 +280,9 @@ class PhabricatorReporter(Reporter):
         notices,
         patches=[],
         task_failures=[],
+        former_diff_id=None,
+        unresolved=0,
+        closed=0,
     ):
         """
         Build a Markdown comment about published issues
@@ -340,6 +362,23 @@ class PhabricatorReporter(Reporter):
         # Add defects
         if defects:
             comment += "\n".join(defects) + "\n"
+
+        # In case of a new diff, display the number of resolved or closed issues
+        if unresolved or closed:
+            followup_comment = ""
+            if unresolved:
+                followup_comment += pluralize("issue", unresolved) + " unresolved "
+                if closed:
+                    followup_comment += "and "
+            if closed:
+                followup_comment += pluralize("issue", closed) + " closed "
+            followup_comment += COMMENT_DIFF_FOLLOWUP.format(
+                phabricator_diff_url=self.phabricator_diff_url.format(
+                    diff_id=former_diff_id
+                ),
+                diff_id=former_diff_id,
+            )
+            comment += followup_comment
 
         # Add colored warning section
         if total_warnings:
