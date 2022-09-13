@@ -139,17 +139,15 @@ class PhabricatorReporter(Reporter):
         # Compare current issues with the previous ones
         new, unresolved = [], []
         for issue in issues:
-            if not issue.on_backend:
-                # An error occurred storing the issue on the backend, no comparison is possible
-                new.append(issue)
-                continue
-            if issue.on_backend["hash"] in previous_issues:
+            if issue.on_backend and issue.on_backend["hash"] in indexed_issues:
                 unresolved.append(issue)
             else:
+                # An error occurred storing the issue on the backend
+                # or issue's hash did not exist in the previous diff
                 new.append(issue)
 
         # All previous issues that are not unresolved are closed
-        unresolved_hashes = set(issue["hash"] for issue in unresolved)
+        unresolved_hashes = set(issue.on_backend["hash"] for issue in unresolved)
         closed = [
             issue for issue in previous_issues if issue["hash"] not in unresolved_hashes
         ]
@@ -204,22 +202,21 @@ class PhabricatorReporter(Reporter):
                 f"No new issues, skipping the comment publication ({len(unresolved_issues)} issues are unresolved)"
             )
 
-        # Report new issues, with the number of unresolved/closed issues compared to the previous diff
         elif new_issues or task_failures or notices:
             if new_issues:
                 # Publish new patch's issues on Harbormaster, all at once, as lint issues
                 self.publish_harbormaster(revision, new_issues)
 
-            # Publish comment summarizing issues
+            # Publish comment summarizing new, unresolved and closed issues
             self.publish_summary(
                 revision,
-                new_issues,
+                [*new_issues, *unresolved_issues],
                 patches,
                 task_failures,
                 notices,
                 former_diff_id=former_diff_id,
-                unresolved=len(unresolved_issues),
-                closed=len(closed_issues),
+                unresolved_count=len(unresolved_issues),
+                closed_count=len(closed_issues),
             )
 
             # Publish statistics
@@ -257,8 +254,8 @@ class PhabricatorReporter(Reporter):
         task_failures,
         notices,
         former_diff_id,
-        unresolved,
-        closed,
+        unresolved_count,
+        closed_count,
     ):
         """
         Summarize publishable issues through Phabricator comment
@@ -273,8 +270,8 @@ class PhabricatorReporter(Reporter):
                 task_failures=task_failures,
                 notices=notices,
                 former_diff_id=former_diff_id,
-                unresolved=unresolved,
-                closed=closed,
+                unresolved=unresolved_count,
+                closed=closed_count,
             ),
         )
         logger.info("Published phabricator summary")
