@@ -655,7 +655,7 @@ def test_clang_format_task(
         "path": "test.cpp",
         "publishable": False,
         "validates": False,
-        "hash": "56f81d5190f8e1bd7a7d2380e7da6d67",
+        "hash": "9a517e384b1dbbe92025c48ea6b7eab9",
         "fix": "Multi\nlines",
     }
     assert issue.as_phabricator_lint() == {

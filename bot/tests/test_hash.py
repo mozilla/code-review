@@ -39,9 +39,18 @@ def test_build_hash(mock_revision, mock_hgmo, mock_task):
     )
 
     # Build hash in the unit test by re-creating the payload
-    payload = "mock-analyzer-eslint:path/to/file.cpp:error:EXXX:{}:test-try:deadbeef1234:path/to/file.cpp:123"
+    payload = (
+        "mock-analyzer-eslint:"
+        "path/to/file.cpp:error:"
+        "EXXX:"
+        "{}:"
+        "test-try:deadbeef1234:"
+        "path/to/file.cpp:"
+        "123:"
+        "A random & fake linting issue"
+    )
     hash_check = hashlib.md5(payload.encode("utf-8")).hexdigest()
-    assert hash_check == "045f57ef8ee111d0c8c475bd7a617564" == issue.build_hash()
+    assert hash_check == "b06e5b92a609496d1473ca90fec1749c" == issue.build_hash()
 
 
 def test_indentation_effect(mock_revision, mock_hgmo, mock_task):
@@ -86,7 +95,7 @@ def test_indentation_effect(mock_revision, mock_hgmo, mock_task):
     assert (
         issue_indent.build_hash()
         == issue_no_indent.build_hash()
-        == "9a9b08552e9e2a5f1da5c103c3a4657d"
+        == "a8c5c52b21c12b483617adc60cdd5dc2"
     )
 
 
@@ -116,14 +125,14 @@ def test_full_file(mock_revision, mock_hgmo, mock_task):
     assert issue.line is None
 
     # Build hash should use the full file
-    assert issue.build_hash() == "76a76ba6e023d933acba9e07ae2897f6"
+    assert issue.build_hash() == "65fe9040e64b3617e4cbf40ef478f62d"
 
     # Check positive integers or None are used in report
     assert issue.as_dict() == {
         "analyzer": "mock-analyzer-fullfile",
         "check": "EXXX",
         "column": 0,
-        "hash": "76a76ba6e023d933acba9e07ae2897f6",
+        "hash": "65fe9040e64b3617e4cbf40ef478f62d",
         "in_patch": False,
         "level": "error",
         "line": None,
