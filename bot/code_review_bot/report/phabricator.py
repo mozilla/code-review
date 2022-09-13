@@ -105,12 +105,11 @@ class PhabricatorReporter(Reporter):
         self.api = api
         logger.info("Phabricator reporter enabled")
 
-    def group_issues(self, former_diff_id, issues):
+    def compare_issues(self, former_diff_id, issues):
         """
-        Group new issues according to their evolution from
-        the previous diff on the same revision.
-        Returns a tuple containing groups of issues:
-          * New issues, that did not exist on the former diff
+        Compare new issues depending on their evolution from the
+        previous diff on the same revision.
+        Returns a tuple containing lists of:
           * Unresolved issues, that are present on both diffs
           * Closed issues, that were present in the previous diff and are now gone
         """
@@ -118,7 +117,7 @@ class PhabricatorReporter(Reporter):
             logger.warning(
                 "Backend API must be enabled to compare issues with previous diff {former_diff_id}."
             )
-            return issues, [], []
+            return [], []
 
         # Retrieve issues related to the previous diff
         try:
@@ -136,23 +135,17 @@ class PhabricatorReporter(Reporter):
         for issue in previous_issues:
             indexed_issues[issue["hash"]].append(issue)
 
-        # Compare current issues with the previous ones
-        new, unresolved = [], []
-        for issue in issues:
-            if issue.on_backend and issue.on_backend["hash"] in indexed_issues:
-                unresolved.append(issue)
-            else:
-                # An error occurred storing the issue on the backend
-                # or issue's hash did not exist in the previous diff
-                new.append(issue)
-
-        # All previous issues that are not unresolved are closed
-        unresolved_hashes = set(issue.on_backend["hash"] for issue in unresolved)
-        closed = [
-            issue for issue in previous_issues if issue["hash"] not in unresolved_hashes
+        # Compare current issues with the previous ones based on the hash
+        unresolved = [
+            issue.on_backend["hash"]
+            for issue in issues
+            if issue.on_backend and issue.on_backend["hash"] in indexed_issues
         ]
 
-        return new, unresolved, closed
+        # All previous issues that are not unresolved are closed
+        closed = [issue for issue in previous_issues if issue["hash"] not in unresolved]
+
+        return unresolved, closed
 
     def publish(self, issues, revision, task_failures, notices):
         """
@@ -175,12 +168,12 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        # Retrieve all diffs for the current revision
-        rev_diffs = self.api.search_diffs(revision_phid=revision.phid)
-
         if issues:
             # Publish detected patch's issues on Harbormaster, all at once, as lint issues
             self.publish_harbormaster(revision, issues)
+
+        # Retrieve all diffs for the current revision
+        rev_diffs = self.api.search_diffs(revision_phid=revision.phid)
 
         if any(diff["id"] > revision.diff_id for diff in rev_diffs):
             logger.warning(
@@ -191,38 +184,37 @@ class PhabricatorReporter(Reporter):
         older_diff_ids = [
             diff["id"] for diff in rev_diffs if diff["id"] < revision.diff_id
         ]
-        former_diff_id = None
-        if older_diff_ids:
-            former_diff_id = sorted(older_diff_ids)[-1]
-            new_issues, unresolved_issues, closed_issues = self.group_issues(
-                former_diff_id, issues
-            )
-        else:
-            new_issues, unresolved_issues, closed_issues = issues, [], []
+        former_diff_id = sorted(older_diff_ids)[-1] if older_diff_ids else None
+        unresolved_issues, closed_issues = self.compare_issues(former_diff_id, issues)
 
-        detected_issues = [*new_issues, *unresolved_issues]
-        if not new_issues and not closed_issues and not task_failures and not notices:
+        if (
+            len(unresolved_issues) == len(issues)
+            and not closed_issues
+            and not task_failures
+            and not notices
+        ):
             # Nothing changed, no issue have been opened or closed
             logger.warning(
                 "No new issues nor failures/notices were detected. "
                 "Skipping comment publication ({len(unresolved_issues)} issues are unresolved)"
             )
-        elif detected_issues or task_failures or notices:
-            # Publish comment summarizing detected, unresolved and closed issues
-            self.publish_summary(
-                revision,
-                detected_issues,
-                patches,
-                task_failures,
-                notices,
-                former_diff_id=former_diff_id,
-                unresolved_count=len(unresolved_issues),
-                closed_count=len(closed_issues),
-            )
+            return issues, patches
 
-            # Publish statistics
-            stats.add_metric("report.phabricator.issues", len(new_issues))
-            stats.add_metric("report.phabricator")
+        # Publish comment summarizing detected, unresolved and closed issues
+        self.publish_summary(
+            revision,
+            issues,
+            patches,
+            task_failures,
+            notices,
+            former_diff_id=former_diff_id,
+            unresolved_count=len(unresolved_issues),
+            closed_count=len(closed_issues),
+        )
+
+        # Publish statistics
+        stats.add_metric("report.phabricator.issues", len(issues))
+        stats.add_metric("report.phabricator")
 
         return issues, patches
 
