@@ -196,13 +196,14 @@ class PhabricatorReporter(Reporter):
         else:
             new_issues, unresolved_issues, closed_issues = issues, [], []
 
-        if not new_issues and not closed_issues:
+        detected_issues = [*new_issues, *unresolved_issues]
+
+        if not new_issues and not closed_issues and not task_failures and not notices:
             # Nothing changed, no issue have been opened or closed
             logger.warning(
                 f"No new issues, skipping the comment publication ({len(unresolved_issues)} issues are unresolved)"
             )
-
-        elif new_issues or task_failures or notices:
+        elif detected_issues or task_failures or notices:
             if new_issues:
                 # Publish new patch's issues on Harbormaster, all at once, as lint issues
                 self.publish_harbormaster(revision, new_issues)
@@ -210,7 +211,7 @@ class PhabricatorReporter(Reporter):
             # Publish comment summarizing new, unresolved and closed issues
             self.publish_summary(
                 revision,
-                [*new_issues, *unresolved_issues],
+                detected_issues,
                 patches,
                 task_failures,
                 notices,
