@@ -3,6 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from collections import defaultdict
 from typing import List
 from urllib.parse import urljoin
 
@@ -129,7 +130,11 @@ class PhabricatorReporter(Reporter):
             )
             previous_issues = []
 
-        previous_issues = {issue["hash"]: issue for issue in previous_issues}
+        # Multiple issues may share a similar hash in case they were
+        # produced by the same linter on the same lines
+        indexed_issues = defaultdict(list)
+        for issue in previous_issues:
+            indexed_issues[issue["hash"]].append(issue)
 
         # Compare current issues with the previous ones
         new, unresolved = [], []
@@ -138,14 +143,16 @@ class PhabricatorReporter(Reporter):
                 # An error occurred storing the issue on the backend, no comparison is possible
                 new.append(issue)
                 continue
-            issue_hash = issue.on_backend["hash"]
-            if issue_hash in previous_issues:
+            if issue.on_backend["hash"] in previous_issues:
                 unresolved.append(issue)
-                del previous_issues[issue_hash]
             else:
                 new.append(issue)
 
-        closed = list(previous_issues.values())
+        # All previous issues that are not unresolved are closed
+        unresolved_hashes = set(issue["hash"] for issue in unresolved)
+        closed = [
+            issue for issue in previous_issues if issue["hash"] not in unresolved_hashes
+        ]
 
         return new, unresolved, closed
 
