@@ -85,7 +85,6 @@ class Issue(abc.ABC):
         self.path = path
         self.line = positive_int("line", line)
         self.nb_lines = positive_int("nb_lines", nb_lines)
-        self.check = check
 
         # Support line 0, with a Sentry warning
         if self.line == 0:
