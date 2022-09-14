@@ -11,7 +11,7 @@
     "chartist": "^0.11.4",
     "lodash": "^4.17.21",
     "vue": "^2.7.8",
-    "vue-chartist": "^2.3.1",
+    "vue-chartist": "^3.0.0",
     "vue-router": "^3.6.5",
     "vue-template-compiler": "^2.7.8",
     "vuex": "^3.6.2"
