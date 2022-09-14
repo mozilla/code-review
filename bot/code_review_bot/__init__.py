@@ -146,7 +146,10 @@ class Issue(abc.ABC):
 
     def build_hash(self):
         """
-        Build a uniquely identifying hash for that issue
+        Build a unique hash identifying that issue
+        The text concerned by the issue is used and not its position in the file
+        Message content is hashed as a single linter may return multiple issues on a single line
+        We make the assumption that the message does not contain the line number
         """
         assert self.revision is not None, "Missing revision"
 
@@ -190,6 +193,7 @@ class Issue(abc.ABC):
                 self.check,
                 extras,
                 raw_content,
+                self.message,
             ]
         ).encode("utf-8")
 

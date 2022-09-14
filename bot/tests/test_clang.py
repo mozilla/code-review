@@ -107,7 +107,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task):
         "in_patch": False,
         "validates": True,
         "publishable": False,
-        "hash": "f434c3f44cd5da419d9119f504086513",
+        "hash": "3d0ec413fc04343cad6375a1219f6a4d",
         "fix": None,
     }
 

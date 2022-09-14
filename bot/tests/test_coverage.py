@@ -50,7 +50,7 @@ def test_coverage(
         "column": None,
         "level": "warning",
         "nb_lines": 1,
-        "hash": "35268931247f488cf2a71d0b06285e76",
+        "hash": "97b2670ecd16d421a4bfd12e4ebb069d",
         "fix": None,
     }
     assert issue.as_phabricator_lint() == {
@@ -99,7 +99,7 @@ This file is uncovered
         "column": None,
         "level": "warning",
         "nb_lines": 1,
-        "hash": "a864bee7b5876989534b28cf245e2ee0",
+        "hash": "5a5da5339c0cab729ca09154c5193324",
         "fix": None,
     }
     assert issue.as_phabricator_lint() == {
@@ -145,7 +145,7 @@ This file is uncovered
         "column": None,
         "level": "warning",
         "nb_lines": 1,
-        "hash": "8d06f3f7063ff4ba9f42b9fe2a808dbd",
+        "hash": "b8b3d343fad944c840cd10d5207da320",
         "fix": None,
     }
     assert issue.as_phabricator_lint() == {

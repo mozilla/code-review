@@ -58,7 +58,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
         "path": "test.py",
         "publishable": False,
         "validates": False,
-        "hash": "28e40e8a562fa8ebea98f984abd503fd",
+        "hash": "cde6dd7bc43f51fff7361f8db71b5876",
         "fix": None,
     }
 
@@ -106,7 +106,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo, mock_task):
         "path": "test.py",
         "publishable": True,
         "validates": True,
-        "hash": "f8d818d42677f3ffdc0be647453278b8",
+        "hash": "bd2978ec40c8295d51046e6b8b05ddf7",
         "fix": None,
     }
 
@@ -140,4 +140,4 @@ def test_licence_payload(mock_revision, mock_hgmo):
         == "source-test-mozlint-license issue source-test-mozlint-license@error intl/locale/rust/unic-langid-ffi/src/lib.rs full file"
     )
     assert issue.check == issue.analyzer.name == "source-test-mozlint-license"
-    assert issue.build_hash() == "0809d81e1e24ee94039c0e2733321a39"
+    assert issue.build_hash() == "7142c536e10b31925b018c37b0e6f9f8"
