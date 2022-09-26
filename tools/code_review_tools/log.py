@@ -141,6 +141,8 @@ def init_logger(
         # E.g.: 'event' become 'msg' and, at the end, all remaining values from 'event_dict'
         # are added as 'extra'
         structlog.stdlib.render_to_log_kwargs,
+        # Render the message as key=repr(value) for both msg and extra arguments
+        structlog.processors.KeyValueRenderer(key_order=["msg"]),
     ]
 
     structlog.configure(
