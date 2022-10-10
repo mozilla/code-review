@@ -8,7 +8,7 @@
   "dependencies": {
     "axios": "^0.27.2",
     "bulma": "^0.9.4",
-    "chartist": "^0.11.4",
+    "chartist": "^1.2.1",
     "lodash": "^4.17.21",
     "vue": "^2.7.8",
     "vue-chartist": "^2.3.1",
