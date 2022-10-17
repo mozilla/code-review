@@ -233,7 +233,7 @@ class CodeReview(PhabricatorActions):
             extra_content = ""
             if build.missing_base_revision:
                 extra_content = " because the parent revision ({}) does not exist on mozilla-unified. If possible, you should publish that revision".format(
-                    build.initial_base_revision
+                    build.base_revision
                 )
 
             failure = UnitResult(
