@@ -230,12 +230,18 @@ class CodeReview(PhabricatorActions):
             )
 
         elif mode == "fail:mercurial":
+            extra_content = ""
+            if build.missing_base_revision:
+                extra_content = " because the parent revision ({}) does not exist on mozilla-unified. If possible, you should publish that revision".format(
+                    build.initial_base_revision
+                )
+
             failure = UnitResult(
                 namespace="code-review",
                 name="mercurial",
                 result=UnitResultState.Fail,
-                details="WARNING: The code review bot failed to apply your patch.\n\n```{}```".format(
-                    extras["message"]
+                details="WARNING: The code review bot failed to apply your patch{}.\n\n```{}```".format(
+                    extra_content, extras["message"]
                 ),
                 format="remarkup",
                 duration=extras.get("duration", 0),
