@@ -27,6 +27,23 @@ class AppNameFilter(logging.Filter):
         return True
 
 
+class ExtraFormatter(logging.Formatter):
+    def format(self, record):
+        log = super().format(record)
+
+        extra = {
+            key: value
+            for key, value in record.__dict__.items()
+            if key
+            not in list(sentry_sdk.integrations.logging.COMMON_RECORD_ATTRS)
+            + ["asctime", "app_name"]
+        }
+        if len(extra) > 0:
+            log += " | extra=" + str(extra)
+
+        return log
+
+
 def setup_papertrail(project_name, channel, PAPERTRAIL_HOST, PAPERTRAIL_PORT):
     """
     Setup papertrail account using taskcluster secrets
@@ -36,7 +53,7 @@ def setup_papertrail(project_name, channel, PAPERTRAIL_HOST, PAPERTRAIL_PORT):
     papertrail = logging.handlers.SysLogHandler(
         address=(PAPERTRAIL_HOST, int(PAPERTRAIL_PORT)),
     )
-    formatter = logging.Formatter(
+    formatter = ExtraFormatter(
         "%(app_name)s: %(asctime)s %(filename)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -141,8 +158,6 @@ def init_logger(
         # E.g.: 'event' become 'msg' and, at the end, all remaining values from 'event_dict'
         # are added as 'extra'
         structlog.stdlib.render_to_log_kwargs,
-        # Render the message as key=repr(value) for both msg and extra arguments
-        structlog.processors.KeyValueRenderer(key_order=["msg"]),
     ]
 
     structlog.configure(
