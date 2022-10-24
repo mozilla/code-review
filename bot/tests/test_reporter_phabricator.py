@@ -7,6 +7,7 @@ import os
 import unittest
 
 import pytest
+import responses
 from structlog.testing import capture_logs
 
 from code_review_bot import Level
@@ -197,6 +198,27 @@ You can run this analysis locally with:
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+"""
+
+FOLLOW_UP_DIFF_MESSAGE = """
+Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+ - 1 defect found by clang-format
+ - 1 defect found by code coverage analysis
+1 issue unresolved and 1 issue closed compared to the previous diff [41](https://phabricator.services.mozilla.com/differential/diff/41/).
+WARNING: Found 2 issues (warning level) that can be dismissed.
+
+You can run this analysis locally with:
+ - `./mach clang-format -p dom/test.cpp`
+
+In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
+Should they have tests, or are they dead code?
+
+ - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
+ - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
+
+---
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Firefox+Build+System&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).\n
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
@@ -1071,6 +1093,148 @@ def test_phabricator_newer_diff(mock_phabricator, phab, mock_try_task, mock_task
 
     # Check the comment hasn't been posted
     assert phab.comments[51] == []
+
+    # Clear the environment
+    del os.environ["SPECIAL_NAME"]
+
+
+def test_phabricator_former_diff_comparison(
+    monkeypatch, mock_phabricator, phab, mock_try_task, mock_task
+):
+    """
+    Test Phabricator reporter publication shows the number of unresolved
+    and closed issues compared to the previous diff.
+    In this test, 2 issues are detected. 1 is new, 1 is unresolved and 2
+    issues from the previous diff have been closed.
+    """
+
+    with mock_phabricator as api:
+        revision = Revision.from_try(mock_try_task, api)
+        revision.mercurial_revision = "deadbeef1234"
+        revision.repository = "https://hg.mozilla.org/try"
+        revision.repository_try_name = "try"
+        revision.lines = {
+            # Add dummy lines diff
+            "test.txt": [0],
+            "path/to/test.cpp": [0],
+            "dom/test.cpp": [42],
+        }
+        reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
+
+    issues = [
+        CoverageIssue(
+            mock_task(ZeroCoverageTask, "coverage"),
+            "path/to/test.cpp",
+            0,
+            "This file is uncovered",
+            revision,
+        ),
+        ClangFormatIssue(
+            mock_task(ClangFormatTask, "source-test-clang-format"),
+            "dom/test.cpp",
+            [(42, 42, b"That line is wrong. Good luck debugging")],
+            revision,
+        ),
+    ]
+    assert all(issue.is_publishable() for issue in issues)
+    for i, issue in enumerate(issues, start=1):
+        issue.on_backend = {
+            "hash": f"hash0{i}",
+            "publishable": True,
+        }
+
+    # Mock a paginated backend response
+    backend = "code-review-backend.test"
+    responses.add(
+        responses.GET,
+        f"http://{backend}/v1/diff/41/issues/",
+        json={
+            "count": 2,
+            "previous": None,
+            "next": f"http://{backend}/v1/diff/41/issues/?page=2",
+            "results": [
+                {
+                    "id": "issue 1",
+                    "hash": "hash02",
+                }
+            ],
+        },
+    )
+    responses.add(
+        responses.GET,
+        f"http://{backend}/v1/diff/41/issues/?page=2",
+        json={
+            "count": 2,
+            "previous": f"http://{backend}/v1/diff/41/issues/",
+            "next": None,
+            "results": [
+                {
+                    "id": "issue 2",
+                    "hash": "hash03",
+                }
+            ],
+        },
+    )
+
+    reporter.api.search_diffs = lambda revision_phid: [
+        {"id": 39},
+        {"id": 41},
+        {"id": 42},
+    ]
+
+    os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
+
+    with capture_logs() as cap_logs:
+        issues, patches = reporter.publish(issues, revision, [], [])
+
+    assert cap_logs == [
+        # Log from PhabricatorReporter.publish_harbormaster(), it was still called
+        {
+            "event": "Updated Harbormaster build state with issues",
+            "log_level": "info",
+            "nb_lint": 2,
+            "nb_unit": 0,
+        },
+        {
+            "event": "Published phabricator summary",
+            "log_level": "info",
+        },
+    ]
+
+    # Check the lint results
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "receiver": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "code": "no-coverage",
+                    "description": "WARNING: This file is uncovered",
+                    "line": 1,
+                    "name": "code coverage analysis",
+                    "path": "path/to/test.cpp",
+                    "severity": "warning",
+                },
+                {
+                    "code": "invalid-styling",
+                    "description": (
+                        "WARNING: The change does not follow the C/C++ "
+                        "coding style, please reformat\n\n"
+                        "  lang=c++\n"
+                        "  That line is wrong. Good luck debugging"
+                    ),
+                    "line": 42,
+                    "name": "clang-format",
+                    "path": "dom/test.cpp",
+                    "severity": "warning",
+                },
+            ],
+            "type": "work",
+            "unit": [],
+        }
+    ]
+
+    # Check the comment hasn't been posted
+    assert phab.comments[51] == [FOLLOW_UP_DIFF_MESSAGE]
 
     # Clear the environment
     del os.environ["SPECIAL_NAME"]
