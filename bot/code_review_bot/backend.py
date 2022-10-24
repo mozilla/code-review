@@ -121,28 +121,6 @@ class BackendAPI(object):
 
         return published
 
-    def list_diff_issues(self, diff_id):
-        """
-        List issues for a given diff
-        """
-        return list(self.paginate(f"/v1/diff/{diff_id}/issues/"))
-
-    def paginate(self, url_path):
-        """
-        Yield results from a paginated API one by one
-        """
-        auth = (self.username, self.password)
-        next_url = urllib.parse.urljoin(self.url, url_path)
-
-        # Iterate until there is no page left or a status error happen
-        while next_url:
-            resp = requests.get(next_url, auth=auth)
-            resp.raise_for_status()
-            data = resp.json()
-            for result in data.get("results", []):
-                yield result
-            next_url = data.get("next")
-
     def create(self, url_path, data):
         """
         Make an authenticated POST request on the backend
