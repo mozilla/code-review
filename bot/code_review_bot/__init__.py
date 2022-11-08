@@ -68,6 +68,7 @@ class Issue(abc.ABC):
         column: int = None,
         message: str = None,
         level: Level = Level.Warning,
+        force_publish: bool = False,
         fix: str = None,
         language: str = None,
     ):
@@ -94,6 +95,7 @@ class Issue(abc.ABC):
         # Optional common fields
         self.column = column
         self.message = message
+        self.force_publish = force_publish
         self.level = level
 
         # Reserved payload for backend
@@ -132,6 +134,11 @@ class Issue(abc.ABC):
         # Always check specific rules validate
         if not self.validates():
             return False
+
+        # Some checks are not Errors but they should still be published,
+        # see clang-tidy `include-cleaner`
+        if self.force_publish:
+            return True
 
         # An error is always published
         if self.level == Level.Error:

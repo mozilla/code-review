@@ -66,6 +66,7 @@ class ClangTidyIssue(Issue):
         reliability=Reliability.Unknown,
         reason=None,
         publish=True,
+        force_publish=False,
     ):
         assert isinstance(reliability, Reliability)
 
@@ -84,6 +85,7 @@ class ClangTidyIssue(Issue):
         self.reliability = reliability
         self.publishable_check = publish
         self.reason = reason
+        self.force_publish = force_publish
 
     def is_build_error(self):
         return True if self.level == Level.Error else False
@@ -202,6 +204,7 @@ class ClangTidyTask(AnalysisTask):
                 else Reliability.Unknown,
                 reason=warning.get("reason"),
                 publish=warning.get("publish"),
+                force_publish=warning.get("publish_mandatory"),
             )
             for artifact in artifacts.values()
             for path, items in artifact["files"].items()

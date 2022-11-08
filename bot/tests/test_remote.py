@@ -532,6 +532,7 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend
                                         "reliability": "high",
                                         "message": "some hard issue with c++",
                                         "filename": "test.cpp",
+                                        "publish_mandatory": True,
                                     },
                                     {
                                         "column": 51,
@@ -561,6 +562,7 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend
     assert issue.reliability == Reliability.High
     assert issue.message == "some hard issue with c++"
     assert not issue.is_build_error()
+    assert issue.force_publish
 
     issue = issues[1]
     assert isinstance(issue, ClangTidyIssue)
