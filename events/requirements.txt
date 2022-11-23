@@ -4,7 +4,7 @@ aioredis==2.0.1
 json-e==4.4.3
 jsonschema==4.17.0
 libmozdata==0.1.83
-libmozevent==1.1.18
+libmozevent==1.1.20
 python-hglib==2.6.2
 pytoml==0.1.21
 pyyaml==6.0
