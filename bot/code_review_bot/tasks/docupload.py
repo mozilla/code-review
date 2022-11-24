@@ -25,15 +25,21 @@ They can be previewed [here]({doc_url}) for one week.
 """
 
 
-def precise_doc_url(path, doc_url, trees):
+def direct_doc_url(path, doc_url, trees):
     root_doc_url = os.path.dirname(doc_url)
     filename, _ = os.path.splitext(os.path.basename(path))
     dir = os.path.dirname(path)
     for doc_path, dir_path in trees.items():
-        if dir == dir_path:
+        if dir.startswith(dir_path):
+            truncated_dir = dir.replace(dir_path, "", 1)
             # Forging the link towards the documentation
-            return f"{root_doc_url}/{doc_path}/{filename}.html"
-    # We didn't find a mapping for the file in the trees artifact
+            return f"{root_doc_url}/{doc_path}{truncated_dir}/{filename}.html"
+
+    # We didn't find a mapping for the file in the trees artifact, this should never happen
+    logger.warn(
+        "Found no match in the trees.json mapping to build a direct documentation link",
+        file=path,
+    )
     return doc_url
 
 
@@ -73,9 +79,7 @@ class DocUploadTask(NoticeTask):
         pronoun = "They" if nb_docs > 1 else "It"
         doc_urls = "".join(
             [
-                DOC_LINK.format(
-                    path=file, doc_url=precise_doc_url(file, doc_url, trees)
-                )
+                DOC_LINK.format(path=file, doc_url=direct_doc_url(file, doc_url, trees))
                 for file in doc_files
             ]
         )
