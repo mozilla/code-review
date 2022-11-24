@@ -296,12 +296,56 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
         return revision
 
 
+class Response(object):
+    "A simple response encoded as JSON"
+
+    def __init__(self, body=None, code=200):
+        self.body = body
+        self.code = code
+
+    def raise_for_status(self):
+        if self.code >= 300:
+            raise Exception(f"Request failed with code {self.code}")
+        else:
+            return json.dumps(self.body)
+
+    @property
+    def content(self):
+        return self.body.encode()
+
+    def json(self):
+        return self.body
+
+
+class SessionMock(object):
+    """
+    Basic mock of a request session, that returns a JSON body
+    """
+
+    # A dict mapping a method and an url to the associated response
+    _callable = {}
+
+    def add(self, method, url, response):
+        self._callable[(method, url)] = response
+
+    def get(self, url, *args, **kwargs):
+        resp_value = self._callable.get(("get", url))
+        if resp_value:
+            return Response(resp_value)
+        else:
+            return Response(None, code=404)
+        if ("get", url) in self._callable:
+            return Response(self._callable[("get", url)])
+
+
 class MockQueue(object):
     """
     Mock the Taskcluster queue, by using fake tasks descriptions, relations and artifacts
     """
 
-    _artifacts = {}
+    def __init__(self):
+        self._artifacts = {}
+        self.session = SessionMock()
 
     def configure(self, relations):
         # Create tasks
@@ -349,6 +393,11 @@ class MockQueue(object):
             }
             for task_id, desc in relations.items()
         }
+        # Mock responses for each artifact
+        for task_name, task in self._artifacts.items():
+            for artifact in task["artifacts"]:
+                url = f"http://tc.test/{task_name}/0/artifacts/{artifact['name']}"
+                self.session.add("get", url, artifact["content"])
 
     def task(self, task_id):
         return self._tasks[task_id]
@@ -370,17 +419,9 @@ class MockQueue(object):
     def listLatestArtifacts(self, task_id):
         return self._artifacts.get(task_id, {})
 
-    def getArtifact(self, task_id, run_id, artifact_name):
-        artifacts = self._artifacts.get(task_id, {})
-        if not artifacts:
-            return
-
-        artifact = next(
-            filter(lambda a: a["name"] == artifact_name, artifacts["artifacts"])
-        )
-        if artifact["contentType"] == "application/json":
-            return artifact["content"]
-        return {"response": MockArtifactResponse(artifact["content"].encode("utf-8"))}
+    def buildUrl(self, route_name, task, run, name):
+        assert route_name == "getArtifact"
+        return f"http://tc.test/{task}/{run}/artifacts/{name}"
 
     def createArtifact(self, task_id, run_id, name, payload):
         if task_id not in self._artifacts:

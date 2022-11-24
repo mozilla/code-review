@@ -7,6 +7,7 @@ from abc import ABC
 from abc import abstractmethod
 
 import structlog
+import yaml
 
 logger = structlog.get_logger(__name__)
 
@@ -89,18 +90,14 @@ class BaseTask:
         out = {}
         for artifact_name in self.artifacts:
             logger.info("Load artifact", task_id=self.id, artifact=artifact_name)
-            try:
-                artifact = queue_service.getArtifact(
-                    self.id, self.run_id, artifact_name
-                )
+            url = queue_service.buildUrl(
+                "getArtifact", self.id, self.run_id, artifact_name
+            )
+            # Allows HTTP_30x redirections retrieving the artifact
+            response = queue_service.session.get(url, stream=True, allow_redirects=True)
 
-                if "response" in artifact:
-                    # When the response's content is empty, set content to None
-                    content = artifact["response"].content or None
-                else:
-                    # Json responses are automatically parsed into Python structures
-                    content = artifact
-                out[artifact_name] = content
+            try:
+                response.raise_for_status()
             except Exception as e:
                 logger.warn(
                     "Failed to read artifact",
@@ -110,6 +107,16 @@ class BaseTask:
                     error=e,
                 )
                 continue
+
+            # Load artifact's data, either as JSON or YAML
+            if artifact_name.endswith(".json"):
+                content = response.json()
+            elif artifact_name.endswith(".yml") or artifact_name.endswith(".yaml"):
+                content = yaml.load_stream(response.text)
+            else:
+                # Json responses are automatically parsed into Python structures
+                content = response.content or None
+            out[artifact_name] = content
 
         return out
 
