@@ -7,7 +7,7 @@ from code_review_bot.tasks.base import NoticeTask
 
 logger = structlog.get_logger(__name__)
 
-MAX_LINKS = 20
+MAX_LINKS = 21
 
 DOC_LINK = """
 - file [{path}]({doc_url})
@@ -25,17 +25,24 @@ They can be previewed [here]({doc_url}) for one week.
 """
 
 
-def direct_doc_url(path, doc_url, trees):
-    root_doc_url = os.path.dirname(doc_url)
+def direct_doc_url(path, docs_url, trees):
+    base_docs_url = os.path.dirname(docs_url)
+
     filename, _ = os.path.splitext(os.path.basename(path))
-    dir = os.path.dirname(path)
-    for doc_path, dir_path in trees.items():
-        if dir.startswith(dir_path):
-            truncated_dir = dir.replace(dir_path, "", 1)
+    dirname = os.path.dirname(path)
+
+    for docs_match_in_trees, dirname_in_trees in trees.items():
+        if dirname.startswith(dirname_in_trees):
+            truncated_dirname = dirname.replace(dirname_in_trees, "", 1)
             # Forging the link towards the documentation
             return "/".join(
                 part.strip("/")
-                for part in [root_doc_url, doc_path, truncated_dir, f"{filename}.html"]
+                for part in [
+                    base_docs_url,
+                    docs_match_in_trees,
+                    truncated_dirname,
+                    f"{filename}.html",
+                ]
                 if part
             )
 
@@ -44,7 +51,7 @@ def direct_doc_url(path, doc_url, trees):
         "Found no match in the trees.json mapping to build a direct documentation link",
         file=path,
     )
-    return doc_url
+    return docs_url
 
 
 class DocUploadTask(NoticeTask):
@@ -78,7 +85,7 @@ class DocUploadTask(NoticeTask):
         nb_docs_hint = (
             f"{nb_docs} documentation files were"
             if nb_docs > 1
-            else f"{nb_docs} documentation file was"
+            else "A documentation file was"
         )
         pronoun = "They" if nb_docs > 1 else "It"
         doc_urls = "".join(

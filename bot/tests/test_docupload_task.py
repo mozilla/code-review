@@ -19,7 +19,7 @@ They can be previewed [here](http://firefox-test-docs.mozilla.org/index.html) fo
 """
 
 ONE_DIRECT_LINK = """
-NOTE: 1 documentation file was modified in diff 42
+NOTE: A documentation file was modified in diff 42
 
 It can be previewed for one week:
 - file [docs/folderA/index.rst](http://firefox-test-docs.mozilla.org/section1/index.html)
