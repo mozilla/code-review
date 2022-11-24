@@ -15,7 +15,7 @@ DOC_LINK = """
 COMMENT_LINKS_TO_DOC = """
 NOTE: {nb_docs_hint} modified in diff {diff_id}
 
-{pronoun} can be previewed for one week: {doc_urls}
+{pronoun} can be previewed for one week:{doc_urls}
 """
 
 COMMENT_LINK_TO_DOC = """
@@ -33,7 +33,11 @@ def direct_doc_url(path, doc_url, trees):
         if dir.startswith(dir_path):
             truncated_dir = dir.replace(dir_path, "", 1)
             # Forging the link towards the documentation
-            return f"{root_doc_url}/{doc_path}{truncated_dir}/{filename}.html"
+            return "/".join(
+                part.strip("/")
+                for part in [root_doc_url, doc_path, truncated_dir, f"{filename}.html"]
+                if part
+            )
 
     # We didn't find a mapping for the file in the trees artifact, this should never happen
     logger.warn(
