@@ -157,10 +157,10 @@ if __name__ == "__main__":
         payload = json.load(args.issues_file)
         validate(payload)
     except json.decoder.JSONDecodeError as e:
-        logger.error("Invalid JSON payload: {}".format(e))
+        logger.error("Invalid JSON payload: {}".format(e), exc_info=True)
         sys.exit(1)
     except Exception as e:
-        logger.error("Invalid issues format: {}".format(e))
+        logger.error("Invalid issues format: {}".format(e), exc_info=True)
         sys.exit(1)
 
     logger.info("Your file is valid !")

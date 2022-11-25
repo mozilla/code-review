@@ -71,7 +71,7 @@ class Command(BaseCommand):
                 issues = self.save_issues(diff, report["issues"])
                 logger.info(f"Imported task {task_id} - {len(issues)}")
             except Exception as e:
-                logger.error(f"Failed to save issues for {task_id}: {e}")
+                logger.error(f"Failed to save issues for {task_id}: {e}", exc_info=True)
 
     @transaction.atomic
     def save_issues(self, diff, issues):

@@ -176,7 +176,9 @@ def main():
             w.run(revision)
     except Exception as e:
         # Log errors to papertrail
-        logger.error("Static analysis failure", revision=revision, error=e)
+        logger.error(
+            "Static analysis failure", revision=revision, error=e, exc_info=True
+        )
 
         # Index analysis state
         extras = {}
@@ -207,7 +209,7 @@ def main():
                     LANDO_FAILURE_MESSAGE, revision.id, revision.diff["id"]
                 )
             except Exception as ex:
-                logger.error(str(ex))
+                logger.error(str(ex), exc_info=True)
 
         # Then raise to mark task as erroneous
         raise
