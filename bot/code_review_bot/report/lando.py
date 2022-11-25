@@ -67,4 +67,4 @@ class LandoReporter(Reporter):
                     revision.diff["id"],
                 )
         except Exception as ex:
-            logger.error(str(ex))
+            logger.error(str(ex), exc_info=True)

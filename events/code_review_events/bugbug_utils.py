@@ -168,7 +168,9 @@ class BugbugUtils:
                 ("project-bugbug", "bugbug-classify-patch", task_id),
             )
         except Exception as e:
-            logger.error("Failed to trigger risk analysis task", error=str(e))
+            logger.error(
+                "Failed to trigger risk analysis task", error=str(e), exc_info=True
+            )
 
     def should_run_test_selection(self, build):
         """
@@ -211,7 +213,9 @@ class BugbugUtils:
                 ("project-bugbug", "bugbug-test-select", task_id),
             )
         except Exception as e:
-            logger.error("Failed to trigger test selection task", error=str(e))
+            logger.error(
+                "Failed to trigger test selection task", error=str(e), exc_info=True
+            )
 
     async def get_test_selection_results(self, task_id):
         # Get the Phabricator diff ID from bugbug task definition.
@@ -298,6 +302,7 @@ class BugbugUtils:
                 "Failure getting test selection results from bugbug task",
                 task=bugbug_task_id,
                 error=e,
+                exc_info=True,
             )
             return
 
@@ -330,6 +335,7 @@ class BugbugUtils:
                 revision=push["revision"],
                 diff=diff_id,
                 error=e,
+                exc_info=True,
             )
             return
 
@@ -396,7 +402,7 @@ class BugbugUtils:
                 )
 
             else:
-                logger.error("Unexpected state", state=state)
+                logger.error("Unexpected state", state=state, exc_info=True)
                 return
 
             await self.bus.send(
@@ -409,5 +415,8 @@ class BugbugUtils:
             )
         except Exception as e:
             logger.error(
-                "Exception when parsing task ending payload", error=e, payload=payload
+                "Exception when parsing task ending payload",
+                error=e,
+                payload=payload,
+                exc_info=True,
             )

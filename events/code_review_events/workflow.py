@@ -174,7 +174,7 @@ class CodeReview(PhabricatorActions):
                         LANDO_WARNING_MESSAGE, build.revision["id"], build.diff_id
                     )
                 except Exception as ex:
-                    logger.error(str(ex))
+                    logger.error(str(ex), exc_info=True)
 
         elif build.state == PhabricatorBuildState.Queued:
             # Requeue when nothing changed for now
@@ -223,7 +223,7 @@ class CodeReview(PhabricatorActions):
                             LANDO_FAILURE_MESSAGE, build.revision["id"], build.diff_id
                         )
                     except Exception as ex:
-                        logger.error(str(ex))
+                        logger.error(str(ex), exc_info=True)
 
             self.api.update_build_target(
                 build.target_phid, BuildState.Fail, unit=[failure]
@@ -258,7 +258,7 @@ class CodeReview(PhabricatorActions):
                         LANDO_FAILURE_HG_MESSAGE, build.revision["id"], build.diff_id
                     )
                 except Exception as ex:
-                    logger.error(str(ex))
+                    logger.error(str(ex), exc_info=True)
             self.api.update_build_target(
                 build.target_phid, BuildState.Fail, unit=[failure]
             )
