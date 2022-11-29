@@ -18,7 +18,6 @@ from libmozdata.phabricator import UnitResultState
 from code_review_bot import AnalysisException
 from code_review_bot import stats
 from code_review_bot import taskcluster
-from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision
@@ -135,11 +134,15 @@ def main():
     # Load unique revision
     try:
         if settings.autoland_group_id:
-            revision = Revision.from_autoland(
+            revision = Revision.from_decision_task(
                 queue_service.task(settings.autoland_group_id), phabricator_api
             )
+        elif settings.mozilla_central_group_id:
+            revision = Revision.from_decision_task(
+                queue_service.task(settings.mozilla_central_group_id), phabricator_api
+            )
         else:
-            revision = Revision.from_try(
+            revision = Revision.from_try_task(
                 queue_service.task(settings.try_task_id), phabricator_api
             )
     except Exception as e:
@@ -170,8 +173,10 @@ def main():
         task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
     )
     try:
-        if revision.repository == REPO_AUTOLAND:
-            w.ingest_autoland(revision)
+        if settings.autoland_group_id:
+            w.ingest_revision(revision, settings.autoland_group_id)
+        elif settings.mozilla_central_group_id:
+            w.ingest_revision(revision, settings.mozilla_central_group_id)
         else:
             w.run(revision)
     except Exception as e:

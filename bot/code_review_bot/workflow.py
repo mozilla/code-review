@@ -15,6 +15,7 @@ from code_review_bot import Level
 from code_review_bot import stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND
+from code_review_bot.config import REPO_MOZILLA_CENTRAL
 from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
@@ -104,13 +105,16 @@ class Workflow(object):
 
         return issues
 
-    def ingest_autoland(self, revision):
+    def ingest_revision(self, revision, group_id):
         """
-        Simpler workflow to ingest autoland revision
+        Simpler workflow to ingest a revision
         """
-        assert revision.repository == REPO_AUTOLAND, "Need an autoland revision"
+        assert revision.repository in (
+            REPO_AUTOLAND,
+            REPO_MOZILLA_CENTRAL,
+        ), "Need a revision from autoland or mozilla-central"
         logger.info(
-            "Starting autoland ingestion",
+            "Starting revision ingestion",
             revision=revision.id,
             bugzilla=revision.bugzilla_id,
             title=revision.title,
@@ -119,7 +123,7 @@ class Workflow(object):
 
         assert (
             self.backend_api.enabled
-        ), "Backend storage is disabled, no autoland ingestion possible"
+        ), "Backend storage is disabled, revision ingestion is not possible"
 
         supported_tasks = []
 
@@ -129,13 +133,11 @@ class Workflow(object):
                 if task is not None:
                     supported_tasks.append(task)
 
-        # Find potential issues in the autoland task group
-        self.queue_service.listTaskGroup(
-            settings.autoland_group_id, paginationHandler=_build_tasks
-        )
+        # Find potential issues in the task group
+        self.queue_service.listTaskGroup(group_id, paginationHandler=_build_tasks)
         logger.info(
-            "Loaded all supported tasks in autoland group",
-            group_id=settings.autoland_group_id,
+            "Loaded all supported tasks in the task group",
+            group_id=group_id,
             nb=len(supported_tasks),
         )
 
@@ -159,7 +161,7 @@ class Workflow(object):
         if issues:
             self.backend_api.publish_issues(issues, revision)
         else:
-            logger.info("No issues for that autoland revision")
+            logger.info("No issues for that revision")
 
     def publish(self, revision, issues, task_failures, notices):
         """
