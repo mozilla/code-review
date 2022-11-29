@@ -10,5 +10,5 @@ structlog==22.2.0
 taskcluster==44.23.4
 treeherder-client==5.0.0
 # Please see #1416, this eventually must be removed!
-urllib3==1.26.12
+urllib3==1.26.13
 yarl==1.8.1
