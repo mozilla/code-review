@@ -130,8 +130,12 @@ class Workflow(object):
         def _build_tasks(tasks):
             for task_status in tasks["tasks"]:
                 task = self.build_task(task_status)
-                if task is not None:
-                    supported_tasks.append(task)
+                if task is None:
+                    continue
+                if getattr(task, "parse_issues", None) is None:
+                    # Do ignore tasks that cannot be parsed as issues
+                    continue
+                supported_tasks.append(task)
 
         # Find potential issues in the task group
         self.queue_service.listTaskGroup(group_id, paginationHandler=_build_tasks)
