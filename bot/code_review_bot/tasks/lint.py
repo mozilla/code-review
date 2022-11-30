@@ -106,10 +106,6 @@ class MozLintTask(AnalysisTask):
 
     artifacts = ["public/code-review/mozlint.json"]
 
-    # Only process failed states, as a completed task means that no issues were found
-    valid_states = ("failed",)
-    skipped_states = ("completed",)
-
     @property
     def linter(self):
         # Detect linter from task name
