@@ -325,6 +325,9 @@ class SessionMock(object):
     # A dict mapping a method and an url to the associated response
     _callable = {}
 
+    def reset(self):
+        self._callable = {}
+
     def add(self, method, url, response):
         self._callable[(method, url)] = response
 
@@ -348,6 +351,9 @@ class MockQueue(object):
         self.session = SessionMock()
 
     def configure(self, relations):
+        # Reset the session mock
+        self.session.reset()
+
         # Create tasks
         assert isinstance(relations, dict)
         self._tasks = {
