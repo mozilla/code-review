@@ -4,10 +4,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
-from datetime import datetime
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 from code_review_backend.issues.models import Issue
 
@@ -28,7 +28,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        clean_until = datetime.today() - timedelta(days=options["nb_days"])
+        clean_until = timezone.now() - timedelta(days=options["nb_days"])
         to_delete = Issue.objects.filter(
             diff__repository__slug__in=["autoland", "mozilla-central"],
             created__lte=clean_until,
