@@ -27,6 +27,7 @@ from code_review_events import QUEUE_MONITORING_COMMUNITY
 from code_review_events import QUEUE_PHABRICATOR_RESULTS
 from code_review_events import QUEUE_PULSE_AUTOLAND
 from code_review_events import QUEUE_PULSE_BUGBUG_TEST_SELECT
+from code_review_events import QUEUE_PULSE_MOZILLA_CENTRAL
 from code_review_events import QUEUE_PULSE_TRY_TASK_END
 from code_review_events import QUEUE_WEB_BUILDS
 from code_review_events import community_taskcluster_config
@@ -308,25 +309,30 @@ class CodeReview(PhabricatorActions):
         else:
             logger.warning("Unsupported publication", mode=mode, build=build)
 
-    async def trigger_autoland(self, payload: dict):
-        """
-        Trigger a code review autoland ingestion task
-        If the task is an autoland decision task
-        """
+    async def trigger_repository(self, payload: dict):
+        """Trigger a code review from the ingestion task of a repository (all tasks are resolved)"""
         assert (
             payload["routing"]["exchange"] == PULSE_TASK_GROUP_RESOLVED
-        ), "Not an autoland message"
+        ), "Message was not published to task-group-resolved"
 
         try:
-
-            # Load first task in task group, check if it's an autoland
+            # Load first task in task group, check if it's on autoland or mozilla-central
             queue = taskcluster_config.get_service("queue")
             task_group_id = payload["body"]["taskGroupId"]
-            logger.debug("Checking autoland task", task_group_id=task_group_id)
+            logger.debug(
+                "Checking repository for the task group", task_group_id=task_group_id
+            )
             task = queue.task(task_group_id)
-            repo = task["payload"]["env"].get("GECKO_HEAD_REPOSITORY")
-            if repo != "https://hg.mozilla.org/integration/autoland":
-                logger.debug("Not an autoland task", task=task_group_id)
+            repo_url = task["payload"]["env"].get("GECKO_HEAD_REPOSITORY")
+
+            if repo_url == "https://hg.mozilla.org/integration/autoland":
+                group_key = "AUTOLAND_TASK_GROUP_ID"
+            elif repo_url == "https://hg.mozilla.org/mozilla-central":
+                group_key = "MOZILLA_CENTRAL_TASK_GROUP_ID"
+            else:
+                logger.debug(
+                    f"Repository {repo_url} is not supported", task=task_group_id
+                )
                 return
 
             # Trigger the autoland ingestion task
@@ -335,13 +341,15 @@ class CodeReview(PhabricatorActions):
             task = hooks.triggerHook(
                 "project-relman",
                 f"code-review-{env}",
-                {"AUTOLAND_TASK_GROUP_ID": task_group_id},
+                {group_key: task_group_id},
             )
             task_id = task["status"]["taskId"]
-            logger.info("Triggered a new autoland ingestion task", id=task_id)
+            logger.info(f"Triggered a new ingestion task from {repo_url}", id=task_id)
         except Exception as e:
             logger.warn(
-                "Autoland trigger failure", key=payload["routing"]["key"], error=str(e)
+                "Repository trigger failure",
+                key=payload["routing"]["key"],
+                error=str(e),
             )
 
 
@@ -372,12 +380,18 @@ class Events(object):
             self.webserver = WebServer(QUEUE_WEB_BUILDS)
             self.webserver.register(self.bus)
 
-            # Create pulse listener
+            # Create pulse listeners
             exchanges = {}
             if taskcluster_config.secrets["autoland_enabled"]:
                 logger.info("Autoland ingestion is enabled")
                 # autoland ingestion
                 exchanges[QUEUE_PULSE_AUTOLAND] = [
+                    (PULSE_TASK_GROUP_RESOLVED, ["#.gecko-level-3.#"])
+                ]
+            if taskcluster_config.secrets["mozilla_central_enabled"]:
+                logger.info("Mozilla-central ingestion is enabled")
+                # autoland ingestion
+                exchanges[QUEUE_PULSE_MOZILLA_CENTRAL] = [
                     (PULSE_TASK_GROUP_RESOLVED, ["#.gecko-level-3.#"])
                 ]
 
@@ -422,6 +436,7 @@ class Events(object):
                 # Manually register to set queue as redis
                 self.pulse.bus = self.bus
                 self.bus.add_queue(QUEUE_PULSE_AUTOLAND, redis=True)
+                self.bus.add_queue(QUEUE_PULSE_MOZILLA_CENTRAL, redis=True)
             else:
                 self.pulse = None
 
@@ -434,6 +449,7 @@ class Events(object):
 
             # Register queues for workers
             self.bus.add_queue(QUEUE_PULSE_AUTOLAND, redis=True)
+            self.bus.add_queue(QUEUE_PULSE_MOZILLA_CENTRAL, redis=True)
             self.bus.add_queue(QUEUE_PULSE_BUGBUG_TEST_SELECT, redis=True)
             self.bus.add_queue(QUEUE_PULSE_TRY_TASK_END, redis=True)
             self.bus.add_queue(QUEUE_WEB_BUILDS, redis=True)
@@ -514,7 +530,11 @@ class Events(object):
                 # Publish results on Phabricator
                 self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS),
                 # Trigger autoland tasks
-                self.bus.run(self.workflow.trigger_autoland, QUEUE_PULSE_AUTOLAND),
+                self.bus.run(self.workflow.trigger_repository, QUEUE_PULSE_AUTOLAND),
+                # Trigger autoland tasks
+                self.bus.run(
+                    self.workflow.trigger_repository, QUEUE_PULSE_MOZILLA_CENTRAL
+                ),
                 # Send to phabricator results publication for normal processing and to bugbug for further analysis
                 self.bus.dispatch(
                     QUEUE_MERCURIAL_APPLIED,
