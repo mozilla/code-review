@@ -33,9 +33,8 @@ COMMENT_ERRORS = """
 IMPORTANT: Found {nb_errors} (error level) that must be fixed before landing.
 """
 
-COMMENT_DIFF_FOLLOWUP = (
-    "compared to the previous diff [{diff_id}]({phabricator_diff_url})."
-)
+COMMENT_DIFF_FOLLOWUP = """compared to the previous diff [{diff_id}]({phabricator_diff_url}).
+"""
 
 COMMENT_RUN_ANALYZERS = """
 You can run this analysis locally with:
@@ -50,7 +49,9 @@ Should they have tests, or are they dead code?
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 """
 
+# Use two line breaks to force '---' to be rendered as a horizontal rule in Phabricator's markdown
 BUG_REPORT = """
+
 ---
 If you see a problem in this automated review, [please report it here]({bug_report_url}).
 """
@@ -414,8 +415,8 @@ class PhabricatorReporter(Reporter):
             comment += COMMENT_COVERAGE
 
         if notices:
-            # The '---' creates a horizontal rule in Phabricator's markdown
-            comment += "\n---\n".join(notices)
+            # Use two line breaks to force '---' to be rendered as a horizontal rule in Phabricator's markdown
+            comment += "\n\n---\n".join(notices)
 
         assert comment != "", "Empty comment"
 
