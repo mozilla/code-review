@@ -33,9 +33,8 @@ COMMENT_ERRORS = """
 IMPORTANT: Found {nb_errors} (error level) that must be fixed before landing.
 """
 
-COMMENT_DIFF_FOLLOWUP = (
-    "compared to the previous diff [{diff_id}]({phabricator_diff_url})."
-)
+COMMENT_DIFF_FOLLOWUP = """compared to the previous diff [{diff_id}]({phabricator_diff_url}).
+"""
 
 COMMENT_RUN_ANALYZERS = """
 You can run this analysis locally with:
@@ -51,6 +50,7 @@ Should they have tests, or are they dead code?
 """
 
 BUG_REPORT = """
+
 ---
 If you see a problem in this automated review, [please report it here]({bug_report_url}).
 """
@@ -415,7 +415,7 @@ class PhabricatorReporter(Reporter):
 
         if notices:
             # The '---' creates a horizontal rule in Phabricator's markdown
-            comment += "\n---\n".join(notices)
+            comment += "\n\n---\n".join(notices)
 
         assert comment != "", "Empty comment"
 
