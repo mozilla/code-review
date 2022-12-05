@@ -49,6 +49,7 @@ Should they have tests, or are they dead code?
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 """
 
+# Use two line breaks to force '---' to be rendered as a horizontal rule in Phabricator's markdown
 BUG_REPORT = """
 
 ---
@@ -414,7 +415,7 @@ class PhabricatorReporter(Reporter):
             comment += COMMENT_COVERAGE
 
         if notices:
-            # The '---' creates a horizontal rule in Phabricator's markdown
+            # Use two line breaks to force '---' to be rendered as a horizontal rule in Phabricator's markdown
             comment += "\n\n---\n".join(notices)
 
         assert comment != "", "Empty comment"
