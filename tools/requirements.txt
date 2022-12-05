@@ -11,4 +11,4 @@ taskcluster==45.0.0
 treeherder-client==5.0.0
 # Please see #1416, this eventually must be removed!
 urllib3==1.26.13
-yarl==1.8.1
+yarl==1.8.2
