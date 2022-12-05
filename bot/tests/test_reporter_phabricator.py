@@ -38,6 +38,7 @@ WARNING: Found 1 issue (warning level) that can be dismissed.
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
 
+
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -52,6 +53,7 @@ IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
 
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
+
 
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
@@ -69,6 +71,7 @@ You can run this analysis locally with:
  - `./mach clang-format -p dom/test.cpp`
 
 For your convenience, [here is a patch]({results}/source-test-clang-format-PHID-DIFF-test.diff) that fixes all the clang-format defects (use it in your repository with `hg import` or `git apply -p0`).
+
 
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
@@ -88,6 +91,7 @@ IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
 
+
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -106,6 +110,7 @@ Should they have tests, or are they dead code?
  - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 
+
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -118,6 +123,7 @@ Code analysis found 1 defect in the diff [42](https://phabricator.services.mozil
 
 WARNING: Found 1 issue (warning level) that can be dismissed.
 
+
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -127,6 +133,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 VALID_TASK_FAILURES_MESSAGE = """
 The analysis task [mock-clang-tidy](https://treeherder.mozilla.org/#/jobs?repo=try&revision=aabbccddee&selectedTaskRun=ab3NrysvSZyEwsOHL2MZfw-0) failed, but we could not detect any issue.
 Please check this task manually.
+
 
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
@@ -142,6 +149,7 @@ IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
 
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
+
 
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
@@ -165,6 +173,7 @@ Should they have tests, or are they dead code?
  - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
 
+
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -173,6 +182,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 
 VALID_NOTICE_MESSAGE = """
 {notice}
+
 
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
@@ -195,6 +205,7 @@ You can run this analysis locally with:
 - **in an expanded Macro**: no
 
 
+
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
@@ -206,6 +217,7 @@ Code analysis found 2 defects in the diff [42](https://phabricator.services.mozi
  - 1 defect found by clang-format
  - 1 defect found by code coverage analysis
 1 issue unresolved and 1 issue closed compared to the previous diff [41](https://phabricator.services.mozilla.com/differential/diff/41/).
+
 WARNING: Found 2 issues (warning level) that can be dismissed.
 
 You can run this analysis locally with:
@@ -216,6 +228,7 @@ Should they have tests, or are they dead code?
 
  - You can file a bug blocking [Bug 1415824](https://bugzilla.mozilla.org/show_bug.cgi?id=1415824) for untested files that should be **tested**.
  - You can file a bug blocking [Bug 1415819](https://bugzilla.mozilla.org/show_bug.cgi?id=1415819) for untested files that should be **removed**.
+
 
 ---
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).\n
@@ -939,7 +952,7 @@ def test_phabricator_notices(mock_phabricator, phab, mock_try_task):
 
     # Check the comment has been posted
     assert phab.comments[51] == [
-        VALID_NOTICE_MESSAGE.format(notice="\n---\n".join(notices).strip())
+        VALID_NOTICE_MESSAGE.format(notice="\n\n---\n".join(notices).strip())
     ]
 
 
