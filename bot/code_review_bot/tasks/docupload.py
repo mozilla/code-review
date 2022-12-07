@@ -77,7 +77,11 @@ class DocUploadTask(NoticeTask):
         if trees is None:
             logger.warn("Missing trees.json")
 
-        doc_files = [file for file in revision.files if "docs" in file]
+        doc_files = [
+            file
+            for file in revision.files
+            if "docs" in file and file.endswith((".rst", ".md"))
+        ]
         nb_docs = len(doc_files)
         if not trees or nb_docs > MAX_LINKS:
             return COMMENT_LINK_TO_DOC.format(diff_id=revision.diff_id, doc_url=doc_url)

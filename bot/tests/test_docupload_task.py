@@ -34,7 +34,7 @@ They can be previewed for one week:
 
 - file [docs/folderB/folderC/index.rst](http://firefox-test-docs.mozilla.org/section2/index.html)
 
-- file [docs/folderB/folderC/subfolder/index.rst](http://firefox-test-docs.mozilla.org/section2/subfolder/index.html)
+- file [docs/folderB/folderC/subfolder/index.md](http://firefox-test-docs.mozilla.org/section2/subfolder/index.html)
 
 - file [docs/folderD/index.rst](http://firefox-test-docs.mozilla.org/index.html)
 
@@ -88,9 +88,10 @@ def test_build_notice_only_one_file(mock_revision, mock_doc_upload_task):
 def test_build_notice_various_files(mock_revision, mock_doc_upload_task):
     mock_revision.files = [
         "file1.txt",  # not a documentation file
+        "docs/image.svg",  # not a documentation file
         "docs/folderA/index.rst",  # complete match on "folderA"
         "docs/folderB/folderC/index.rst",  # complete match on "folderB/folderC"
-        "docs/folderB/folderC/subfolder/index.rst",  # partial match on a prefix "folderB/folderC"
+        "docs/folderB/folderC/subfolder/index.md",  # partial match on a prefix "folderB/folderC"
         "docs/folderD/index.rst",  # no match
     ]
     notice = mock_doc_upload_task.build_notice(ARTIFACTS, mock_revision)
