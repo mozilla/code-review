@@ -37,7 +37,6 @@ class IssueAdmin(admin.ModelAdmin):
         "analyzer",
         "analyzer_check",
         "created",
-        "diff_id",
     )
     search_fields = ("line", "analyzer", "path")
     ordering = ("-created",)
