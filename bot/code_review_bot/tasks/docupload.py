@@ -83,6 +83,12 @@ class DocUploadTask(NoticeTask):
             if "docs" in file and file.endswith((".rst", ".md"))
         ]
         nb_docs = len(doc_files)
+        if not nb_docs:
+            logger.info(
+                "Found no documentation file in revision, skipping comment creation"
+            )
+            return ""
+
         if not trees or nb_docs > MAX_LINKS:
             return COMMENT_LINK_TO_DOC.format(diff_id=revision.diff_id, doc_url=doc_url)
 

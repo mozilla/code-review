@@ -72,6 +72,12 @@ def test_build_notice_no_trees_artifact(mock_revision, mock_doc_upload_task):
     assert notice == MISSING_MAPPING_OR_MORE_THAN_TWENTY
 
 
+def test_build_notice_no_documentation_file(mock_revision, mock_doc_upload_task):
+    mock_revision.files = ["file1.txt", "docs/folderA/index.svg"]
+    notice = mock_doc_upload_task.build_notice(ARTIFACTS, mock_revision)
+    assert notice == ""
+
+
 def test_build_notice_more_than_twenty_files(mock_revision, mock_doc_upload_task):
     mock_revision.files = ["file1.txt"] + ["docs/folderA/index.rst"] * 30
     assert len(mock_revision.files) > MAX_LINKS
