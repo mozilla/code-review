@@ -7,11 +7,13 @@ import hashlib
 import random
 import uuid
 
+from django.conf import settings
 from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from code_review_backend.issues.models import Issue
+from code_review_backend.issues.models import IssueLink
 from code_review_backend.issues.models import Repository
 
 
@@ -47,34 +49,52 @@ class StatsAPITestCase(APITestCase):
         analyzers = ["analyzer-X", "analyzer-Y", "analyzer-Z"]
         checks = ["check-1", "check-10", "check-42", "check-1000", None]
 
-        for i in range(500):
-            Issue.objects.create(
-                diff_id=random.randint(1, 10),
-                path="path/to/file",
-                line=random.randint(1, 100),
-                nb_lines=random.randint(1, 100),
-                char=None,
-                level="warning",
-                message=None,
-                analyzer=analyzers[i % len(analyzers)],
-                analyzer_check=checks[i % len(checks)],
-                hash=uuid.uuid4().hex,
-            )
+        issues = Issue.objects.bulk_create(
+            [
+                Issue(
+                    path="path/to/file",
+                    line=random.randint(1, 100),
+                    nb_lines=random.randint(1, 100),
+                    char=None,
+                    level="warning",
+                    message=None,
+                    analyzer=analyzers[i % len(analyzers)],
+                    analyzer_check=checks[i % len(checks)],
+                    hash=uuid.uuid4().hex,
+                )
+                for i in range(500)
+            ]
+        )
+        IssueLink.objects.bulk_create(
+            [
+                IssueLink(
+                    issue=issue,
+                    revision=revision,
+                    diff_id=random.randint(1, 10),
+                )
+                for issue in issues
+            ]
+        )
 
         # Add some issues not attached to a diff
-        for i in range(10):
-            Issue.objects.create(
-                diff_id=None,
-                path="path/to/file",
-                line=random.randint(1, 100),
-                nb_lines=random.randint(1, 100),
-                char=None,
-                level="warning",
-                message=None,
-                analyzer=analyzers[i % len(analyzers)],
-                analyzer_check=checks[i % len(checks)],
-                hash=uuid.uuid4().hex,
-            )
+        Issue.objects.bulk_create(
+            [
+                Issue(
+                    path="path/to/file",
+                    line=random.randint(1, 100),
+                    nb_lines=random.randint(1, 100),
+                    char=None,
+                    level="warning",
+                    message=None,
+                    analyzer=analyzers[i % len(analyzers)],
+                    analyzer_check=checks[i % len(checks)],
+                    hash=uuid.uuid4().hex,
+                )
+                for i in range(10)
+            ]
+        )
+
+        settings.PHABRICATOR_HOST = "http://anotherphab.test/api123/?custom"
 
     def test_stats(self):
         """
@@ -225,7 +245,9 @@ class StatsAPITestCase(APITestCase):
             self.assertEqual(issue["path"], "path/to/file")
 
             # Diff
-            diff = issue["diff"]
+            diffs = issue["diffs"]
+            self.assertEqual(len(diffs), 1)
+            diff = diffs[0]
             self.assertTrue(diff["id"] > 0)
             self.assertEqual(diff["repository"], "http://repo.test/myrepo-try")
 

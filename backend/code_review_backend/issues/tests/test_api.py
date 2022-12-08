@@ -167,8 +167,7 @@ class CreationAPITestCase(APITestCase):
         issue = Issue.objects.first()
         self.assertEqual(issue.path, "path/to/file.py")
         self.assertEqual(issue.line, 1)
-        self.assertEqual(issue.diff, diff)
-        self.assertEqual(issue.diff.revision, revision)
+        self.assertListEqual(list(issue.diffs.values_list("id", flat=True)), [diff.id])
         self.assertTrue(issue.new_for_revision)
 
         # The diff now counts an issue

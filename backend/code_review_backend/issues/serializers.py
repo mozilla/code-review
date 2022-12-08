@@ -170,11 +170,11 @@ class IssueCheckSerializer(IssueSerializer):
     Serialize an Issue in a Diff
     """
 
-    diff = DiffLightSerializer()
+    diffs = DiffLightSerializer(many=True)
 
     class Meta:
         model = Issue
-        fields = IssueSerializer.Meta.fields + ("diff",)
+        fields = IssueSerializer.Meta.fields + ("diffs",)
 
 
 class IssueCheckStatsSerializer(serializers.Serializer):
@@ -182,11 +182,15 @@ class IssueCheckStatsSerializer(serializers.Serializer):
     Serialize the usage statistics for each check encountered
     """
 
-    repository = serializers.CharField(source="diff__revision__repository__slug")
+    repository = serializers.SlugField(source="revisions__repository__slug")
     analyzer = serializers.CharField()
     check = serializers.CharField(source="analyzer_check")
     total = serializers.IntegerField()
     publishable = serializers.IntegerField(default=0)
+
+    class Meta:
+        model = Issue
+        fields = IssueSerializer.Meta.fields + ("repositories",)
 
 
 class HistoryPointSerializer(serializers.Serializer):

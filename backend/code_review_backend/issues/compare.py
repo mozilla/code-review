@@ -3,7 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from code_review_backend.issues.models import Diff
-from code_review_backend.issues.models import Issue
+from code_review_backend.issues.models import IssueLink
 
 
 def detect_new_for_revision(diff: Diff, path: str, hash: str) -> bool:
@@ -12,6 +12,9 @@ def detect_new_for_revision(diff: Diff, path: str, hash: str) -> bool:
     This function ignores pre-existing issues outside of that revision !
     """
     assert diff is not None, "Missing diff"
-    return not Issue.objects.filter(
-        diff__revision_id=diff.revision_id, diff_id__lt=diff.id, path=path, hash=hash
+    return not IssueLink.objects.filter(
+        revision_id=diff.revision_id,
+        diff_id__lt=diff.id,
+        issue__path=path,
+        issue__hash=hash,
     ).exists()
