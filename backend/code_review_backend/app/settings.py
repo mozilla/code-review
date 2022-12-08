@@ -266,3 +266,9 @@ if "DYNO" in os.environ:
 if DEBUG:
     INSTALLED_APPS.append("debug_toolbar")
     MIDDLEWARE.append("debug_toolbar.middleware.DebugToolbarMiddleware")
+    try:
+        import django_extensions  # noqa
+
+        INSTALLED_APPS.append("django_extensions")
+    except ImportError:
+        pass
