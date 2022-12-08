@@ -10,6 +10,7 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 
 from code_review_backend.issues.models import Issue
+from code_review_backend.issues.models import Revision
 
 logging.basicConfig(level=logging.INFO)
 
@@ -29,18 +30,23 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         clean_until = timezone.now() - timedelta(days=options["nb_days"])
-        to_delete = Issue.objects.filter(
-            diff__repository__slug__in=["autoland", "mozilla-central"],
+        rev_to_delete = Revision.objects.filter(
+            repository__slug__in=["autoland", "mozilla-central"],
             created__lte=clean_until,
         )
 
-        count = to_delete.count()
+        count = rev_to_delete.count()
         if not count:
-            logger.info("Didn't find any old issue to delete.")
+            logger.info("Didn't find any old revision to delete.")
             return
 
+        # Delete revisions, with their related IssueLink and Diff
         logger.info(
-            f"Retrieved {count} old issues from either autoland or mozilla-central to be deleted."
+            f"Retrieved {count} old revisions from either autoland or mozilla-central to be deleted."
         )
-        to_delete.delete()
-        logger.info("Deleted all selected old issues.")
+        _, stats = rev_to_delete.delete()
+        # Delete issues that are not linked to a revision anymore
+        _, issues_stats = Issue.objects.filter(revisions__isnull=True).delete()
+        stats.update(issues_stats)
+        msg = ", ".join((f"{n} {key}" for key, n in stats.items()))
+        logger.info(f"Deleted {msg}.")
