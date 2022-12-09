@@ -15,6 +15,7 @@ from django.db import transaction
 
 from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import Issue
+from code_review_backend.issues.models import IssueLink
 from code_review_backend.issues.models import Repository
 
 logger = logging.getLogger(__name__)
@@ -79,9 +80,8 @@ class Command(BaseCommand):
         diff.issues.all().delete()
 
         # Build all issues for that diff, in a single DB call
-        return Issue.objects.bulk_create(
+        created_issues = Issue.objects.bulk_create(
             Issue(
-                diff=diff,
                 path=i["path"],
                 line=i["line"],
                 nb_lines=i.get("nb_lines", 1),
@@ -97,6 +97,15 @@ class Command(BaseCommand):
             )
             for i in issues
         )
+        IssueLink.objects.bulk_create(
+            IssueLink(
+                issue=i,
+                diff=diff,
+                revision_id=diff.revision_id,
+            )
+            for i in created_issues
+        )
+        return created_issues
 
     def load_tasks(self, environment, chunk=200):
         # Direct unauthenticated usage
@@ -180,6 +189,7 @@ class Command(BaseCommand):
         diff, _ = revision.diffs.get_or_create(
             id=data["diff_id"],
             defaults={
+                "repository": repository,
                 "phid": data["diff_phid"],
                 "review_task_id": task_id,
                 "mercurial_hash": data["mercurial_revision"],
