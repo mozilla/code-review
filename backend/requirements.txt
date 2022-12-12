@@ -1,5 +1,5 @@
 -e ../tools #egg=code-review-tools
-dj-database-url==1.0.0
+dj-database-url==1.1.0
 Django==4.1.4
 django-cors-headers==3.13.0
 djangorestframework==3.14.0
