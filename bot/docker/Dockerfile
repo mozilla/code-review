@@ -1,4 +1,4 @@
-FROM python:3.10.7-slim
+FROM python:3.11.1-slim
 
 ADD tools /src/tools
 RUN cd /src/tools && python setup.py install
