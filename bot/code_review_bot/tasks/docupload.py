@@ -8,6 +8,8 @@ from code_review_bot.tasks.base import NoticeTask
 logger = structlog.get_logger(__name__)
 
 MAX_LINKS = 21
+# Should stay up-to-date with https://searchfox.org/mozilla-central/rev/2d24d893669ad0fe8d76b0427b25369d35fcc19b/docs/conf.py#79
+DOC_FILE_SUFFIXES = (".rst", ".md")
 
 DOC_LINK = """
 - file [{path}]({doc_url})
@@ -80,7 +82,7 @@ class DocUploadTask(NoticeTask):
         doc_files = [
             file
             for file in revision.files
-            if "docs" in file and file.endswith((".rst", ".md"))
+            if "docs" in file and file.endswith(DOC_FILE_SUFFIXES)
         ]
         nb_docs = len(doc_files)
         if not nb_docs:
