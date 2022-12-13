@@ -200,6 +200,7 @@ class Command(BaseCommand):
         )
         diff, _ = revision.diffs.get_or_create(
             id=data["diff_id"],
+            repository=repository,
             defaults={
                 "repository": repository,
                 "phid": data["diff_phid"],
