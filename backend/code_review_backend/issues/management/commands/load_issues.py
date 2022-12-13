@@ -185,7 +185,7 @@ class Command(BaseCommand):
             repository = Repository.objects.get(url=data["target_repository"])
         except Repository.DoesNotExist:
             logger.warning(
-                "No repository found with URL {data['repository']}, skipping."
+                f"No repository found with URL {data['repository']}, skipping."
             )
             return None, None
         revision, _ = repository.revisions.get_or_create(
