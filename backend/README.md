@@ -2,6 +2,9 @@
 
 ## Developer setup
 
+### Run the application
+
+You may want to install dependencies in a virtual environment an run the development test server with a base fixure for development purpose:
 ```
 mkvirtualenv -p /usr/bin/python3 code-review-backend
 cd backend
@@ -13,6 +16,16 @@ pip install -r requirements.txt
 ```
 
 At this point, you can log into http://127.0.0.1:8000/admin/ with the credentials you mentioned during the `createsuperuser` step.
+
+### Debugging tools
+
+Run `pip install -r requirements-dev.txt` to install all the available optional dev tools for the backend.
+
+[Django Debug Toolbar](https://django-debug-toolbar.readthedocs.io/en/latest/) provides you with a neat debug sidebar that will help diagnosing slow API endpoints.
+
+[Django Extensions](https://django-extensions.readthedocs.io/en/latest/) adds a *lot* of `manage.py` commands ; the most important one is `./manage.py shell_plus` which runs the usual shell but with all the available models pre-imported.
+
+You may also want to use IPython (`pip install ipython`) to get a nicer shell with syntax highlighting, auto reloading and much more via `./manage.py shell`.
 
 ## Load existing issues
 
