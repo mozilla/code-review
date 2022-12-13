@@ -175,7 +175,7 @@ class Command(BaseCommand):
 
     def build_revision_and_diff(self, data, task_id):
         """Build or retrieve a revision and diff in current repo from report's data"""
-        repository = Repository.objects.get(slug=data["target_repository"])
+        repository = Repository.objects.get(url=data["target_repository"])
         revision, _ = repository.revisions.get_or_create(
             id=data["id"],
             defaults={
