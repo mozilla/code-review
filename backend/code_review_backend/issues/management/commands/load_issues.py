@@ -10,7 +10,6 @@ import tempfile
 
 import taskcluster
 from django.core.management.base import BaseCommand
-from django.core.management.base import CommandError
 from django.db import transaction
 from requests.exceptions import HTTPError
 
@@ -43,13 +42,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Check repositories
-        for repo in ("mozilla-central", "nss"):
-            try:
-                Repository.objects.get(slug=repo)
-            except Repository.DoesNotExist:
-                raise CommandError(f"Missing repository {repo}")
-
         # Setup cache dir
         self.cache_dir = os.path.join(
             tempfile.gettempdir(), "code-review-reports", options["environment"]
@@ -67,6 +59,8 @@ class Command(BaseCommand):
 
             # Build revision & diff
             revision, diff = self.build_revision_and_diff(report["revision"], task_id)
+            if not revision:
+                continue
 
             # Save all issues in a single db transaction
             try:
@@ -187,7 +181,13 @@ class Command(BaseCommand):
 
     def build_revision_and_diff(self, data, task_id):
         """Build or retrieve a revision and diff in current repo from report's data"""
-        repository = Repository.objects.get(url=data["target_repository"])
+        try:
+            repository = Repository.objects.get(url=data["target_repository"])
+        except Repository.DoesNotExist:
+            logger.warning(
+                "No repository found with URL {data['repository']}, skipping."
+            )
+            return None, None
         revision, _ = repository.revisions.get_or_create(
             id=data["id"],
             defaults={
