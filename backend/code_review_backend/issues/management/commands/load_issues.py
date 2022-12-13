@@ -12,6 +12,7 @@ import taskcluster
 from django.core.management.base import BaseCommand
 from django.core.management.base import CommandError
 from django.db import transaction
+from requests.exceptions import HTTPError
 
 from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import Issue
@@ -141,14 +142,25 @@ class Command(BaseCommand):
                     # Download the task report
                     logging.info(f"Download task {task['taskId']}")
                     try:
-                        artifact = queue.getLatestArtifact(
-                            task["taskId"], "public/results/report.json"
+                        url = queue.buildUrl(
+                            "getLatestArtifact",
+                            task["taskId"],
+                            "public/results/report.json",
                         )
-                    except taskcluster.exceptions.TaskclusterRestFailure as e:
-                        if e.status_code == 404:
-                            logging.info("Missing artifact")
+                        # Allows HTTP_30x redirections retrieving the artifact
+                        response = queue.session.get(
+                            url, stream=True, allow_redirects=True
+                        )
+                        response.raise_for_status()
+                        artifact = response.json()
+                    except HTTPError as e:
+                        if (
+                            getattr(getattr(e, "response", None), "status_code", None)
+                            == 404
+                        ):
+                            logging.info(f"Missing artifact : {repr(e)}")
                             continue
-                        raise
+                        raise e
 
                     # Check the artifact has repositories & revision
                     revision = artifact["revision"]
