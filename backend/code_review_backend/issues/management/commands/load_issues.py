@@ -200,12 +200,12 @@ class Command(BaseCommand):
         )
         diff, _ = revision.diffs.get_or_create(
             id=data["diff_id"],
-            repository=repository,
             defaults={
                 "repository": repository,
                 "phid": data["diff_phid"],
                 "review_task_id": task_id,
                 "mercurial_hash": data["mercurial_revision"],
+                "repository": repository,
             },
         )
         return revision, diff
