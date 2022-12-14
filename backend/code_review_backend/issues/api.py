@@ -233,7 +233,8 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
             Issue.objects.values(
                 "revisions__repository__slug", "analyzer", "analyzer_check"
             )
-            .annotate(total=Count("id"))
+            # We want to count distinct issues because they can be referenced on multiple diffs
+            .annotate(total=Count("id", distinct=True))
             .annotate(
                 publishable=Count("id", filter=Q(in_patch=True) | Q(level=LEVEL_ERROR))
             )
@@ -251,9 +252,11 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
             # Because of the perf. hit filter, issues that are not older than today - 3 months.
             since = date.today() - timedelta(days=90)
 
-        queryset = queryset.filter(diffs__created__gte=since).distinct()
+        queryset = queryset.filter(revisions__created__gte=since).distinct()
 
-        return queryset.order_by("-total")
+        return queryset.order_by(
+            "-total", "revisions__repository__slug", "analyzer", "analyzer_check"
+        )
 
 
 class IssueCheckHistory(CachedView, generics.ListAPIView):

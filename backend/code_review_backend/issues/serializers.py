@@ -183,6 +183,7 @@ class IssueCheckStatsSerializer(serializers.Serializer):
     Serialize the usage statistics for each check encountered
     """
 
+    # The view aggregates issues depending on their reference to a repository (via IssueLink M2M)
     repository = serializers.SlugField(source="revisions__repository__slug")
     analyzer = serializers.CharField()
     check = serializers.CharField(source="analyzer_check")
