@@ -112,7 +112,7 @@ class Issue(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ("diff", "path", "line", "analyzer")
+        ordering = ("diff_id", "path", "line", "analyzer")
 
     @property
     def publishable(self):

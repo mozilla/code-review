@@ -29,8 +29,18 @@ class RevisionAdmin(admin.ModelAdmin):
 
 class IssueAdmin(admin.ModelAdmin):
     list_filter = ("analyzer",)
-    list_display = ("id", "path", "line", "level", "analyzer", "analyzer_check", "diff")
-    list_select_related = ("diff",)
+    list_display = (
+        "id",
+        "path",
+        "line",
+        "level",
+        "analyzer",
+        "analyzer_check",
+        "created",
+        "diff_id",
+    )
+    search_fields = ("line", "analyzer", "path")
+    ordering = ("-created",)
 
 
 admin.site.register(Repository, RepositoryAdmin)
