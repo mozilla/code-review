@@ -14,6 +14,13 @@ from django.db import models
 ISSUES_INSERT_SIZE = 5000
 
 
+def clean_unlinked_issue(apps, schema_editor):
+    """Delete issues that have no diff"""
+    Issue = apps.get_model("issues", "Issue")
+    deleted, _ = Issue.objects.filter(old_diff__isnull=True).delete()
+    print(f"Deleted {deleted} issues that were missing a diff.")
+
+
 def generate_issue_links(apps, schema_editor):
     """Generate the IssueLink M2M table from issues' FK to the diff of a revision"""
     Issue = apps.get_model("issues", "Issue")
@@ -136,10 +143,16 @@ class Migration(migrations.Migration):
                 related_name="issues", through="issues.IssueLink", to="issues.diff"
             ),
         ),
+        # Clean issues that are linked to no diff (should not exist)
+        migrations.RunPython(
+            clean_unlinked_issue,
+            reverse_code=None,
+            elidable=True,
+        ),
         # Fill the M2M table
         migrations.RunPython(
             generate_issue_links,
-            reverse_code=migrations.RunPython.noop,
+            reverse_code=None,
             elidable=True,
         ),
         # Drop old FK
