@@ -167,7 +167,8 @@ class IssueSerializer(serializers.ModelSerializer):
 
 class IssueCheckSerializer(IssueSerializer):
     """
-    Serialize an Issue in a Diff
+    Serialize an Issue with all the diffs where it has been found.
+    Each diff is serialized with its revision's information.
     """
 
     diffs = DiffLightSerializer(many=True)
