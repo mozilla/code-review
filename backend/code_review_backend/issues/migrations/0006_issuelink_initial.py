@@ -13,7 +13,7 @@ from django.db import models
 def clean_unlinked_issue(apps, schema_editor):
     """Delete issues that have no diff"""
     Issue = apps.get_model("issues", "Issue")
-    deleted, _ = Issue.objects.filter(old_diff__isnull=True).delete()
+    deleted, _ = Issue.objects.filter(diff__isnull=True).delete()
     print(f"Deleted {deleted} issues that were missing a diff.")
 
 
@@ -84,11 +84,6 @@ class Migration(migrations.Migration):
                 related_name="old_issues",
                 to="issues.diff",
             ),
-        ),
-        migrations.RenameField(
-            model_name="issue",
-            old_name="diff",
-            new_name="old_diff",
         ),
         migrations.AlterModelOptions(
             name="issue",

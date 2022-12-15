@@ -19,9 +19,9 @@ def generate_issue_links(apps, schema_editor):
     qs = (
         # This ensures we do not handle newly created issues
         # during the migration so the order is preserved
-        Issue.objects.filter(old_diff__isnull=False)
+        Issue.objects.filter(diff__isnull=False)
         .order_by("created", "id")
-        .values("id", "old_diff_id", "old_diff__revision_id")
+        .values("id", "diff_id", "diff__revision_id")
     )
 
     issues_count = qs.count()
@@ -36,8 +36,8 @@ def generate_issue_links(apps, schema_editor):
             (
                 IssueLink(
                     issue_id=issue["id"],
-                    diff_id=issue["old_diff_id"],
-                    revision_id=issue["old_diff__revision_id"],
+                    diff_id=issue["diff_id"],
+                    revision_id=issue["diff__revision_id"],
                 )
                 for issue in issues
             )
@@ -60,6 +60,6 @@ class Migration(migrations.Migration):
         # Drop old FK
         migrations.RemoveField(
             model_name="issue",
-            name="old_diff",
+            name="diff",
         ),
     ]
