@@ -13,14 +13,26 @@ ISSUES_INSERT_SIZE = 5000
 
 
 def generate_issue_links(apps, schema_editor):
-    """Generate the IssueLink M2M table from issues' FK to the diff of a revision"""
+    """Generate the IssueLink M2M table from issues' FK to the diff of a revision.
+    Issues are migrated from the most recent to the oldest.
+    The generation is done in small transactions, so the tables ar not locked for a
+    long period of time (allowing to ingest new issues) and can be resumed later on.
+    """
     Issue = apps.get_model("issues", "Issue")
     IssueLink = apps.get_model("issues", "IssueLink")
+
+    # Search for the IssueLink referencing the older issue
+    older_issue_link = IssueLink.objects.order_by("issue__created").first()
+    issue_filters = {}
+    if older_issue_link is not None:
+        issue_filters = {"created__lt": older_issue_link.issue.created}
+
     qs = (
         # This ensures we do not handle newly created issues
         # during the migration so the order is preserved
         Issue.objects.filter(diff__isnull=False)
-        .order_by("created", "id")
+        .filter(**issue_filters)
+        .order_by("-created", "id")
         .values("id", "diff_id", "diff__revision_id")
     )
 
@@ -45,6 +57,7 @@ def generate_issue_links(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    atomic = False
 
     dependencies = [
         ("issues", "0006_issuelink_initial"),
