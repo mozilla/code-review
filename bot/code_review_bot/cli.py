@@ -6,6 +6,7 @@
 import argparse
 import os
 import sys
+from pathlib import Path
 
 import structlog
 import yaml
@@ -47,6 +48,13 @@ def parse_cli():
         "--taskcluster-secret",
         help="Taskcluster Secret path",
         default=os.environ.get("TASKCLUSTER_SECRET"),
+    )
+    parser.add_argument(
+        "--mercurial-repository",
+        help="Optional path to a mercurial repository matching the analyzed revision.\n"
+        "Improves reading the updated files, i.e. to compute the unique hash of an issue.",
+        type=Path,
+        default=None,
     )
     parser.add_argument("--taskcluster-client-id", help="Taskcluster Client ID")
     parser.add_argument("--taskcluster-access-token", help="Taskcluster Access token")
@@ -171,6 +179,7 @@ def main():
         # Update build status only when phabricator reporting is enabled
         update_build=phabricator_reporting_enabled,
         task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
+        mercurial_repository=args.mercurial_repository,
     )
     try:
         if settings.autoland_group_id:

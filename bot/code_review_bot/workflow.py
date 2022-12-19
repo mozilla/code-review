@@ -53,6 +53,7 @@ class Workflow(object):
         zero_coverage_enabled=True,
         update_build=True,
         task_failures_ignored=[],
+        mercurial_repository=None,
     ):
         self.zero_coverage_enabled = zero_coverage_enabled
         self.update_build = update_build
@@ -79,6 +80,9 @@ class Workflow(object):
 
         # Setup Backend API client
         self.backend_api = BackendAPI()
+
+        # Path to the mercurial repository
+        self.mercurial_repository = mercurial_repository
 
     def run(self, revision):
         """
@@ -172,7 +176,11 @@ class Workflow(object):
 
         # Publish issues when there are some
         if issues:
-            self.backend_api.publish_issues(issues, revision)
+            if self.mercurial_repository:
+                logger.info("Using the local repository to build issues")
+            self.backend_api.publish_issues(
+                issues, revision, mercurial_repository=self.mercurial_repository
+            )
         else:
             logger.info("No issues for that revision")
 

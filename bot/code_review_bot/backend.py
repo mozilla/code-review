@@ -83,7 +83,7 @@ class BackendAPI(object):
         # Store the issues url on the revision
         revision.issues_url = backend_diff["issues_url"]
 
-    def publish_issues(self, issues, revision):
+    def publish_issues(self, issues, revision, mercurial_repository=None):
         """
         Publish all issues on the backend
         """
@@ -99,7 +99,8 @@ class BackendAPI(object):
 
         published = 0
         for issue in issues:
-            payload = issue.as_dict()
+            issue_hash = issue.build_hash(local_repository=mercurial_repository)
+            payload = issue.as_dict(issue_hash=issue_hash)
             if payload["hash"] is None:
                 logger.warning(
                     "Missing issue hash, cannot publish on backend", issue=str(issue)
