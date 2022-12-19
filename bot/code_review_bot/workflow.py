@@ -129,10 +129,19 @@ class Workflow(object):
 
         def _build_tasks(tasks):
             for task_status in tasks["tasks"]:
-                task = self.build_task(task_status)
-                if task is None:
+                try:
+                    task_name = task_status["task"]["metadata"]["name"]
+                    # Only analyze tasks stating with `source-test-` to avoid checking artifacts every time
+                    if not task_name.startswith("source-test-"):
+                        logger.debug(
+                            f"Task with name '{task_name}' is not supported during the ingestion of a revision"
+                        )
+                        continue
+                    task = self.build_task(task_status)
+                except Exception as e:
+                    logger.warning(f"Could not proceed task {task_name}: {e}")
                     continue
-                if getattr(task, "parse_issues", None) is None:
+                if task is None or getattr(task, "parse_issues", None) is None:
                     # Do ignore tasks that cannot be parsed as issues
                     continue
                 supported_tasks.append(task)
