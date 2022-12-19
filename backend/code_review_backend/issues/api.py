@@ -328,7 +328,7 @@ urls = router.urls + [
     path("check/stats/", IssueCheckStats.as_view(), name="issue-checks-stats"),
     path("check/history/", IssueCheckHistory.as_view(), name="issue-checks-history"),
     path(
-        "check/<str:repository>/<str:analyzer>/<str:check>/",
+        "check/<str:repository>/<str:analyzer>/<path:check>/",
         IssueCheckDetails.as_view(),
         name="issue-check-details",
     ),
