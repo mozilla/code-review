@@ -165,6 +165,27 @@ class IssueSerializer(serializers.ModelSerializer):
         read_only_fields = ("new_for_revision",)
 
 
+class IssueListSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        assert self.context.get(
+            "diff_id"
+        ), "A diff ID is required to save the serializer"
+        return Issue.objects.bulk_create(
+            [
+                Issue(
+                    **values,
+                    diff_id=self.context["diff_id"],
+                )
+                for values in validated_data
+            ]
+        )
+
+
+class IssueBulkSerializer(IssueSerializer):
+    class Meta(IssueSerializer.Meta):
+        list_serializer_class = IssueListSerializer
+
+
 class IssueCheckSerializer(IssueSerializer):
     """
     Serialize an Issue with all the diffs where it has been found.
