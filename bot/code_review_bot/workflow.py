@@ -179,7 +179,10 @@ class Workflow(object):
             if self.mercurial_repository:
                 logger.info("Using the local repository to build issues")
             self.backend_api.publish_issues(
-                issues, revision, mercurial_repository=self.mercurial_repository
+                issues,
+                revision,
+                mercurial_repository=self.mercurial_repository,
+                bulk=100,
             )
         else:
             logger.info("No issues for that revision")

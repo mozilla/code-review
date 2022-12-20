@@ -83,9 +83,11 @@ class BackendAPI(object):
         # Store the issues url on the revision
         revision.issues_url = backend_diff["issues_url"]
 
-    def publish_issues(self, issues, revision, mercurial_repository=None):
+    def publish_issues(self, issues, revision, mercurial_repository=None, bulk=0):
         """
-        Publish all issues on the backend
+        Publish all issues on the backend.
+        `mercurial_repository` parameter should be path to the local repository at the given revision.
+        If set to an integer, `bulk` parameter allow to use the bulk creation endpoint of the backend.
         """
         if not self.enabled:
             logger.warn("Skipping issues publication on backend")
@@ -98,19 +100,37 @@ class BackendAPI(object):
             return
 
         published = 0
-        for issue in issues:
-            issue_hash = issue.build_hash(local_repository=mercurial_repository)
-            payload = issue.as_dict(issue_hash=issue_hash)
-            if payload["hash"] is None:
-                logger.warning(
-                    "Missing issue hash, cannot publish on backend", issue=str(issue)
-                )
-                continue
-            issue.on_backend = self.create(revision.issues_url, payload)
-            if issue.on_backend is not None:
-                published += 1
-            else:
-                logger.warn("Failed backend publication", issue=str(issue))
+        if bulk > 0:
+            url = revision.issues_url.rstrip("/") + "-bulk/"
+            chunks = (issues[i : i + bulk] for i in range(0, len(issues), bulk))
+            for issues_chunk in chunks:
+                data = []
+                # Build issues' payload for that given chunk
+                for issue in issues_chunk:
+                    issue_hash = issue.build_hash(local_repository=mercurial_repository)
+                    data.append(issue.as_dict(issue_hash=issue_hash))
+                response = self.create(url, {"issues": data})
+                created = response.get("issues")
+                assert created and len(created) == len(issues_chunk)
+                for issue, value in zip(issues_chunk, created):
+                    # Set the returned value on each issue
+                    issue.on_backend = value
+                published += len(data)
+        else:
+            for issue in issues:
+                issue_hash = issue.build_hash(local_repository=mercurial_repository)
+                payload = issue.as_dict(issue_hash=issue_hash)
+                if payload["hash"] is None:
+                    logger.warning(
+                        "Missing issue hash, cannot publish on backend",
+                        issue=str(issue),
+                    )
+                    continue
+                issue.on_backend = self.create(revision.issues_url, payload)
+                if issue.on_backend is not None:
+                    published += 1
+                else:
+                    logger.warn("Failed backend publication", issue=str(issue))
 
         total = len(issues)
         if published < total:
@@ -168,5 +188,5 @@ class BackendAPI(object):
             logger.warn("Backend rejected the payload: {}".format(response.content))
             return None
         out = response.json()
-        logger.info("Created item on backend", url=url_post, id=out["id"])
+        logger.info("Created item on backend", url=url_post, id=out.get("id"))
         return out
