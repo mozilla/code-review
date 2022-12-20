@@ -154,8 +154,12 @@ class Issue(abc.ABC):
         assert self.revision is not None, "Missing revision"
 
         if local_repository:
-            with open(local_repository / self.path) as f:
-                file_content = f.read()
+            try:
+                with open(local_repository / self.path) as f:
+                    file_content = f.read()
+            except FileNotFoundError:
+                logger.warning(f"Failed to find issue's related file at {self.path}")
+                file_content = ""
         else:
             try:
                 # Load all the lines affected by the issue
