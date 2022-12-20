@@ -181,14 +181,13 @@ class IssueBulkCreate(generics.CreateAPIView):
     """
 
     serializer_class = IssueBulkSerializer
-    queryset = Issue.objects.all()
 
     def get_serializer_context(self):
         diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
         context = super().get_serializer_context()
         if not self.request:
             return context
-        context["diff_id"] = diff.id
+        context["diff"] = diff
         return context
 
 
@@ -353,7 +352,7 @@ router.register(r"diff", DiffViewSet, basename="diffs")
 router.register(r"diff/(?P<diff_id>\d+)/issues", IssueViewSet, basename="issues")
 urls = router.urls + [
     path(
-        "diff/<int:diff_id>/issues/bulk/",
+        "diff/<int:diff_id>/issues-bulk/",
         IssueBulkCreate.as_view(),
         name="issue-bulk-create",
     ),

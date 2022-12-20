@@ -3,10 +3,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from django.db import transaction
 from rest_framework import serializers
 
 from code_review_backend.issues.models import Diff
 from code_review_backend.issues.models import Issue
+from code_review_backend.issues.models import IssueLink
 from code_review_backend.issues.models import Repository
 from code_review_backend.issues.models import Revision
 
@@ -165,25 +167,23 @@ class IssueSerializer(serializers.ModelSerializer):
         read_only_fields = ("new_for_revision",)
 
 
-class IssueListSerializer(serializers.ModelSerializer):
+class IssueBulkSerializer(serializers.Serializer):
+    issues = IssueSerializer(many=True)
+
+    @transaction.atomic
     def create(self, validated_data):
-        assert self.context.get(
-            "diff_id"
-        ), "A diff ID is required to save the serializer"
-        return Issue.objects.bulk_create(
+        diff = self.context.get("diff")
+        assert diff, "A diff is required to save the serializer"
+        issues = Issue.objects.bulk_create(
+            [Issue(**values) for values in validated_data["issues"]]
+        )
+        IssueLink.objects.bulk_create(
             [
-                Issue(
-                    **values,
-                    diff_id=self.context["diff_id"],
-                )
-                for values in validated_data
+                IssueLink(issue=issue, diff_id=diff.id, revision_id=diff.revision_id)
+                for issue in issues
             ]
         )
-
-
-class IssueBulkSerializer(IssueSerializer):
-    class Meta(IssueSerializer.Meta):
-        list_serializer_class = IssueListSerializer
+        return {"issues": issues}
 
 
 class IssueCheckSerializer(IssueSerializer):
