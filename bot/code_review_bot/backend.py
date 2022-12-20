@@ -108,6 +108,12 @@ class BackendAPI(object):
                 # Build issues' payload for that given chunk
                 for issue in issues_chunk:
                     issue_hash = issue.build_hash(local_repository=mercurial_repository)
+                    if issue_hash is None:
+                        logger.warning(
+                            "Missing issue hash, cannot publish on backend",
+                            issue=str(issue),
+                        )
+                        continue
                     data.append(issue.as_dict(issue_hash=issue_hash))
                 response = self.create(url, {"issues": data})
                 created = response.get("issues")
@@ -119,13 +125,13 @@ class BackendAPI(object):
         else:
             for issue in issues:
                 issue_hash = issue.build_hash(local_repository=mercurial_repository)
-                payload = issue.as_dict(issue_hash=issue_hash)
-                if payload["hash"] is None:
+                if issue_hash is None:
                     logger.warning(
                         "Missing issue hash, cannot publish on backend",
                         issue=str(issue),
                     )
                     continue
+                payload = issue.as_dict(issue_hash=issue_hash)
                 issue.on_backend = self.create(revision.issues_url, payload)
                 if issue.on_backend is not None:
                     published += 1
