@@ -9,7 +9,7 @@ from math import ceil
 
 from django.db import migrations
 
-ISSUES_INSERT_SIZE = 5000
+ISSUES_INSERT_SIZE = 1000
 
 
 def generate_issue_links(apps, schema_editor):
@@ -40,8 +40,9 @@ def generate_issue_links(apps, schema_editor):
     slices = ceil(issues_count / ISSUES_INSERT_SIZE)
 
     for index in range(0, slices):
+        current = min((index + 1) * ISSUES_INSERT_SIZE, issues_count)
         print(
-            f"[{index + 1}/{slices}] Initializing Issues references on the M2M table."
+            f"[{current}/{issues_count}] Initializing Issues references on the M2M table."
         )
         issues = qs[index * ISSUES_INSERT_SIZE : (index + 1) * ISSUES_INSERT_SIZE]
         IssueLink.objects.bulk_create(
@@ -69,6 +70,7 @@ class Migration(migrations.Migration):
             generate_issue_links,
             reverse_code=None,
             elidable=True,
+            atomic=False,
         ),
         # Drop old FK
         migrations.RemoveField(
