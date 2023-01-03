@@ -311,6 +311,7 @@ class CodeReview(PhabricatorActions):
 
     async def trigger_repository(self, payload: dict):
         """Trigger a code review from the ingestion task of a repository (all tasks are resolved)"""
+        logger.info(f"TRIGGER : {payload}")
         assert (
             payload["routing"]["exchange"] == PULSE_TASK_GROUP_RESOLVED
         ), "Message was not published to task-group-resolved"
@@ -318,12 +319,15 @@ class CodeReview(PhabricatorActions):
         try:
             # Load first task in task group, check if it's on autoland or mozilla-central
             queue = taskcluster_config.get_service("queue")
+            logger.info(f"QUEUE : {queue}")
             task_group_id = payload["body"]["taskGroupId"]
+            logger.info(f"GROUP_ID: {task_group_id}")
             logger.debug(
                 "Checking repository for the task group", task_group_id=task_group_id
             )
             task = queue.task(task_group_id)
             repo_url = task["payload"]["env"].get("GECKO_HEAD_REPOSITORY")
+            logger.info(f"REPO_URL: {repo_url}")
 
             if repo_url == "https://hg.mozilla.org/integration/autoland":
                 group_key = "AUTOLAND_TASK_GROUP_ID"
@@ -435,8 +439,10 @@ class Events(object):
                 )
                 # Manually register to set queue as redis
                 self.pulse.bus = self.bus
-                self.bus.add_queue(QUEUE_PULSE_AUTOLAND, redis=True)
-                self.bus.add_queue(QUEUE_PULSE_MOZILLA_CENTRAL, redis=True)
+                if taskcluster_config.secrets["autoland_enabled"]:
+                    self.bus.add_queue(QUEUE_PULSE_AUTOLAND, redis=True)
+                if taskcluster_config.secrets["mozilla_central_enabled"]:
+                    self.bus.add_queue(QUEUE_PULSE_MOZILLA_CENTRAL, redis=True)
             else:
                 self.pulse = None
 
@@ -529,18 +535,24 @@ class Events(object):
                 self.bus.run(self.workflow.process_build, QUEUE_WEB_BUILDS),
                 # Publish results on Phabricator
                 self.bus.run(self.workflow.publish_results, QUEUE_PHABRICATOR_RESULTS),
-                # Trigger autoland tasks
-                self.bus.run(self.workflow.trigger_repository, QUEUE_PULSE_AUTOLAND),
-                # Trigger autoland tasks
-                self.bus.run(
-                    self.workflow.trigger_repository, QUEUE_PULSE_MOZILLA_CENTRAL
-                ),
                 # Send to phabricator results publication for normal processing and to bugbug for further analysis
                 self.bus.dispatch(
                     QUEUE_MERCURIAL_APPLIED,
                     [QUEUE_PHABRICATOR_RESULTS, QUEUE_BUGBUG_TRY_PUSH],
                 ),
             ]
+            if taskcluster_config.secrets["autoland_enabled"]:
+                # Trigger autoland tasks
+                consumers.append(
+                    self.bus.run(self.workflow.trigger_repository, QUEUE_PULSE_AUTOLAND)
+                )
+            if taskcluster_config.secrets["mozilla_central_enabled"]:
+                # Trigger mozilla-central tasks
+                consumers.append(
+                    self.bus.run(
+                        self.workflow.trigger_repository, QUEUE_PULSE_MOZILLA_CENTRAL
+                    )
+                )
 
         if self.bugbug_utils:
             consumers += [
