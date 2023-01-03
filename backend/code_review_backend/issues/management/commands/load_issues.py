@@ -91,6 +91,7 @@ class Command(BaseCommand):
                 ),
             )
             for i in issues
+            if i["hash"]
         )
         IssueLink.objects.bulk_create(
             IssueLink(
@@ -182,7 +183,7 @@ class Command(BaseCommand):
     def build_revision_and_diff(self, data, task_id):
         """Build or retrieve a revision and diff in current repo from report's data"""
         try:
-            repository = Repository.objects.get(url=data["target_repository"])
+            repository = Repository.objects.get(url=data["repository"])
         except Repository.DoesNotExist:
             logger.warning(
                 f"No repository found with URL {data['repository']}, skipping."
