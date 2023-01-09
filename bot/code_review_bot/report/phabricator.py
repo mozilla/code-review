@@ -197,7 +197,8 @@ class PhabricatorReporter(Reporter):
             # Nothing changed, no issue have been opened or closed
             logger.warning(
                 "No new issues nor failures/notices were detected. "
-                "Skipping comment publication ({len(unresolved_issues)} issues are unresolved)"
+                "Skipping comment publication (some issues are unresolved)",
+                unresolved_count=len(unresolved_issues),
             )
             return issues, patches
 
