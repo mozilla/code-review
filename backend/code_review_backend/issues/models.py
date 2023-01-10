@@ -8,6 +8,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 
 LEVEL_WARNING = "warning"
 LEVEL_ERROR = "error"
@@ -59,6 +60,10 @@ class Revision(PhabricatorModel):
 
 
 class Diff(PhabricatorModel):
+    """Reference of a specific code patch (diff) in Phabricator.
+    A revision can be linked to multiple successive diffs, or none in case of a repository push.
+    """
+
     revision = models.ForeignKey(
         Revision, related_name="diffs", on_delete=models.CASCADE
     )
@@ -76,15 +81,60 @@ class Diff(PhabricatorModel):
         return f"Diff {self.id}"
 
 
+class IssueLink(models.Model):
+    """Many-to-many relationship between an Issue and a Revision.
+    A Diff can be set to track issues evolution on a revision with multiple diffs.
+    """
+
+    id = models.BigAutoField(primary_key=True)
+    revision = models.ForeignKey(
+        "issues.Revision",
+        on_delete=models.CASCADE,
+        related_name="issue_links",
+    )
+    issue = models.ForeignKey(
+        "issues.Issue",
+        on_delete=models.CASCADE,
+        related_name="issue_links",
+    )
+    diff = models.ForeignKey(
+        "issues.Diff",
+        on_delete=models.CASCADE,
+        related_name="issue_links",
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        constraints = [
+            # Two constraints are required as Null values are not compared for unicity
+            models.UniqueConstraint(
+                fields=["issue", "revision"],
+                name="issue_link_unique_revision",
+                condition=Q(diff__isnull=True),
+            ),
+            models.UniqueConstraint(
+                fields=["issue", "revision", "diff"],
+                name="issue_link_unique_diff",
+                condition=Q(diff__isnull=False),
+            ),
+        ]
+
+
 class Issue(models.Model):
     """An issue detected on a Phabricator patch"""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4)
 
-    # Diff can be null to support issues without any link to Phabricator
-    # like the issues used to initialize the database on a full tree analyzer run
-    diff = models.ForeignKey(
-        Diff, related_name="issues", on_delete=models.CASCADE, null=True, blank=True
+    revisions = models.ManyToManyField(
+        "issues.Revision",
+        through="issues.IssueLink",
+        related_name="issues",
+    )
+    diffs = models.ManyToManyField(
+        "issues.Diff",
+        through="issues.IssueLink",
+        related_name="issues",
     )
 
     # Raw issue data
@@ -112,7 +162,7 @@ class Issue(models.Model):
     updated = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ("diff_id", "path", "line", "analyzer")
+        ordering = ("created",)
 
     @property
     def publishable(self):

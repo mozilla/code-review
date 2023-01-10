@@ -8,7 +8,9 @@ from datetime import datetime
 from datetime import timedelta
 
 from django.conf import settings
+from django.db import transaction
 from django.db.models import Count
+from django.db.models import Prefetch
 from django.db.models import Q
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
@@ -25,6 +27,7 @@ from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import LEVEL_ERROR
 from code_review_backend.issues.models import Diff
 from code_review_backend.issues.models import Issue
+from code_review_backend.issues.models import IssueLink
 from code_review_backend.issues.models import Repository
 from code_review_backend.issues.models import Revision
 from code_review_backend.issues.serializers import DiffFullSerializer
@@ -149,19 +152,25 @@ class IssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
 
     def get_queryset(self):
-        return Issue.objects.filter(diff_id=Diff.objects.get(pk=self.kwargs["diff_id"]))
+        diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
+        # No multiple revision should be linked to a single diff
+        # but we use the distinct clause to match the DB state.
+        return Issue.objects.filter(diffs=diff).distinct()
 
+    @transaction.atomic
     def perform_create(self, serializer):
         # Attach diff to issue created
         # and detect if the issue is new for the revision
         diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
-        serializer.save(
-            diff=diff,
+        issue = serializer.save(
             new_for_revision=detect_new_for_revision(
                 diff,
                 path=serializer.validated_data["path"],
                 hash=serializer.validated_data["hash"],
             ),
+        )
+        IssueLink.objects.create(
+            issue=issue, diff_id=diff.id, revision_id=diff.revision_id
         )
 
 
@@ -176,17 +185,15 @@ class IssueCheckDetails(CachedView, generics.ListAPIView):
         repo = self.kwargs["repository"]
 
         queryset = (
-            Issue.objects.filter(
-                Q(diff__repository__slug=repo)
-                | Q(diff__revision__repository__slug=repo)
-            )
+            Issue.objects.filter(revisions__repository__slug=repo)
             .filter(analyzer=self.kwargs["analyzer"])
             .filter(analyzer_check=self.kwargs["check"])
             .prefetch_related(
-                "diff",
-                "diff__repository",
-                "diff__revision",
-                "diff__revision__repository",
+                "diffs__repository",
+                Prefetch(
+                    "diffs__revision",
+                    queryset=Revision.objects.select_related("repository"),
+                ),
             )
             .order_by("-created")
         )
@@ -210,7 +217,7 @@ class IssueCheckDetails(CachedView, generics.ListAPIView):
                 raise APIException(detail="invalid since date - should be YYYY-MM-DD")
             queryset = queryset.filter(created__gte=since)
 
-        return queryset
+        return queryset.distinct()
 
 
 class IssueCheckStats(CachedView, generics.ListAPIView):
@@ -222,16 +229,16 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
     serializer_class = IssueCheckStatsSerializer
 
     def get_queryset(self):
-
         queryset = (
             Issue.objects.values(
-                "analyzer", "analyzer_check", "diff__revision__repository__slug"
+                "revisions__repository__slug", "analyzer", "analyzer_check"
             )
-            .annotate(total=Count("id"))
+            # We want to count distinct issues because they can be referenced on multiple diffs
+            .annotate(total=Count("id", distinct=True))
             .annotate(
                 publishable=Count("id", filter=Q(in_patch=True) | Q(level=LEVEL_ERROR))
             )
-            .prefetch_related("diff", "diff_revision", "diff__revision__repository")
+            .distinct("revisions__repository__slug", "analyzer", "analyzer_check")
         )
 
         # Filter issues by date
@@ -245,9 +252,11 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
             # Because of the perf. hit filter, issues that are not older than today - 3 months.
             since = date.today() - timedelta(days=90)
 
-        queryset = queryset.filter(diff__created__gte=since)
+        queryset = queryset.filter(revisions__created__gte=since).distinct()
 
-        return queryset.order_by("-total")
+        return queryset.order_by(
+            "-total", "revisions__repository__slug", "analyzer", "analyzer_check"
+        )
 
 
 class IssueCheckHistory(CachedView, generics.ListAPIView):
@@ -277,7 +286,7 @@ class IssueCheckHistory(CachedView, generics.ListAPIView):
         # Filter by repository
         repository = self.request.query_params.get("repository")
         if repository:
-            queryset = queryset.filter(diff__revision__repository__slug=repository)
+            queryset = queryset.filter(diffs__revision__repository__slug=repository)
 
         # Filter by analyzer
         analyzer = self.request.query_params.get("analyzer")
@@ -310,7 +319,7 @@ class IssueCheckHistory(CachedView, generics.ListAPIView):
             else:
                 queryset = queryset.filter(date__gte=since.date())
 
-        return queryset.order_by("date")
+        return queryset.order_by("date").distinct()
 
 
 # Build exposed urls for the API

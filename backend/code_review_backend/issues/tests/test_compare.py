@@ -47,8 +47,7 @@ class CompareAPITestCase(APITestCase):
             self.build_issue(1, i)
 
     def build_issue(self, diff_id, hash_id):
-        return Issue.objects.create(
-            diff_id=diff_id,
+        issue = Issue.objects.create(
             path="path/to/file",
             line=random.randint(1, 100),
             nb_lines=random.randint(1, 100),
@@ -59,6 +58,9 @@ class CompareAPITestCase(APITestCase):
             analyzer_check="check-y",
             hash=self.build_hash(hash_id),
         )
+        # Link the issue to the specific diff
+        issue.issue_links.create(diff_id=diff_id, revision=self.revision)
+        return issue
 
     def build_hash(self, content):
         """Produce a dummy hash from some content"""
@@ -69,7 +71,7 @@ class CompareAPITestCase(APITestCase):
         Check the detection of a new issue in a revision
         """
         # No issues on second diff at first
-        self.assertFalse(Issue.objects.filter(diff_id=2).exists())
+        self.assertFalse(Issue.objects.filter(diffs=2).exists())
 
         # All issues on top diff are new
         top_diff = Diff.objects.get(pk=1)
@@ -90,7 +92,7 @@ class CompareAPITestCase(APITestCase):
         Check the detection is automatically applied through the API
         """
         # No issues on second diff at first
-        self.assertFalse(Issue.objects.filter(diff_id=2).exists())
+        self.assertFalse(Issue.objects.filter(diffs=2).exists())
 
         # Adding an issue with same hash on second diff will be set as existing
         data = {

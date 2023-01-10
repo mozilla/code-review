@@ -2,6 +2,7 @@
 import Pagination from './Pagination.vue'
 import Bool from './Bool.vue'
 import Choice from './Choice.vue'
+import RevisionDiffs from './RevisionDiffs.vue'
 
 export default {
   mounted () {
@@ -48,7 +49,8 @@ export default {
   components: {
     Bool,
     Choice,
-    Pagination
+    Pagination,
+    RevisionDiffs
   },
   computed: {
     issues () {
@@ -77,8 +79,7 @@ export default {
     <table class="table is-fullwidth" v-if="issues">
       <thead>
         <tr>
-          <th>Diff</th>
-          <th>Revision</th>
+          <th>Revisions (diffs)</th>
           <th>Path</th>
           <th>Line</th>
           <td><Choice :choices="choices.publishable" name="publishable" v-on:new-choice="load_issues('publishable', $event)"/></td>
@@ -88,10 +89,7 @@ export default {
       <tbody>
         <tr v-for="issue in issues">
           <td>
-            {{ issue.diff.id }}
-          </td>
-          <td>
-            <a :href="issue.diff.revision.phabricator_url" target="_blank">D{{ issue.diff.revision.id }}</a>
+            <RevisionDiffs :diffs=issue.diffs />
           </td>
           <td class="mono">{{ issue.path }}</td>
           <td>{{ issue.line }}</td>
@@ -119,5 +117,8 @@ export default {
 <style>
 .mono{
   font-family: monospace;
+}
+.is-nowrap{
+  white-space: nowrap;
 }
 </style>
