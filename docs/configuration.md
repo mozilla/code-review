@@ -146,11 +146,12 @@ events:
   # Each project has its own Sentry environment
   SENTRY_DSN: https://xxx:yyy@sentry.com
 
-  # Does the system need to listen for autoland payloads on pulse
-  # This is needed to ingest autoland issues in the backend
+  # Does the system need to listen for autoland or mozilla-central payloads on pulse
+  # This is needed to ingest issues in the backend
   autoland_enabled: true
+  mozilla_central_enabled: true
 
-  # Pulse authentication to get messages for the autoland triggers
+  # Pulse authentication to get messages for the autoland and mozilla-central triggers
   pulse_user: xxx
   pulse_password: yyy
 
