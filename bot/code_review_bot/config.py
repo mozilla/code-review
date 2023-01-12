@@ -46,6 +46,7 @@ class Settings(object):
         self.try_task_id = None
         self.try_group_id = None
         self.autoland_group_id = None
+        self.mozilla_central_group_id = None
         self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
         self.repositories = []
 
@@ -59,6 +60,8 @@ class Settings(object):
             self.try_group_id = os.environ["TRY_TASK_GROUP_ID"]
         elif "AUTOLAND_TASK_GROUP_ID" in os.environ:
             self.autoland_group_id = os.environ["AUTOLAND_TASK_GROUP_ID"]
+        elif "MOZILLA_CENTRAL_TASK_GROUP_ID" in os.environ:
+            self.mozilla_central_group_id = os.environ["MOZILLA_CENTRAL_TASK_GROUP_ID"]
         else:
             raise Exception("Only TRY mode is supported")
 

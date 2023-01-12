@@ -286,7 +286,7 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        revision = Revision.from_try(mock_try_task, api)
+        revision = Revision.from_try_task(mock_try_task, api)
 
         # Setup mercurial information manually instead of calling setup_try
         revision.mercurial_revision = "deadbeef123456"
@@ -325,6 +325,9 @@ class SessionMock(object):
     # A dict mapping a method and an url to the associated response
     _callable = {}
 
+    def reset(self):
+        self._callable = {}
+
     def add(self, method, url, response):
         self._callable[(method, url)] = response
 
@@ -348,6 +351,9 @@ class MockQueue(object):
         self.session = SessionMock()
 
     def configure(self, relations):
+        # Reset the session mock
+        self.session.reset()
+
         # Create tasks
         assert isinstance(relations, dict)
         self._tasks = {

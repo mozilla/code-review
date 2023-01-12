@@ -33,6 +33,7 @@ from code_review_backend.issues.models import Revision
 from code_review_backend.issues.serializers import DiffFullSerializer
 from code_review_backend.issues.serializers import DiffSerializer
 from code_review_backend.issues.serializers import HistoryPointSerializer
+from code_review_backend.issues.serializers import IssueBulkSerializer
 from code_review_backend.issues.serializers import IssueCheckSerializer
 from code_review_backend.issues.serializers import IssueCheckStatsSerializer
 from code_review_backend.issues.serializers import IssueSerializer
@@ -172,6 +173,22 @@ class IssueViewSet(viewsets.ModelViewSet):
         IssueLink.objects.create(
             issue=issue, diff_id=diff.id, revision_id=diff.revision_id
         )
+
+
+class IssueBulkCreate(generics.CreateAPIView):
+    """
+    Create multiple issues at once
+    """
+
+    serializer_class = IssueBulkSerializer
+
+    def get_serializer_context(self):
+        diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
+        context = super().get_serializer_context()
+        if not self.request:
+            return context
+        context["diff"] = diff
+        return context
 
 
 class IssueCheckDetails(CachedView, generics.ListAPIView):
@@ -334,6 +351,11 @@ router.register(
 router.register(r"diff", DiffViewSet, basename="diffs")
 router.register(r"diff/(?P<diff_id>\d+)/issues", IssueViewSet, basename="issues")
 urls = router.urls + [
+    path(
+        "diff/<int:diff_id>/issues-bulk/",
+        IssueBulkCreate.as_view(),
+        name="issue-bulk-create",
+    ),
     path("check/stats/", IssueCheckStats.as_view(), name="issue-checks-stats"),
     path("check/history/", IssueCheckHistory.as_view(), name="issue-checks-history"),
     path(

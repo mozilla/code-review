@@ -141,7 +141,7 @@ class Revision(object):
         return "Phabricator #{} - {}".format(self.diff_id, self.diff_phid)
 
     @staticmethod
-    def from_try(try_task: dict, phabricator: PhabricatorAPI):
+    def from_try_task(try_task: dict, phabricator: PhabricatorAPI):
         """
         Load identifiers from Phabricator, using the remote task description
         """
@@ -200,20 +200,23 @@ class Revision(object):
         )
 
     @staticmethod
-    def from_autoland(autoland_task: dict, phabricator: PhabricatorAPI):
+    def from_decision_task(task: dict, phabricator: PhabricatorAPI):
         """
-        Build a revision from a Mozilla autoland decision task
+        Build a revision from a Mozilla decision task
+        This method can be used for autoland or mozilla-central repositories
         """
-        assert (
-            autoland_task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] == REPO_AUTOLAND
-        ), "Not an autoland decision task"
+        assert task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] in (
+            REPO_AUTOLAND,
+            REPO_MOZILLA_CENTRAL,
+        ), "Decision task must be on autoland or mozilla-central"
 
         # Load mercurial revision
-        mercurial_revision = autoland_task["payload"]["env"]["GECKO_HEAD_REV"]
+        mercurial_revision = task["payload"]["env"]["GECKO_HEAD_REV"]
 
         # Search phabricator revision from commit message
-        commit_url = (
-            f"https://hg.mozilla.org/integration/autoland/json-rev/{mercurial_revision}"
+        commit_url = os.path.join(
+            task["payload"]["env"]["GECKO_HEAD_REPOSITORY"],
+            f"json-rev/{mercurial_revision}",
         )
         response = requests.get(commit_url)
         response.raise_for_status()

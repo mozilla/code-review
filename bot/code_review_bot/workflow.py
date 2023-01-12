@@ -15,6 +15,7 @@ from code_review_bot import Level
 from code_review_bot import stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND
+from code_review_bot.config import REPO_MOZILLA_CENTRAL
 from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
@@ -52,6 +53,7 @@ class Workflow(object):
         zero_coverage_enabled=True,
         update_build=True,
         task_failures_ignored=[],
+        mercurial_repository=None,
     ):
         self.zero_coverage_enabled = zero_coverage_enabled
         self.update_build = update_build
@@ -79,6 +81,9 @@ class Workflow(object):
         # Setup Backend API client
         self.backend_api = BackendAPI()
 
+        # Path to the mercurial repository
+        self.mercurial_repository = mercurial_repository
+
     def run(self, revision):
         """
         Find all issues on remote tasks and publish them
@@ -104,13 +109,16 @@ class Workflow(object):
 
         return issues
 
-    def ingest_autoland(self, revision):
+    def ingest_revision(self, revision, group_id):
         """
-        Simpler workflow to ingest autoland revision
+        Simpler workflow to ingest a revision
         """
-        assert revision.repository == REPO_AUTOLAND, "Need an autoland revision"
+        assert revision.repository in (
+            REPO_AUTOLAND,
+            REPO_MOZILLA_CENTRAL,
+        ), "Need a revision from autoland or mozilla-central"
         logger.info(
-            "Starting autoland ingestion",
+            "Starting revision ingestion",
             revision=revision.id,
             bugzilla=revision.bugzilla_id,
             title=revision.title,
@@ -119,23 +127,34 @@ class Workflow(object):
 
         assert (
             self.backend_api.enabled
-        ), "Backend storage is disabled, no autoland ingestion possible"
+        ), "Backend storage is disabled, revision ingestion is not possible"
 
         supported_tasks = []
 
         def _build_tasks(tasks):
             for task_status in tasks["tasks"]:
-                task = self.build_task(task_status)
-                if task is not None:
-                    supported_tasks.append(task)
+                try:
+                    task_name = task_status["task"]["metadata"]["name"]
+                    # Only analyze tasks stating with `source-test-` to avoid checking artifacts every time
+                    if not task_name.startswith("source-test-"):
+                        logger.debug(
+                            f"Task with name '{task_name}' is not supported during the ingestion of a revision"
+                        )
+                        continue
+                    task = self.build_task(task_status)
+                except Exception as e:
+                    logger.warning(f"Could not proceed task {task_name}: {e}")
+                    continue
+                if task is None or getattr(task, "parse_issues", None) is None:
+                    # Do ignore tasks that cannot be parsed as issues
+                    continue
+                supported_tasks.append(task)
 
-        # Find potential issues in the autoland task group
-        self.queue_service.listTaskGroup(
-            settings.autoland_group_id, paginationHandler=_build_tasks
-        )
+        # Find potential issues in the task group
+        self.queue_service.listTaskGroup(group_id, paginationHandler=_build_tasks)
         logger.info(
-            "Loaded all supported tasks in autoland group",
-            group_id=settings.autoland_group_id,
+            "Loaded all supported tasks in the task group",
+            group_id=group_id,
             nb=len(supported_tasks),
         )
 
@@ -157,9 +176,16 @@ class Workflow(object):
 
         # Publish issues when there are some
         if issues:
-            self.backend_api.publish_issues(issues, revision)
+            if self.mercurial_repository:
+                logger.info("Using the local repository to build issues")
+            self.backend_api.publish_issues(
+                issues,
+                revision,
+                mercurial_repository=self.mercurial_repository,
+                bulk=100,
+            )
         else:
-            logger.info("No issues for that autoland revision")
+            logger.info("No issues for that revision")
 
     def publish(self, revision, issues, task_failures, notices):
         """

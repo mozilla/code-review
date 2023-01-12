@@ -144,7 +144,7 @@ class Issue(abc.ABC):
         # Fallback to in_patch detection
         return self.revision.contains(self)
 
-    def build_hash(self):
+    def build_hash(self, local_repository=None):
         """
         Build a unique hash identifying that issue
         The text concerned by the issue is used and not its position in the file
@@ -153,25 +153,34 @@ class Issue(abc.ABC):
         """
         assert self.revision is not None, "Missing revision"
 
-        try:
-            # Load all the lines affected by the issue
-            file_content = self.revision.load_file(self.path)
-        except requests.exceptions.HTTPError as e:
-            if e.response.status_code == 404:
-                logger.warning(
-                    "Failed to download a file with an issue", path=self.path
-                )
-
-                # We still build the hash with empty content
+        if local_repository:
+            try:
+                with open(local_repository / self.path) as f:
+                    file_content = f.read()
+            except (FileNotFoundError, IsADirectoryError):
+                logger.warning(f"Failed to find issue's related file at {self.path}")
                 file_content = ""
-            else:
-                # When encountering another HTTP error, raise the issue
-                raise
+        else:
+            try:
+                # Load all the lines affected by the issue
+                file_content = self.revision.load_file(self.path)
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 404:
+                    logger.warning(
+                        "Failed to download a file with an issue", path=self.path
+                    )
+
+                    # We still build the hash with empty content
+                    file_content = ""
+                else:
+                    # When encountering another HTTP error, raise the issue
+                    raise
 
         # Build raw content:
         # 1. lines affected by patch
         # 2. without any spaces around each line
         file_lines = file_content.splitlines()
+
         if self.line is None or self.nb_lines is None:
             # Use full file when line is not specified
             lines = file_lines
@@ -228,16 +237,16 @@ class Issue(abc.ABC):
         """
         raise NotImplementedError
 
-    def as_dict(self):
+    def as_dict(self, issue_hash=None):
         """
         Build the serializable dict representation of the issue
         Used by debugging tools
         """
-        try:
-            issue_hash = self.build_hash()
-        except Exception as e:
-            logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
-            issue_hash = None
+        if not issue_hash:
+            try:
+                issue_hash = self.build_hash()
+            except Exception as e:
+                logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
 
         return {
             "analyzer": self.analyzer.name,

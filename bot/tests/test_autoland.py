@@ -12,7 +12,7 @@ def test_revision(mock_autoland_task, mock_phabricator, mock_hgmo):
     """
 
     with mock_phabricator as api:
-        revision = Revision.from_autoland(mock_autoland_task, api)
+        revision = Revision.from_decision_task(mock_autoland_task, api)
 
     assert revision.as_dict() == {
         "bugzilla_id": 1234567,

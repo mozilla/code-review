@@ -6,6 +6,7 @@
 import argparse
 import os
 import sys
+from pathlib import Path
 
 import structlog
 import yaml
@@ -18,7 +19,6 @@ from libmozdata.phabricator import UnitResultState
 from code_review_bot import AnalysisException
 from code_review_bot import stats
 from code_review_bot import taskcluster
-from code_review_bot.config import REPO_AUTOLAND
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision
@@ -48,6 +48,13 @@ def parse_cli():
         "--taskcluster-secret",
         help="Taskcluster Secret path",
         default=os.environ.get("TASKCLUSTER_SECRET"),
+    )
+    parser.add_argument(
+        "--mercurial-repository",
+        help="Optional path to a mercurial repository matching the analyzed revision.\n"
+        "Improves reading the updated files, i.e. to compute the unique hash of an issue.",
+        type=Path,
+        default=None,
     )
     parser.add_argument("--taskcluster-client-id", help="Taskcluster Client ID")
     parser.add_argument("--taskcluster-access-token", help="Taskcluster Access token")
@@ -135,11 +142,15 @@ def main():
     # Load unique revision
     try:
         if settings.autoland_group_id:
-            revision = Revision.from_autoland(
+            revision = Revision.from_decision_task(
                 queue_service.task(settings.autoland_group_id), phabricator_api
             )
+        elif settings.mozilla_central_group_id:
+            revision = Revision.from_decision_task(
+                queue_service.task(settings.mozilla_central_group_id), phabricator_api
+            )
         else:
-            revision = Revision.from_try(
+            revision = Revision.from_try_task(
                 queue_service.task(settings.try_task_id), phabricator_api
             )
     except Exception as e:
@@ -168,10 +179,13 @@ def main():
         # Update build status only when phabricator reporting is enabled
         update_build=phabricator_reporting_enabled,
         task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
+        mercurial_repository=args.mercurial_repository,
     )
     try:
-        if revision.repository == REPO_AUTOLAND:
-            w.ingest_autoland(revision)
+        if settings.autoland_group_id:
+            w.ingest_revision(revision, settings.autoland_group_id)
+        elif settings.mozilla_central_group_id:
+            w.ingest_revision(revision, settings.mozilla_central_group_id)
         else:
             w.run(revision)
     except Exception as e:
