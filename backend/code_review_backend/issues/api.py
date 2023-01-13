@@ -192,7 +192,7 @@ class IssueBulkCreate(generics.CreateAPIView):
         context = super().get_serializer_context()
         # Required to generate the OpenAPI documentation
         if not self.kwargs.get("diff_id"):
-            return {}
+            return context
         diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
         if not self.request:
             return context
