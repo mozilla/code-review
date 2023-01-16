@@ -28,7 +28,7 @@
     "eslint-plugin-import": "^2.27.4",
     "eslint-plugin-n": "^15.6.0",
     "eslint-plugin-promise": "^6.1.1",
-    "eslint-plugin-vue": "^9.8.0",
+    "eslint-plugin-vue": "^9.9.0",
     "html-webpack-plugin": "^5.5.0",
     "mini-css-extract-plugin": "^2.7.2",
     "process": "^0.11.10",
