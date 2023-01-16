@@ -351,7 +351,7 @@ def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_ba
     )
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 0
-    assert mock_revision._state == BuildState.Fail
+    assert mock_revision._state == BuildState.Pass
 
 
 def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
