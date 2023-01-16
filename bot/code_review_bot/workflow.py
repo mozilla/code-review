@@ -436,6 +436,8 @@ class Workflow(object):
             return ExternalTidyTask(task_id, task_status)
         elif name == "source-test-taskgraph-diff":
             return TaskGraphDiffTask(task_id, task_status)
+        elif name.startsWith("source-test-shadow-scheduler"):
+            return None
         elif settings.autoland_group_id is not None and not name.startswith(
             "source-test-"
         ):
