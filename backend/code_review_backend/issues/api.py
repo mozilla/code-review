@@ -83,6 +83,9 @@ class RevisionDiffViewSet(CreateListRetrieveViewSet):
     serializer_class = DiffSerializer
 
     def get_queryset(self):
+        # Required to generate the OpenAPI documentation
+        if not self.kwargs.get("revision_id"):
+            return Diff.objects.none()
         return Diff.objects.filter(revision_id=self.kwargs["revision_id"])
 
     def perform_create(self, serializer):
@@ -153,6 +156,9 @@ class IssueViewSet(viewsets.ModelViewSet):
     serializer_class = IssueSerializer
 
     def get_queryset(self):
+        # Required to generate the OpenAPI documentation
+        if not self.kwargs.get("diff_id"):
+            return Issue.objects.none()
         diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
         # No multiple revision should be linked to a single diff
         # but we use the distinct clause to match the DB state.
@@ -183,8 +189,11 @@ class IssueBulkCreate(generics.CreateAPIView):
     serializer_class = IssueBulkSerializer
 
     def get_serializer_context(self):
-        diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
         context = super().get_serializer_context()
+        # Required to generate the OpenAPI documentation
+        if not self.kwargs.get("diff_id"):
+            return context
+        diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
         if not self.request:
             return context
         context["diff"] = diff
