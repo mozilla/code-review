@@ -3,6 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from contextlib import nullcontext
 from datetime import datetime, timedelta
 
 import structlog
@@ -12,6 +13,7 @@ from taskcluster.utils import stringDate
 from code_review_bot import Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND, REPO_MOZILLA_CENTRAL, settings
+from code_review_bot.mercurial import clone_repository
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask, BaseTask, NoticeTask
@@ -28,6 +30,9 @@ logger = structlog.get_logger(__name__)
 
 TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
+
+# Max number of issues published to the backend at a time during the ingestion of a revision
+BULK_ISSUE_CHUNKS = 100
 
 
 class Workflow(object):
@@ -169,17 +174,26 @@ class Workflow(object):
         self.backend_api.publish_revision(revision)
 
         # Publish issues when there are some
-        if issues:
-            if self.mercurial_repository:
-                logger.info("Using the local repository to build issues")
+        if not issues:
+            logger.info("No issues for that revision")
+            return
+
+        context_manager = nullcontext(self.mercurial_repository)
+        # Do always clone the repository on production to speed up reading issues
+        if (
+            self.mercurial_repository is None
+            and settings.taskcluster.task_id != "local instance"
+        ):
+            logger.info(f"Cloning revision {revision.id} to read issues")
+            context_manager = clone_repository()
+
+        with context_manager as repo_path:
             self.backend_api.publish_issues(
                 issues,
                 revision,
-                mercurial_repository=self.mercurial_repository,
-                bulk=100,
+                mercurial_repository=str(repo_path),
+                bulk=BULK_ISSUE_CHUNKS,
             )
-        else:
-            logger.info("No issues for that revision")
 
     def publish(self, revision, issues, task_failures, notices, reviewers):
         """
