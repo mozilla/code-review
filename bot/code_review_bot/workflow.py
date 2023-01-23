@@ -442,7 +442,7 @@ class Workflow(object):
             # Log cleanly on autoland unknown tasks
             logger.info("Skipping unknown task", id=task_id, name=name)
         else:
-            return DefaultTask(task_id, task_status)
+            return None
 
     def update_status(self, revision, state):
         """
