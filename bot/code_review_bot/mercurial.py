@@ -81,9 +81,9 @@ def clone_repository(repo_url, branch="tip"):
     """
     with TemporaryDirectory() as temp_path:
         temp_path = Path(temp_path)
-        checkout_dir = (temp_path / "checkout").absolute()
-        checkout_dir.mkdir()
         sharebase_dir = (temp_path / "shared").absolute()
         sharebase_dir.mkdir()
+        # Do not create the checkout folder or Mercurial will complain about a missing .hg file
+        checkout_dir = (temp_path / "checkout").absolute()
         robust_checkout(repo_url, str(checkout_dir), str(sharebase_dir), branch)
         yield checkout_dir

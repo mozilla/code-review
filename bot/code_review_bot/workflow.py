@@ -184,14 +184,18 @@ class Workflow(object):
             self.mercurial_repository is None
             and settings.taskcluster.task_id != "local instance"
         ):
-            logger.info(f"Cloning revision {revision.id} to read issues")
-            context_manager = clone_repository()
+            logger.info(
+                f"Cloning revision to build issues (checkout to {revision.mercurial_revision})"
+            )
+            context_manager = clone_repository(
+                repo_url=revision.repository, branch=revision.mercurial_revision
+            )
 
         with context_manager as repo_path:
             self.backend_api.publish_issues(
                 issues,
                 revision,
-                mercurial_repository=str(repo_path),
+                mercurial_repository=repo_path,
                 bulk=BULK_ISSUE_CHUNKS,
             )
 
