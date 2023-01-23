@@ -311,7 +311,6 @@ class CodeReview(PhabricatorActions):
 
     async def trigger_repository(self, payload: dict):
         """Trigger a code review from the ingestion task of a repository (all tasks are resolved)"""
-        logger.info(f"TRIGGER : {payload}")
         assert (
             payload["routing"]["exchange"] == PULSE_TASK_GROUP_RESOLVED
         ), "Message was not published to task-group-resolved"
@@ -319,15 +318,12 @@ class CodeReview(PhabricatorActions):
         try:
             # Load first task in task group, check if it's on autoland or mozilla-central
             queue = taskcluster_config.get_service("queue")
-            logger.info(f"QUEUE : {queue}")
             task_group_id = payload["body"]["taskGroupId"]
-            logger.info(f"GROUP_ID: {task_group_id}")
             logger.debug(
                 "Checking repository for the task group", task_group_id=task_group_id
             )
             task = queue.task(task_group_id)
             repo_url = task["payload"]["env"].get("GECKO_HEAD_REPOSITORY")
-            logger.info(f"REPO_URL: {repo_url}")
 
             if repo_url == "https://hg.mozilla.org/integration/autoland":
                 group_key = "AUTOLAND_TASK_GROUP_ID"
