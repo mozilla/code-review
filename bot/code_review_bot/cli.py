@@ -145,7 +145,7 @@ def main():
                 queue_service.task(settings.autoland_group_id), phabricator_api
             )
         elif settings.mozilla_central_group_id:
-            revision = Revision.from_decision_task(
+            revision = Revision.from_mozilla_central_group(
                 queue_service.task(settings.mozilla_central_group_id), phabricator_api
             )
         else:
