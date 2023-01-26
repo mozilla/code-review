@@ -633,8 +633,9 @@ def mock_backend(mock_backend_secret):
         if revision_id in revisions:
             return (400, {}, "")
 
-        # Add diffs_url to the output
+        # Add backend's pre-built URLs to the output
         payload["diffs_url"] = f"http://{host}/v1/revision/{revision_id}/diffs/"
+        payload["issues_bulk_url"] = f"http://{host}/v1/revision/{revision_id}/issues/"
 
         revisions[revision_id] = payload
         return (201, {}, json.dumps(payload))

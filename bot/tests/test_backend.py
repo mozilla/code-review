@@ -37,6 +37,7 @@ def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_h
         "repository": "https://hgmo/test",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
+        "issues_bulk_url": "http://code-review-backend.test/v1/revision/51/issues/",
     }
 
     # Check the diff in the backend
@@ -127,6 +128,7 @@ def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
         "repository": "https://hgmo/test",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
+        "issues_bulk_url": "http://code-review-backend.test/v1/revision/51/issues/",
     }
 
 
@@ -178,7 +180,8 @@ def test_publication_failures(
     assert mock_clang_tidy_issues[0].path == "dom/animation/Animation.cpp"
 
     # Only one issue should be published as the bad one is ignored
-    mock_revision.issues_url = "http://code-review-backend.test/v1/diff/42/issues/"
+    mock_revision.diff_issues_url = "http://code-review-backend.test/v1/diff/42/issues/"
+
     published = r.publish_issues(mock_clang_tidy_issues, mock_revision)
     assert published == 1
 
