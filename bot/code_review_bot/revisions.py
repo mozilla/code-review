@@ -203,7 +203,7 @@ class Revision(object):
     @staticmethod
     def from_decision_task(task: dict, phabricator: PhabricatorAPI):
         """
-        Build a revision from a Mozilla decision task (e.g. from Autoland)
+        Build a revision from a Mozilla decision task (e.g. from Autoland or Mozilla-central)
         """
         # Load mercurial revision
         mercurial_revision = task["payload"]["env"]["GECKO_HEAD_REV"]
@@ -217,108 +217,50 @@ class Revision(object):
         response.raise_for_status()
         description = response.json()["desc"]
         match = REGEX_PHABRICATOR_COMMIT.search(description)
-        if match is not None:
-            url, revision_id = match.groups()
-            revision_id = int(revision_id)
-            logger.info("Found phabricator revision", id=revision_id, url=url)
-        else:
+        if match is None:
             raise Exception(f"No phabricator revision found in commit {commit_url}")
+
+        url, revision_id = match.groups()
+        revision_id = int(revision_id)
+        logger.info("Found phabricator revision", id=revision_id, url=url)
 
         # Lookup the Phabricator revision to get details (phid, title, bugzilla_id, ...)
         revision = phabricator.load_revision(rev_id=revision_id)
 
-        # Search the Phabricator diff with same commit identifier
-        diffs = phabricator.search_diffs(
-            revision_phid=revision["phid"], attachments={"commits": True}
-        )
-        diff = next(
-            iter(
-                d
-                for d in diffs
-                if d["attachments"]["commits"]["commits"][0]["identifier"]
-                == mercurial_revision
-            ),
-            None,
-        )
-        assert (
-            diff is not None
-        ), f"No Phabricator diff found for D{revision_id} and mercurial revision {mercurial_revision}"
-        logger.info("Found phabricator diff", id=diff["id"])
+        diff_attrs = {}
+        if task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] != REPO_MOZILLA_CENTRAL:
+            # Search the Phabricator diff with the same commit identifier, except on Mozilla-central
+            diffs = phabricator.search_diffs(
+                revision_phid=revision["phid"], attachments={"commits": True}
+            )
+            diff = next(
+                iter(
+                    d
+                    for d in diffs
+                    if d["attachments"]["commits"]["commits"][0]["identifier"]
+                    == mercurial_revision
+                ),
+                None,
+            )
+            assert (
+                diff is not None
+            ), f"No Phabricator diff found for D{revision_id} and mercurial revision {mercurial_revision}"
+            logger.info("Found phabricator diff", id=diff["id"])
+            diff_attrs = {
+                "diff": diff["id"],
+                "diff_id": diff["id"],
+                "diff_phid": diff["phid"],
+            }
 
         return Revision(
             id=revision_id,
             phid=revision["phid"],
-            diff_id=diff["id"],
-            diff_phid=diff["phid"],
             mercurial_revision=mercurial_revision,
             repository=REPO_AUTOLAND,
             target_repository=REPO_MOZILLA_CENTRAL,
             revision=revision,
-            diff=diff,
             url=url,
-        )
-
-    @staticmethod
-    def from_mozilla_central_group(task: dict, phabricator: PhabricatorAPI):
-        """
-        Build a revision from a Mozilla-central group task.
-        There is no information about the Phabricator revision in such a commit, so we look
-        for the top-most mozilla-central Phabricator diffs matching the mercurial revision.
-        """
-        assert (
-            task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] == REPO_MOZILLA_CENTRAL
-        ), "The task must be on mozilla-central"
-
-        repo_name = "mozilla-central"
-        mercurial_revision = task["payload"]["env"]["GECKO_HEAD_REV"]
-
-        logger.info("Retrieving Mozilla-central repository PHID")
-        repos = phabricator.list_repositories()
-        mc_repo = next(
-            (repo for repo in repos if repo["fields"]["name"] == repo_name),
-            None,
-        )
-        if mc_repo is None:
-            raise Exception(
-                f"Repository Phabricator ID could not be found with name {repo_name}"
-            )
-
-        logger.info(
-            "Looking for recent Phabricator diffs matching the mercurial revision"
-        )
-        diffs = phabricator.search_diffs(attachments={"commits": True})
-        diff = next(
-            (
-                diff
-                for diff in diffs
-                if diff["repositoryPHID"] == mc_repo["phid"]
-                and diff["baseRevision"] == mercurial_revision
-            ),
-            None,
-        )
-        if diff is None:
-            raise Exception(
-                f"Phabricator diff matching the mercurial revision {mercurial_revision} could "
-                f"not be found among the {len(diffs)} most recent diffs."
-            )
-
-        revision_phid = diff["revisionPHID"]
-
-        logger.info(f"Retrieving revision {revision_phid}")
-        revision = phabricator.load_revision(rev_phid=revision_phid)
-
-        return Revision(
-            id=revision["id"],
-            phid=revision_phid,
-            # The diff used to retrieve the revision makes no sense here
-            diff_id=None,
-            diff_phid=None,
-            mercurial_revision=mercurial_revision,
-            repository=REPO_MOZILLA_CENTRAL,
-            target_repository=REPO_MOZILLA_CENTRAL,
-            revision=revision,
-            diff=diff,
-            url=revision["fields"]["uri"],
+            **diff_attrs,
         )
 
     def analyze_patch(self):
