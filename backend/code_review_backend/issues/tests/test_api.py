@@ -172,12 +172,20 @@ class CreationAPITestCase(APITestCase):
     def test_create_issue_bulk_methods(self):
         self.client.force_authenticate(user=self.user)
         for method in ("get", "put", "patch"):
-            response = getattr(self.client, method)("/v1/diff/1234/issues-bulk/")
+            response = getattr(self.client, method)("/v1/revision/456/issues/")
             self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_create_issue_wrong_revision(self):
+        self.client.force_authenticate(user=self.user)
+        with self.assertNumQueries(1):
+            response = self.client.post(
+                "/v1/revision/0011101000101001/issues/", {}, format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_create_issue_bulk(self):
         """
-        Check we can create multiple issues through the API
+        Check we can create multiple issues through the API without no Diff
         """
         data = {
             "issues": [
@@ -202,16 +210,14 @@ class CreationAPITestCase(APITestCase):
         }
 
         # No auth will give a permission denied
-        response = self.client.post("/v1/diff/1234/issues-bulk/", data, format="json")
+        response = self.client.post("/v1/revision/456/issues/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Once authenticated, creation will work
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
         with self.assertNumQueries(5):
-            response = self.client.post(
-                "/v1/diff/1234/issues-bulk/", data, format="json"
-            )
+            response = self.client.post("/v1/revision/456/issues/", data, format="json")
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         issues = list(Issue.objects.order_by("created"))
@@ -219,10 +225,10 @@ class CreationAPITestCase(APITestCase):
 
         # Do not check the content of issue created as it's a random UUID
         issue_data = response.json()
-        self.maxDiff = None
         self.assertDictEqual(
             issue_data,
             {
+                "diff_id": None,
                 "issues": [
                     {
                         "analyzer": "remote-flake8",
@@ -254,20 +260,73 @@ class CreationAPITestCase(APITestCase):
                         "path": "path/to/file.py",
                         "publishable": False,
                     },
-                ]
+                ],
             },
         )
 
         self.assertEqual(issues[0].path, "path/to/file.py")
         self.assertEqual(issues[0].line, 1)
-        self.assertListEqual(
-            list(issues[0].diffs.values_list("id", flat=True)), [self.diff.id]
-        )
+        self.assertFalse(issues[0].diffs.exists())
         self.assertFalse(issues[0].new_for_revision)
 
         self.assertEqual(issues[1].path, "path/to/file.py")
         self.assertEqual(issues[1].line, 2)
-        self.assertListEqual(
-            list(issues[1].diffs.values_list("id", flat=True)), [self.diff.id]
-        )
+        self.assertFalse(issues[1].diffs.exists())
         self.assertEqual(issues[1].new_for_revision, None)
+
+    def test_create_issue_bulk_with_diff(self):
+        """
+        Check we can create issues on a revision with a reference to a diff
+        """
+        data = {
+            "diff_id": 1234,
+            "issues": [
+                {
+                    "hash": "somemd5hash",
+                    "line": 1,
+                    "analyzer": "remote-flake8",
+                    "level": "error",
+                    "path": "path/to/file.py",
+                    "in_patch": True,
+                    "new_for_revision": False,
+                }
+            ],
+        }
+        self.client.force_authenticate(user=self.user)
+        with self.assertNumQueries(6):
+            response = self.client.post("/v1/revision/456/issues/", data, format="json")
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(Issue.objects.filter(revisions__id=456).count(), 1)
+
+        issue = Issue.objects.filter(revisions__id=456).get()
+        self.assertDictEqual(
+            response.json(),
+            {
+                "diff_id": 1234,
+                "issues": [
+                    {
+                        "analyzer": "remote-flake8",
+                        "char": None,
+                        "check": None,
+                        "hash": "somemd5hash",
+                        "id": str(issue.id),
+                        "in_patch": True,
+                        "level": "error",
+                        "line": 1,
+                        "message": None,
+                        "nb_lines": None,
+                        "new_for_revision": None,
+                        "path": "path/to/file.py",
+                        "publishable": True,
+                    },
+                ],
+            },
+        )
+
+        self.assertEqual(issue.path, "path/to/file.py")
+        self.assertEqual(issue.line, 1)
+        self.assertListEqual(
+            list(issue.diffs.values_list("id", flat=True)), [self.diff.id]
+        )
+        self.assertFalse(issue.new_for_revision)
