@@ -68,6 +68,19 @@ class CreationAPITestCase(APITestCase):
         revision = Revision.objects.get(pk=123)
         self.assertEqual(revision.title, "Bug XXX - Some bug")
         self.assertEqual(revision.bugzilla_id, 123456)
+        self.assertDictEqual(
+            response.json(),
+            {
+                "id": 123,
+                "bugzilla_id": 123456,
+                "diffs_url": "http://testserver/v1/revision/123/diffs/",
+                "issues_bulk_url": "http://testserver/v1/revision/123/issues/",
+                "phabricator_url": "https://phabricator.services.mozilla.com/D123",
+                "phid": "PHID-REV-xxx",
+                "repository": "http://repo.test/myrepo",
+                "title": "Bug XXX - Some bug",
+            },
+        )
 
     def test_create_diff(self):
         """

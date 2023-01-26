@@ -39,7 +39,9 @@ class BackendAPI(object):
 
     def publish_revision(self, revision):
         """
-        Create Revision and Diff instances in backend
+        Create a Revision on the backend.
+        In case revision.diff_id exists, also create revision's diff and set
+        revision.diff_issues_url to the URL for issues creation.
         """
         if not self.enabled:
             logger.warn("Skipping revision publication on backend")
@@ -65,6 +67,12 @@ class BackendAPI(object):
         if backend_revision is None:
             return
 
+        revision.issues_url = backend_revision["issues_bulk_url"]
+
+        # A revision may have no diff (e.g. Mozilla-central group tasks)
+        if not revision.diff_id:
+            return
+
         # Create diff attached to revision on backend
         data = {
             "id": revision.diff_id,
@@ -77,11 +85,10 @@ class BackendAPI(object):
 
         # If we are dealing with a None `backend_revision` bail out
         if backend_diff is None:
-            revision.issues_url = None
             return
 
         # Store the issues url on the revision
-        revision.issues_url = backend_diff["issues_url"]
+        revision.diff_issues_url = backend_diff["issues_url"]
 
     def publish_issues(self, issues, revision, mercurial_repository=None, bulk=0):
         """
@@ -93,15 +100,12 @@ class BackendAPI(object):
             logger.warn("Skipping issues publication on backend")
             return
 
-        if revision.issues_url is None:
-            logger.warn(
-                "Missing issues_url on revision",
-            )
-            return
-
         published = 0
         if bulk > 0:
-            url = revision.issues_url.rstrip("/") + "-bulk/"
+            assert revision.issues_url is not None, (
+                "Missing issues_url on the revision. "
+                "This attribute is required when publishing issues in bulk."
+            )
             chunks = (issues[i : i + bulk] for i in range(0, len(issues), bulk))
             for issues_chunk in chunks:
                 data = []
@@ -115,7 +119,7 @@ class BackendAPI(object):
                         )
                         continue
                     data.append(issue.as_dict(issue_hash=issue_hash))
-                response = self.create(url, {"issues": data})
+                response = self.create(revision.issues_url, {"issues": data})
                 created = response.get("issues")
                 assert created and len(created) == len(issues_chunk)
                 for issue, value in zip(issues_chunk, created):
@@ -123,6 +127,11 @@ class BackendAPI(object):
                     issue.on_backend = value
                 published += len(data)
         else:
+            assert revision.diff_issues_url is not None, (
+                "Missing diff_issues_url on the revision. "
+                "This attribute is required when publishing a single issue on a revision's diff."
+            )
+
             for issue in issues:
                 try:
                     issue_hash = issue.build_hash(local_repository=mercurial_repository)
@@ -135,7 +144,7 @@ class BackendAPI(object):
                     )
                     continue
                 payload = issue.as_dict(issue_hash=issue_hash)
-                issue.on_backend = self.create(revision.issues_url, payload)
+                issue.on_backend = self.create(revision.diff_issues_url, payload)
                 if issue.on_backend is not None:
                     published += 1
                 else:

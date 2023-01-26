@@ -73,6 +73,7 @@ class DiffAPITestCase(APITestCase):
                             "title": "Revision 1",
                             "bugzilla_id": 10000,
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
+                            "issues_bulk_url": "http://testserver/v1/revision/1/issues/",
                             "phabricator_url": "https://phabricator.services.mozilla.com/D1",
                         },
                         "repository": {
@@ -100,6 +101,7 @@ class DiffAPITestCase(APITestCase):
                             "title": "Revision 2",
                             "bugzilla_id": 10001,
                             "diffs_url": "http://testserver/v1/revision/2/diffs/",
+                            "issues_bulk_url": "http://testserver/v1/revision/2/issues/",
                             "phabricator_url": "https://phabricator.services.mozilla.com/D2",
                         },
                         "repository": {
@@ -127,6 +129,7 @@ class DiffAPITestCase(APITestCase):
                             "title": "Revision 1",
                             "bugzilla_id": 10000,
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
+                            "issues_bulk_url": "http://testserver/v1/revision/1/issues/",
                             "phabricator_url": "https://phabricator.services.mozilla.com/D1",
                         },
                         "repository": {

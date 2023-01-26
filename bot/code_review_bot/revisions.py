@@ -113,7 +113,9 @@ class Revision(object):
         # the phabricator repository payload for later identification
         self.phabricator_repository = phabricator_repository
 
-        # Backend data
+        # backend's returned URL to list or create issues on the revision's diff
+        self.diff_issues_url = None
+        # backend's returned URL to list or create issues linked to the revision in bulk (diff is optional)
         self.issues_url = None
 
         # Patches built later on
@@ -308,8 +310,9 @@ class Revision(object):
         return Revision(
             id=revision["id"],
             phid=revision_phid,
-            diff_id=diff["id"],
-            diff_phid=diff["phid"],
+            # The diff used to retrieve the revision makes no sense here
+            diff_id=None,
+            diff_phid=None,
             mercurial_revision=mercurial_revision,
             repository=REPO_MOZILLA_CENTRAL,
             target_repository=REPO_MOZILLA_CENTRAL,

@@ -34,6 +34,9 @@ class RevisionSerializer(serializers.ModelSerializer):
     diffs_url = serializers.HyperlinkedIdentityField(
         view_name="revision-diffs-list", lookup_url_kwarg="revision_id"
     )
+    issues_bulk_url = serializers.HyperlinkedIdentityField(
+        view_name="revision-issues-bulk", lookup_url_kwarg="revision_id"
+    )
     phabricator_url = serializers.URLField(read_only=True)
 
     class Meta:
@@ -45,6 +48,7 @@ class RevisionSerializer(serializers.ModelSerializer):
             "title",
             "bugzilla_id",
             "diffs_url",
+            "issues_bulk_url",
             "phabricator_url",
         )
 
