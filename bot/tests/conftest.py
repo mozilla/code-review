@@ -673,6 +673,21 @@ def mock_backend(mock_backend_secret):
         issues[diff_id].append(payload)
         return (201, {}, json.dumps(payload))
 
+    def post_issues_bulk(request):
+        """Create issues in bulk on a revision"""
+        payload = json.loads(request.body)
+
+        # Add a constant UUIDs for issues
+        for index, issue in enumerate(payload["issues"]):
+            issue["id"] = str(
+                uuid.uuid5(
+                    uuid.NAMESPACE_URL, request.url + str(index) + str(issue["hash"])
+                )
+            )
+
+        issues.update({issue["id"]: issue for issue in payload["issues"]})
+        return (201, {}, json.dumps(payload))
+
     # Revision
     responses.add_callback(
         responses.GET,
@@ -702,6 +717,11 @@ def mock_backend(mock_backend_secret):
         responses.POST,
         re.compile(rf"^http://{host}/v1/diff/(\d+)/issues/$"),
         callback=post_issue,
+    )
+    responses.add_callback(
+        responses.POST,
+        re.compile(rf"^http://{host}/v1/revision/(\d+)/issues/$"),
+        callback=post_issues_bulk,
     )
 
     return revisions, diffs, issues
