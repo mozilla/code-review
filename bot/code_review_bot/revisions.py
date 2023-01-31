@@ -205,6 +205,11 @@ class Revision(object):
         """
         Build a revision from a Mozilla decision task (e.g. from Autoland or Mozilla-central)
         """
+        assert task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] in (
+            REPO_AUTOLAND,
+            REPO_MOZILLA_CENTRAL,
+        ), "Decision task must be on autoland or mozilla-central"
+
         # Load mercurial revision
         mercurial_revision = task["payload"]["env"]["GECKO_HEAD_REV"]
 
@@ -247,7 +252,7 @@ class Revision(object):
             ), f"No Phabricator diff found for D{revision_id} and mercurial revision {mercurial_revision}"
             logger.info("Found phabricator diff", id=diff["id"])
             diff_attrs = {
-                "diff": diff["id"],
+                "diff": diff,
                 "diff_id": diff["id"],
                 "diff_phid": diff["phid"],
             }
