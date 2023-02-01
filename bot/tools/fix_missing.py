@@ -124,7 +124,6 @@ def list_pushes(known_revisions, updates, min_date, max_date):
 
 
 def find_task(push_id):
-
     # Find the task ids from Treeherder
     resp = requests.get(
         TREEHERDER_JOBS_URL, {"push_id": push_id}, headers=TREEHERDER_HEADERS

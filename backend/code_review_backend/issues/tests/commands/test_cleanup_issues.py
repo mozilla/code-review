@@ -58,7 +58,7 @@ class CleanupIssuesCommandTestCase(TestCase):
                 )
             ]
         )
-        for (rev, days_ago) in ((rev_1, 35), (rev_2, 15), (rev_3, 1)):
+        for rev, days_ago in ((rev_1, 35), (rev_2, 15), (rev_3, 1)):
             rev.created = timezone.now() - timedelta(days=days_ago)
             rev.save(update_fields=["created"])
 

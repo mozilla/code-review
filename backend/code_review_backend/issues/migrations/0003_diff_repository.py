@@ -40,7 +40,6 @@ def _create_diff_repos(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("issues", "0002_compare_issues")]
 
     operations = [

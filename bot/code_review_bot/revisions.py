@@ -90,7 +90,6 @@ class Revision(object):
         url=None,
         patch=None,
     ):
-
         # Identification
         self.id = id
         self.phid = phid

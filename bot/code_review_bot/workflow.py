@@ -382,7 +382,6 @@ class Workflow(object):
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
                     if task.state == "failed" and not task_issues and not task_patches:
-
                         # Skip task that are listed as ignorable (we try to avoid unnecessary spam)
                         if task.name in self.task_failures_ignored:
                             logger.warning(

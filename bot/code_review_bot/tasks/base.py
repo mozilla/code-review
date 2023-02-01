@@ -74,7 +74,6 @@ class BaseTask:
         return cls(task_id, task_status)
 
     def load_artifacts(self, queue_service):
-
         # Process only the supported final states
         # as some tasks do not always have relevant output
         if self.state in self.skipped_states:

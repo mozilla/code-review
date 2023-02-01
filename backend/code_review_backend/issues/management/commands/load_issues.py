@@ -63,7 +63,6 @@ class Command(BaseCommand):
         )
 
         for task_id, report in tasks:
-
             # Build revision & diff
             revision, diff = self.build_revision_and_diff(report["revision"], task_id)
 
@@ -118,7 +117,6 @@ class Command(BaseCommand):
 
         token = None
         while True:
-
             query = {"limit": chunk}
             if token is not None:
                 query["continuationToken"] = token
@@ -127,7 +125,6 @@ class Command(BaseCommand):
             )
 
             for task in data["tasks"]:
-
                 if not task["data"].get("issues"):
                     continue
 
@@ -137,7 +134,6 @@ class Command(BaseCommand):
                     artifact = json.load(open(path))
 
                 else:
-
                     # Download the task report
                     logging.info(f"Download task {task['taskId']}")
                     try:

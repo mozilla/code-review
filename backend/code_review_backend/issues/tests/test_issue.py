@@ -12,7 +12,6 @@ from code_review_backend.issues.models import Issue
 
 class IssueTestCase(TestCase):
     def test_publishable(self):
-
         # A warning is not publishable
         issue = Issue.objects.create(path="some/file", line=12, level=LEVEL_WARNING)
         self.assertFalse(issue.publishable)

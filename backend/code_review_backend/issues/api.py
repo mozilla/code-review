@@ -301,7 +301,6 @@ class IssueCheckHistory(CachedView, generics.ListAPIView):
     pagination_class = None
 
     def get_queryset(self):
-
         # Count all the issues per day
         queryset = (
             Issue.objects.annotate(date=TruncDate("created"))

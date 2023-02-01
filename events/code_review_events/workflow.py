@@ -138,7 +138,6 @@ class CodeReview(PhabricatorActions):
         self.update_state(build)
 
         if build.state == PhabricatorBuildState.Public:
-
             # Check if the author is not blacklisted
             if self.is_blacklisted(build.revision):
                 return
@@ -375,7 +374,6 @@ class Events(object):
 
         # Run webserver & pulse on web dyno or single instance
         if not heroku.in_dyno() or heroku.in_web_dyno():
-
             # Create web server
             self.webserver = WebServer(QUEUE_WEB_BUILDS)
             self.webserver.register(self.bus)
