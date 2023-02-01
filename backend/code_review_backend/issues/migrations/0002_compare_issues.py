@@ -37,7 +37,6 @@ def set_existing_as_new(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("issues", "0001_initial")]
 
     operations = [

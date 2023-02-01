@@ -18,7 +18,6 @@ def clean_unlinked_issue(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("issues", "0005_rename_check_issue_analyzer_check"),
     ]

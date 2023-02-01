@@ -118,7 +118,6 @@ def PhabricatorMock():
         return (200, json_headers, _response(mock_name))
 
     with responses.RequestsMock(assert_all_requests_are_fired=False) as resp:
-
         resp.add(
             responses.POST,
             "http://phabricator.test/api/user.whoami",

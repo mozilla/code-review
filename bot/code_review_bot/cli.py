@@ -63,7 +63,6 @@ def parse_cli():
 
 @stats.timer("runtime.analysis")
 def main():
-
     args = parse_cli()
     taskcluster.auth(args.taskcluster_client_id, args.taskcluster_access_token)
 

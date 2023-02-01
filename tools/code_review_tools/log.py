@@ -129,7 +129,6 @@ def init_logger(
     PAPERTRAIL_PORT=None,
     SENTRY_DSN=None,
 ):
-
     if not channel:
         channel = os.environ.get("APP_CHANNEL")
 

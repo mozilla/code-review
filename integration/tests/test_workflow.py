@@ -7,7 +7,6 @@ import subprocess
 
 
 def test_publish(monkeypatch, workflow, tmpdir, mock_taskcluster):
-
     # Fake repo
     repo_dir = tmpdir.realpath()
     hg = tmpdir.mkdir(".hg")

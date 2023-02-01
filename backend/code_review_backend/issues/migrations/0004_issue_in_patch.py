@@ -10,7 +10,6 @@ from django.db import models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [("issues", "0003_diff_repository")]
 
     operations = [
