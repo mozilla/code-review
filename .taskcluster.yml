@@ -47,7 +47,7 @@ tasks:
         then: 'https://api.code-review.testing.moz.tools'
         else: 'https://api.code-review.moz.tools'
 
-    taskboot_image: "mozilla/taskboot:0.2.2"
+    taskboot_image: "mozilla/taskboot:0.3.6"
 
     pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
     python_version: "3.9"
@@ -62,7 +62,7 @@ tasks:
 
     workerType:
       $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
-      then: linux
+      then: linux-gcp
       else: ci
   in:
     $if: 'tasks_for == "github-push" || (tasks_for == "github-pull-request" && event["action"] in ["opened", "reopened", "synchronize"])'
@@ -146,9 +146,9 @@ tasks:
                   - /bot.tar
                   - bot/docker/Dockerfile
                 artifacts:
-                  public/code-review-bot.tar:
+                  public/code-review-bot.tar.zst:
                     expires: {$fromNow: '6 months'}
-                    path: /bot.tar
+                    path: /bot.tar.zst
                     type: file
               routes:
                 $if: 'tasks_for == "github-pull-request"'
@@ -266,9 +266,9 @@ tasks:
                   - /events.tar
                   - events/docker/Dockerfile
                 artifacts:
-                  public/code-review-events.tar:
+                  public/code-review-events.tar.zst:
                     expires: {$fromNow: '2 weeks'}
-                    path: /events.tar
+                    path: /events.tar.zst
                     type: file
               scopes:
                 - docker-worker:capability:privileged
@@ -297,9 +297,9 @@ tasks:
                   - "git clone --quiet ${repository} /code-review && cd /code-review && git checkout ${head_rev} -b build
                     && backend/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
                 artifacts:
-                  public/code-review-backend.tar:
+                  public/code-review-backend.tar.zst:
                     expires: {$fromNow: '2 weeks'}
-                    path: /backend.tar
+                    path: /backend.tar.zst
                     type: file
               scopes:
                 - docker-worker:capability:privileged
@@ -359,9 +359,9 @@ tasks:
                   - /integration.tar
                   - integration/docker/Dockerfile
                 artifacts:
-                  public/code-review-integration.tar:
+                  public/code-review-integration.tar.zst:
                     expires: {$fromNow: '2 weeks'}
-                    path: /integration.tar
+                    path: /integration.tar.zst
                     type: file
               scopes:
                 - docker-worker:capability:privileged
@@ -422,8 +422,8 @@ tasks:
                     - deploy-heroku
                     - --heroku-app
                     - "code-review-events-${channel}"
-                    - web:public/code-review-events.tar
-                    - worker:public/code-review-events.tar
+                    - web:public/code-review-events.tar.zst
+                    - worker:public/code-review-events.tar.zst
                   env:
                     TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
                 scopes:
@@ -453,7 +453,7 @@ tasks:
                     - deploy-heroku
                     - --heroku-app
                     - "code-review-backend-${channel}"
-                    - web:public/code-review-backend.tar
+                    - web:public/code-review-backend.tar.zst
                   env:
                     TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
                 scopes:
