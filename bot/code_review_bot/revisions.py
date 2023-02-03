@@ -113,7 +113,9 @@ class Revision(object):
         # the phabricator repository payload for later identification
         self.phabricator_repository = phabricator_repository
 
-        # Backend data
+        # backend's returned URL to list or create issues on the revision's diff
+        self.diff_issues_url = None
+        # backend's returned URL to list or create issues linked to the revision in bulk (diff is optional)
         self.issues_url = None
 
         # Patches built later on
@@ -201,8 +203,7 @@ class Revision(object):
     @staticmethod
     def from_decision_task(task: dict, phabricator: PhabricatorAPI):
         """
-        Build a revision from a Mozilla decision task
-        This method can be used for autoland or mozilla-central repositories
+        Build a revision from a Mozilla decision task (e.g. from Autoland or Mozilla-central)
         """
         assert task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] in (
             REPO_AUTOLAND,
@@ -212,7 +213,7 @@ class Revision(object):
         # Load mercurial revision
         mercurial_revision = task["payload"]["env"]["GECKO_HEAD_REV"]
 
-        # Search phabricator revision from commit message
+        # Look for the Phabricator revision from the commit message
         commit_url = os.path.join(
             task["payload"]["env"]["GECKO_HEAD_REPOSITORY"],
             f"json-rev/{mercurial_revision}",
@@ -221,45 +222,50 @@ class Revision(object):
         response.raise_for_status()
         description = response.json()["desc"]
         match = REGEX_PHABRICATOR_COMMIT.search(description)
-        if match is not None:
-            url, revision_id = match.groups()
-            revision_id = int(revision_id)
-            logger.info("Found phabricator revision", id=revision_id, url=url)
-        else:
+        if match is None:
             raise Exception(f"No phabricator revision found in commit {commit_url}")
+
+        url, revision_id = match.groups()
+        revision_id = int(revision_id)
+        logger.info("Found phabricator revision", id=revision_id, url=url)
 
         # Lookup the Phabricator revision to get details (phid, title, bugzilla_id, ...)
         revision = phabricator.load_revision(rev_id=revision_id)
 
-        # Search the Phabricator diff with same commit identifier
-        diffs = phabricator.search_diffs(
-            revision_phid=revision["phid"], attachments={"commits": True}
-        )
-        diff = next(
-            iter(
-                d
-                for d in diffs
-                if d["attachments"]["commits"]["commits"][0]["identifier"]
-                == mercurial_revision
-            ),
-            None,
-        )
-        assert (
-            diff is not None
-        ), f"No Phabricator diff found for D{revision_id} and mercurial revision {mercurial_revision}"
-        logger.info("Found phabricator diff", id=diff["id"])
+        diff_attrs = {}
+        if task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] != REPO_MOZILLA_CENTRAL:
+            # Search the Phabricator diff with the same commit identifier, except on Mozilla-central
+            diffs = phabricator.search_diffs(
+                revision_phid=revision["phid"], attachments={"commits": True}
+            )
+            diff = next(
+                iter(
+                    d
+                    for d in diffs
+                    if d["attachments"]["commits"]["commits"][0]["identifier"]
+                    == mercurial_revision
+                ),
+                None,
+            )
+            assert (
+                diff is not None
+            ), f"No Phabricator diff found for D{revision_id} and mercurial revision {mercurial_revision}"
+            logger.info("Found phabricator diff", id=diff["id"])
+            diff_attrs = {
+                "diff": diff,
+                "diff_id": diff["id"],
+                "diff_phid": diff["phid"],
+            }
 
         return Revision(
             id=revision_id,
             phid=revision["phid"],
-            diff_id=diff["id"],
-            diff_phid=diff["phid"],
             mercurial_revision=mercurial_revision,
             repository=REPO_AUTOLAND,
             target_repository=REPO_MOZILLA_CENTRAL,
             revision=revision,
-            diff=diff,
             url=url,
+            **diff_attrs,
         )
 
     def analyze_patch(self):

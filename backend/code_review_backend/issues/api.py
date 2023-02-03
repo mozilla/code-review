@@ -183,7 +183,7 @@ class IssueViewSet(viewsets.ModelViewSet):
 
 class IssueBulkCreate(generics.CreateAPIView):
     """
-    Create multiple issues at once
+    Create multiple issues at once, linked to a mandatory revision and an optional diff.
     """
 
     serializer_class = IssueBulkSerializer
@@ -191,12 +191,10 @@ class IssueBulkCreate(generics.CreateAPIView):
     def get_serializer_context(self):
         context = super().get_serializer_context()
         # Required to generate the OpenAPI documentation
-        if not self.kwargs.get("diff_id"):
+        if not self.kwargs.get("revision_id"):
             return context
-        diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
-        if not self.request:
-            return context
-        context["diff"] = diff
+        revision = get_object_or_404(Revision, id=self.kwargs["revision_id"])
+        context["revision"] = revision
         return context
 
 
@@ -360,9 +358,9 @@ router.register(r"diff", DiffViewSet, basename="diffs")
 router.register(r"diff/(?P<diff_id>\d+)/issues", IssueViewSet, basename="issues")
 urls = router.urls + [
     path(
-        "diff/<int:diff_id>/issues-bulk/",
+        "revision/<int:revision_id>/issues/",
         IssueBulkCreate.as_view(),
-        name="issue-bulk-create",
+        name="revision-issues-bulk",
     ),
     path("check/stats/", IssueCheckStats.as_view(), name="issue-checks-stats"),
     path("check/history/", IssueCheckHistory.as_view(), name="issue-checks-history"),

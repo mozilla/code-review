@@ -34,6 +34,9 @@ class RevisionSerializer(serializers.ModelSerializer):
     diffs_url = serializers.HyperlinkedIdentityField(
         view_name="revision-diffs-list", lookup_url_kwarg="revision_id"
     )
+    issues_bulk_url = serializers.HyperlinkedIdentityField(
+        view_name="revision-issues-bulk", lookup_url_kwarg="revision_id"
+    )
     phabricator_url = serializers.URLField(read_only=True)
 
     class Meta:
@@ -45,6 +48,7 @@ class RevisionSerializer(serializers.ModelSerializer):
             "title",
             "bugzilla_id",
             "diffs_url",
+            "issues_bulk_url",
             "phabricator_url",
         )
 
@@ -168,22 +172,37 @@ class IssueSerializer(serializers.ModelSerializer):
 
 
 class IssueBulkSerializer(serializers.Serializer):
+    diff_id = serializers.PrimaryKeyRelatedField(
+        # Initialized depending on the revision used for the creation
+        queryset=Diff.objects.none(),
+        style={"base_template": "input.html"},
+        required=False,
+        allow_null=True,
+    )
     issues = IssueSerializer(many=True)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if not self.context.get("revision"):
+            return
+        self.fields["diff_id"].queryset = self.context["revision"].diffs.all()
 
     @transaction.atomic
     def create(self, validated_data):
-        diff = self.context.get("diff")
-        assert diff, "A diff is required to save the serializer"
+        diff = validated_data.get("diff_id", None)
         issues = Issue.objects.bulk_create(
             [Issue(**values) for values in validated_data["issues"]]
         )
         IssueLink.objects.bulk_create(
             [
-                IssueLink(issue=issue, diff_id=diff.id, revision_id=diff.revision_id)
+                IssueLink(issue=issue, diff=diff, revision=self.context["revision"])
                 for issue in issues
             ]
         )
-        return {"issues": issues}
+        return {
+            "diff_id": diff,
+            "issues": issues,
+        }
 
 
 class IssueCheckSerializer(IssueSerializer):

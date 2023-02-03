@@ -37,6 +37,7 @@ def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_h
         "repository": "https://hgmo/test",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
+        "issues_bulk_url": "http://code-review-backend.test/v1/revision/51/issues/",
     }
 
     # Check the diff in the backend
@@ -127,6 +128,7 @@ def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
         "repository": "https://hgmo/test",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
+        "issues_bulk_url": "http://code-review-backend.test/v1/revision/51/issues/",
     }
 
 
@@ -178,7 +180,8 @@ def test_publication_failures(
     assert mock_clang_tidy_issues[0].path == "dom/animation/Animation.cpp"
 
     # Only one issue should be published as the bad one is ignored
-    mock_revision.issues_url = "http://code-review-backend.test/v1/diff/42/issues/"
+    mock_revision.diff_issues_url = "http://code-review-backend.test/v1/diff/42/issues/"
+
     published = r.publish_issues(mock_clang_tidy_issues, mock_revision)
     assert published == 1
 
@@ -204,3 +207,66 @@ def test_publication_failures(
             "fix": None,
         }
     ]
+
+
+def test_publish_issues_bulk(
+    mock_clang_tidy_issues, mock_revision, mock_backend, mock_hgmo
+):
+    """
+    Test publication of issues in bulk for a revision
+    """
+    # Nothing in backend at first
+    revisions, diffs, issues = mock_backend
+    assert not revisions and not diffs and not issues
+
+    # Hardcode revision & repo
+    mock_revision.repository = "http://hgmo/test-try"
+    mock_revision.target_repository = "https://hgmo/test"
+    mock_revision.mercurial_revision = "deadbeef1234"
+    assert mock_revision.bugzilla_id == 1234567
+
+    r = BackendAPI()
+    assert r.enabled is True
+
+    # Issue URL is set when publishing the issue on the backend
+    mock_revision.issues_url = "http://code-review-backend.test/v1/revision/51/issues/"
+
+    published = r.publish_issues(mock_clang_tidy_issues, mock_revision, bulk=10)
+    assert published == 2
+
+    # Check the issues in the backend
+    assert len(issues) == 2
+    assert dict(issues) == {
+        "852c3473-77a8-51c5-bb78-4d2d53652b0a": {
+            "analyzer": "mock-clang-tidy",
+            "check": "clanck.checker",
+            "column": 46,
+            "fix": None,
+            "hash": "18ff7d47ce8c3a11ea19a4e2b055fd06",
+            "id": "852c3473-77a8-51c5-bb78-4d2d53652b0a",
+            "in_patch": False,
+            "level": "warning",
+            "line": 57,
+            "message": "Some Error Message",
+            "nb_lines": 1,
+            "path": "dom/animation/Animation.cpp",
+            "publishable": False,
+            "validates": True,
+        },
+        "a79acfdf-522a-5063-8ce2-775b9932bd58": {
+            "analyzer": "mock-clang-tidy",
+            "check": "clanck.checker",
+            "column": 46,
+            "fix": None,
+            "hash": "ddf7ae1da14e80c488f99e4245e9ef79",
+            "id": "a79acfdf-522a-5063-8ce2-775b9932bd58",
+            "in_patch": False,
+            "level": "error",
+            "line": 57,
+            "message": "Some Error Message",
+            "nb_lines": 1,
+            "path": "dom/animation/Animation.cpp",
+            "publishable": True,
+            "validates": True,
+        },
+    }
