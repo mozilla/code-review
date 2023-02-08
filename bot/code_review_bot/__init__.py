@@ -164,6 +164,9 @@ class Issue(abc.ABC):
             try:
                 # Load all the lines affected by the issue
                 file_content = self.revision.load_file(self.path)
+            except ValueError:
+                # Build the hash with an empty content in case the path is erroneous
+                file_content = ""
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 404:
                     logger.warning(
