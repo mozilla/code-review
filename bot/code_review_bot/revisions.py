@@ -298,7 +298,7 @@ class Revision(object):
         """
         # Check in hgmo cache first
         cache_path = os.path.join(settings.hgmo_cache, path)
-        if Path(settings.hgmo_cache) not in Path(cache_path).parents:
+        if Path(settings.hgmo_cache) not in Path(cache_path).resolve().parents:
             logger.warning(f"Element with path '{path}' is not valid")
             raise ValueError
 
