@@ -108,7 +108,8 @@ class BackendAPI(object):
             )
             chunks = (issues[i : i + bulk] for i in range(0, len(issues), bulk))
             for issues_chunk in chunks:
-                data = []
+                # Store valid data as couples of (<issue>, <json_data>)
+                valid_data = []
                 # Build issues' payload for that given chunk
                 for issue in issues_chunk:
                     issue_hash = issue.build_hash(local_repository=mercurial_repository)
@@ -118,14 +119,20 @@ class BackendAPI(object):
                             issue=str(issue),
                         )
                         continue
-                    data.append(issue.as_dict(issue_hash=issue_hash))
-                response = self.create(revision.issues_url, {"issues": data})
+                    valid_data.append((issue, issue.as_dict(issue_hash=issue_hash)))
+
+                response = self.create(
+                    revision.issues_url,
+                    {"issues": [json_data for _, json_data in valid_data]},
+                )
                 created = response.get("issues")
-                assert created and len(created) == len(issues_chunk)
-                for issue, value in zip(issues_chunk, created):
+
+                assert created and len(created) == len(valid_data)
+                for (issue, _), return_value in zip(valid_data, created):
                     # Set the returned value on each issue
-                    issue.on_backend = value
-                published += len(data)
+                    issue.on_backend = return_value
+
+                published += len(valid_data)
         else:
             assert revision.diff_issues_url is not None, (
                 "Missing diff_issues_url on the revision. "
