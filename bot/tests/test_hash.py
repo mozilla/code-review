@@ -5,6 +5,8 @@
 
 import hashlib
 
+import pytest
+
 from code_review_bot.tasks.lint import MozLintIssue
 from code_review_bot.tasks.lint import MozLintTask
 
@@ -143,3 +145,13 @@ def test_full_file(mock_revision, mock_hgmo, mock_task):
         "validates": True,
         "fix": None,
     }
+
+
+@pytest.mark.parametrize("path", [".", "..", "a/../../b"])
+def test_incorrect_file_path(mock_revision, path):
+    """
+    Test that a revision raises a ValueError when loading
+    a file with a path pointing outside the repository
+    """
+    with pytest.raises(ValueError):
+        mock_revision.load_file(path)

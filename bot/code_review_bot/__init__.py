@@ -150,6 +150,7 @@ class Issue(abc.ABC):
         The text concerned by the issue is used and not its position in the file
         Message content is hashed as a single linter may return multiple issues on a single line
         We make the assumption that the message does not contain the line number
+        If an error occurs reading the file content (locally or remotely), None is returned
         """
         assert self.revision is not None, "Missing revision"
 
@@ -159,11 +160,14 @@ class Issue(abc.ABC):
                     file_content = f.read()
             except (FileNotFoundError, IsADirectoryError):
                 logger.warning(f"Failed to find issue's related file at {self.path}")
-                file_content = ""
+                file_content = None
         else:
             try:
                 # Load all the lines affected by the issue
                 file_content = self.revision.load_file(self.path)
+            except ValueError:
+                # Build the hash with an empty content in case the path is erroneous
+                file_content = None
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 404:
                     logger.warning(
@@ -171,10 +175,13 @@ class Issue(abc.ABC):
                     )
 
                     # We still build the hash with empty content
-                    file_content = ""
+                    file_content = None
                 else:
                     # When encountering another HTTP error, raise the issue
                     raise
+
+        if file_content is None:
+            return None
 
         # Build raw content:
         # 1. lines affected by patch

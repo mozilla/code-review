@@ -6,6 +6,7 @@
 import pytest
 
 from code_review_bot.backend import BackendAPI
+from code_review_bot.tasks.clang_tidy import ClangTidyIssue
 
 
 def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_hgmo):
@@ -214,10 +215,11 @@ def test_publish_issues_bulk(
 ):
     """
     Test publication of issues in bulk for a revision
+    Issues missing a hash are not published
     """
     # Nothing in backend at first
-    revisions, diffs, issues = mock_backend
-    assert not revisions and not diffs and not issues
+    _, _, backend_issues = mock_backend
+    assert not backend_issues
 
     # Hardcode revision & repo
     mock_revision.repository = "http://hgmo/test-try"
@@ -231,12 +233,28 @@ def test_publish_issues_bulk(
     # Issue URL is set when publishing the issue on the backend
     mock_revision.issues_url = "http://code-review-backend.test/v1/revision/51/issues/"
 
-    published = r.publish_issues(mock_clang_tidy_issues, mock_revision, bulk=10)
+    # Two issues are publishable and a third one has an erroneous path
+    issues = [
+        ClangTidyIssue(
+            analyzer=mock_clang_tidy_issues[0].analyzer,
+            revision=mock_clang_tidy_issues[0].revision,
+            path="../../../an_invalid_path",
+            line=42,
+            column=42,
+            level=mock_clang_tidy_issues[0].level,
+            check="check",
+            message="err",
+            publish=True,
+        ),
+        *mock_clang_tidy_issues,
+    ]
+
+    published = r.publish_issues(issues, mock_revision, bulk=10)
     assert published == 2
 
     # Check the issues in the backend
-    assert len(issues) == 2
-    assert dict(issues) == {
+    assert len(backend_issues) == 2
+    assert dict(backend_issues) == {
         "852c3473-77a8-51c5-bb78-4d2d53652b0a": {
             "analyzer": "mock-clang-tidy",
             "check": "clanck.checker",

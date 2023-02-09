@@ -6,6 +6,7 @@
 import os
 import urllib.parse
 from datetime import timedelta
+from pathlib import Path
 
 import requests
 import rs_parsepatch
@@ -297,6 +298,10 @@ class Revision(object):
         """
         # Check in hgmo cache first
         cache_path = os.path.join(settings.hgmo_cache, path)
+        if Path(settings.hgmo_cache) not in Path(cache_path).resolve().parents:
+            logger.warning(f"Element with path '{path}' is not valid")
+            raise ValueError
+
         if os.path.exists(cache_path):
             with open(cache_path) as f:
                 return f.read()
