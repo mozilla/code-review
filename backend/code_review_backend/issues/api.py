@@ -3,6 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from collections import defaultdict
 from datetime import date
 from datetime import datetime
 from datetime import timedelta
@@ -22,6 +23,7 @@ from rest_framework import mixins
 from rest_framework import routers
 from rest_framework import viewsets
 from rest_framework.exceptions import APIException
+from rest_framework.exceptions import ValidationError
 
 from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import LEVEL_ERROR
@@ -345,6 +347,63 @@ class IssueCheckHistory(CachedView, generics.ListAPIView):
         return queryset.order_by("date").distinct()
 
 
+class IssueList(generics.ListAPIView):
+    serializer_class = IssueSerializer
+
+    def get_queryset(self):
+        qs = Issue.objects.all()
+
+        errors = defaultdict(list)
+        repo_slug = self.kwargs["repo_slug"]
+        try:
+            repo = Repository.objects.get(slug=repo_slug)
+        except Repository.DoesNotExist:
+            errors["repo_slug"].append(
+                "invalid repo_slug path argument - No repository match this slug"
+            )
+        else:
+            qs = qs.filter(revisions__repository=repo)
+
+        # Always filter by path when the parameter is set
+        if path := self.request.query_params.get("path"):
+            qs = qs.filter(path=path)
+
+        date_revision = None
+        if date := self.request.query_params.get("date"):
+            try:
+                date = datetime.strptime(date, "%Y-%m-%d") + timedelta(days=1)
+            except ValueError:
+                errors["date"].append("invalid date - should be YYYY-MM-DD")
+            else:
+                # Look for a revision matching this date, going back to 2 days maximum
+                date_revision = (
+                    Revision.objects.filter(
+                        created__gte=date - timedelta(2),
+                        created__lt=date,
+                    )
+                    .order_by("-created")
+                    .first()
+                )
+
+        revision = self.request.query_params.get("revision")
+        if revision and not revision.isdecimal():
+            errors["revision"].append("invalid revision - should be a number")
+
+        if errors:
+            raise ValidationError(errors)
+
+        # Only use the revision filter in case some issues are found
+        if revision and qs.filter(revisions__id=revision).exists():
+            qs = qs.filter(revisions__id=revision)
+        elif revision and not date_revision:
+            qs = Issue.objects.none()
+        # Defaults to filtering by the revision closest to the given date
+        elif date_revision:
+            qs = qs.filter(revisions=date_revision)
+
+        return qs.order_by("created").distinct()
+
+
 # Build exposed urls for the API
 router = routers.DefaultRouter()
 router.register(r"repository", RepositoryViewSet)
@@ -369,4 +428,5 @@ urls = router.urls + [
         IssueCheckDetails.as_view(),
         name="issue-check-details",
     ),
+    path("issues/<slug:repo_slug>/", IssueList.as_view(), name="repository-issues"),
 ]
