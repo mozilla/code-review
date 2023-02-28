@@ -21,6 +21,14 @@ def webserver():
     webserver.stop()
 
 
+async def test_get_version_error(aiohttp_client, webserver):
+    webserver.version_path = "oops/not/found"
+    client = await aiohttp_client(webserver.app)
+    response = await client.get("/__version__")
+    assert response.status == 500
+    assert await response.text() == "500: Could not retrieve the version file"
+
+
 async def test_get_version(aiohttp_client, webserver):
     client = await aiohttp_client(webserver.app)
     response = await client.get("/__version__")
