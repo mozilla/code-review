@@ -12,4 +12,6 @@ RUN /src/tools/docker/bootstrap-mercurial.sh
 ENV LD_PRELOAD="libjemalloc.so.2"
 ENV MALLOC_CONF="narenas:1,tcache:false,background_thread:false,dirty_decay_ms:0,muzzy_decay_ms:0"
 
+ENV VERSION_PATH="/src/events/code_review_events/version.json"
+
 CMD ["code-review-events"]

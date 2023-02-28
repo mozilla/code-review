@@ -51,6 +51,7 @@ LANDO_FAILURE_HG_MESSAGE = (
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VERSION_PATH = os.environ.get("VERSION_PATH", os.path.join(BASE_DIR, "version.json"))
 
 
 class CodeReview(PhabricatorActions):
@@ -378,9 +379,7 @@ class Events(object):
         # Run webserver & pulse on web dyno or single instance
         if not heroku.in_dyno() or heroku.in_web_dyno():
             # Create web server
-            self.webserver = WebServer(
-                QUEUE_WEB_BUILDS, version_path=f"{BASE_DIR}/version.json"
-            )
+            self.webserver = WebServer(QUEUE_WEB_BUILDS, version_path=VERSION_PATH)
             self.webserver.register(self.bus)
 
             # Create pulse listeners

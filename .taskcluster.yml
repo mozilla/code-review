@@ -254,7 +254,7 @@ tasks:
                   - /bin/sh
                   - -lxce
                   - "git clone --quiet ${repository} /code-review && cd /code-review && git checkout ${head_rev} -b build
-                    && backend/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
+                    && events/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
                 artifacts:
                   public/code-review-events.tar.zst:
                     expires: {$fromNow: '2 weeks'}

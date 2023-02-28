@@ -8,9 +8,7 @@ import json
 import pytest
 from libmozevent.web import WebServer
 
-from code_review_events.workflow import BASE_DIR
-
-VERSION_PATH = f"{BASE_DIR}/version.json"
+from code_review_events.workflow import VERSION_PATH
 
 
 @pytest.fixture
