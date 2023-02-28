@@ -26,7 +26,7 @@ async def test_get_version_error(aiohttp_client, webserver):
     client = await aiohttp_client(webserver.app)
     response = await client.get("/__version__")
     assert response.status == 500
-    assert await response.text() == "500: Could not retrieve the version file"
+    assert await response.text() == "Could not retrieve the version file"
 
 
 async def test_get_version(aiohttp_client, webserver):
