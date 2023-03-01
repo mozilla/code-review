@@ -88,7 +88,7 @@ class Issue(abc.ABC):
 
         # Support line 0, with a Sentry warning
         if self.line == 0:
-            logger.warning("Line 0 is not supported, falling back to full file issue")
+            logger.info("Line 0 is not supported, falling back to full file issue")
             self.line = None
 
         # Optional common fields
