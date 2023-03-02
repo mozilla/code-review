@@ -142,6 +142,9 @@ class BackendAPI(object):
                         continue
                     valid_data.append((issue, issue.as_dict(issue_hash=issue_hash)))
 
+                if not valid_data:
+                    continue
+
                 response = self.create(
                     revision.issues_url,
                     {"issues": [json_data for _, json_data in valid_data]},
