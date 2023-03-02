@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import asyncio
+import os
 
 import structlog
 from libmozdata.lando import LandoWarnings
@@ -48,6 +49,9 @@ LANDO_FAILURE_MESSAGE = (
 LANDO_FAILURE_HG_MESSAGE = (
     "Static analysis and linting did not run due to failure in applying the patch."
 )
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VERSION_PATH = os.environ.get("VERSION_PATH", os.path.join(BASE_DIR, "version.json"))
 
 
 class CodeReview(PhabricatorActions):
@@ -375,7 +379,7 @@ class Events(object):
         # Run webserver & pulse on web dyno or single instance
         if not heroku.in_dyno() or heroku.in_web_dyno():
             # Create web server
-            self.webserver = WebServer(QUEUE_WEB_BUILDS)
+            self.webserver = WebServer(QUEUE_WEB_BUILDS, version_path=VERSION_PATH)
             self.webserver.register(self.bus)
 
             # Create pulse listeners

@@ -250,21 +250,11 @@ tasks:
                   privileged: true
                 maxRunTime: 3600
                 image: "${taskboot_image}"
-                env:
-                  GIT_REPOSITORY: ${repository}
-                  GIT_REVISION: ${head_rev}
                 command:
-                  - taskboot
-                  - build
-                  - --image
-                  - mozilla/code-review
-                  - --tag
-                  - "${channel}"
-                  - --tag
-                  - "${head_rev}"
-                  - --write
-                  - /events.tar
-                  - events/docker/Dockerfile
+                  - /bin/sh
+                  - -lxce
+                  - "git clone --quiet ${repository} /code-review && cd /code-review && git checkout ${head_rev} -b build
+                    && events/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
                 artifacts:
                   public/code-review-events.tar.zst:
                     expires: {$fromNow: '2 weeks'}
