@@ -98,14 +98,14 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures, notices = self.find_issues(
+        issues, task_failures, notices, reviewers = self.find_issues(
             revision, settings.try_group_id
         )
         if not issues and not task_failures and not notices:
             logger.info("No issues or notices, stopping there.")
 
         # Publish all issues
-        self.publish(revision, issues, task_failures, notices)
+        self.publish(revision, issues, task_failures, notices, reviewers)
 
         return issues
 
@@ -187,7 +187,7 @@ class Workflow(object):
         else:
             logger.info("No issues for that revision")
 
-    def publish(self, revision, issues, task_failures, notices):
+    def publish(self, revision, issues, task_failures, notices, reviewers):
         """
         Publish issues on selected reporters
         """
@@ -223,7 +223,7 @@ class Workflow(object):
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
-                reporter.publish(issues, revision, task_failures, notices)
+                reporter.publish(issues, revision, task_failures, notices, reviewers)
 
         self.index(
             revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
@@ -405,7 +405,7 @@ class Workflow(object):
                 )
                 raise
 
-        return issues, task_failures, notices
+        return issues, task_failures, notices, task.extra_reviewers_groups
 
     def build_task(self, task_status):
         """

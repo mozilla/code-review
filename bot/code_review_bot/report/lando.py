@@ -25,7 +25,7 @@ class LandoReporter(Reporter):
         logger.info("Publishing warnings to lando is enabled by the bot!")
         self.lando_api = lando_api
 
-    def publish(self, issues, revision, task_failures, links):
+    def publish(self, issues, revision, task_failures, links, reviewers):
         """
         Send an email to administrators
         """

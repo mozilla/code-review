@@ -148,12 +148,36 @@ class PhabricatorReporter(Reporter):
 
         return unresolved, closed
 
-    def publish(self, issues, revision, task_failures, notices):
+    def publish(self, issues, revision, task_failures, notices, reviewers):
         """
         Publish issues on Phabricator:
         * publishable issues use lint results
         * build errors are displayed as unit test results
         """
+
+        # Add extra reviewers groups to the revision
+        if reviewers:
+            phids = []
+            for reviewers_group in reviewers:
+                data = self.api.search_projects(slugs=[reviewers_group])
+                if not data or "phid" not in data[0]:
+                    logger.warning(
+                        f'Unable to find the PHID of the reviewers group identified by the slug "{reviewers_group}"'
+                    )
+                    continue
+
+                phids.append(data[0]["phid"])
+
+            if phids:
+                self.api.edit_revision(
+                    revision.id,
+                    [
+                        {
+                            "type": "reviewers.add",
+                            "value": phids,
+                        }
+                    ],
+                )
 
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer

@@ -13,6 +13,8 @@ from code_review_bot.tasks.base import NoticeTask
 
 logger = structlog.get_logger(__name__)
 
+SUMMARY_ARTIFACT_PATH = "public/taskgraph/diffs/summary.json"
+
 COMMENT_TASKGRAPH_DIFF = """
 NOTE: Tasks were added or removed in diff {diff_id}.
 
@@ -47,16 +49,21 @@ class TaskGraphDiffTask(NoticeTask):
 
         logger.info("List artifacts", task_id=self.id)
         orig_root_url = queue_service.options["rootUrl"]
+        summary = None
         try:
             # Make sure we avoid using the proxy URL.
             queue_service.options["rootUrl"] = tc_config.default_url
-            self.artifact_urls = {
-                a["name"]: queue_service.buildUrl(
-                    "getArtifact", self.id, self.run_id, a["name"]
-                )
-                for a in queue_service.listArtifacts(self.id, self.run_id)["artifacts"]
-                if a["name"].startswith("public/taskgraph/diffs/")
-            }
+            for a in queue_service.listArtifacts(self.id, self.run_id)["artifacts"]:
+                if a["name"].startswith("public/taskgraph/diffs/"):
+                    self.artifact_urls[a["name"]] = queue_service.buildUrl(
+                        "getArtifact", self.id, self.run_id, a["name"]
+                    )
+
+                if a["name"] == SUMMARY_ARTIFACT_PATH:
+                    summary, _ = self.load_artifact(
+                        queue_service, SUMMARY_ARTIFACT_PATH
+                    )
+
         except Exception as e:
             logger.warn(
                 "Failed to list artifacts",
@@ -67,6 +74,15 @@ class TaskGraphDiffTask(NoticeTask):
             return
         finally:
             queue_service.options["rootUrl"] = orig_root_url
+
+        logger.info("Parsing the summary.json artifact if it exists", task_id=self.id)
+        if summary is None:
+            logger.warn("Missing summary.json")
+        elif "status" in summary and summary["status"] == "WARNING":
+            logger.info(
+                "TaskGraphDiff summary status is in WARNING, the #taskgraph-reviewers group will be added to the revision"
+            )
+            self.extra_reviewers_groups.append("taskgraph-reviewers")
 
         # We don't actually want the contents of these artifacts, just their
         # urls (which are now stored in `self.artifact_urls`).
