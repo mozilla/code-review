@@ -378,6 +378,7 @@ class IssueList(generics.ListAPIView):
                 # Look for a revision matching this date, going back to 2 days maximum
                 date_revision = (
                     Revision.objects.filter(
+                        repository=repo,
                         created__gte=date - timedelta(2),
                         created__lt=date,
                     )
