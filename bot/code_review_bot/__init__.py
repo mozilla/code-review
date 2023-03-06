@@ -86,9 +86,9 @@ class Issue(abc.ABC):
         self.line = positive_int("line", line)
         self.nb_lines = positive_int("nb_lines", nb_lines)
 
-        # Support line 0, with a Sentry warning
+        # Support line 0 for full file issues like `source-test-mozlint-test-manifest`.
         if self.line == 0:
-            logger.warning("Line 0 is not supported, falling back to full file issue")
+            logger.info("Line 0 is not supported, falling back to full file issue")
             self.line = None
 
         # Optional common fields
