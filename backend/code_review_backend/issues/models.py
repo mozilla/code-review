@@ -42,9 +42,28 @@ class Repository(PhabricatorModel):
 
 
 class Revision(PhabricatorModel):
-    # The target repository where the revision will land in the end
-    repository = models.ForeignKey(
-        Repository, related_name="revisions", on_delete=models.CASCADE
+    base_repository = models.ForeignKey(
+        Repository,
+        related_name="base_revisions",
+        on_delete=models.CASCADE,
+        help_text="Target repository where the revision has been produced and will land in the end",
+    )
+    head_repository = models.ForeignKey(
+        Repository,
+        related_name="head_revisions",
+        on_delete=models.CASCADE,
+        help_text="Repository where the revision is actually analyzed (e.g. Try for patches analysis)",
+    )
+
+    base_changeset = models.CharField(
+        max_length=40,
+        help_text="Mercurial hash identifier on the base repository",
+    )
+    head_changeset = models.CharField(
+        max_length=40,
+        null=True,
+        blank=True,
+        help_text="Mercurial hash identifier on the analyze repository (only set for try pushes)",
     )
 
     title = models.CharField(max_length=250)
