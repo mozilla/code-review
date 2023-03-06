@@ -20,6 +20,7 @@ from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask
+from code_review_bot.tasks.base import BaseTask
 from code_review_bot.tasks.base import NoticeTask
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
@@ -338,7 +339,7 @@ class Workflow(object):
             task = tasks[dependencies[0]]
             if task["task"]["metadata"]["name"] == "Gecko Decision Task":
                 logger.warn("Only dependency is a Decision Task, skipping analysis")
-                return [], [], []
+                return [], [], [], []
 
         # Add zero-coverage task
         if self.zero_coverage_enabled:
@@ -405,7 +406,10 @@ class Workflow(object):
                 )
                 raise
 
-        return issues, task_failures, notices, task.extra_reviewers_groups
+        reviewers = (
+            task.extra_reviewers_groups if task and isinstance(task, BaseTask) else []
+        )
+        return issues, task_failures, notices, reviewers
 
     def build_task(self, task_status):
         """

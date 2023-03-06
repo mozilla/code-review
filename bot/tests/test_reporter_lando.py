@@ -50,7 +50,7 @@ def test_lando(log, mock_clang_tidy_issues, mock_revision):
 
     assert log.has("Publishing warnings to lando is enabled by the bot!")
 
-    r.publish(mock_clang_tidy_issues, mock_revision, [], [])
+    r.publish(mock_clang_tidy_issues, mock_revision, [], [], [])
 
     assert lando_api.revision_id == mock_revision.revision["id"]
     assert lando_api.diff_id == mock_revision.diff_id

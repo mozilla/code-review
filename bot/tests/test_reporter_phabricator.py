@@ -264,7 +264,7 @@ def test_phabricator_clang_tidy(mock_phabricator, phab, mock_try_task, mock_task
     )
     assert issue.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision, [], [])
+    issues, patches = reporter.publish([issue], revision, [], [], [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -305,7 +305,7 @@ def test_phabricator_clang_format(
     ]
     list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
-    issues, patches = reporter.publish([issue], revision, [], [])
+    issues, patches = reporter.publish([issue], revision, [], [], [])
     assert len(issues) == 1
     assert len(patches) == 1
 
@@ -363,7 +363,9 @@ def test_phabricator_mozlint(
     )
     assert issue_eslint.is_publishable()
 
-    issues, patches = reporter.publish([issue_flake, issue_eslint], revision, [], [])
+    issues, patches = reporter.publish(
+        [issue_flake, issue_eslint], revision, [], [], []
+    )
     assert len(issues) == 2
     assert len(patches) == 0
 
@@ -429,7 +431,7 @@ def test_phabricator_coverage(
     )
     assert issue.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision, [], [])
+    issues, patches = reporter.publish([issue], revision, [], [], [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -500,7 +502,7 @@ def test_phabricator_clang_tidy_and_coverage(
     assert issue_coverage.is_publishable()
 
     issues, patches = reporter.publish(
-        [issue_clang_tidy, issue_coverage], revision, [], []
+        [issue_clang_tidy, issue_coverage], revision, [], [], []
     )
     assert len(issues) == 2
     assert len(patches) == 0
@@ -655,7 +657,7 @@ def test_phabricator_analyzers(
     ]
     list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
-    issues, patches = reporter.publish(issues, revision, [], [])
+    issues, patches = reporter.publish(issues, revision, [], [], [])
 
     # Check issues & patches analyzers
     assert len(issues) == len(valid_issues)
@@ -700,7 +702,7 @@ def test_phabricator_clang_tidy_build_error(
 
         assert issue.is_publishable()
 
-        issues, patches = reporter.publish([issue], revision, [], [])
+        issues, patches = reporter.publish([issue], revision, [], [], [])
         assert len(issues) == 1
         assert len(patches) == 0
 
@@ -760,7 +762,7 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task, mock_task
     assert revision.has_file(issue.path)
     assert revision.contains(issue)
 
-    issues, patches = reporter.publish([issue], revision, [], [])
+    issues, patches = reporter.publish([issue], revision, [], [], [])
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -807,7 +809,7 @@ def test_task_failures(mock_phabricator, phab, mock_try_task):
         "status": {"runs": [{"runId": 0}]},
     }
     task = ClangTidyTask("ab3NrysvSZyEwsOHL2MZfw", status)
-    issues, patches = reporter.publish([], revision, [task], [])
+    issues, patches = reporter.publish([], revision, [task], [], [])
     assert len(issues) == 0
     assert len(patches) == 0
 
@@ -869,7 +871,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
         ),
     ]
 
-    published_issues, patches = reporter.publish(all_issues, revision, [], [])
+    published_issues, patches = reporter.publish(all_issues, revision, [], [], [])
     assert len(published_issues) == 2
     assert len(patches) == 0
 
@@ -931,6 +933,7 @@ def test_phabricator_notices(mock_phabricator, phab, mock_try_task):
         revision,
         [],
         notices,
+        [],
     )
 
     # Check the comment has been posted
@@ -948,6 +951,7 @@ def test_phabricator_notices(mock_phabricator, phab, mock_try_task):
         revision,
         [],
         notices,
+        [],
     )
 
     # Check the comment has been posted
@@ -979,6 +983,7 @@ def test_phabricator_tgdiff(mock_phabricator, phab, mock_try_task):
         revision,
         [],
         [doc_notice],
+        [],
     )
 
     # Check the comment has been posted
@@ -1027,7 +1032,7 @@ def test_phabricator_external_tidy(mock_phabricator, phab, mock_try_task, mock_t
     assert not issue_clang_diagnostic.is_publishable()
 
     issues, patches = reporter.publish(
-        [issue_civet_warning, issue_clang_diagnostic], revision, [], []
+        [issue_civet_warning, issue_clang_diagnostic], revision, [], [], []
     )
     assert len(issues) == 1
     assert len(patches) == 0
@@ -1066,7 +1071,7 @@ def test_phabricator_newer_diff(mock_phabricator, phab, mock_try_task, mock_task
     with capture_logs() as cap_logs:
         os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
 
-        issues, patches = reporter.publish([issue], revision, [], [])
+        issues, patches = reporter.publish([issue], revision, [], [], [])
 
         assert cap_logs == [
             # Log from PhabricatorReporter.publish_harbormaster(), it was still called
@@ -1198,7 +1203,7 @@ def test_phabricator_former_diff_comparison(
     os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
 
     with capture_logs() as cap_logs:
-        issues, patches = reporter.publish(issues, revision, [], [])
+        issues, patches = reporter.publish(issues, revision, [], [], [])
 
     assert cap_logs == [
         # Log from PhabricatorReporter.publish_harbormaster(), it was still called
