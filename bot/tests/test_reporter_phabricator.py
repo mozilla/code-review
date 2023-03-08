@@ -983,8 +983,13 @@ def test_phabricator_tgdiff(mock_phabricator, phab, mock_try_task):
         revision,
         [],
         [doc_notice],
-        [],
+        ["taskgraph-reviewers"],
     )
+
+    # Check the reviewer group has been added to the revision
+    assert phab.transactions[51] == [
+        [{"type": "reviewers.add", "value": ["PHID-123456789-TGReviewers"]}]
+    ]
 
     # Check the comment has been posted
     assert phab.comments[51] == [VALID_NOTICE_MESSAGE.format(notice=doc_notice.strip())]

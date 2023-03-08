@@ -739,11 +739,14 @@ class MockPhabricator(object):
         self.comments = collections.defaultdict(list)
         self.inline_comments = collections.defaultdict(list)
         self.build_messages = collections.defaultdict(list)
+        self.transactions = collections.defaultdict(list)
 
         endpoints = {
             "differential.createcomment": self.comment,
             "differential.createinline": self.comment_inline,
             "harbormaster.sendmessage": self.build_message,
+            "project.search": self.search_projects,
+            "differential.revision.edit": self.edit_revision,
         }
 
         for endpoint, callback in endpoints.items():
@@ -810,6 +813,34 @@ class MockPhabricator(object):
         return (
             201,
             {"Content-Type": "application/json", "unittest": "flake8-error"},
+            json.dumps({"error_code": None, "result": None}),
+        )
+
+    def search_projects(self, request):
+        params = self.parse_request(request, ("constraints",))
+
+        result = None
+        if params["constraints"]["slugs"] == ["taskgraph-reviewers"]:
+            result = [
+                {"phid": "PHID-123456789-TGReviewers", "slug": "taskgraph-reviewers"}
+            ]
+
+        return (
+            201,
+            {"Content-Type": "application/json"},
+            json.dumps({"error_code": None, "result": {"data": result}}),
+        )
+
+    def edit_revision(self, request):
+        params = self.parse_request(request, ("objectIdentifier", "transactions"))
+
+        # Store the transactions on the revision
+        self.transactions[params["objectIdentifier"]].append(params["transactions"])
+
+        # Outputs dummy empty response
+        return (
+            201,
+            {"Content-Type": "application/json"},
             json.dumps({"error_code": None, "result": None}),
         )
 
