@@ -39,7 +39,7 @@ class MailReporter(Reporter):
 
         logger.info("Mail report enabled", emails=self.emails)
 
-    def publish(self, issues, revision, task_failures, links):
+    def publish(self, issues, revision, task_failures, links, reviewers):
         """
         Send an email to administrators
         """

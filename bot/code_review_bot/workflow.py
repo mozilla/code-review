@@ -20,6 +20,7 @@ from code_review_bot.config import settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask
+from code_review_bot.tasks.base import BaseTask
 from code_review_bot.tasks.base import NoticeTask
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
@@ -98,14 +99,14 @@ class Workflow(object):
         revision.analyze_patch()
 
         # Find issues on remote tasks
-        issues, task_failures, notices = self.find_issues(
+        issues, task_failures, notices, reviewers = self.find_issues(
             revision, settings.try_group_id
         )
         if not issues and not task_failures and not notices:
             logger.info("No issues or notices, stopping there.")
 
         # Publish all issues
-        self.publish(revision, issues, task_failures, notices)
+        self.publish(revision, issues, task_failures, notices, reviewers)
 
         return issues
 
@@ -187,7 +188,7 @@ class Workflow(object):
         else:
             logger.info("No issues for that revision")
 
-    def publish(self, revision, issues, task_failures, notices):
+    def publish(self, revision, issues, task_failures, notices, reviewers):
         """
         Publish issues on selected reporters
         """
@@ -223,7 +224,7 @@ class Workflow(object):
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
-                reporter.publish(issues, revision, task_failures, notices)
+                reporter.publish(issues, revision, task_failures, notices, reviewers)
 
         self.index(
             revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
@@ -338,7 +339,7 @@ class Workflow(object):
             task = tasks[dependencies[0]]
             if task["task"]["metadata"]["name"] == "Gecko Decision Task":
                 logger.warn("Only dependency is a Decision Task, skipping analysis")
-                return [], [], []
+                return [], [], [], []
 
         # Add zero-coverage task
         if self.zero_coverage_enabled:
@@ -405,7 +406,10 @@ class Workflow(object):
                 )
                 raise
 
-        return issues, task_failures, notices
+        reviewers = (
+            task.extra_reviewers_groups if task and isinstance(task, BaseTask) else []
+        )
+        return issues, task_failures, notices, reviewers
 
     def build_task(self, task_status):
         """

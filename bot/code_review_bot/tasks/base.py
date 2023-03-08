@@ -17,6 +17,7 @@ class BaseTask:
     route = None
     valid_states = ("completed", "failed")
     skipped_states = ()
+    extra_reviewers_groups = []
 
     def __init__(self, task_id, task_status):
         self.id = task_id
@@ -73,6 +74,33 @@ class BaseTask:
         # Build the instance
         return cls(task_id, task_status)
 
+    def load_artifact(self, queue_service, artifact_name):
+        url = queue_service.buildUrl("getArtifact", self.id, self.run_id, artifact_name)
+        # Allows HTTP_30x redirections retrieving the artifact
+        response = queue_service.session.get(url, stream=True, allow_redirects=True)
+
+        try:
+            response.raise_for_status()
+        except Exception as e:
+            logger.warn(
+                "Failed to read artifact",
+                task_id=self.id,
+                run_id=self.run_id,
+                artifact=artifact_name,
+                error=e,
+            )
+            return None, True
+
+        # Load artifact's data, either as JSON or YAML
+        if artifact_name.endswith(".json"):
+            content = response.json()
+        elif artifact_name.endswith(".yml") or artifact_name.endswith(".yaml"):
+            content = yaml.load_stream(response.text)
+        else:
+            # Json responses are automatically parsed into Python structures
+            content = response.content or None
+        return content, False
+
     def load_artifacts(self, queue_service):
         # Process only the supported final states
         # as some tasks do not always have relevant output
@@ -89,32 +117,10 @@ class BaseTask:
         out = {}
         for artifact_name in self.artifacts:
             logger.info("Load artifact", task_id=self.id, artifact=artifact_name)
-            url = queue_service.buildUrl(
-                "getArtifact", self.id, self.run_id, artifact_name
-            )
-            # Allows HTTP_30x redirections retrieving the artifact
-            response = queue_service.session.get(url, stream=True, allow_redirects=True)
-
-            try:
-                response.raise_for_status()
-            except Exception as e:
-                logger.warn(
-                    "Failed to read artifact",
-                    task_id=self.id,
-                    run_id=self.run_id,
-                    artifact=artifact_name,
-                    error=e,
-                )
+            content, skip = self.load_artifact(queue_service, artifact_name)
+            if skip:
                 continue
 
-            # Load artifact's data, either as JSON or YAML
-            if artifact_name.endswith(".json"):
-                content = response.json()
-            elif artifact_name.endswith(".yml") or artifact_name.endswith(".yaml"):
-                content = yaml.load_stream(response.text)
-            else:
-                # Json responses are automatically parsed into Python structures
-                content = response.content or None
             out[artifact_name] = content
 
         return out
