@@ -54,14 +54,16 @@ class TaskGraphDiffTask(NoticeTask):
             # Make sure we avoid using the proxy URL.
             queue_service.options["rootUrl"] = tc_config.default_url
             for a in queue_service.listArtifacts(self.id, self.run_id)["artifacts"]:
-                if a["name"].startswith("public/taskgraph/diffs/"):
-                    self.artifact_urls[a["name"]] = queue_service.buildUrl(
-                        "getArtifact", self.id, self.run_id, a["name"]
-                    )
-
                 if a["name"] == SUMMARY_ARTIFACT_PATH:
                     summary, _ = self.load_artifact(
                         queue_service, SUMMARY_ARTIFACT_PATH
+                    )
+                    # We don't want to add the summary.json to the artifact_urls list
+                    continue
+
+                if a["name"].startswith("public/taskgraph/diffs/"):
+                    self.artifact_urls[a["name"]] = queue_service.buildUrl(
+                        "getArtifact", self.id, self.run_id, a["name"]
                     )
 
         except Exception as e:
