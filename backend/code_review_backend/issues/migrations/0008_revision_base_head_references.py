@@ -8,11 +8,7 @@ import secrets
 import django.db.models.deletion
 from django.db import migrations
 from django.db import models
-from django.db.models import Case
 from django.db.models import F
-from django.db.models import PositiveIntegerField
-from django.db.models import Value
-from django.db.models import When
 
 # A django command can help restauring real hashes later on.
 
@@ -28,14 +24,11 @@ def update_revisions(apps, schema_editor):
     Revision = apps.get_model("issues", "Revision")
 
     try_repository = Repository.objects.get(slug="try")
-    Revision.objects.update(
-        head_repository_id=Case(
-            When(
-                diffs__isnull=False,
-                then=Value(try_repository.id, output_field=PositiveIntegerField()),
-            ),
-            default=F("base_repository_id"),
-        ),
+    Revision.objects.filter(diffs__isnull=False).update(
+        head_repository_id=try_repository.id
+    )
+    Revision.objects.filter(diffs__isnull=True).update(
+        head_repository_id=F("base_repository_id")
     )
 
 
