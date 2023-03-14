@@ -10,8 +10,8 @@ import tempfile
 
 import taskcluster
 from django.core.management.base import BaseCommand
-from django.core.management.base import CommandError
 from django.db import transaction
+from requests.exceptions import HTTPError
 
 from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import Issue
@@ -42,13 +42,6 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        # Check repositories
-        for repo in ("mozilla-central", "nss"):
-            try:
-                Repository.objects.get(slug=repo)
-            except Repository.DoesNotExist:
-                raise CommandError(f"Missing repository {repo}")
-
         # Setup cache dir
         self.cache_dir = os.path.join(
             tempfile.gettempdir(), "code-review-reports", options["environment"]
@@ -65,6 +58,8 @@ class Command(BaseCommand):
         for task_id, report in tasks:
             # Build revision & diff
             revision, diff = self.build_revision_and_diff(report["revision"], task_id)
+            if not revision:
+                continue
 
             # Save all issues in a single db transaction
             try:
@@ -95,6 +90,7 @@ class Command(BaseCommand):
                 ),
             )
             for i in issues
+            if i["hash"]
         )
         IssueLink.objects.bulk_create(
             IssueLink(
@@ -137,14 +133,25 @@ class Command(BaseCommand):
                     # Download the task report
                     logging.info(f"Download task {task['taskId']}")
                     try:
-                        artifact = queue.getLatestArtifact(
-                            task["taskId"], "public/results/report.json"
+                        url = queue.buildUrl(
+                            "getLatestArtifact",
+                            task["taskId"],
+                            "public/results/report.json",
                         )
-                    except taskcluster.exceptions.TaskclusterRestFailure as e:
-                        if e.status_code == 404:
-                            logging.info("Missing artifact")
+                        # Allows HTTP_30x redirections retrieving the artifact
+                        response = queue.session.get(
+                            url, stream=True, allow_redirects=True
+                        )
+                        response.raise_for_status()
+                        artifact = response.json()
+                    except HTTPError as e:
+                        if (
+                            getattr(getattr(e, "response", None), "status_code", None)
+                            == 404
+                        ):
+                            logging.info(f"Missing artifact : {repr(e)}")
                             continue
-                        raise
+                        raise e
 
                     # Check the artifact has repositories & revision
                     revision = artifact["revision"]
@@ -171,7 +178,13 @@ class Command(BaseCommand):
 
     def build_revision_and_diff(self, data, task_id):
         """Build or retrieve a revision and diff in current repo from report's data"""
-        repository = Repository.objects.get(slug=data["target_repository"])
+        try:
+            repository = Repository.objects.get(url=data["repository"])
+        except Repository.DoesNotExist:
+            logger.warning(
+                f"No repository found with URL {data['repository']}, skipping."
+            )
+            return None, None
         revision, _ = repository.revisions.get_or_create(
             id=data["id"],
             defaults={
@@ -189,6 +202,7 @@ class Command(BaseCommand):
                 "phid": data["diff_phid"],
                 "review_task_id": task_id,
                 "mercurial_hash": data["mercurial_revision"],
+                "repository": repository,
             },
         )
         return revision, diff
