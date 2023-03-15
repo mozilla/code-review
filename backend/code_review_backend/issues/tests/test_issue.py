@@ -21,9 +21,13 @@ class IssueTestCase(TestCase):
         self.repo = Repository.objects.create(id=42, slug="repo_slug")
         with patch("django.utils.timezone.now") as mock_now:
             mock_now.return_value = datetime.fromisoformat("2010-01-01:10")
-            self.revision = self.repo.revisions.create(id=1111, phid="PH-1111")
+            self.revision = self.repo.head_revisions.create(
+                id=1111, phid="PH-1111", base_repository=self.repo
+            )
             mock_now.return_value = datetime.fromisoformat("2000-01-01:10")
-            self.old_revision = self.repo.revisions.create(id=2222, phid="PH-2222")
+            self.old_revision = self.repo.head_revisions.create(
+                id=2222, phid="PH-2222", base_repository=self.repo
+            )
 
         self.err_issue = Issue.objects.create(
             path="some/file", line=12, level=LEVEL_ERROR

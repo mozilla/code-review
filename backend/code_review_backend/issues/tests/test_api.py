@@ -26,11 +26,12 @@ class CreationAPITestCase(APITestCase):
             id=2, slug="myrepo-try", url="http://repo.test/try"
         )
         # Create revision and diff
-        self.revision = self.repo.revisions.create(
+        self.revision = self.repo_try.head_revisions.create(
             id=456,
             phid="PHID-REV-XXX",
             title="Bug XXX - Yet Another bug",
             bugzilla_id=78901,
+            base_repository=self.repo,
         )
         self.diff = self.revision.diffs.create(
             id=1234,
@@ -50,7 +51,8 @@ class CreationAPITestCase(APITestCase):
             "phid": "PHID-REV-xxx",
             "title": "Bug XXX - Some bug",
             "bugzilla_id": 123456,
-            "repository": "http://repo.test/myrepo",
+            "base_repository": "http://repo.test/myrepo",
+            "head_repository": "http://repo.test/myrepo",
         }
 
         # No auth will give a permission denied
@@ -77,7 +79,8 @@ class CreationAPITestCase(APITestCase):
                 "issues_bulk_url": "http://testserver/v1/revision/123/issues/",
                 "phabricator_url": "https://phabricator.services.mozilla.com/D123",
                 "phid": "PHID-REV-xxx",
-                "repository": "http://repo.test/myrepo",
+                "base_repository": "http://repo.test/myrepo",
+                "head_repository": "http://repo.test/myrepo",
                 "title": "Bug XXX - Some bug",
             },
         )

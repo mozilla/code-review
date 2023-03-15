@@ -179,13 +179,22 @@ class Command(BaseCommand):
     def build_revision_and_diff(self, data, task_id):
         """Build or retrieve a revision and diff in current repo from report's data"""
         try:
-            repository = Repository.objects.get(url=data["repository"])
+            head_repository = Repository.objects.get(url=data["repository"])
         except Repository.DoesNotExist:
             logger.warning(
                 f"No repository found with URL {data['repository']}, skipping."
             )
             return None, None
-        revision, _ = repository.revisions.get_or_create(
+        
+        try:
+            base_repository = Repository.objects.get(url=data["target_repository"])
+        except Repository.DoesNotExist:
+            logger.warning(
+                f"No repository found with URL {data['target_repository']}, skipping."
+            )
+            return None, None
+
+        revision, _ = head_repository.head_revisions.get_or_create(
             id=data["id"],
             defaults={
                 "phid": data["phid"],
@@ -193,12 +202,13 @@ class Command(BaseCommand):
                 "bugzilla_id": int(data["bugzilla_id"])
                 if data["bugzilla_id"]
                 else None,
+                "base_repository": base_repository,
             },
         )
         diff, _ = revision.diffs.get_or_create(
             id=data["diff_id"],
             defaults={
-                "repository": repository,
+                "repository": head_repository,
                 "phid": data["diff_phid"],
                 "review_task_id": task_id,
                 "mercurial_hash": data["mercurial_revision"],
