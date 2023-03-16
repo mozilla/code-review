@@ -57,6 +57,8 @@ class Revision(PhabricatorModel):
 
     base_changeset = models.CharField(
         max_length=40,
+        null=True,
+        blank=True,
         help_text="Mercurial hash identifier on the base repository",
     )
     head_changeset = models.CharField(
