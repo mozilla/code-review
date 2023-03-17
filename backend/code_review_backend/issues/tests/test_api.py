@@ -53,6 +53,8 @@ class CreationAPITestCase(APITestCase):
             "bugzilla_id": 123456,
             "base_repository": "http://repo.test/myrepo",
             "head_repository": "http://repo.test/myrepo",
+            "base_changeset": "123456789ABCDEF",
+            "head_changeset": "FEDCBA987654321",
         }
 
         # No auth will give a permission denied
@@ -81,6 +83,8 @@ class CreationAPITestCase(APITestCase):
                 "phid": "PHID-REV-xxx",
                 "base_repository": "http://repo.test/myrepo",
                 "head_repository": "http://repo.test/myrepo",
+                "base_changeset": "123456789ABCDEF",
+                "head_changeset": "FEDCBA987654321",
                 "title": "Bug XXX - Some bug",
             },
         )

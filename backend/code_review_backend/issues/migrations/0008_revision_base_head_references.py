@@ -23,6 +23,10 @@ def update_revisions(apps, schema_editor):
     Revision = apps.get_model("issues", "Revision")
     Diff = apps.get_model("issues", "Diff")
 
+    # No need to run the following lines if the db is empty (e.g. during tests)
+    if not Revision.objects.exists():
+        return
+
     # all revisions without any diff get their head repo as revision.repository_id
     Revision.objects.filter(diffs__isnull=True).update(
         head_repository_id=F("base_repository_id")
