@@ -208,18 +208,22 @@ class Revision(object):
         """
         Build a revision from a Mozilla decision task (e.g. from Autoland or Mozilla-central)
         """
-        assert task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] in (
+        # Load repositories
+        repository = task["payload"]["env"]["GECKO_HEAD_REPOSITORY"]
+        target_repository = task["payload"]["env"]["GECKO_BASE_REPOSITORY"]
+
+        assert repository in (
             REPO_AUTOLAND,
             REPO_MOZILLA_CENTRAL,
         ), "Decision task must be on autoland or mozilla-central"
 
-        # Load mercurial revision
+        # Load mercurial revisions
         mercurial_revision = task["payload"]["env"]["GECKO_HEAD_REV"]
         target_mercurial_revision = task["payload"]["env"]["GECKO_BASE_REV"]
 
         # Look for the Phabricator revision from the commit message
         commit_url = os.path.join(
-            task["payload"]["env"]["GECKO_HEAD_REPOSITORY"],
+            repository,
             f"json-rev/{mercurial_revision}",
         )
         response = requests.get(commit_url)
@@ -237,7 +241,7 @@ class Revision(object):
         revision = phabricator.load_revision(rev_id=revision_id)
 
         diff_attrs = {}
-        if task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] != REPO_MOZILLA_CENTRAL:
+        if repository != REPO_MOZILLA_CENTRAL:
             # Search the Phabricator diff with the same commit identifier, except on Mozilla-central
             diffs = phabricator.search_diffs(
                 revision_phid=revision["phid"], attachments={"commits": True}
@@ -266,8 +270,8 @@ class Revision(object):
             phid=revision["phid"],
             mercurial_revision=mercurial_revision,
             target_mercurial_revision=target_mercurial_revision,
-            repository=REPO_AUTOLAND,
-            target_repository=REPO_MOZILLA_CENTRAL,
+            repository=repository,
+            target_repository=target_repository,
             revision=revision,
             url=url,
             **diff_attrs,
