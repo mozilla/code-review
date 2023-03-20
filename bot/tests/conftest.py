@@ -38,6 +38,7 @@ def mock_repositories():
         {
             "url": "https://hg.mozilla.org/mozilla-central",
             "decision_env_revision": "GECKO_HEAD_REV",
+            "decision_env_target_revision": "GECKO_BASE_REV",
             "decision_env_repository": "GECKO_HEAD_REPOSITORY",
             "checkout": "robust",
             "try_url": "ssh://hg.mozilla.org/try",

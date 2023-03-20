@@ -84,6 +84,7 @@ class Revision(object):
         diff=None,
         build_target_phid=None,
         mercurial_revision=None,
+        target_mercurial_revision=None,
         repository=None,
         repository_try_name=None,
         target_repository=None,
@@ -98,6 +99,7 @@ class Revision(object):
         self.diff_phid = diff_phid
         self.build_target_phid = build_target_phid
         self.mercurial_revision = mercurial_revision
+        self.target_mercurial_revision = target_mercurial_revision
         self.revision = revision
         self.diff = diff
         self.url = url
@@ -213,6 +215,7 @@ class Revision(object):
 
         # Load mercurial revision
         mercurial_revision = task["payload"]["env"]["GECKO_HEAD_REV"]
+        target_mercurial_revision = task["payload"]["env"]["GECKO_BASE_REV"]
 
         # Look for the Phabricator revision from the commit message
         commit_url = os.path.join(
@@ -262,6 +265,7 @@ class Revision(object):
             id=revision_id,
             phid=revision["phid"],
             mercurial_revision=mercurial_revision,
+            target_mercurial_revision=target_mercurial_revision,
             repository=REPO_AUTOLAND,
             target_repository=REPO_MOZILLA_CENTRAL,
             revision=revision,
@@ -423,10 +427,16 @@ class Revision(object):
                     repository.decision_env_revision in decision_env
                 ), f"Revision {repository.decision_env_revision} not found in decision task"
                 assert (
+                    repository.decision_env_target_revision in decision_env
+                ), f"Revision {repository.decision_env_target_revision} not found in decision task"
+                assert (
                     repository.decision_env_repository in decision_env
                 ), f"Repository {repository.decision_env_repository} not found in decision task"
                 self.repository_try_name = repository.try_name
                 self.mercurial_revision = decision_env[repository.decision_env_revision]
+                self.target_mercurial_revision = decision_env[
+                    repository.decision_env_target_revision
+                ]
                 self.repository = decision_env[repository.decision_env_repository]
                 self.target_repository = repository.url
                 break

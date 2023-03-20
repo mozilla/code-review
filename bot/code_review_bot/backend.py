@@ -53,13 +53,23 @@ class BackendAPI(object):
             res = urllib.parse.urlparse(url)
             assert res.scheme and res.netloc, f"Repository {url} is not an url"
 
+        # Check the Mercurial revisions are strings
+        for mercurial_rev in (
+            revision.target_mercurial_revision,
+            revision.mercurial_revision,
+        ):
+            assert isinstance(mercurial_rev, str), "Mercurial revision must be a string"
+
         # Create revision on backend if it does not exists
         data = {
             "id": revision.id,
             "phid": revision.phid,
             "title": revision.title,
             "bugzilla_id": revision.bugzilla_id,
-            "repository": revision.target_repository,
+            "base_repository": revision.target_repository,
+            "head_repository": revision.repository,
+            "base_changeset": revision.target_mercurial_revision,
+            "head_changeset": revision.mercurial_revision,
         }
         backend_revision = self.create("/v1/revision/", data)
 

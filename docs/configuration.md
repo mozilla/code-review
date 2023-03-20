@@ -79,6 +79,7 @@ common:
       # Environment variables used by the bot to detect which repository
       # is setup from a decision task (more details on the bot documentation)
       decision_env_revision: GECKO_HEAD_REV
+      decision_env_target_revision: GECKO_BASE_REV
       decision_env_repository: GECKO_HEAD_REPOSITORY
 
       # The ssh username (or email) used to push on Try
