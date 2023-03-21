@@ -185,7 +185,7 @@ class Command(BaseCommand):
                 f"No repository found with URL {data['repository']}, skipping."
             )
             return None, None
-        
+
         try:
             base_repository = Repository.objects.get(url=data["target_repository"])
         except Repository.DoesNotExist:
@@ -212,7 +212,6 @@ class Command(BaseCommand):
                 "phid": data["diff_phid"],
                 "review_task_id": task_id,
                 "mercurial_hash": data["mercurial_revision"],
-                "repository": repository,
             },
         )
         return revision, diff
