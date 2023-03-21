@@ -244,6 +244,7 @@ def test_phabricator_clang_tidy(mock_phabricator, phab, mock_try_task, mock_task
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -282,6 +283,7 @@ def test_phabricator_clang_format(
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -326,6 +328,7 @@ def test_phabricator_mozlint(
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -412,6 +415,7 @@ def test_phabricator_coverage(
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -468,6 +472,7 @@ def test_phabricator_clang_tidy_and_coverage(
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -592,6 +597,7 @@ def test_phabricator_analyzers(
         # Always use the same setup, only varies the analyzers
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {"test.cpp": [0, 41, 42, 43], "dom/test.cpp": [42]}
@@ -685,6 +691,7 @@ def test_phabricator_clang_tidy_build_error(
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
 
         reporter = PhabricatorReporter({}, api=api)
 
@@ -736,6 +743,7 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_try_task, mock_task
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -800,6 +808,7 @@ def test_task_failures(mock_phabricator, phab, mock_try_task):
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "aabbccddee"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy"]}, api=api)
@@ -825,6 +834,7 @@ def test_extra_errors(mock_phabricator, mock_try_task, phab, mock_task):
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {"path/to/file.py": [1, 2, 3]}
@@ -918,6 +928,7 @@ def test_phabricator_notices(mock_phabricator, phab, mock_try_task):
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -968,6 +979,7 @@ def test_phabricator_tgdiff(mock_phabricator, phab, mock_try_task):
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -1003,6 +1015,7 @@ def test_phabricator_external_tidy(mock_phabricator, phab, mock_try_task, mock_t
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -1054,6 +1067,7 @@ def test_phabricator_newer_diff(mock_phabricator, phab, mock_try_task, mock_task
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {
@@ -1134,6 +1148,7 @@ def test_phabricator_former_diff_comparison(
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, api)
         revision.mercurial_revision = "deadbeef1234"
+        revision.target_mercurial_revision = "1234deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.repository_try_name = "try"
         revision.lines = {

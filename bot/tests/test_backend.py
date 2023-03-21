@@ -21,6 +21,7 @@ def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_h
     mock_revision.repository = "http://hgmo/test-try"
     mock_revision.target_repository = "https://hgmo/test"
     mock_revision.mercurial_revision = "deadbeef1234"
+    mock_revision.target_mercurial_revision = "1234deadbeef"
 
     assert mock_revision.bugzilla_id == 1234567
 
@@ -35,10 +36,13 @@ def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_h
         "bugzilla_id": 1234567,
         "id": 51,
         "phid": "PHID-DREV-zzzzz",
-        "repository": "https://hgmo/test",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
         "issues_bulk_url": "http://code-review-backend.test/v1/revision/51/issues/",
+        "head_repository": "http://hgmo/test-try",
+        "base_repository": "https://hgmo/test",
+        "head_changeset": "deadbeef1234",
+        "base_changeset": "1234deadbeef",
     }
 
     # Check the diff in the backend
@@ -112,6 +116,7 @@ def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
     mock_revision.repository = "http://hgmo/test-try"
     mock_revision.target_repository = "https://hgmo/test"
     mock_revision.mercurial_revision = "deadbeef1234"
+    mock_revision.target_mercurial_revision = "1234deadbeef"
 
     # Set bugzilla id as empty string
     mock_revision.revision["fields"]["bugzilla.bug-id"] = ""
@@ -126,10 +131,13 @@ def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
         "bugzilla_id": None,
         "id": 51,
         "phid": "PHID-DREV-zzzzz",
-        "repository": "https://hgmo/test",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
         "issues_bulk_url": "http://code-review-backend.test/v1/revision/51/issues/",
+        "head_repository": "http://hgmo/test-try",
+        "base_repository": "https://hgmo/test",
+        "head_changeset": "deadbeef1234",
+        "base_changeset": "1234deadbeef",
     }
 
 
@@ -137,8 +145,6 @@ def test_repo_url(mock_revision, mock_backend, mock_hgmo):
     """
     Check that the backend client verifies repositories are URLs
     """
-    mock_revision.mercurial_revision = "deadbeef1234"
-
     r = BackendAPI()
     assert r.enabled is True
 
@@ -156,6 +162,30 @@ def test_repo_url(mock_revision, mock_backend, mock_hgmo):
     assert str(e.value) == "Repository somewhere/test-try is not an url"
 
 
+def test_mercurial_revision_string(mock_revision, mock_backend, mock_hgmo):
+    """
+    Check that the backend client verifies mercurial revisions are strings
+    """
+    mock_revision.repository = "http://hgmo/test-try"
+    mock_revision.target_repository = "https://hgmo/test"
+
+    r = BackendAPI()
+    assert r.enabled is True
+
+    # Invalid target mercurial revision
+    mock_revision.target_mercurial_revision = 4321
+    with pytest.raises(AssertionError) as e:
+        r.publish_revision(mock_revision)
+    assert str(e.value) == "Mercurial revision must be a string"
+
+    # Invalid mercurial revision
+    mock_revision.target_mercurial_revision = "1234deadbeef"
+    mock_revision.mercurial_revision = 1234
+    with pytest.raises(AssertionError) as e:
+        r.publish_revision(mock_revision)
+    assert str(e.value) == "Mercurial revision must be a string"
+
+
 def test_publication_failures(
     mock_clang_tidy_issues, mock_revision, mock_backend, mock_hgmo
 ):
@@ -170,6 +200,7 @@ def test_publication_failures(
     mock_revision.repository = "http://hgmo/test-try"
     mock_revision.target_repository = "https://hgmo/test"
     mock_revision.mercurial_revision = "deadbeef1234"
+    mock_revision.target_mercurial_revision = "1234deadbeef"
 
     assert mock_revision.bugzilla_id == 1234567
 
@@ -225,6 +256,7 @@ def test_publish_issues_bulk(
     mock_revision.repository = "http://hgmo/test-try"
     mock_revision.target_repository = "https://hgmo/test"
     mock_revision.mercurial_revision = "deadbeef1234"
+    mock_revision.target_mercurial_revision = "1234deadbeef"
     assert mock_revision.bugzilla_id == 1234567
 
     r = BackendAPI()

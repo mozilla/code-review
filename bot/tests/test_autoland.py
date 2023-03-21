@@ -21,9 +21,10 @@ def test_revision(mock_autoland_task, mock_phabricator, mock_hgmo):
         "has_clang_files": False,
         "id": 123,
         "mercurial_revision": "deadbeef123",
+        "target_mercurial_revision": "123deadbeef",
         "phid": "PHID-DREV-azcDeadbeef",
         "repository": "https://hg.mozilla.org/integration/autoland",
-        "target_repository": "https://hg.mozilla.org/mozilla-central",
+        "target_repository": "https://hg.mozilla.org/mozilla-unified",
         "title": "Static Analysis tests",
         "url": "https://phabricator.services.mozilla.com/D123",
     }

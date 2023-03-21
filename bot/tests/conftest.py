@@ -274,6 +274,7 @@ def mock_autoland_task():
                 "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/integration/autoland",
                 "GECKO_HEAD_REF": "deadbeef123",
                 "GECKO_HEAD_REV": "deadbeef123",
+                "GECKO_BASE_REV": "123deadbeef",
             }
         }
     }
@@ -291,6 +292,7 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
 
         # Setup mercurial information manually instead of calling setup_try
         revision.mercurial_revision = "deadbeef123456"
+        revision.target_mercurial_revision = "123456deadbeef"
         revision.repository = "https://hg.mozilla.org/try"
         revision.target_repository = "https://hg.mozilla.org/mozilla-central"
 

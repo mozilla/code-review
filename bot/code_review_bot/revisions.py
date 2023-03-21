@@ -488,4 +488,5 @@ class Revision(object):
             "repository": self.repository,
             "target_repository": self.target_repository,
             "mercurial_revision": self.mercurial_revision,
+            "target_mercurial_revision": self.target_mercurial_revision,
         }

@@ -43,6 +43,7 @@ def test_parser(mock_workflow, mock_revision, mock_hgmo, mock_backend):
                 "env": {
                     "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
                     "GECKO_HEAD_REV": "deadbeef1234",
+                    "GECKO_BASE_REV": "1234deadbeef",
                 },
             },
             "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
