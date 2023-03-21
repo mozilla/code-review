@@ -291,10 +291,10 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
         revision = Revision.from_try_task(mock_try_task, api)
 
         # Setup mercurial information manually instead of calling setup_try
-        revision.mercurial_revision = "deadbeef123456"
-        revision.target_mercurial_revision = "123456deadbeef"
-        revision.repository = "https://hg.mozilla.org/try"
-        revision.target_repository = "https://hg.mozilla.org/mozilla-central"
+        revision.head_changeset = "deadbeef123456"
+        revision.base_changeset = "123456deadbeef"
+        revision.head_repository = "https://hg.mozilla.org/try"
+        revision.base_repository = "https://hg.mozilla.org/mozilla-central"
 
         return revision
 

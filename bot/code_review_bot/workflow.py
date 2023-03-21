@@ -114,7 +114,7 @@ class Workflow(object):
         """
         Simpler workflow to ingest a revision
         """
-        assert revision.repository in (
+        assert revision.head_repository in (
             REPO_AUTOLAND,
             REPO_MOZILLA_CENTRAL,
         ), "Need a revision from autoland or mozilla-central"
@@ -123,7 +123,7 @@ class Workflow(object):
             revision=revision.id,
             bugzilla=revision.bugzilla_id,
             title=revision.title,
-            mercurial_revision=revision.mercurial_revision,
+            head_changeset=revision.head_changeset,
         )
 
         assert (
@@ -263,7 +263,7 @@ class Workflow(object):
 
         # Always add the repository we are working on
         # This is mainly used by the frontend to list & filter diffs
-        payload["repository"] = revision.target_repository
+        payload["repository"] = revision.base_repository
 
         # Add restartable flag for monitoring
         payload["monitoring_restart"] = payload["state"] == "error" and payload.get(

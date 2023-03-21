@@ -117,8 +117,8 @@ def test_licence_payload(mock_revision, mock_hgmo):
     The analyzer name replaces the empty check
     See https://github.com/mozilla/code-review/issues/172
     """
-    mock_revision.repository = "test-try"
-    mock_revision.mercurial_revision = "deadbeef1234"
+    mock_revision.head_repository = "test-try"
+    mock_revision.head_changeset = "deadbeef1234"
     task_status = {
         "task": {"metadata": {"name": "source-test-mozlint-license"}},
         "status": {},

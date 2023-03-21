@@ -429,7 +429,7 @@ class PhabricatorReporter(Reporter):
         for task in task_failures:
             treeherder_url = treeherder.get_job_url(
                 revision.repository_try_name,
-                revision.mercurial_revision,
+                revision.head_changeset,
                 task.id,
                 task.run_id,
             )

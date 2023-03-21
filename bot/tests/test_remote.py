@@ -365,8 +365,8 @@ def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with different decision task setup
     """
-    # Reset mercurial revision to enable setup_try to run
-    mock_revision.mercurial_revision = None
+    # Reset mercurial changeset to enable setup_try to run
+    mock_revision.head_changeset = None
 
     assert mock_revision.phabricator_repository["fields"]["name"] == "mozilla-central"
 
@@ -459,10 +459,10 @@ def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
     with pytest.raises(AssertionError) as e:
         mock_workflow.run(mock_revision)
     assert str(e.value) == "No task dependencies to analyze"
-    assert mock_revision.mercurial_revision == "someRevision"
-    assert mock_revision.target_mercurial_revision == "someOtherRevision"
-    assert mock_revision.repository == "https://hg.mozilla.org/try"
-    assert mock_revision.target_repository == "https://hg.mozilla.org/mozilla-central"
+    assert mock_revision.head_changeset == "someRevision"
+    assert mock_revision.base_changeset == "someOtherRevision"
+    assert mock_revision.head_repository == "https://hg.mozilla.org/try"
+    assert mock_revision.base_repository == "https://hg.mozilla.org/mozilla-central"
 
 
 def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_backend):

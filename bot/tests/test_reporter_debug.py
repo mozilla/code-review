@@ -66,7 +66,10 @@ def test_publication(tmpdir, mock_issues, mock_revision):
         "repository": "https://hg.mozilla.org/try",
         "target_repository": "https://hg.mozilla.org/mozilla-central",
         "mercurial_revision": "deadc0ffee",
-        "target_mercurial_revision": "c0ffeedead",
+        "head_repository": "https://hg.mozilla.org/try",
+        "base_repository": "https://hg.mozilla.org/mozilla-central",
+        "head_changeset": "deadc0ffee",
+        "base_changeset": "c0ffeedead",
     }
 
     assert "task_failures" in report
