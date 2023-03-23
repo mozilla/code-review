@@ -76,7 +76,7 @@ def test_as_text(mock_revision, mock_task):
     )
 
 
-def test_as_dict(mock_revision, mock_hgmo, mock_task):
+def test_as_dict(mock_revision_setup, mock_hgmo, mock_task):
     """
     Test text export for ClangTidyIssue
     """
@@ -85,7 +85,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task):
 
     issue = ClangTidyIssue(
         mock_task(ClangTidyTask, "clang-tidy"),
-        mock_revision,
+        mock_revision_setup,
         "test.cpp",
         "42",
         "51",

@@ -415,6 +415,17 @@ class Revision(object):
         """
         Find the mercurial revision from the Try decision task env
         """
+        # We shouldn't override existing data
+        assert all(
+            attr is None
+            for attr in [
+                self.head_changeset,
+                self.base_changeset,
+                self.head_repository,
+                self.base_repository,
+            ]
+        ), "Head and base changesets/repositories shouldn't be overridden by setup_try"
+
         # The decision task should have the same id as the task group
         decision_task = tasks.get(task_group_id)
         assert decision_task is not None, "Missing decision task"

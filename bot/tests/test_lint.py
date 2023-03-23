@@ -11,7 +11,7 @@ from code_review_bot.tasks.lint import MozLintTask
 from conftest import FIXTURES_DIR
 
 
-def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
+def test_flake8_checks(mock_config, mock_revision_setup, mock_hgmo, mock_task):
     """
     Check flake8 check detection
     """
@@ -26,7 +26,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
         "flake8",
         "Dummy test",
         "dummy rule",
-        mock_revision,
+        mock_revision_setup,
     )
     assert not issue.is_disabled_check()
     assert issue.validates()
@@ -41,7 +41,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
         "flake8",
         "Remove bad quotes or whatever.",
         "Q000",
-        mock_revision,
+        mock_revision_setup,
     )
     assert issue.is_disabled_check()
     assert not issue.validates()

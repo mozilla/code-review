@@ -214,6 +214,12 @@ def test_no_issues(mock_config, mock_revision, mock_workflow, mock_backend):
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Fail
 
+    # Reset the head and base references before rerunning the workflow
+    mock_revision.head_changeset = None
+    mock_revision.base_changeset = None
+    mock_revision.head_repository = None
+    mock_revision.base_repository = None
+
     # Now mark that task failure as ignorable
     mock_workflow.task_failures_ignored = ["source-test-mozlint-flake8"]
     issues = mock_workflow.run(mock_revision)
@@ -775,6 +781,12 @@ def test_zero_coverage_option(mock_config, mock_revision, mock_workflow, mock_ba
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Pass
+
+    # Reset the head and base references before rerunning the workflow
+    mock_revision.head_changeset = None
+    mock_revision.base_changeset = None
+    mock_revision.head_repository = None
+    mock_revision.base_repository = None
 
     mock_workflow.zero_coverage_enabled = True
     issues = mock_workflow.run(mock_revision)

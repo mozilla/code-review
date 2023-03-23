@@ -288,15 +288,18 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        revision = Revision.from_try_task(mock_try_task, api)
+        return Revision.from_try_task(mock_try_task, api)
 
-        # Setup mercurial information manually instead of calling setup_try
-        revision.head_changeset = "deadbeef123456"
-        revision.base_changeset = "123456deadbeef"
-        revision.head_repository = "https://hg.mozilla.org/try"
-        revision.base_repository = "https://hg.mozilla.org/mozilla-central"
 
-        return revision
+@pytest.fixture
+def mock_revision_setup(mock_revision):
+    # Setup mercurial information manually instead of calling setup_try
+    mock_revision.head_changeset = "deadbeef123456"
+    mock_revision.base_changeset = "123456deadbeef"
+    mock_revision.head_repository = "https://hg.mozilla.org/try"
+    mock_revision.base_repository = "https://hg.mozilla.org/mozilla-central"
+
+    return mock_revision
 
 
 class Response(object):
