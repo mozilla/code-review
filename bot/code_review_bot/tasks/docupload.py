@@ -11,6 +11,9 @@ MAX_LINKS = 21
 # Should stay up-to-date with https://searchfox.org/mozilla-central/rev/2d24d893669ad0fe8d76b0427b25369d35fcc19b/docs/conf.py#79
 DOC_FILE_SUFFIXES = (".rst", ".md")
 
+# Any additional files that could trigger doc rebuild.
+EXTRA_DOC_FILES = ("mots.yaml",)
+
 DOC_LINK = """
 - file [{path}]({doc_url})
 """
@@ -84,10 +87,14 @@ class DocUploadTask(NoticeTask):
         doc_files = [
             file
             for file in revision.files
-            if any(
-                os.path.dirname(file).startswith(prefix) for prefix in trees.values()
+            if (
+                any(
+                    os.path.dirname(file).startswith(prefix)
+                    for prefix in trees.values()
+                )
+                and file.endswith(DOC_FILE_SUFFIXES)
             )
-            and file.endswith(DOC_FILE_SUFFIXES)
+            or file in EXTRA_DOC_FILES
         ]
         nb_docs = len(doc_files)
         if not nb_docs:
