@@ -48,10 +48,17 @@ class BackendAPI(object):
             return
 
         # Check the repositories are urls
-        for url in (revision.target_repository, revision.repository):
+        for url in (revision.base_repository, revision.head_repository):
             assert isinstance(url, str), "Repository must be a string"
             res = urllib.parse.urlparse(url)
             assert res.scheme and res.netloc, f"Repository {url} is not an url"
+
+        # Check the Mercurial changesets are strings
+        for changeset in (
+            revision.base_changeset,
+            revision.head_changeset,
+        ):
+            assert isinstance(changeset, str), "Mercurial changeset must be a string"
 
         # Create revision on backend if it does not exists
         data = {
@@ -59,7 +66,10 @@ class BackendAPI(object):
             "phid": revision.phid,
             "title": revision.title,
             "bugzilla_id": revision.bugzilla_id,
-            "repository": revision.target_repository,
+            "base_repository": revision.base_repository,
+            "head_repository": revision.head_repository,
+            "base_changeset": revision.base_changeset,
+            "head_changeset": revision.head_changeset,
         }
         backend_revision = self.create("/v1/revision/", data)
 
@@ -78,8 +88,8 @@ class BackendAPI(object):
             "id": revision.diff_id,
             "phid": revision.diff_phid,
             "review_task_id": settings.taskcluster.task_id,
-            "mercurial_hash": revision.mercurial_revision,
-            "repository": revision.repository,
+            "mercurial_hash": revision.head_changeset,
+            "repository": revision.head_repository,
         }
         backend_diff = self.create(backend_revision["diffs_url"], data)
 

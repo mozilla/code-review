@@ -28,7 +28,10 @@ class RevisionSerializer(serializers.ModelSerializer):
     Serialize a Revision in a Repository
     """
 
-    repository = serializers.SlugRelatedField(
+    base_repository = serializers.SlugRelatedField(
+        queryset=Repository.objects.all(), slug_field="url"
+    )
+    head_repository = serializers.SlugRelatedField(
         queryset=Repository.objects.all(), slug_field="url"
     )
     diffs_url = serializers.HyperlinkedIdentityField(
@@ -43,7 +46,10 @@ class RevisionSerializer(serializers.ModelSerializer):
         model = Revision
         fields = (
             "id",
-            "repository",
+            "base_repository",
+            "head_repository",
+            "base_changeset",
+            "head_changeset",
             "phid",
             "title",
             "bugzilla_id",
@@ -58,14 +64,26 @@ class RevisionLightSerializer(serializers.ModelSerializer):
     Serialize a Revision in a Diff light serializer
     """
 
-    repository = serializers.SlugRelatedField(
+    base_repository = serializers.SlugRelatedField(
+        queryset=Repository.objects.all(), slug_field="url"
+    )
+    head_repository = serializers.SlugRelatedField(
         queryset=Repository.objects.all(), slug_field="url"
     )
     phabricator_url = serializers.URLField(read_only=True)
 
     class Meta:
         model = Revision
-        fields = ("id", "repository", "title", "bugzilla_id", "phabricator_url")
+        fields = (
+            "id",
+            "base_repository",
+            "head_repository",
+            "base_changeset",
+            "head_changeset",
+            "title",
+            "bugzilla_id",
+            "phabricator_url",
+        )
 
 
 class DiffSerializer(serializers.ModelSerializer):
@@ -224,7 +242,7 @@ class IssueCheckStatsSerializer(serializers.Serializer):
     """
 
     # The view aggregates issues depending on their reference to a repository (via IssueLink M2M)
-    repository = serializers.SlugField(source="revisions__repository__slug")
+    repository = serializers.SlugField(source="revisions__head_repository__slug")
     analyzer = serializers.CharField()
     check = serializers.CharField(source="analyzer_check")
     total = serializers.IntegerField()

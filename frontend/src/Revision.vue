@@ -44,7 +44,7 @@ export default {
     <div v-else-if="state == 'loaded'">
       <h2 class="subtitle">{{ revision.title }}</h2>
       <p>
-        On <strong>{{ revision.repository }}</strong> - <a :href="revision.phabricator_url" target="_blank">View on Phabricator</a>
+        On <strong>{{ revision.head_repository }}</strong> - <a :href="revision.phabricator_url" target="_blank">View on Phabricator</a>
         <span v-if="revision.bugzilla_id">
           - <a :href="'https://bugzil.la/' + revision.bugzilla_id" target="_blank">View Bug {{ revision.bugzilla_id }}</a>
         </span>

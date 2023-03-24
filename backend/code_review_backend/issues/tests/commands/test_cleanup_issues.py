@@ -52,7 +52,13 @@ class CleanupIssuesCommandTestCase(TestCase):
         # The third revision is on test and has been ingested 1 days ago
         rev_1, rev_2, rev_3 = Revision.objects.bulk_create(
             [
-                Revision(id=i, phid=i, title=f"Revision {i}", repository=repo)
+                Revision(
+                    id=i,
+                    phid=i,
+                    title=f"Revision {i}",
+                    base_repository=repo,
+                    head_repository=repo,
+                )
                 for i, repo in enumerate(
                     (self.moz_central, self.autoland, self.test_repo)
                 )
@@ -108,7 +114,8 @@ class CleanupIssuesCommandTestCase(TestCase):
         )
 
         self.assertFalse(Diff.objects.exists())
-        self.assertFalse(self.moz_central.revisions.exists())
+        self.assertFalse(self.moz_central.base_revisions.exists())
+        self.assertFalse(self.moz_central.head_revisions.exists())
 
         self.assertListEqual(
             mock_log.output,

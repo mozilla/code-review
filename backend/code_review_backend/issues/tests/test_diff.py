@@ -29,11 +29,12 @@ class DiffAPITestCase(APITestCase):
 
         # Create a stack with 2 revisions & 3 diffs
         for i in range(2):
-            self.repo.revisions.create(
+            self.repo_try.head_revisions.create(
                 id=i + 1,
                 phid=f"PHID-DREV-{i+1}",
                 title=f"Revision {i+1}",
                 bugzilla_id=10000 + i,
+                base_repository=self.repo,
             )
         for i in range(3):
             Diff.objects.create(
@@ -68,7 +69,10 @@ class DiffAPITestCase(APITestCase):
                         "id": 3,
                         "revision": {
                             "id": 1,
-                            "repository": "http://repo.test/myrepo",
+                            "base_repository": "http://repo.test/myrepo",
+                            "head_repository": "http://repo.test/try",
+                            "base_changeset": None,
+                            "head_changeset": None,
                             "phid": "PHID-DREV-1",
                             "title": "Revision 1",
                             "bugzilla_id": 10000,
@@ -96,7 +100,10 @@ class DiffAPITestCase(APITestCase):
                         "id": 2,
                         "revision": {
                             "id": 2,
-                            "repository": "http://repo.test/myrepo",
+                            "base_repository": "http://repo.test/myrepo",
+                            "head_repository": "http://repo.test/try",
+                            "base_changeset": None,
+                            "head_changeset": None,
                             "phid": "PHID-DREV-2",
                             "title": "Revision 2",
                             "bugzilla_id": 10001,
@@ -124,7 +131,10 @@ class DiffAPITestCase(APITestCase):
                         "id": 1,
                         "revision": {
                             "id": 1,
-                            "repository": "http://repo.test/myrepo",
+                            "base_repository": "http://repo.test/myrepo",
+                            "head_repository": "http://repo.test/try",
+                            "base_changeset": None,
+                            "head_changeset": None,
                             "phid": "PHID-DREV-1",
                             "title": "Revision 1",
                             "bugzilla_id": 10000,

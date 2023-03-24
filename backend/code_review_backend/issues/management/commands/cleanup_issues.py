@@ -31,7 +31,8 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         clean_until = timezone.now() - timedelta(days=options["nb_days"])
         rev_to_delete = Revision.objects.filter(
-            repository__slug__in=["autoland", "mozilla-central"],
+            base_repository__slug__in=["autoland", "mozilla-central"],
+            head_repository__slug__in=["autoland", "mozilla-central"],
             created__lte=clean_until,
         )
 

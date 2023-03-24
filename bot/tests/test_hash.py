@@ -16,8 +16,8 @@ def test_build_hash(mock_revision, mock_hgmo, mock_task):
     Test build hash algorithm
     """
     # Hardcode revision & repo
-    mock_revision.repository = "test-try"
-    mock_revision.mercurial_revision = "deadbeef1234"
+    mock_revision.head_repository = "test-try"
+    mock_revision.head_changeset = "deadbeef1234"
 
     issue = MozLintIssue(
         mock_task(MozLintTask, "mock-analyzer-eslint"),
@@ -62,8 +62,8 @@ def test_indentation_effect(mock_revision, mock_hgmo, mock_task):
     should produce the same hash
     """
     # Hardcode revision & repo
-    mock_revision.repository = "test-try"
-    mock_revision.mercurial_revision = "deadbeef1234"
+    mock_revision.head_repository = "test-try"
+    mock_revision.head_changeset = "deadbeef1234"
 
     issue_indent = MozLintIssue(
         mock_task(MozLintTask, "mock-analyzer-flake8"),
@@ -106,8 +106,8 @@ def test_full_file(mock_revision, mock_hgmo, mock_task):
     Test build hash algorithm when using a full file (line is -1)
     """
     # Hardcode revision & repo
-    mock_revision.repository = "test-try"
-    mock_revision.mercurial_revision = "deadbeef1234"
+    mock_revision.head_repository = "test-try"
+    mock_revision.head_changeset = "deadbeef1234"
 
     issue = MozLintIssue(
         mock_task(MozLintTask, "mock-analyzer-fullfile"),

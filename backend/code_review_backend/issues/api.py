@@ -109,7 +109,11 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
             # Because of the perf. hit filter issues that are not older than today - 3 months.
             .filter(created__gte=date.today() - timedelta(days=90))
             .prefetch_related(
-                "issues", "revision", "revision__repository", "repository"
+                "issues",
+                "revision",
+                "revision__base_repository",
+                "revision__head_repository",
+                "repository",
             )
             .annotate(nb_issues=Count("issues"))
             .annotate(nb_errors=Count("issues", filter=Q(issues__level="error")))
@@ -127,7 +131,8 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
         repository = self.request.query_params.get("repository")
         if repository is not None:
             diffs = diffs.filter(
-                Q(revision__repository__slug=repository)
+                Q(revision__base_repository__slug=repository)
+                | Q(revision__head_repository__slug=repository)
                 | Q(repository__slug=repository)
             )
 
@@ -211,14 +216,16 @@ class IssueCheckDetails(CachedView, generics.ListAPIView):
         repo = self.kwargs["repository"]
 
         queryset = (
-            Issue.objects.filter(revisions__repository__slug=repo)
+            Issue.objects.filter(revisions__head_repository__slug=repo)
             .filter(analyzer=self.kwargs["analyzer"])
             .filter(analyzer_check=self.kwargs["check"])
             .prefetch_related(
                 "diffs__repository",
                 Prefetch(
                     "diffs__revision",
-                    queryset=Revision.objects.select_related("repository"),
+                    queryset=Revision.objects.select_related(
+                        "base_repository", "head_repository"
+                    ),
                 ),
             )
             .order_by("-created")
@@ -257,14 +264,14 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
     def get_queryset(self):
         queryset = (
             Issue.objects.values(
-                "revisions__repository__slug", "analyzer", "analyzer_check"
+                "revisions__head_repository__slug", "analyzer", "analyzer_check"
             )
             # We want to count distinct issues because they can be referenced on multiple diffs
             .annotate(total=Count("id", distinct=True))
             .annotate(
                 publishable=Count("id", filter=Q(in_patch=True) | Q(level=LEVEL_ERROR))
             )
-            .distinct("revisions__repository__slug", "analyzer", "analyzer_check")
+            .distinct("revisions__head_repository__slug", "analyzer", "analyzer_check")
         )
 
         # Filter issues by date
@@ -281,7 +288,7 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
         queryset = queryset.filter(revisions__created__gte=since).distinct()
 
         return queryset.order_by(
-            "-total", "revisions__repository__slug", "analyzer", "analyzer_check"
+            "-total", "revisions__head_repository__slug", "analyzer", "analyzer_check"
         )
 
 
@@ -311,7 +318,10 @@ class IssueCheckHistory(CachedView, generics.ListAPIView):
         # Filter by repository
         repository = self.request.query_params.get("repository")
         if repository:
-            queryset = queryset.filter(diffs__revision__repository__slug=repository)
+            queryset = queryset.filter(
+                Q(diffs__revision__base_repository__slug=repository)
+                | Q(diffs__revision__head_repository__slug=repository)
+            )
 
         # Filter by analyzer
         analyzer = self.request.query_params.get("analyzer")
@@ -362,7 +372,7 @@ class IssueList(generics.ListAPIView):
                 "invalid repo_slug path argument - No repository match this slug"
             )
         else:
-            qs = qs.filter(revisions__repository=repo)
+            qs = qs.filter(revisions__head_repository=repo)
 
         # Always filter by path when the parameter is set
         if path := self.request.query_params.get("path"):

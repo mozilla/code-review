@@ -38,6 +38,7 @@ def mock_repositories():
         {
             "url": "https://hg.mozilla.org/mozilla-central",
             "decision_env_revision": "GECKO_HEAD_REV",
+            "decision_env_target_revision": "GECKO_BASE_REV",
             "decision_env_repository": "GECKO_HEAD_REPOSITORY",
             "checkout": "robust",
             "try_url": "ssh://hg.mozilla.org/try",
@@ -273,6 +274,7 @@ def mock_autoland_task():
                 "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/integration/autoland",
                 "GECKO_HEAD_REF": "deadbeef123",
                 "GECKO_HEAD_REV": "deadbeef123",
+                "GECKO_BASE_REV": "123deadbeef",
             }
         }
     }
@@ -286,14 +288,18 @@ def mock_revision(mock_phabricator, mock_try_task, mock_config):
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        revision = Revision.from_try_task(mock_try_task, api)
+        return Revision.from_try_task(mock_try_task, api)
 
-        # Setup mercurial information manually instead of calling setup_try
-        revision.mercurial_revision = "deadbeef123456"
-        revision.repository = "https://hg.mozilla.org/try"
-        revision.target_repository = "https://hg.mozilla.org/mozilla-central"
 
-        return revision
+@pytest.fixture
+def mock_revision_setup(mock_revision):
+    # Setup mercurial information manually instead of calling setup_try
+    mock_revision.head_changeset = "deadbeef123456"
+    mock_revision.base_changeset = "123456deadbeef"
+    mock_revision.head_repository = "https://hg.mozilla.org/try"
+    mock_revision.base_repository = "https://hg.mozilla.org/mozilla-central"
+
+    return mock_revision
 
 
 class Response(object):

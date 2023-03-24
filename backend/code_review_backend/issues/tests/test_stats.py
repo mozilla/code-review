@@ -31,8 +31,12 @@ class StatsAPITestCase(APITestCase):
         )
 
         # Create a revision
-        revision = self.repo.revisions.create(
-            id=10, phid="PHID-DREV-arev", title="Revision A", bugzilla_id=None
+        revision = self.repo_try.head_revisions.create(
+            id=10,
+            phid="PHID-DREV-arev",
+            title="Revision A",
+            bugzilla_id=None,
+            base_repository=self.repo,
         )
 
         # Create some diffs
@@ -114,105 +118,105 @@ class StatsAPITestCase(APITestCase):
                         "analyzer": "analyzer-X",
                         "check": "check-1",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-X",
                         "check": "check-1000",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-Y",
                         "check": None,
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-Y",
                         "check": "check-10",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-Z",
                         "check": "check-42",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-X",
                         "check": None,
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-X",
                         "check": "check-10",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-X",
                         "check": "check-42",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Y",
                         "check": "check-1",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Y",
                         "check": "check-1000",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Y",
                         "check": "check-42",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Z",
                         "check": None,
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Z",
                         "check": "check-1",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Z",
                         "check": "check-10",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                     {
                         "analyzer": "analyzer-Z",
                         "check": "check-1000",
                         "publishable": 0,
-                        "repository": "myrepo",
+                        "repository": "myrepo-try",
                         "total": 33,
                     },
                 ],
@@ -225,7 +229,7 @@ class StatsAPITestCase(APITestCase):
         """
         self.maxDiff = None
         response = self.client.get(
-            "/v1/check/myrepo/analyzer-X/check-1/?publishable=all"
+            "/v1/check/myrepo-try/analyzer-X/check-1/?publishable=all"
         )
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
@@ -254,7 +258,8 @@ class StatsAPITestCase(APITestCase):
             # Revision
             rev = diff["revision"]
             self.assertTrue(rev["id"] > 0)
-            self.assertEqual(rev["repository"], "http://repo.test/myrepo")
+            self.assertEqual(rev["base_repository"], "http://repo.test/myrepo")
+            self.assertEqual(rev["head_repository"], "http://repo.test/myrepo-try")
             self.assertEqual(
                 rev["phabricator_url"], f"http://anotherphab.test/D{rev['id']}"
             )

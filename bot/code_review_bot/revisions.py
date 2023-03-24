@@ -83,10 +83,11 @@ class Revision(object):
         revision=None,
         diff=None,
         build_target_phid=None,
-        mercurial_revision=None,
-        repository=None,
+        head_changeset=None,
+        base_changeset=None,
+        head_repository=None,
         repository_try_name=None,
-        target_repository=None,
+        base_repository=None,
         phabricator_repository=None,
         url=None,
         patch=None,
@@ -97,19 +98,20 @@ class Revision(object):
         self.diff_id = diff_id
         self.diff_phid = diff_phid
         self.build_target_phid = build_target_phid
-        self.mercurial_revision = mercurial_revision
+        self.head_changeset = head_changeset
+        self.base_changeset = base_changeset
         self.revision = revision
         self.diff = diff
         self.url = url
 
         # a try repo where the revision is stored
-        self.repository = repository
+        self.head_repository = head_repository
 
         # the name of the try repo where the revision is stored
         self.repository_try_name = repository_try_name
 
         # the target repo where the patch may land
-        self.target_repository = target_repository
+        self.base_repository = base_repository
 
         # the phabricator repository payload for later identification
         self.phabricator_repository = phabricator_repository
@@ -206,18 +208,23 @@ class Revision(object):
         """
         Build a revision from a Mozilla decision task (e.g. from Autoland or Mozilla-central)
         """
-        assert task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] in (
+        # Load repositories
+        head_repository = task["payload"]["env"]["GECKO_HEAD_REPOSITORY"]
+        base_repository = task["payload"]["env"]["GECKO_BASE_REPOSITORY"]
+
+        assert head_repository in (
             REPO_AUTOLAND,
             REPO_MOZILLA_CENTRAL,
         ), "Decision task must be on autoland or mozilla-central"
 
-        # Load mercurial revision
-        mercurial_revision = task["payload"]["env"]["GECKO_HEAD_REV"]
+        # Load mercurial changesets
+        head_changeset = task["payload"]["env"]["GECKO_HEAD_REV"]
+        base_changeset = task["payload"]["env"]["GECKO_BASE_REV"]
 
         # Look for the Phabricator revision from the commit message
         commit_url = os.path.join(
-            task["payload"]["env"]["GECKO_HEAD_REPOSITORY"],
-            f"json-rev/{mercurial_revision}",
+            head_repository,
+            f"json-rev/{head_changeset}",
         )
         response = requests.get(commit_url)
         response.raise_for_status()
@@ -234,7 +241,7 @@ class Revision(object):
         revision = phabricator.load_revision(rev_id=revision_id)
 
         diff_attrs = {}
-        if task["payload"]["env"]["GECKO_HEAD_REPOSITORY"] != REPO_MOZILLA_CENTRAL:
+        if head_repository != REPO_MOZILLA_CENTRAL:
             # Search the Phabricator diff with the same commit identifier, except on Mozilla-central
             diffs = phabricator.search_diffs(
                 revision_phid=revision["phid"], attachments={"commits": True}
@@ -244,13 +251,13 @@ class Revision(object):
                     d
                     for d in diffs
                     if d["attachments"]["commits"]["commits"][0]["identifier"]
-                    == mercurial_revision
+                    == head_changeset
                 ),
                 None,
             )
             assert (
                 diff is not None
-            ), f"No Phabricator diff found for D{revision_id} and mercurial revision {mercurial_revision}"
+            ), f"No Phabricator diff found for D{revision_id} and mercurial revision {head_changeset}"
             logger.info("Found phabricator diff", id=diff["id"])
             diff_attrs = {
                 "diff": diff,
@@ -261,9 +268,10 @@ class Revision(object):
         return Revision(
             id=revision_id,
             phid=revision["phid"],
-            mercurial_revision=mercurial_revision,
-            repository=REPO_AUTOLAND,
-            target_repository=REPO_MOZILLA_CENTRAL,
+            head_changeset=head_changeset,
+            base_changeset=base_changeset,
+            head_repository=head_repository,
+            base_repository=base_repository,
             revision=revision,
             url=url,
             **diff_attrs,
@@ -309,7 +317,7 @@ class Revision(object):
         # Retrieve remote file
         url = urllib.parse.urljoin(
             "https://hg.mozilla.org",
-            f"{self.repository}/raw-file/{self.mercurial_revision}/{path}",
+            f"{self.head_repository}/raw-file/{self.head_changeset}/{path}",
         )
         logger.info("Downloading HGMO file", url=url)
         response = requests.get(url)
@@ -407,6 +415,17 @@ class Revision(object):
         """
         Find the mercurial revision from the Try decision task env
         """
+        # We shouldn't override existing data
+        assert all(
+            attr is None
+            for attr in [
+                self.head_changeset,
+                self.base_changeset,
+                self.head_repository,
+                self.base_repository,
+            ]
+        ), "Head and base changesets/repositories shouldn't be overridden by setup_try"
+
         # The decision task should have the same id as the task group
         decision_task = tasks.get(task_group_id)
         assert decision_task is not None, "Missing decision task"
@@ -423,21 +442,27 @@ class Revision(object):
                     repository.decision_env_revision in decision_env
                 ), f"Revision {repository.decision_env_revision} not found in decision task"
                 assert (
+                    repository.decision_env_target_revision in decision_env
+                ), f"Revision {repository.decision_env_target_revision} not found in decision task"
+                assert (
                     repository.decision_env_repository in decision_env
                 ), f"Repository {repository.decision_env_repository} not found in decision task"
                 self.repository_try_name = repository.try_name
-                self.mercurial_revision = decision_env[repository.decision_env_revision]
-                self.repository = decision_env[repository.decision_env_repository]
-                self.target_repository = repository.url
+                self.head_changeset = decision_env[repository.decision_env_revision]
+                self.base_changeset = decision_env[
+                    repository.decision_env_target_revision
+                ]
+                self.head_repository = decision_env[repository.decision_env_repository]
+                self.base_repository = repository.url
                 break
 
-        # Check mercurial revision is set
-        assert self.mercurial_revision is not None, "Unsupported decision task"
+        # Check mercurial changeset is set
+        assert self.head_changeset is not None, "Unsupported decision task"
         logger.info(
-            "Using mercurial revision",
-            rev=self.mercurial_revision,
-            repository=self.repository,
-            target=self.target_repository,
+            "Using mercurial changeset",
+            head_changeset=self.head_changeset,
+            head_repository=self.head_repository,
+            base_repository=self.base_repository,
         )
 
     @property
@@ -471,7 +496,13 @@ class Revision(object):
             "title": self.title,
             "bugzilla_id": self.bugzilla_id,
             # Extra infos for backend
-            "repository": self.repository,
-            "target_repository": self.target_repository,
-            "mercurial_revision": self.mercurial_revision,
+            "repository": self.head_repository,
+            "target_repository": self.base_repository,
+            "mercurial_revision": self.head_changeset,
+            # New names that should be used instead of the old
+            # repository, target_repository and mercurial_revision ones
+            "head_repository": self.head_repository,
+            "base_repository": self.base_repository,
+            "head_changeset": self.head_changeset,
+            "base_changeset": self.base_changeset,
         }

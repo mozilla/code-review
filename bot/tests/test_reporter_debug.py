@@ -26,6 +26,7 @@ def test_publication(tmpdir, mock_issues, mock_revision):
                         "image": "taskcluster/decision",
                         "env": {
                             "GECKO_HEAD_REV": "deadc0ffee",
+                            "GECKO_BASE_REV": "c0ffeedead",
                             "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
                             "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-central",
                         },
@@ -65,6 +66,10 @@ def test_publication(tmpdir, mock_issues, mock_revision):
         "repository": "https://hg.mozilla.org/try",
         "target_repository": "https://hg.mozilla.org/mozilla-central",
         "mercurial_revision": "deadc0ffee",
+        "head_repository": "https://hg.mozilla.org/try",
+        "base_repository": "https://hg.mozilla.org/mozilla-central",
+        "head_changeset": "deadc0ffee",
+        "base_changeset": "c0ffeedead",
     }
 
     assert "task_failures" in report

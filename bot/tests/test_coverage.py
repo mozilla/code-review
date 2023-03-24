@@ -3,11 +3,11 @@ from code_review_bot.tasks.coverage import ZeroCoverageTask
 
 
 def test_coverage(
-    mock_config, mock_revision, mock_coverage_artifact, mock_hgmo, mock_task
+    mock_config, mock_revision_setup, mock_coverage_artifact, mock_hgmo, mock_task
 ):
     cov = mock_task(ZeroCoverageTask, "coverage")
 
-    mock_revision.files = [
+    mock_revision_setup.files = [
         # Uncovered file
         "my/path/file1.cpp",
         # Covered file
@@ -19,10 +19,10 @@ def test_coverage(
     ]
 
     # Build fake lines.
-    for path in mock_revision.files:
-        mock_revision.lines[path] = [0]
+    for path in mock_revision_setup.files:
+        mock_revision_setup.lines[path] = [0]
 
-    issues = cov.parse_issues(mock_coverage_artifact, mock_revision)
+    issues = cov.parse_issues(mock_coverage_artifact, mock_revision_setup)
 
     # The list must have three elements
     assert len(issues) == 3
