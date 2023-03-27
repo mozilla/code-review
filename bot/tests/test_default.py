@@ -38,14 +38,6 @@ def test_parser(mock_workflow, mock_revision, mock_hgmo, mock_backend):
     """Test the default format parser"""
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
             "analyzer-A": {},
             "analyzer-B": {
@@ -102,12 +94,12 @@ A random issue happened here
 """
     )
 
-    assert issue.build_hash() == "6fada40e84a621bf00d11b4a16edd8c0"
+    assert issue.build_hash() == "533d1aefc79ef542b3e7d677c1c5724e"
     assert issue.as_dict() == {
         "analyzer": "any-analyzer-name",
         "check": "XYZ",
         "column": 51,
-        "hash": "6fada40e84a621bf00d11b4a16edd8c0",
+        "hash": "533d1aefc79ef542b3e7d677c1c5724e",
         "in_patch": False,
         "level": "error",
         "line": 42,

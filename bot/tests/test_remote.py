@@ -39,14 +39,6 @@ def test_no_deps(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {},
             "extra-task": {},
         }
@@ -74,14 +66,6 @@ def test_baseline(mock_config, mock_revision, mock_workflow, mock_backend, mock_
 
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
             "analyzer-A": {
                 "name": "source-test-mozlint-flake8",
@@ -162,14 +146,6 @@ def test_no_failed(mock_config, mock_revision, mock_workflow, mock_backend):
 
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
             "analyzer-A": {},
             "analyzer-B": {},
@@ -188,14 +164,6 @@ def test_no_issues(mock_config, mock_revision, mock_workflow, mock_backend):
 
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
             "analyzer-A": {},
             "analyzer-B": {
@@ -214,12 +182,6 @@ def test_no_issues(mock_config, mock_revision, mock_workflow, mock_backend):
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Fail
 
-    # Reset the head and base references before rerunning the workflow
-    mock_revision.head_changeset = None
-    mock_revision.base_changeset = None
-    mock_revision.head_repository = None
-    mock_revision.base_repository = None
-
     # Now mark that task failure as ignorable
     mock_workflow.task_failures_ignored = ["source-test-mozlint-flake8"]
     issues = mock_workflow.run(mock_revision)
@@ -235,14 +197,6 @@ def test_build_status_fail_on_error(
     """
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["mozlint"]},
             "mozlint": {
                 "name": "source-test-mozlint-dummy",
@@ -289,14 +243,6 @@ def test_build_status_pass_on_warning(
     """
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["mozlint"]},
             "mozlint": {
                 "name": "source-test-mozlint-dummy",
@@ -342,14 +288,6 @@ def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_ba
 
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["analyzer-X", "analyzer-Y"]},
             "analyzer-X": {},
             "analyzer-Y": {
@@ -367,110 +305,6 @@ def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_ba
     assert mock_revision._state == BuildState.Pass
 
 
-def test_decision_task(mock_config, mock_revision, mock_workflow, mock_backend):
-    """
-    Test a remote workflow with different decision task setup
-    """
-    # Reset mercurial changeset to enable setup_try to run
-    mock_revision.head_changeset = None
-
-    assert mock_revision.phabricator_repository["fields"]["name"] == "mozilla-central"
-
-    mock_workflow.setup_mock_tasks({"notDecision": {}, "remoteTryTask": {}})
-    with pytest.raises(Exception) as e:
-        mock_workflow.run(mock_revision)
-    assert str(e.value) == "Missing decision task"
-
-    mock_workflow.setup_mock_tasks({"decision": {}, "remoteTryTask": {}})
-    with pytest.raises(AssertionError) as e:
-        mock_revision.phabricator_repository["fields"]["name"] = "unknown"
-        mock_workflow.run(mock_revision)
-    assert str(e.value) == "Unsupported decision task"
-
-    # Restore name
-    mock_revision.phabricator_repository["fields"]["name"] = "mozilla-central"
-    mock_workflow.setup_mock_tasks({"decision": {}, "remoteTryTask": {}})
-    with pytest.raises(Exception) as e:
-        mock_workflow.run(mock_revision)
-    assert str(e.value) == "Revision GECKO_HEAD_REV not found in decision task"
-
-    mock_workflow.setup_mock_tasks(
-        {"decision": {"image": "anotherImage"}, "remoteTryTask": {}}
-    )
-    with pytest.raises(Exception) as e:
-        mock_workflow.run(mock_revision)
-    assert str(e.value) == "Revision GECKO_HEAD_REV not found in decision task"
-
-    mock_workflow.setup_mock_tasks(
-        {
-            "decision": {
-                "image": {"from": "taskcluster/decision", "tag": "unsupported"}
-            },
-            "remoteTryTask": {},
-        }
-    )
-    with pytest.raises(Exception) as e:
-        mock_workflow.run(mock_revision)
-    assert str(e.value) == "Revision GECKO_HEAD_REV not found in decision task"
-
-    mock_workflow.setup_mock_tasks(
-        {"decision": {"image": "taskcluster/decision:XXX"}, "remoteTryTask": {}}
-    )
-    with pytest.raises(Exception) as e:
-        mock_workflow.run(mock_revision)
-    assert str(e.value) == "Revision GECKO_HEAD_REV not found in decision task"
-
-    mock_workflow.setup_mock_tasks(
-        {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {"GECKO_HEAD_REV": "someRevision"},
-            },
-            "remoteTryTask": {},
-        }
-    )
-    with pytest.raises(Exception) as e:
-        mock_workflow.run(mock_revision)
-    assert str(e.value) == "Revision GECKO_BASE_REV not found in decision task"
-
-    mock_workflow.setup_mock_tasks(
-        {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REV": "someRevision",
-                    "GECKO_BASE_REV": "someOtherRevision",
-                },
-            },
-            "remoteTryTask": {},
-        }
-    )
-    with pytest.raises(Exception) as e:
-        mock_workflow.run(mock_revision)
-    assert str(e.value) == "Repository GECKO_HEAD_REPOSITORY not found in decision task"
-
-    mock_workflow.setup_mock_tasks(
-        {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REV": "someRevision",
-                    "GECKO_BASE_REV": "someOtherRevision",
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                },
-            },
-            "remoteTryTask": {},
-        }
-    )
-    with pytest.raises(AssertionError) as e:
-        mock_workflow.run(mock_revision)
-    assert str(e.value) == "No task dependencies to analyze"
-    assert mock_revision.head_changeset == "someRevision"
-    assert mock_revision.base_changeset == "someOtherRevision"
-    assert mock_revision.head_repository == "https://hg.mozilla.org/try"
-    assert mock_revision.base_repository == "https://hg.mozilla.org/mozilla-central"
-
-
 def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_backend):
     """
     Test a remote workflow with a mozlint analyzer
@@ -479,14 +313,6 @@ def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_backend):
 
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["mozlint"]},
             "mozlint": {
                 "name": "source-test-mozlint-dummy",
@@ -543,14 +369,6 @@ def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend
 
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["clang-tidy"]},
             "clang-tidy": {
                 "name": "source-test-clang-tidy",
@@ -653,14 +471,6 @@ def test_clang_format_task(
     )
 
     tasks = {
-        "decision": {
-            "image": "taskcluster/decision:XXX",
-            "env": {
-                "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                "GECKO_HEAD_REV": "deadbeef1234",
-                "GECKO_BASE_REV": "1234deadbeef",
-            },
-        },
         "remoteTryTask": {"dependencies": ["clang-format"]},
         "clang-format": {
             "name": "source-test-clang-format",
@@ -732,15 +542,6 @@ def test_no_tasks(mock_config, mock_revision, mock_workflow, mock_backend):
 
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1234",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-                "name": "Gecko Decision Task",
-            },
             "remoteTryTask": {"dependencies": ["decision", "someOtherDockerbuild"]},
         }
     )
@@ -782,12 +583,6 @@ def test_zero_coverage_option(mock_config, mock_revision, mock_workflow, mock_ba
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Pass
 
-    # Reset the head and base references before rerunning the workflow
-    mock_revision.head_changeset = None
-    mock_revision.base_changeset = None
-    mock_revision.head_repository = None
-    mock_revision.base_repository = None
-
     mock_workflow.zero_coverage_enabled = True
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 1
@@ -804,14 +599,6 @@ def test_external_tidy_task(mock_config, mock_revision, mock_workflow, mock_back
 
     mock_workflow.setup_mock_tasks(
         {
-            "decision": {
-                "image": "taskcluster/decision:XXX",
-                "env": {
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_HEAD_REV": "deadbeef1235",
-                    "GECKO_BASE_REV": "1234deadbeef",
-                },
-            },
             "remoteTryTask": {"dependencies": ["clang-tidy-external"]},
             "clang-tidy-external": {
                 "name": "source-test-clang-external",

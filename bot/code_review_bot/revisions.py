@@ -145,7 +145,7 @@ class Revision(object):
         return "Phabricator #{} - {}".format(self.diff_id, self.diff_phid)
 
     @staticmethod
-    def from_try_task(try_task: dict, phabricator: PhabricatorAPI):
+    def from_try_task(try_task: dict, decision_task: dict, phabricator: PhabricatorAPI):
         """
         Load identifiers from Phabricator, using the remote task description
         """
@@ -188,6 +188,54 @@ class Revision(object):
         # Load target patch from Phabricator for Try mode
         patch = phabricator.load_raw_diff(diff_id)
 
+        # The parent decision task should exist
+        assert decision_task is not None, "Missing parent decision task"
+        logger.info(
+            "Found decision task", name=decision_task["task"]["metadata"]["name"]
+        )
+
+        # Match the decision task environment to get the mercurial information
+        decision_env = decision_task["task"]["payload"]["env"]
+        head_repository = (
+            base_repository
+        ) = head_changeset = base_changeset = repository_try_name = None
+        for prefix in settings.decision_env_prefixes:
+            head_repository_key = f"{prefix}_HEAD_REPOSITORY"
+            base_repository_key = f"{prefix}_BASE_REPOSITORY"
+            head_changeset_key = f"{prefix}_HEAD_REV"
+            base_changeset_key = f"{prefix}_BASE_REV"
+            if (
+                head_repository_key not in decision_env
+                or base_repository_key not in decision_env
+                or head_changeset_key not in decision_env
+                or base_changeset_key not in decision_env
+            ):
+                continue
+
+            head_repository = decision_env[head_repository_key]
+            base_repository = decision_env[base_repository_key]
+            head_changeset = decision_env[head_changeset_key]
+            base_changeset = decision_env[base_changeset_key]
+            repository_try_name = head_repository.rstrip("/").rsplit("/", 1)[-1]
+            break
+
+        # Check mercurial information were properly retrieved
+        assert all(
+            attr is not None
+            for attr in [
+                head_repository,
+                base_repository,
+                head_changeset,
+                base_changeset,
+            ]
+        ), "Unsupported parent decision task, missing mercurial information in its environment"
+        logger.info(
+            "Using mercurial changeset",
+            head_changeset=head_changeset,
+            head_repository=head_repository,
+            base_repository=base_repository,
+        )
+
         # Build a revision without repositories as they are retrieved later
         # when analyzing the full task group
         return Revision(
@@ -201,6 +249,11 @@ class Revision(object):
             diff=diff,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
             patch=patch,
+            head_changeset=head_changeset,
+            base_changeset=base_changeset,
+            head_repository=head_repository,
+            repository_try_name=repository_try_name,
+            base_repository=base_repository,
         )
 
     @staticmethod
@@ -410,60 +463,6 @@ class Revision(object):
         * improvement patches
         """
         self.improvement_patches = []
-
-    def setup_try(self, task_group_id, tasks):
-        """
-        Find the mercurial revision from the Try decision task env
-        """
-        # We shouldn't override existing data
-        assert all(
-            attr is None
-            for attr in [
-                self.head_changeset,
-                self.base_changeset,
-                self.head_repository,
-                self.base_repository,
-            ]
-        ), "Head and base changesets/repositories shouldn't be overridden by setup_try"
-
-        # The decision task should have the same id as the task group
-        decision_task = tasks.get(task_group_id)
-        assert decision_task is not None, "Missing decision task"
-        logger.info(
-            "Found decision task", name=decision_task["task"]["metadata"]["name"]
-        )
-
-        # Match the supported repositories from settings
-        # with the decision task environment to get the mercurial information
-        decision_env = decision_task["task"]["payload"]["env"]
-        for repository in settings.repositories:
-            if repository.name == self.phabricator_repository["fields"]["name"]:
-                assert (
-                    repository.decision_env_revision in decision_env
-                ), f"Revision {repository.decision_env_revision} not found in decision task"
-                assert (
-                    repository.decision_env_target_revision in decision_env
-                ), f"Revision {repository.decision_env_target_revision} not found in decision task"
-                assert (
-                    repository.decision_env_repository in decision_env
-                ), f"Repository {repository.decision_env_repository} not found in decision task"
-                self.repository_try_name = repository.try_name
-                self.head_changeset = decision_env[repository.decision_env_revision]
-                self.base_changeset = decision_env[
-                    repository.decision_env_target_revision
-                ]
-                self.head_repository = decision_env[repository.decision_env_repository]
-                self.base_repository = repository.url
-                break
-
-        # Check mercurial changeset is set
-        assert self.head_changeset is not None, "Unsupported decision task"
-        logger.info(
-            "Using mercurial changeset",
-            head_changeset=self.head_changeset,
-            head_repository=self.head_repository,
-            base_repository=self.base_repository,
-        )
 
     @property
     def bugzilla_id(self):

@@ -33,25 +33,7 @@ MockArtifactResponse = namedtuple("MockArtifactResponse", "content")
 
 
 @pytest.fixture(scope="function")
-def mock_repositories():
-    return [
-        {
-            "url": "https://hg.mozilla.org/mozilla-central",
-            "decision_env_revision": "GECKO_HEAD_REV",
-            "decision_env_target_revision": "GECKO_BASE_REV",
-            "decision_env_repository": "GECKO_HEAD_REPOSITORY",
-            "checkout": "robust",
-            "try_url": "ssh://hg.mozilla.org/try",
-            "try_mode": "json",
-            "try_name": "try",
-            "name": "mozilla-central",
-            "ssh_user": "reviewbot@mozilla.com",
-        }
-    ]
-
-
-@pytest.fixture(scope="function")
-def mock_config(mock_repositories):
+def mock_config():
     """
     Mock configuration for bot
     Using try source
@@ -61,7 +43,7 @@ def mock_config(mock_repositories):
         del os.environ["TASK_ID"]
     os.environ["TRY_TASK_ID"] = "remoteTryTask"
     os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
-    settings.setup("test", ["dom/*", "tests/*.py", "test/*.c"], mock_repositories)
+    settings.setup("test", ["dom/*", "tests/*.py", "test/*.c"], ["GECKO"])
     return settings
 
 
@@ -263,6 +245,27 @@ def mock_try_task():
 
 
 @pytest.fixture
+def mock_decision_task():
+    """
+    Mock a remote decision task definition
+    """
+    return {
+        "task": {
+            "metadata": {"name": "Mock decision task"},
+            "payload": {
+                "image": "taskcluster/decision",
+                "env": {
+                    "GECKO_HEAD_REV": "deadc0ffee",
+                    "GECKO_BASE_REV": "c0ffeedead",
+                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                    "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-central",
+                },
+            },
+        }
+    }
+
+
+@pytest.fixture
 def mock_autoland_task():
     """
     Mock a remote Autoland decision task definition
@@ -281,25 +284,14 @@ def mock_autoland_task():
 
 
 @pytest.fixture
-def mock_revision(mock_phabricator, mock_try_task, mock_config):
+def mock_revision(mock_phabricator, mock_try_task, mock_decision_task, mock_config):
     """
     Mock a mercurial revision
     """
     from code_review_bot.revisions import Revision
 
     with mock_phabricator as api:
-        return Revision.from_try_task(mock_try_task, api)
-
-
-@pytest.fixture
-def mock_revision_setup(mock_revision):
-    # Setup mercurial information manually instead of calling setup_try
-    mock_revision.head_changeset = "deadbeef123456"
-    mock_revision.base_changeset = "123456deadbeef"
-    mock_revision.head_repository = "https://hg.mozilla.org/try"
-    mock_revision.base_repository = "https://hg.mozilla.org/mozilla-central"
-
-    return mock_revision
+        return Revision.from_try_task(mock_try_task, mock_decision_task, api)
 
 
 class Response(object):
@@ -521,9 +513,6 @@ def mock_workflow(mock_config, mock_phabricator, mock_taskcluster_config):
             """
             Add mock tasks in queue & index mock services
             """
-            # The task group id is used to find the decision task
-            # as it's the task with the same ID as the group
-            mock_config.try_group_id = "decision"
             self.index_service.configure(tasks)
             self.queue_service.configure(tasks)
 

@@ -14,28 +14,6 @@ def test_publication(tmpdir, mock_issues, mock_revision):
     """
     from code_review_bot.report.debug import DebugReporter
 
-    # Load description from Taskcluster tasks
-    mock_revision.setup_try(
-        "decision",
-        {
-            # Base information are retrieved from the decision task
-            "decision": {
-                "task": {
-                    "metadata": {"name": "Mock decision task"},
-                    "payload": {
-                        "image": "taskcluster/decision",
-                        "env": {
-                            "GECKO_HEAD_REV": "deadc0ffee",
-                            "GECKO_BASE_REV": "c0ffeedead",
-                            "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                            "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-central",
-                        },
-                    },
-                }
-            }
-        },
-    )
-
     report_dir = str(tmpdir.mkdir("public").realpath())
     report_path = os.path.join(report_dir, "report.json")
     assert not os.path.exists(report_path)

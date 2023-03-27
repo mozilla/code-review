@@ -47,6 +47,11 @@ common:
     api_key: api-xxxx
     publish: true
 
+  # A list of the common prefixes for decision environment variables
+  decision_env_prefixes:
+    - 'GECKO'
+    - 'NSS'
+
   repositories:
       # A unique display name for the repository
     - name: mozilla-central
@@ -75,12 +80,6 @@ common:
       # - batch, to clone from revision 1 up to tip (slow but lower memory usage)
       # - default, to use the default hg clone (for small repositories only)
       checkout: robust
-
-      # Environment variables used by the bot to detect which repository
-      # is setup from a decision task (more details on the bot documentation)
-      decision_env_revision: GECKO_HEAD_REV
-      decision_env_target_revision: GECKO_BASE_REV
-      decision_env_repository: GECKO_HEAD_REPOSITORY
 
       # The ssh username (or email) used to push on Try
       ssh_user: someone@mozilla.com

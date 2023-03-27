@@ -100,7 +100,7 @@ def main():
     settings.setup(
         taskcluster.secrets["APP_CHANNEL"],
         taskcluster.secrets["ALLOWED_PATHS"],
-        taskcluster.secrets["repositories"],
+        taskcluster.secrets["decision_env_prefixes"],
     )
     # Setup statistics
     influx_conf = taskcluster.secrets.get("influxdb")
@@ -150,7 +150,9 @@ def main():
             )
         else:
             revision = Revision.from_try_task(
-                queue_service.task(settings.try_task_id), phabricator_api
+                queue_service.task(settings.try_task_id),
+                queue_service.task(settings.try_group_id),
+                phabricator_api,
             )
     except Exception as e:
         # Report revision loading failure on production only

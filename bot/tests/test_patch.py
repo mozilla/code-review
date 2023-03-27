@@ -10,9 +10,7 @@ from code_review_bot.revisions import ImprovementPatch
 from code_review_bot.tasks.default import DefaultTask
 
 
-def test_publication(
-    monkeypatch, mock_taskcluster_config, mock_repositories, mock_task
-):
+def test_publication(monkeypatch, mock_taskcluster_config, mock_task):
     """
     Check a patch publication through Taskcluster services
     """
@@ -21,7 +19,7 @@ def test_publication(
     monkeypatch.setenv("TASK_ID", "fakeTaskId")
     monkeypatch.setenv("RUN_ID", "0")
     monkeypatch.setenv("TASKCLUSTER_PROXY_URL", "http://proxy")
-    settings.setup("test", [], mock_repositories)
+    settings.setup("test", [], ["GECKO"])
 
     # Mock the storage response
     responses.add(

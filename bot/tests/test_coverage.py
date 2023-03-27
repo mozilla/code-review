@@ -3,11 +3,11 @@ from code_review_bot.tasks.coverage import ZeroCoverageTask
 
 
 def test_coverage(
-    mock_config, mock_revision_setup, mock_coverage_artifact, mock_hgmo, mock_task
+    mock_config, mock_revision, mock_coverage_artifact, mock_hgmo, mock_task
 ):
     cov = mock_task(ZeroCoverageTask, "coverage")
 
-    mock_revision_setup.files = [
+    mock_revision.files = [
         # Uncovered file
         "my/path/file1.cpp",
         # Covered file
@@ -19,10 +19,10 @@ def test_coverage(
     ]
 
     # Build fake lines.
-    for path in mock_revision_setup.files:
-        mock_revision_setup.lines[path] = [0]
+    for path in mock_revision.files:
+        mock_revision.lines[path] = [0]
 
-    issues = cov.parse_issues(mock_coverage_artifact, mock_revision_setup)
+    issues = cov.parse_issues(mock_coverage_artifact, mock_revision)
 
     # The list must have three elements
     assert len(issues) == 3
@@ -50,7 +50,7 @@ def test_coverage(
         "column": None,
         "level": "warning",
         "nb_lines": 1,
-        "hash": "97b2670ecd16d421a4bfd12e4ebb069d",
+        "hash": "c43a516d74b257b21495bc3183f0543e",
         "fix": None,
     }
     assert issue.as_phabricator_lint() == {
@@ -99,7 +99,7 @@ This file is uncovered
         "column": None,
         "level": "warning",
         "nb_lines": 1,
-        "hash": "5a5da5339c0cab729ca09154c5193324",
+        "hash": "79a322a555198ec03ccce3daf086ef81",
         "fix": None,
     }
     assert issue.as_phabricator_lint() == {
@@ -145,7 +145,7 @@ This file is uncovered
         "column": None,
         "level": "warning",
         "nb_lines": 1,
-        "hash": "b8b3d343fad944c840cd10d5207da320",
+        "hash": "db03e65242d5bf27abf532026f782d2d",
         "fix": None,
     }
     assert issue.as_phabricator_lint() == {
