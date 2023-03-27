@@ -250,18 +250,16 @@ def mock_decision_task():
     Mock a remote decision task definition
     """
     return {
-        "task": {
-            "metadata": {"name": "Mock decision task"},
-            "payload": {
-                "image": "taskcluster/decision",
-                "env": {
-                    "GECKO_HEAD_REV": "deadc0ffee",
-                    "GECKO_BASE_REV": "c0ffeedead",
-                    "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
-                    "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-central",
-                },
+        "metadata": {"name": "Mock decision task"},
+        "payload": {
+            "image": "taskcluster/decision",
+            "env": {
+                "GECKO_HEAD_REV": "deadc0ffee",
+                "GECKO_BASE_REV": "c0ffeedead",
+                "GECKO_HEAD_REPOSITORY": "https://hg.mozilla.org/try",
+                "GECKO_BASE_REPOSITORY": "https://hg.mozilla.org/mozilla-central",
             },
-        }
+        },
     }
 
 

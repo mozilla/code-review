@@ -190,12 +190,10 @@ class Revision(object):
 
         # The parent decision task should exist
         assert decision_task is not None, "Missing parent decision task"
-        logger.info(
-            "Found decision task", name=decision_task["task"]["metadata"]["name"]
-        )
+        logger.info("Found decision task", name=decision_task["metadata"]["name"])
 
         # Match the decision task environment to get the mercurial information
-        decision_env = decision_task["task"]["payload"]["env"]
+        decision_env = decision_task["payload"]["env"]
         head_repository = (
             base_repository
         ) = head_changeset = base_changeset = repository_try_name = None
