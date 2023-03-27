@@ -128,7 +128,7 @@ def test_build_task(task_name, result, on_autoland, mock_config, mock_workflow):
         assert isinstance(task, result)
 
 
-def test_on_production(mock_config):
+def test_on_production(mock_config, mock_repositories):
     """
     Test the production environment detection
     """
@@ -141,7 +141,7 @@ def test_on_production(mock_config):
     os.environ["TASK_ID"] = "testingTask"
     os.environ["RUN_ID"] = "0"
     testing = Settings()
-    testing.setup("testing", [], ["GECKO"])
+    testing.setup("testing", [], mock_repositories)
     assert testing.app_channel == "testing"
     assert testing.taskcluster.local is False
     assert testing.on_production is False
@@ -150,7 +150,7 @@ def test_on_production(mock_config):
     os.environ["TASK_ID"] = "prodTask"
     os.environ["RUN_ID"] = "0"
     testing = Settings()
-    testing.setup("production", [], ["GECKO"])
+    testing.setup("production", [], mock_repositories)
     assert testing.app_channel == "production"
     assert testing.taskcluster.local is False
     assert testing.on_production is True

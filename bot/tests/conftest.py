@@ -33,7 +33,23 @@ MockArtifactResponse = namedtuple("MockArtifactResponse", "content")
 
 
 @pytest.fixture(scope="function")
-def mock_config():
+def mock_repositories():
+    return [
+        {
+            "url": "https://hg.mozilla.org/mozilla-central",
+            "decision_env_prefix": "GECKO",
+            "checkout": "robust",
+            "try_url": "ssh://hg.mozilla.org/try",
+            "try_mode": "json",
+            "try_name": "try",
+            "name": "mozilla-central",
+            "ssh_user": "reviewbot@mozilla.com",
+        }
+    ]
+
+
+@pytest.fixture(scope="function")
+def mock_config(mock_repositories):
     """
     Mock configuration for bot
     Using try source
@@ -43,7 +59,7 @@ def mock_config():
         del os.environ["TASK_ID"]
     os.environ["TRY_TASK_ID"] = "remoteTryTask"
     os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
-    settings.setup("test", ["dom/*", "tests/*.py", "test/*.c"], ["GECKO"])
+    settings.setup("test", ["dom/*", "tests/*.py", "test/*.c"], mock_repositories)
     return settings
 
 

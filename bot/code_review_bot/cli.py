@@ -100,7 +100,7 @@ def main():
     settings.setup(
         taskcluster.secrets["APP_CHANNEL"],
         taskcluster.secrets["ALLOWED_PATHS"],
-        taskcluster.secrets["decision_env_prefixes"],
+        taskcluster.secrets["repositories"],
     )
     # Setup statistics
     influx_conf = taskcluster.secrets.get("influxdb")
