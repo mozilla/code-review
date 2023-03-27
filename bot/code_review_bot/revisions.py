@@ -214,7 +214,11 @@ class Revision(object):
             base_repository = decision_env[base_repository_key]
             head_changeset = decision_env[head_changeset_key]
             base_changeset = decision_env[base_changeset_key]
-            repository_try_name = head_repository.rstrip("/").rsplit("/", 1)[-1]
+            repository_try_name = (
+                urllib.parse.urlparse(head_repository)
+                .path.rstrip("/")
+                .rsplit("/", 1)[-1]
+            )
             break
 
         # Check mercurial information were properly retrieved
