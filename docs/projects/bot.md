@@ -189,9 +189,7 @@ common:
       name: mozilla-central
       ssh_user: <ssh_user>
       url: 'https://hg.mozilla.org/mozilla-central'
-      decision_env_revision: GECKO_HEAD_REV
-      decision_env_target_revision: GECKO_BASE_REV
-      decision_env_repository: GECKO_HEAD_REPOSITORY
+      decision_env_prefix: GECKO
 ```
 
 **Note**: You can generate/find your Phabricator API Token on this page: https://phabricator.services.mozilla.com/settings/user/--phabricator_username--/page/apitokens/.

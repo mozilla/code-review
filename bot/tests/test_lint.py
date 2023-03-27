@@ -11,7 +11,7 @@ from code_review_bot.tasks.lint import MozLintTask
 from conftest import FIXTURES_DIR
 
 
-def test_flake8_checks(mock_config, mock_revision_setup, mock_hgmo, mock_task):
+def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
     """
     Check flake8 check detection
     """
@@ -26,7 +26,7 @@ def test_flake8_checks(mock_config, mock_revision_setup, mock_hgmo, mock_task):
         "flake8",
         "Dummy test",
         "dummy rule",
-        mock_revision_setup,
+        mock_revision,
     )
     assert not issue.is_disabled_check()
     assert issue.validates()
@@ -41,7 +41,7 @@ def test_flake8_checks(mock_config, mock_revision_setup, mock_hgmo, mock_task):
         "flake8",
         "Remove bad quotes or whatever.",
         "Q000",
-        mock_revision_setup,
+        mock_revision,
     )
     assert issue.is_disabled_check()
     assert not issue.validates()
@@ -58,7 +58,7 @@ def test_flake8_checks(mock_config, mock_revision_setup, mock_hgmo, mock_task):
         "path": "test.py",
         "publishable": False,
         "validates": False,
-        "hash": "cde6dd7bc43f51fff7361f8db71b5876",
+        "hash": "d8deb1271c70950549ec8cf49a4623ac",
         "fix": None,
     }
 
@@ -106,7 +106,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo, mock_task):
         "path": "test.py",
         "publishable": True,
         "validates": True,
-        "hash": "bd2978ec40c8295d51046e6b8b05ddf7",
+        "hash": "15cf70b31f0a6cd0a3a6914f0e4b8900",
         "fix": None,
     }
 

@@ -28,7 +28,7 @@ TaskCluster = collections.namedtuple(
 )
 RepositoryConf = collections.namedtuple(
     "RepositoryConf",
-    "name, try_name, url, decision_env_revision, decision_env_target_revision, decision_env_repository",
+    "name, try_name, url, decision_env_prefix",
 )
 
 
@@ -49,6 +49,7 @@ class Settings(object):
         self.mozilla_central_group_id = None
         self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
         self.repositories = []
+        self.decision_env_prefixes = []
 
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
@@ -99,6 +100,11 @@ class Settings(object):
 
         self.repositories = [build_conf(i, repo) for i, repo in enumerate(repositories)]
         assert self.repositories, "No repositories available"
+
+        # Save prefixes for decision environment variables
+        self.decision_env_prefixes = [
+            repo.decision_env_prefix for repo in self.repositories
+        ]
 
     def __getattr__(self, key):
         if key not in self.config:

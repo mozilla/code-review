@@ -76,7 +76,7 @@ def test_as_text(mock_revision, mock_task):
     )
 
 
-def test_as_dict(mock_revision_setup, mock_hgmo, mock_task):
+def test_as_dict(mock_revision, mock_hgmo, mock_task):
     """
     Test text export for ClangTidyIssue
     """
@@ -85,7 +85,7 @@ def test_as_dict(mock_revision_setup, mock_hgmo, mock_task):
 
     issue = ClangTidyIssue(
         mock_task(ClangTidyTask, "clang-tidy"),
-        mock_revision_setup,
+        mock_revision,
         "test.cpp",
         "42",
         "51",
@@ -107,7 +107,7 @@ def test_as_dict(mock_revision_setup, mock_hgmo, mock_task):
         "in_patch": False,
         "validates": True,
         "publishable": False,
-        "hash": "3d0ec413fc04343cad6375a1219f6a4d",
+        "hash": "89cc9f47b63f3184d0914797ca740b9b",
         "fix": None,
     }
 
