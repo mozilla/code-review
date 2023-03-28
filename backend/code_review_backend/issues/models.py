@@ -41,7 +41,20 @@ class Repository(PhabricatorModel):
         return self.slug
 
 
-class Revision(PhabricatorModel):
+class Revision(models.Model):
+    """Reference to an analyzed code patch.
+    A revision may be linked to Phabricator and contain multiple diffs (e.g. analyzing a try push)
+    or be a reference to a new version of a repository (e.g. a Mozilla-Central update or back out).
+    """
+
+    # TODO
+    id = models.UUIDField(default=uuid.uuid4, primary_key=True, editable=False)
+    phabricator_id = models.PositiveIntegerField(null=True, blank=True)
+    phabricator_phid = models.CharField(max_length=40, null=True, blank=True)
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
     base_repository = models.ForeignKey(
         Repository,
         related_name="base_revisions",
@@ -70,6 +83,22 @@ class Revision(PhabricatorModel):
 
     title = models.CharField(max_length=250)
     bugzilla_id = models.PositiveIntegerField(null=True)
+
+    class Meta:
+        ordering = ("phabricator_id", "id")
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["phabricator_id"],
+                name="revision_unique_phab_id",
+                condition=Q(phabricator_id__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=["phabricator_phid"],
+                name="revision_unique_phab_phabid",
+                condition=Q(phabricator_phid__isnull=False),
+            ),
+        ]
 
     def __str__(self):
         return f"D{self.id} - {self.title}"
