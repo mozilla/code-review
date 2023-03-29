@@ -30,13 +30,17 @@ class Migration(migrations.Migration):
         ("issues", "0008_revision_base_head_references"),
     ]
     operations = [
-        # Rename the original Revision Phabricator FK
+        migrations.AlterModelOptions(
+            name="revision",
+            options={"ordering": ("phabricator_id", "id")},
+        ),
+        # Rename the original Revision Phabricator PK
         migrations.RenameField(
             model_name="revision",
             old_name="id",
             new_name="phabricator_id",
         ),
-        # Add and populate the field that will contain the future Revision UUID PK
+        # Populate the field that will contain the future Revision UUID PK
         migrations.AddField(
             model_name="revision",
             name="id",
@@ -47,7 +51,7 @@ class Migration(migrations.Migration):
             reverse_code=migrations.RunPython.noop,
             elidable=True,
         ),
-        # Add a field on IssueLink model that references the new UUID field as the FK
+        # Add a field on IssueLink and Diff models that references the new UUID field
         migrations.AddField(
             model_name="issuelink",
             name="revision_new_fk",
@@ -59,6 +63,20 @@ class Migration(migrations.Migration):
                 SELECT issues_revision.id
                 FROM issues_revision
                 WHERE issues_revision.phabricator_id = issues_issuelink.revision_id
+            )
+            """
+        ),
+        migrations.AddField(
+            model_name="diff",
+            name="revision_new_fk",
+            field=models.UUIDField(null=True),
+        ),
+        migrations.RunSQL(
+            """
+            UPDATE issues_diff SET revision_new_fk = (
+                SELECT issues_revision.id
+                FROM issues_revision
+                WHERE issues_revision.phabricator_id = issues_diff.revision_id
             )
             """
         ),
@@ -76,6 +94,12 @@ class Migration(migrations.Migration):
             field=models.PositiveIntegerField(blank=True, null=True),
         ),
         migrations.AlterField(
+            model_name="revision",
+            name="phid",
+            field=models.CharField(blank=True, max_length=40, null=True),
+        ),
+        # Update the Foreign key on IssueLink and Diff models
+        migrations.AlterField(
             model_name="issuelink",
             name="revision_new_fk",
             field=models.ForeignKey(
@@ -85,18 +109,30 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AlterField(
-            model_name="revision",
-            name="phid",
-            field=models.CharField(blank=True, max_length=40, null=True),
-        ),
-        # Update the Foreign key on the IssueLink model
-        migrations.AlterField(
             model_name="issuelink",
             name="revision",
             field=models.PositiveIntegerField(),
         ),
         migrations.RemoveField(
             model_name="issuelink",
+            name="revision",
+        ),
+        migrations.AlterField(
+            model_name="diff",
+            name="revision_new_fk",
+            field=models.ForeignKey(
+                "issues.Revision",
+                on_delete=models.CASCADE,
+                related_name="diffs",
+            ),
+        ),
+        migrations.AlterField(
+            model_name="diff",
+            name="revision",
+            field=models.PositiveIntegerField(),
+        ),
+        migrations.RemoveField(
+            model_name="diff",
             name="revision",
         ),
         # Rename fields
@@ -106,13 +142,14 @@ class Migration(migrations.Migration):
             new_name="revision",
         ),
         migrations.RenameField(
+            model_name="diff",
+            old_name="revision_new_fk",
+            new_name="revision",
+        ),
+        migrations.RenameField(
             model_name="revision",
             old_name="phid",
             new_name="phabricator_phid",
-        ),
-        migrations.AlterModelOptions(
-            name="revision",
-            options={"ordering": ("phabricator_id", "id")},
         ),
         # Add constraints
         migrations.AddConstraint(
