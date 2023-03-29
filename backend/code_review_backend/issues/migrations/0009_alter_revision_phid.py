@@ -34,6 +34,15 @@ class Migration(migrations.Migration):
             name="revision",
             options={"ordering": ("phabricator_id", "id")},
         ),
+        # Drop constraints from the IssueLink M2M table
+        migrations.RemoveConstraint(
+            model_name="issuelink",
+            name="issue_link_unique_revision",
+        ),
+        migrations.RemoveConstraint(
+            model_name="issuelink",
+            name="issue_link_unique_diff",
+        ),
         # Rename the original Revision Phabricator PK
         migrations.RenameField(
             model_name="revision",
@@ -166,6 +175,22 @@ class Migration(migrations.Migration):
                 condition=models.Q(("phabricator_phid__isnull", False)),
                 fields=("phabricator_phid",),
                 name="revision_unique_phab_phabid",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="issuelink",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("diff__isnull", True)),
+                fields=("issue", "revision"),
+                name="issue_link_unique_revision",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="issuelink",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("diff__isnull", False)),
+                fields=("issue", "revision", "diff"),
+                name="issue_link_unique_diff",
             ),
         ),
     ]
