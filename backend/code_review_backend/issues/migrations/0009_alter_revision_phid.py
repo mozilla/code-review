@@ -15,7 +15,7 @@ def populate_uuids(apps, schema_editor):
     Postgres support generating UUIDs from the backend directly.
     """
     if "postgresql" in schema_editor.connection.vendor:
-        schema_editor.execute("INSERT INTO issues_revision id SELECT gen_random_uuid()")
+        schema_editor.execute("UPDATE issues_revision SET id = gen_random_uuid()")
     else:
         # Default to updating new PKs in bulk for developers
         Revision = apps.get_model("issues", "Revision")
