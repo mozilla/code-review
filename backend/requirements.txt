@@ -1,6 +1,6 @@
 -e ../tools #egg=code-review-tools
 dj-database-url==1.2.0
-Django==4.1.7
+Django==4.2
 django-cors-headers==3.14.0
 djangorestframework==3.14.0
 dockerflow==2022.8.0
