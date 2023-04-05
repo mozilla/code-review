@@ -239,7 +239,9 @@ class BackendAPI(object):
         logger.info("Created item on backend", url=url_post, id=out.get("id"))
         return out
 
-    def list_repo_issues(self, repo_slug, date=None, revision_id=None, path=None):
+    def list_repo_issues(
+        self, repo_slug, date=None, revision_changeset=None, path=None
+    ):
         """
         List issues detected from a specific repository.
         Optional `date` and `revision_id` parameters can be used to look for a
@@ -250,7 +252,7 @@ class BackendAPI(object):
             for key, value in (
                 ("path", path),
                 ("date", date),
-                ("revision", revision_id),
+                ("revision_changeset", revision_changeset),
             )
             if value is not None
         }
