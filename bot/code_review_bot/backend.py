@@ -254,8 +254,6 @@ class BackendAPI(object):
             )
             if value is not None
         }
-        d = list(
+        return list(
             self.paginate(f"/v1/issues/{repo_slug}/?{urllib.parse.urlencode(params)}")
         )
-        logger.error(f"count {len(d)}")
-        return d

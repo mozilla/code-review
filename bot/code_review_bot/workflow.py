@@ -85,25 +85,6 @@ class Workflow(object):
         # Path to the mercurial repository
         self.mercurial_repository = mercurial_repository
 
-    def iter_diffs(self, timestamp_gte=None, page_size=100):
-        """
-        Iterate over the most recent Phabricator diff
-        The Phabricator API limits results to 100 items
-        """
-        assert page_size >= 1
-        after = None
-        while True:
-            diffs = self.phabricator.search_diffs(limit=page_size, after=after)
-            if len(diffs) == 0:
-                # No more results available
-                return
-            for diff in diffs:
-                if timestamp_gte and diff["dateCreated"] < timestamp_gte:
-                    # We reached the timestamp limit
-                    return
-                after = diff["id"]
-                yield diff
-
     def run(self, revision):
         """
         Find all issues on remote tasks and publish them
@@ -127,31 +108,23 @@ class Workflow(object):
             logger.info("Running the before/after feature")
             # Search a base revision from the decision task
             decision = self.queue_service.task(settings.try_group_id)
-            base_revision_hash = (
+            base_rev_changeset = (
                 decision.get("payload", {}).get("env", {}).get("GECKO_BASE_REV")
             )
-            base_rev_id = None
-            if base_revision_hash:
-                # Look for a Phabricator diff matching the base revision within the most recent diffs (< 2 day)
-                recent_diffs = self.iter_diffs(
-                    timestamp_gte=(datetime.now() - timedelta(days=2)).timestamp()
-                )
-                # Pick the first matching diff for the base revision
-                base_rev_id = next(
-                    (
-                        diff["id"]
-                        for diff in recent_diffs
-                        if diff["baseRevision"] == base_revision_hash
-                    ),
-                    None,
-                )
-            if not base_revision_hash:
+            if not base_rev_changeset:
                 logger.info(
-                    "Base revision could not be fetched from Phabricator, using the current date"
+                    "Base revision changeset could not be fetched from Phabricator, "
+                    "looking for existing issues based on the current date",
+                    task=settings.try_group_id,
                 )
 
             # Mark know issues to avoid publishing them on this patch
-            self.find_previous_issues(issues, base_rev_id)
+            self.find_previous_issues(issues, base_rev_changeset)
+            new_issues_count = sum(1 for issue in issues if issue.new_issue is True)
+            logger.info(
+                f"Found {new_issues_count} new issues (over {len(issues)} total detected issues)",
+                task=settings.try_group_id,
+            )
 
         if (
             all(issue.new_issue is False for issue in issues)
@@ -363,7 +336,7 @@ class Workflow(object):
                 },
             )
 
-    def find_previous_issues(self, issues, base_revision_id=None):
+    def find_previous_issues(self, issues, base_rev_changeset=None):
         """
         Look for known issues in the backend matching the given list of issues
 
@@ -381,14 +354,14 @@ class Workflow(object):
 
         logger.info(
             f"Checking for existing issues in the backend ({len(groups)} paths)",
-            base_revision=base_revision_id,
+            base_revision_changeset=base_rev_changeset,
         )
 
         for path, group_issues in groups.items():
             known_issues = self.backend_api.list_repo_issues(
                 "mozilla-central",
                 date=current_date,
-                revision_id=base_revision_id,
+                revision_changeset=base_rev_changeset,
                 path=path,
             )
             hashes = [issue["hash"] for issue in known_issues]
