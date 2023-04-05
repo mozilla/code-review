@@ -23,16 +23,20 @@ class IssueTestCase(TestCase):
         self.repo = Repository.objects.create(id=42, slug="repo_slug")
         with patch("django.utils.timezone.now") as mock_now:
             mock_now.return_value = datetime.fromisoformat("2010-01-01:10")
-            self.revision = self.repo.head_revisions.create(
+            self.revision = self.repo.base_revisions.create(
+                id=4000,
                 phabricator_id=1111,
                 phabricator_phid="PH-1111",
-                base_repository=self.repo,
+                head_changeset="1" * 40,
+                head_repository=self.repo,
             )
             mock_now.return_value = datetime.fromisoformat("2000-01-01:10")
-            self.old_revision = self.repo.head_revisions.create(
+            self.old_revision = self.repo.base_revisions.create(
+                id=4001,
                 phabricator_id=2222,
                 phabricator_phid="PH-2222",
-                base_repository=self.repo,
+                head_changeset="2" * 40,
+                head_repository=self.repo,
             )
 
         self.err_issue = Issue.objects.create(
@@ -85,9 +89,10 @@ class IssueTestCase(TestCase):
         with self.assertNumQueries(1):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "no"})
-                + "?date=2000-01-01T00:00:00Z&path=.&revision=notanumber"
+                + "?date=2000-01-01T00:00:00Z&path=.&revision_changeset=whatisthat"
             )
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.maxDiff = None
         self.assertEqual(
             response.json(),
             {
@@ -95,7 +100,9 @@ class IssueTestCase(TestCase):
                     "invalid repo_slug path argument - No repository match this slug"
                 ],
                 "date": ["invalid date - should be YYYY-MM-DD"],
-                "revision": ["invalid revision - should be a number"],
+                "revision_changeset": [
+                    "invalid revision_changeset - should be the mercurial hash on the head repository"
+                ],
             },
         )
 
@@ -125,23 +132,13 @@ class IssueTestCase(TestCase):
         with self.assertNumQueries(5):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
-                + "?revision=2222&date=1999-01-01"
+                + "?date=1999-01-01&revision_changeset="
+                + "2" * 40
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["count"], 1)
         self.assertEqual(data["results"], [self.serialize_issue(self.warn_issue)])
-
-    def test_list_repository_issues_wrong_revision(self):
-        with self.assertNumQueries(2):
-            response = self.client.get(
-                reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
-                + "?revision=1337"
-            )
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-        data = response.json()
-        self.assertEqual(data["count"], 0)
-        self.assertEqual(data["results"], [])
 
     def test_list_repository_issues_date_fallback(self):
         """
@@ -150,7 +147,8 @@ class IssueTestCase(TestCase):
         with self.assertNumQueries(5):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
-                + "?revision=1337&date=2000-01-02"
+                + "?date=2000-01-02&revision_changeset="
+                + "A" * 40
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
@@ -177,11 +175,30 @@ class IssueTestCase(TestCase):
             },
         )
 
+    def test_list_repository_issues_wrong_revision_no_date(self):
+        """
+        An empty result is returned when no revision is matched and no date is set
+        """
+        with self.assertNumQueries(2):
+            response = self.client.get(
+                reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
+                + "?revision_changeset="
+                + "A" * 40
+            )
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()
+        self.assertEqual(data["count"], 0)
+        self.assertEqual(data["results"], [])
+
     def test_list_repository_issues_date_no_match(self):
+        """
+        No revision may be found for the date fallback
+        """
         with self.assertNumQueries(3):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
-                + "?revision=1337&date=1999-01-01"
+                + "?date=1999-01-01&revision_changeset="
+                + "A" * 40
             )
             self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
