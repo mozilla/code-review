@@ -49,8 +49,6 @@ Should they have tests, or are they dead code?
 
 # Use two line breaks to force '---' to be rendered as a horizontal rule in Phabricator's markdown
 BUG_REPORT = """
-
----
 If you see a problem in this automated review, [please report it here]({bug_report_url}).
 """
 
@@ -179,12 +177,13 @@ class PhabricatorReporter(Reporter):
 
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
-        issues = [
+        new_issues = [
             issue
             for issue in issues
             if issue.is_publishable()
             and issue.analyzer.name not in self.analyzers_skipped
         ]
+        known_issues = [issue for issue in issues if issue.new_issue is False]
         patches = [
             patch
             for patch in revision.improvement_patches
@@ -195,6 +194,7 @@ class PhabricatorReporter(Reporter):
             # Publish detected patch's issues on Harbormaster, all at once, as lint issues
             self.publish_harbormaster(revision, issues)
 
+
         # Retrieve all diffs for the current revision
         rev_diffs = self.api.search_diffs(revision_phid=revision.phabricator_phid)
 
@@ -204,14 +204,17 @@ class PhabricatorReporter(Reporter):
             )
             return issues, patches
 
+        # Compare issues that are not known on the repository to a previous diff
         older_diff_ids = [
             diff["id"] for diff in rev_diffs if diff["id"] < revision.diff_id
         ]
         former_diff_id = sorted(older_diff_ids)[-1] if older_diff_ids else None
-        unresolved_issues, closed_issues = self.compare_issues(former_diff_id, issues)
+        unresolved_issues, closed_issues = self.compare_issues(
+            former_diff_id, new_issues
+        )
 
         if (
-            len(unresolved_issues) == len(issues)
+            len(unresolved_issues) == len(new_issues)
             and not closed_issues
             and not task_failures
             and not notices
@@ -222,18 +225,19 @@ class PhabricatorReporter(Reporter):
                 "Skipping comment publication (some issues are unresolved)",
                 unresolved_count=len(unresolved_issues),
             )
-            return issues, patches
+            return new_issues, patches
 
         # Publish comment summarizing detected, unresolved and closed issues
         self.publish_summary(
             revision,
-            issues,
+            new_issues,
             patches,
             task_failures,
             notices,
             former_diff_id=former_diff_id,
             unresolved_count=len(unresolved_issues),
             closed_count=len(closed_issues),
+            known_issues=known_issues,
         )
 
         # Publish statistics
@@ -273,6 +277,7 @@ class PhabricatorReporter(Reporter):
         former_diff_id,
         unresolved_count,
         closed_count,
+        known_issues,
     ):
         """
         Summarize publishable issues through Phabricator comment
@@ -289,7 +294,8 @@ class PhabricatorReporter(Reporter):
                 former_diff_id=former_diff_id,
                 unresolved=unresolved_count,
                 closed=closed_count,
-            ),
+                known_issues=known_issues,
+            )
         )
         logger.info("Published phabricator summary")
 
@@ -304,6 +310,7 @@ class PhabricatorReporter(Reporter):
         former_diff_id=None,
         unresolved=0,
         closed=0,
+        known_issues=[],
     ):
         """
         Build a Markdown comment about published issues
@@ -442,6 +449,23 @@ class PhabricatorReporter(Reporter):
             comment += "\n\n---\n".join(notices)
 
         assert comment != "", "Empty comment"
+
+        known_stats = defaultdict(int)
+        for i in known_issues:
+            known_stats[i.level.value] += 1
+
+        # Display more information in the footer section
+        comment += "\n\n---\n\n"
+
+        if known_stats:
+            known_issues_msg = " and ".join(
+                f"{num} errors with a {t} level" for t, num in known_stats.items()
+            )
+            known_issues_msg = (
+                known_issues_msg
+                + " were detected but already existing on the mozilla-central repository.\n"
+            )
+            comment += known_issues_msg
 
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
