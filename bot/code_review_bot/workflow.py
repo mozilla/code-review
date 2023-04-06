@@ -368,7 +368,8 @@ class Workflow(object):
             )
             hashes = [issue["hash"] for issue in known_issues]
             for issue in group_issues:
-                issue.new_issue = issue.hash not in hashes
+                issue_hash = issue.get_hash(local_repository=self.mercurial_repository)
+                issue.new_issue = bool(issue_hash and issue_hash not in hashes)
 
     def find_issues(self, revision, group_id):
         """

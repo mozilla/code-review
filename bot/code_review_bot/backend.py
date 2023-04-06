@@ -133,7 +133,7 @@ class BackendAPI(object):
                 valid_data = []
                 # Build issues' payload for that given chunk
                 for issue in issues_chunk:
-                    issue_hash = issue.build_hash(local_repository=mercurial_repository)
+                    issue_hash = issue.get_hash(local_repository=mercurial_repository)
                     if issue_hash is None:
                         logger.warning(
                             "Missing issue hash, cannot publish on backend",
@@ -162,7 +162,7 @@ class BackendAPI(object):
 
             for issue in issues:
                 try:
-                    issue_hash = issue.build_hash(local_repository=mercurial_repository)
+                    issue_hash = issue.get_hash(local_repository=mercurial_repository)
                 except Exception:
                     issue_hash = None
                 if issue_hash is None:

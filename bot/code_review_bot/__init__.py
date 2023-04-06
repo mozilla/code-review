@@ -145,14 +145,17 @@ class Issue(abc.ABC):
         # Fallback to in_patch detection
         return self.revision.contains(self)
 
-    def build_hash(self, local_repository=None):
+    def get_hash(self, local_repository=None):
         """
-        Build a unique hash identifying that issue
+        Build a unique hash identifying that issue and cache the resulting value
         The text concerned by the issue is used and not its position in the file
         Message content is hashed as a single linter may return multiple issues on a single line
         We make the assumption that the message does not contain the line number
         If an error occurs reading the file content (locally or remotely), None is returned
         """
+        if hasattr(self, "_hash"):
+            return self._hash
+
         assert self.revision is not None, "Missing revision"
 
         if local_repository:
@@ -182,7 +185,8 @@ class Issue(abc.ABC):
                     raise
 
         if file_content is None:
-            return None
+            self._hash = None
+            return self._hash
 
         # Build raw content:
         # 1. lines affected by patch
@@ -215,7 +219,8 @@ class Issue(abc.ABC):
         ).encode("utf-8")
 
         # Finally build the MD5 hash
-        return hashlib.md5(payload).hexdigest()
+        self._hash = hashlib.md5(payload).hexdigest()
+        return self._hash
 
     @abc.abstractmethod
     def validates(self):
@@ -252,7 +257,7 @@ class Issue(abc.ABC):
         """
         if not issue_hash:
             try:
-                issue_hash = self.build_hash()
+                issue_hash = self.get_hash()
             except Exception as e:
                 logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
 
