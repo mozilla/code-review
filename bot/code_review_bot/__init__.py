@@ -103,8 +103,9 @@ class Issue(abc.ABC):
         if self.fix is not None:
             assert self.language is not None, "Missing fix language"
 
-        # Mark the issue as unknown for the backend by default
-        self.new_issue = True
+        # Mark the issue as known by default, so only errors are reported
+        # The before/after feature may tag some issues as new, so they are reported
+        self.new_issue = False
 
     def __str__(self):
         line = f"line {self.line}" if self.line is not None else "full file"
@@ -136,6 +137,10 @@ class Issue(abc.ABC):
 
         # An error is always published
         if self.level == Level.Error:
+            return True
+
+        # Issues that are new are reported
+        if self.new_issue:
             return True
 
         # Then check if the backend marks this issue as publishable
