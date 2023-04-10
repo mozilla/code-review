@@ -1,4 +1,4 @@
-FROM python:3.11.2-slim
+FROM python:3.11.3-slim
 
 ADD tools /src/tools
 ADD events /src/events
