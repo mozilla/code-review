@@ -20,7 +20,11 @@ from code_review_tools import treeherder
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
 COMMENT_FAILURE = """
-Code analysis found {defects_total}{defects_details} in the diff [{diff_id}]({phabricator_diff_url}):
+Code analysis found {defects_total} in the diff [{diff_id}]({phabricator_diff_url}):
+"""
+
+COMMENT_FAILURE_OUTSIDE = """
+Code analysis found {defects_total} outside the diff [{diff_id}]({phabricator_diff_url}).
 """
 
 COMMENT_WARNINGS = """
@@ -321,13 +325,18 @@ class PhabricatorReporter(Reporter):
             assert isinstance(nb, int)
             return "{} {}".format(nb, nb == 1 and word or word + "s")
 
-        # List all the issues classes
-        issue_classes = {issue.__class__ for issue in issues}
+        # Build comment differentiating issues detected outside the patch
+        in_issues = [i for i in issues if i.is_in_patch()]
+        nb_in = len(in_issues)
+        nb_out = len(issues) - nb_in
 
-        # Calc stats for issues, grouped by class
-        stats = self.calc_stats(issues)
+        # List all the issues classes for issue inside the patch
+        issue_classes = {issue.__class__ for issue in in_issues}
 
-        # Build parts depending on issues
+        # Calc stats for issues inside the patch, grouped by class
+        stats = self.calc_stats(in_issues)
+
+        # Build parts depending on issues inside the patch
         defects, analyzers = set(), set()
         total_warnings = 0
         total_errors = 0
@@ -361,35 +370,25 @@ class PhabricatorReporter(Reporter):
         )
 
         # Build top comment
-        nb = len(issues)
-
-        # Add extra hint when errors are published outside of the patch
-        defects_details = ""
-        # Only display the hint when the revision has parents in his stack
-        rev_parents_count = len(self.api.load_parents(revision.phabricator_phid))
-        external_failures_count = rev_parents_count and sum(
-            1
-            for issue in issues
-            if issue.is_publishable() and not revision.contains(issue)
-        )
-        if nb == 1 and external_failures_count == 1:
-            defects_details = " (in a parent revision)"
-        elif nb > 1 and external_failures_count > 0:
-            defects_details = f" ({external_failures_count} in a parent revision)"
-
-        if nb > 0:
+        comment = ""
+        if nb_in > 0:
             comment = COMMENT_FAILURE.format(
-                defects_total=pluralize("defect", nb),
-                defects_details=defects_details,
+                defects_total=pluralize("defect", nb_in),
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
             )
-        else:
-            comment = ""
 
         # Add defects
         if defects:
             comment += "\n".join(defects) + "\n"
+
+        # Build a simple comment for issues outside the patch
+        if nb_out > 0:
+            comment += COMMENT_FAILURE_OUTSIDE.format(
+                defects_total=pluralize("defect", nb_out),
+                diff_id=revision.diff_id,
+                phabricator_diff_url=phabricator_diff_url,
+            )
 
         # In case of a new diff, display the number of resolved or closed issues
         if unresolved or closed:
