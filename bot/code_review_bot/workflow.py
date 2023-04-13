@@ -103,6 +103,8 @@ class Workflow(object):
             revision, settings.try_group_id
         )
 
+        # Make sure to run before/after on all the diffs of a revision
+        random.seed(revision.id)
         # Analyze issues in case the before/after feature is enabled
         if random.random() < taskcluster.secrets.get("BEFORE_AFTER_RATIO", 0):
             logger.info("Running the before/after feature")
