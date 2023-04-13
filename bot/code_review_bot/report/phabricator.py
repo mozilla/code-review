@@ -23,10 +23,6 @@ COMMENT_FAILURE = """
 Code analysis found {defects_total} in diff [{diff_id}]({phabricator_diff_url}):
 """
 
-COMMENT_FAILURE_OUTSIDE = """
-Code analysis found {defects_total} outside of diff [{diff_id}]({phabricator_diff_url}):
-"""
-
 COMMENT_WARNINGS = """
 WARNING: Found {nb_warnings} (warning level) that can be dismissed.
 """
@@ -277,27 +273,6 @@ class PhabricatorReporter(Reporter):
             nb_unit=len(unit_issues),
         )
 
-    def find_defects(self, issues):
-        """
-        Returns a set of messages resuming the number of defects found by each analyzer:
-        {"- 2 defects found by eslint (Mozlint)",}
-        """
-        defects = set()
-        stats = self.calc_stats(issues)
-        for stat in stats:
-            defect_nb = []
-            if stat["nb_build_errors"] > 0:
-                defect_nb.append(self.pluralize("build error", stat["nb_build_errors"]))
-            if stat["nb_defects"] > 0:
-                defect_nb.append(self.pluralize("defect", stat["nb_defects"]))
-
-            defects.add(
-                " - {nb} found by {analyzer}".format(
-                    analyzer=stat["analyzer"], nb=" and ".join(defect_nb)
-                )
-            )
-        return defects
-
     def publish_summary(
         self,
         revision,
@@ -346,14 +321,6 @@ class PhabricatorReporter(Reporter):
         """
         Build a Markdown comment about published issues
         """
-        # Build main comment differentiating issues detected outside the patch
-        issues_in, issues_out = [], []
-        for i in issues:
-            if i.is_in_patch():
-                issues_in.append(i)
-            else:
-                issues_out.append(i)
-
         comment = ""
 
         # Comment with an absolute link to the revision diff in Phabricator
@@ -363,28 +330,30 @@ class PhabricatorReporter(Reporter):
         )
 
         # Build main comment for issues inside the patch
-        if (nb_in := len(issues_in)) > 0:
+        if (nb := len(issues)) > 0:
             comment = COMMENT_FAILURE.format(
-                defects_total=self.pluralize("defect", nb_in),
+                defects_total=self.pluralize("defect", nb),
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
             )
-        # Calc stats for issues inside the patch, grouped by class
-        defects_in = sorted(self.find_defects(issues_in))
-        if defects_in:
-            comment += "\n".join(defects_in) + "\n"
 
-        # Build main comment for issues outside the patch
-        if (nb_out := len(issues_out)) > 0:
-            comment += COMMENT_FAILURE_OUTSIDE.format(
-                defects_total=self.pluralize("defect", nb_out),
-                diff_id=revision.diff_id,
-                phabricator_diff_url=phabricator_diff_url,
+        # Calc stats for issues inside the patch, grouped by class and sorted by number of issues
+        defects = []
+        stats = self.calc_stats(issues)
+        for stat in sorted(stats, key=lambda x: (x["total"], x["analyzer"])):
+            defect_nb = []
+            if stat["nb_build_errors"] > 0:
+                defect_nb.append(self.pluralize("build error", stat["nb_build_errors"]))
+            if stat["nb_defects"] > 0:
+                defect_nb.append(self.pluralize("defect", stat["nb_defects"]))
+
+            defects.append(
+                " - {nb} found by {analyzer}".format(
+                    analyzer=stat["analyzer"], nb=" and ".join(defect_nb)
+                )
             )
-        # Calc stats for issues outside the patch, grouped by class
-        defects_out = sorted(self.find_defects(issues_out))
-        if defects_out:
-            comment += "\n".join(defects_out) + "\n"
+        if defects:
+            comment += "\n".join(defects) + "\n"
 
         # In case of a new diff, display the number of resolved or closed issues
         if unresolved or closed:
@@ -421,7 +390,7 @@ class PhabricatorReporter(Reporter):
 
         # Build analyzers help comment for all issues
         analyzers = set()
-        for stat in self.calc_stats(issues):
+        for stat in stats:
             _help = stat.get("help")
             if _help is not None:
                 analyzers.add(f" - {_help}")
@@ -478,7 +447,7 @@ class PhabricatorReporter(Reporter):
 
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
-        if defects_in or defects_out:
+        if defects:
             comment += FRONTEND_LINKS.format(
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
