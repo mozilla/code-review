@@ -203,9 +203,9 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if issues:
+        if new_issues:
             # Publish detected patch's issues on Harbormaster, all at once, as lint issues
-            self.publish_harbormaster(revision, issues)
+            self.publish_harbormaster(revision, new_issues)
 
         # Retrieve all diffs for the current revision
         rev_diffs = self.api.search_diffs(revision_phid=revision.phabricator_phid)
