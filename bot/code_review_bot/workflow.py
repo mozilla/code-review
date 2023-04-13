@@ -37,6 +37,15 @@ TASKCLUSTER_INDEX_TTL = 7  # in days
 BULK_ISSUE_CHUNKS = 100
 
 
+def before_after_feature(revision):
+    """
+    Randomly run the before/after feature depending on a configured ratio.
+    All the diffs of a revision must be analysed with or without the feature.
+    """
+    random.seed(revision.id)
+    return random.random() < taskcluster.secrets.get("BEFORE_AFTER_RATIO", 0)
+
+
 class Workflow(object):
     """
     Full static analysis workflow
@@ -103,10 +112,8 @@ class Workflow(object):
             revision, settings.try_group_id
         )
 
-        # Make sure to run before/after on all the diffs of a revision
-        random.seed(revision.id)
         # Analyze issues in case the before/after feature is enabled
-        if random.random() < taskcluster.secrets.get("BEFORE_AFTER_RATIO", 0):
+        if before_after_feature(revision):
             logger.info("Running the before/after feature")
             # Search a base revision from the decision task
             decision = self.queue_service.task(settings.try_group_id)
@@ -246,6 +253,11 @@ class Workflow(object):
         # Publish issues on backend to retrieve their comparison state
         # Only publish errors and "in patch" warnings due to a backend timeout
         publishable_issues = [i for i in issues if i.is_publishable()]
+
+        if before_after_feature(revision):
+            # In case before/after feature is enabled, only store issues that are new
+            # That is required to specify the number of unresolved or closed issues
+            publishable_issues = [i for i in issues if i.new_issue]
 
         self.backend_api.publish_issues(publishable_issues, revision)
 
