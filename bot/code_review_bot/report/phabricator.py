@@ -467,11 +467,12 @@ class PhabricatorReporter(Reporter):
 
         if known_stats:
             known_issues_msg = " and ".join(
-                f"{num} errors with a {t} level" for t, num in known_stats.items()
+                self.pluralize(level, nb) for level, nb in known_stats.items()
             )
+            plural = sum(known_stats.values()) > 1
             known_issues_msg = (
                 known_issues_msg
-                + " were detected but already existing on the mozilla-central repository.\n"
+                + f" {'were' if plural else 'was'} detected but already existing on the mozilla-central repository.\n"
             )
             comment += known_issues_msg
 
