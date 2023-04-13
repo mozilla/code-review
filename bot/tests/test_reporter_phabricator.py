@@ -26,42 +26,46 @@ from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
 
 VALID_CLANG_TIDY_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-tidy
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_BUILD_ERROR_MESSAGE = """
-Code analysis found 1 defect (in a parent revision) in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 build error found by clang-tidy
 
-IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
+IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
 
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_CLANG_FORMAT_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-format
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach clang-format -p dom/test.cpp`
@@ -70,35 +74,39 @@ For your convenience, [here is a patch]({results}/source-test-clang-format-PHID-
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_FLAKE8_MESSAGE = """
-Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by eslint (Mozlint)
  - 1 defect found by py-flake8 (Mozlint)
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
-IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
+IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
 
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_COVERAGE_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by code coverage analysis
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
 Should they have tests, or are they dead code?
@@ -108,57 +116,65 @@ Should they have tests, or are they dead code?
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_DEFAULT_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by full-file-analyzer
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_TASK_FAILURES_MESSAGE = """
-The analysis task [mock-clang-tidy](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadc0ffee&selectedTaskRun=ab3NrysvSZyEwsOHL2MZfw-0) failed, but we could not detect any issue.
+The analysis task [mock-clang-tidy](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadc0ffee&selectedTaskRun=ab3NrysvSZyEwsOHL2MZfw-0) failed, but we could not detect any defect.
 Please check this task manually.
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """
 
 VALID_MOZLINT_MESSAGE = """
-Code analysis found 2 defects (1 in a parent revision) in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 2 defects found by dummy (Mozlint)
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
-IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
+IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
 
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
-Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-tidy
  - 1 defect found by code coverage analysis
 
-WARNING: Found 2 issues (warning level) that can be dismissed.
+WARNING: Found 2 defects (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
@@ -171,6 +187,8 @@ Should they have tests, or are they dead code?
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
@@ -181,14 +199,16 @@ VALID_NOTICE_MESSAGE = """
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """
 
 VALID_EXTERNAL_TIDY_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by private static analysis
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - For private static analysis, please see [our private docs in Mana](https://mana.mozilla.org/wiki/pages/viewpage.action?pageId=130909687), if you cannot access this resource, ask your reviewer to help you resolve the issue.
@@ -203,18 +223,20 @@ You can run this analysis locally with:
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 FOLLOW_UP_DIFF_MESSAGE = """
-Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-format
  - 1 defect found by code coverage analysis
-1 issue unresolved and 1 issue closed compared to the previous diff [41](https://phabricator.services.mozilla.com/differential/diff/41/).
+1 defect unresolved and 1 defect closed compared to the previous diff [41](https://phabricator.services.mozilla.com/differential/diff/41/).
 
-WARNING: Found 2 issues (warning level) that can be dismissed.
+WARNING: Found 2 defects (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach clang-format -p dom/test.cpp`
@@ -227,6 +249,8 @@ Should they have tests, or are they dead code?
 
 
 ---
+
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).\n
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
@@ -945,6 +969,7 @@ def test_phabricator_tgdiff(mock_phabricator, phab, mock_try_task, mock_decision
 
     doc_url = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
     doc_notice = COMMENT_LINK_TO_DOC.format(diff_id=42, doc_url=doc_url)
+
     reporter.publish(
         [],
         revision,
