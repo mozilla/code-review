@@ -190,7 +190,7 @@ class PhabricatorReporter(Reporter):
 
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
-        new_issues = [
+        issues = [
             issue
             for issue in issues
             if issue.is_publishable()
@@ -203,9 +203,9 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if new_issues:
+        if issues:
             # Publish detected patch's issues on Harbormaster, all at once, as lint issues
-            self.publish_harbormaster(revision, new_issues)
+            self.publish_harbormaster(revision, issues)
 
         # Retrieve all diffs for the current revision
         rev_diffs = self.api.search_diffs(revision_phid=revision.phabricator_phid)
@@ -221,12 +221,10 @@ class PhabricatorReporter(Reporter):
             diff["id"] for diff in rev_diffs if diff["id"] < revision.diff_id
         ]
         former_diff_id = sorted(older_diff_ids)[-1] if older_diff_ids else None
-        unresolved_issues, closed_issues = self.compare_issues(
-            former_diff_id, new_issues
-        )
+        unresolved_issues, closed_issues = self.compare_issues(former_diff_id, issues)
 
         if (
-            len(unresolved_issues) == len(new_issues)
+            len(unresolved_issues) == len(issues)
             and not closed_issues
             and not task_failures
             and not notices
@@ -237,12 +235,12 @@ class PhabricatorReporter(Reporter):
                 "Skipping comment publication (some issues are unresolved)",
                 unresolved_count=len(unresolved_issues),
             )
-            return new_issues, patches
+            return issues, patches
 
         # Publish comment summarizing detected, unresolved and closed issues
         self.publish_summary(
             revision,
-            new_issues,
+            issues,
             patches,
             task_failures,
             notices,
