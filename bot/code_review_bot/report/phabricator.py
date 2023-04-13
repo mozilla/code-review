@@ -61,7 +61,7 @@ For your convenience, [here is a patch]({url}) that fixes all the {analyzer} def
 """
 
 COMMENT_TASK_FAILURE = """
-The analysis task [{name}]({url}) failed, but we could not detect any issue.
+The analysis task [{name}]({url}) failed, but we could not detect any defect.
 Please check this task manually.
 """
 
@@ -392,11 +392,13 @@ class PhabricatorReporter(Reporter):
         if unresolved or closed:
             followup_comment = ""
             if unresolved:
-                followup_comment += self.pluralize("issue", unresolved) + " unresolved "
+                followup_comment += (
+                    self.pluralize("defect", unresolved) + " unresolved "
+                )
                 if closed:
                     followup_comment += "and "
             if closed:
-                followup_comment += self.pluralize("issue", closed) + " closed "
+                followup_comment += self.pluralize("defect", closed) + " closed "
             followup_comment += COMMENT_DIFF_FOLLOWUP.format(
                 phabricator_diff_url=self.phabricator_diff_url.format(
                     diff_id=former_diff_id
@@ -409,14 +411,14 @@ class PhabricatorReporter(Reporter):
         total_warnings = sum(1 for i in issues if i.level == Level.Warning)
         if total_warnings:
             comment += COMMENT_WARNINGS.format(
-                nb_warnings=self.pluralize("issue", total_warnings)
+                nb_warnings=self.pluralize("defect", total_warnings)
             )
 
         # Add colored error section
         total_errors = sum(1 for i in issues if i.level == Level.Error)
         if total_errors:
             comment += COMMENT_ERRORS.format(
-                nb_errors=self.pluralize("issue", total_errors)
+                nb_errors=self.pluralize("defect", total_errors)
             )
 
         # Build analyzers help comment for all issues
