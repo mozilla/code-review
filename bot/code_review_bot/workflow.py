@@ -3,7 +3,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import random
 from collections import defaultdict
 from contextlib import nullcontext
 from datetime import datetime, timedelta
@@ -12,7 +11,7 @@ import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
 from taskcluster.utils import stringDate
 
-from code_review_bot import Level, stats, taskcluster
+from code_review_bot import Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND, REPO_MOZILLA_CENTRAL, settings
 from code_review_bot.mercurial import clone_repository
@@ -35,15 +34,6 @@ TASKCLUSTER_INDEX_TTL = 7  # in days
 
 # Max number of issues published to the backend at a time during the ingestion of a revision
 BULK_ISSUE_CHUNKS = 100
-
-
-def before_after_feature(revision):
-    """
-    Randomly run the before/after feature depending on a configured ratio.
-    All the diffs of a revision must be analysed with or without the feature.
-    """
-    random.seed(revision.id)
-    return random.random() < taskcluster.secrets.get("BEFORE_AFTER_RATIO", 0)
 
 
 class Workflow(object):
@@ -113,7 +103,7 @@ class Workflow(object):
         )
 
         # Analyze issues in case the before/after feature is enabled
-        if before_after_feature(revision):
+        if revision.before_after_feature:
             logger.info("Running the before/after feature")
             # Search a base revision from the decision task
             decision = self.queue_service.task(settings.try_group_id)
@@ -254,10 +244,10 @@ class Workflow(object):
         # Only publish errors and "in patch" warnings due to a backend timeout
         publishable_issues = [i for i in issues if i.is_publishable()]
 
-        if before_after_feature(revision):
+        if revision.before_after_feature:
             # In case before/after feature is enabled, only store issues that are new
             # That is required to specify the number of unresolved or closed issues
-            publishable_issues = [i for i in issues if i.new_issue]
+            publishable_issues = [i for i in publishable_issues if i.new_issue]
 
         self.backend_api.publish_issues(publishable_issues, revision)
 

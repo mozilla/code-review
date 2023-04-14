@@ -186,22 +186,23 @@ class PhabricatorReporter(Reporter):
 
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
-        issues = [
+        publishable_issues = [
             issue
             for issue in issues
             if issue.is_publishable()
             and issue.analyzer.name not in self.analyzers_skipped
         ]
-        known_issues = [issue for issue in issues if issue.new_issue is False]
         patches = [
             patch
             for patch in revision.improvement_patches
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if issues:
+        # Publish a statistic about issues already known on mozilla-central
+        known_issues = [issue for issue in issues if issue.new_issue is False]
+        if publishable_issues:
             # Publish detected patch's issues on Harbormaster, all at once, as lint issues
-            self.publish_harbormaster(revision, issues)
+            self.publish_harbormaster(revision, publishable_issues)
 
         # Retrieve all diffs for the current revision
         rev_diffs = self.api.search_diffs(revision_phid=revision.phabricator_phid)
@@ -210,17 +211,19 @@ class PhabricatorReporter(Reporter):
             logger.warning(
                 "A newer diff exists on this patch, skipping the comment publication"
             )
-            return issues, patches
+            return publishable_issues, patches
 
         # Compare issues that are not known on the repository to a previous diff
         older_diff_ids = [
             diff["id"] for diff in rev_diffs if diff["id"] < revision.diff_id
         ]
         former_diff_id = sorted(older_diff_ids)[-1] if older_diff_ids else None
-        unresolved_issues, closed_issues = self.compare_issues(former_diff_id, issues)
+        unresolved_issues, closed_issues = self.compare_issues(
+            former_diff_id, publishable_issues
+        )
 
         if (
-            len(unresolved_issues) == len(issues)
+            len(unresolved_issues) == len(publishable_issues)
             and not closed_issues
             and not task_failures
             and not notices
@@ -231,12 +234,12 @@ class PhabricatorReporter(Reporter):
                 "Skipping comment publication (some issues are unresolved)",
                 unresolved_count=len(unresolved_issues),
             )
-            return issues, patches
+            return publishable_issues, patches
 
         # Publish comment summarizing detected, unresolved and closed issues
         self.publish_summary(
             revision,
-            issues,
+            publishable_issues,
             patches,
             task_failures,
             notices,
@@ -250,7 +253,7 @@ class PhabricatorReporter(Reporter):
         stats.add_metric("report.phabricator.issues", len(issues))
         stats.add_metric("report.phabricator")
 
-        return issues, patches
+        return publishable_issues, patches
 
     def publish_harbormaster(
         self, revision, lint_issues: Issues = [], unit_issues: Issues = []
@@ -434,7 +437,8 @@ class PhabricatorReporter(Reporter):
         # Display more information in the footer section
         comment += "\n\n---\n\n"
 
-        if known_stats:
+        # Publish the number of known issues in case running with before/after
+        if revision.before_after_feature and known_stats:
             known_issues_msg = " and ".join(
                 self.pluralize(level, nb) for level, nb in known_stats.items()
             )
