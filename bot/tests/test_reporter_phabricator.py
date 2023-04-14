@@ -255,6 +255,25 @@ If you see a problem in this automated review, [please report it here](https://b
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
+VALID_CLANG_BEFORE_AFTER_MESSAGE = """
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+ - 1 defect found by clang-format
+
+WARNING: Found 1 defect (warning level) that can be dismissed.
+
+You can run this analysis locally with:
+ - `./mach clang-format -p outside/of/the/patch.cpp`
+
+
+---
+
+1 warning was detected but already existing on the mozilla-central repository.
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+"""
+
 
 def test_phabricator_clang_tidy(
     mock_phabricator, phab, mock_try_task, mock_decision_task, mock_task
@@ -1243,8 +1262,107 @@ def test_phabricator_former_diff_comparison(
         }
     ]
 
-    # Check the comment hasn't been posted
     assert phab.comments[51] == [FOLLOW_UP_DIFF_MESSAGE]
 
     # Clear the environment
     del os.environ["SPECIAL_NAME"]
+
+
+def test_phabricator_before_after_comment(
+    monkeypatch,
+    mock_phabricator,
+    phab,
+    mock_try_task,
+    mock_decision_task,
+    mock_task,
+    mock_taskcluster_config,
+):
+    """
+    Test Phabricator reporter publication shows all type of issues depending on their existence
+    on the backend while running the before/after feature.
+
+    Two warnings are detected, one is reported because it is a new issue while the other one
+    is marked as existing on the backend (resumed by a line in the footer).
+    """
+    mock_taskcluster_config.secrets = {"BEFORE_AFTER_RATIO": 1}
+
+    with mock_phabricator as api:
+        revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+        revision.lines = {
+            # Add dummy lines diff
+            "test.txt": [0],
+            "path/to/test.cpp": [0],
+            "dom/test.cpp": [42],
+        }
+        reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
+
+    assert revision.before_after_feature is True
+
+    # A new warning issue outside of the patch
+    clang_issue = ClangFormatIssue(
+        mock_task(ClangFormatTask, "source-test-clang-format"),
+        "outside/of/the/patch.cpp",
+        [(42, 42, b"That line is wrong. Good luck debugging")],
+        revision,
+    )
+    clang_issue.validates = lambda: True
+    clang_issue.new_issue = True
+    # A warning already existing on the mozilla-central repository
+    cov_issue = CoverageIssue(
+        mock_task(ZeroCoverageTask, "coverage"),
+        "outside/of/the/patch.txt",
+        42,
+        "Coverage warning",
+        revision,
+    )
+
+    # New issues are publishable by default
+    assert clang_issue.is_publishable() is True
+    assert cov_issue.is_publishable() is False
+
+    # Tag the coverage issue as a new issue (nor unresolved nor closed)
+    reporter.compare_issues = lambda former_diff, issues: ([], [])
+
+    with capture_logs() as cap_logs:
+        issues, patches = reporter.publish(
+            [cov_issue, clang_issue], revision, [], [], []
+        )
+
+    assert cap_logs == [
+        {
+            "event": "Updated Harbormaster build state with issues",
+            "log_level": "info",
+            "nb_lint": 1,
+            "nb_unit": 0,
+        },
+        {
+            "event": "Published phabricator summary",
+            "log_level": "info",
+        },
+    ]
+
+    # Check the lint results
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "receiver": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "code": "invalid-styling",
+                    "description": (
+                        "WARNING: The change does not follow the C/C++ "
+                        "coding style, please reformat\n\n"
+                        "  lang=c++\n"
+                        "  That line is wrong. Good luck debugging"
+                    ),
+                    "line": 42,
+                    "name": "clang-format",
+                    "path": "outside/of/the/patch.cpp",
+                    "severity": "warning",
+                },
+            ],
+            "type": "work",
+            "unit": [],
+        }
+    ]
+
+    assert phab.comments[51] == [VALID_CLANG_BEFORE_AFTER_MESSAGE]

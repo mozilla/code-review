@@ -4,12 +4,15 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+from datetime import datetime
 from unittest import mock
 
 import pytest
+import responses
 
 from code_review_bot.config import Settings
 from code_review_bot.revisions import Revision
+from code_review_bot.tasks.clang_format import ClangFormatIssue
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
@@ -154,3 +157,71 @@ def test_on_production(mock_config, mock_repositories):
     assert testing.app_channel == "production"
     assert testing.taskcluster.local is False
     assert testing.on_production is True
+
+
+def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_revision):
+    """
+    Test the before/after feature running a try task workflow.
+    Issues that are unknown to the backend are tagged as new issues.
+    """
+    mock_taskcluster_config.secrets = {"BEFORE_AFTER_RATIO": 1}
+    issues = [
+        ClangFormatIssue(
+            mock_task(ClangFormatTask, "source-test-clang-format"),
+            "outside/of/the/patch.cpp",
+            [(42, 42, b"This is a new warning.")],
+            mock_revision,
+        ),
+        ClangFormatIssue(
+            mock_task(ClangFormatTask, "source-test-clang-format"),
+            "outside/of/the/patch.cpp",
+            [(42, 42, b"This is a warning known by the backend.")],
+            mock_revision,
+        ),
+    ]
+    mock_workflow.publish = mock.Mock()
+    mock_workflow.find_issues = mock.Mock()
+    mock_workflow.find_issues.return_value = (
+        issues,
+        # No failure nor notices nor reviewers
+        [],
+        [],
+        [],
+    )
+    mock_workflow.queue_service.task = lambda x: {}
+    mock_workflow.mercurial_repository = None
+    mock_workflow.backend_api.url = "https://backend.test"
+    mock_workflow.backend_api.username = "root"
+    mock_workflow.backend_api.password = "hunter2"
+    for index, hash_val in enumerate(("aaaa", "bbbb")):
+        issues[index].get_hash = mock.Mock()
+        issues[index].get_hash.return_value = hash_val
+
+    # There is a very small chance that a race condition occurs here
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    responses.add(
+        responses.GET,
+        f"https://backend.test/v1/issues/mozilla-central/?path=outside%2Fof%2Fthe%2Fpatch.cpp&date={current_date}",
+        json={
+            "count": 2,
+            "previous": None,
+            "next": None,
+            "results": [
+                {"id": "issue 1", "hash": "bbbb"},
+                {"id": "issue 42", "hash": "xxxx"},
+            ],
+        },
+    )
+
+    mock_workflow.run(mock_revision)
+    assert mock_workflow.publish.call_args_list == [
+        mock.call(
+            mock_revision,
+            issues,
+            [],
+            [],
+            [],
+        )
+    ]
+    assert issues[0].new_issue is True
+    assert issues[1].new_issue is False
