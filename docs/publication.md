@@ -27,11 +27,10 @@ Here, the analyzer produces its JSON output as `/builds/worker/clang-tidy.json`,
 
 Once your task is triggered with the `code-review` attribute, its analysis artifact will be retrieved automatically by the bot. All issues found will be filtered using those basic rules:
 
-* if the issue is not in a modifided line of a file in the patch, it will be discarded.
-* if the issue is in a third party path, it will be discarded.
+- if the issue is not in a modifided line of a file in the patch, it will be discarded.
+- if the issue is in a third party path, it will be discarded.
 
 We have [plans](https://bugzilla.mozilla.org/show_bug.cgi?id=1555721) to remove the first filter, by using a two pass approach and comparing the issues found before vs. after applying the patch.
-
 
 ## Troubleshooting
 

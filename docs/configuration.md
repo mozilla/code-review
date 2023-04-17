@@ -17,7 +17,6 @@ We use one secret per environment, on the firefox-ci Taskcluster instance:
 ```yaml
 # Configuration under the `common` key is shared across the 3 other Python projects (bot, backend & events)
 common:
-
   # This defines the environment name, used to customize logging, reporting, ...
   # Usual choices are: `testing`, `production` or `localdev`, `dev`
   APP_CHANNEL: testing
@@ -43,21 +42,21 @@ common:
   # Issues will be published with this account
   # This section is required in local configuration
   PHABRICATOR:
-    url: 'https://phabricator.services.mozilla.com/api/'
+    url: "https://phabricator.services.mozilla.com/api/"
     api_key: api-xxxx
     publish: true
 
   repositories:
-      # A unique display name for the repository
+    # A unique display name for the repository
     - name: mozilla-central
 
       # The repository base url, used to clone the repository
       # and reference it in the backend
-      url: 'https://hg.mozilla.org/mozilla-central'
+      url: "https://hg.mozilla.org/mozilla-central"
 
       # Try server configuration
       # try_url is the ssh connection string to push patches
-      try_url: 'ssh://hg.mozilla.org/try'
+      try_url: "ssh://hg.mozilla.org/try"
 
       # try_name is a display name for that repository
       try_name: try
@@ -90,7 +89,6 @@ common:
 bot:
   # The list of reporter classes used to publish issues
   REPORTERS:
-
     # The most important one being Phabricator publication
     # You just need to add that line to use the shared phabricator credentials
     # Every issues deemed publishable will then be posted on the revision
@@ -113,7 +111,7 @@ bot:
   # Connection information to publish issues on the backend
   # On local development it should be set to the local backend running in Docker
   backend:
-    url: 'https://api.code-review.moz.tools'
+    url: "https://api.code-review.moz.tools"
 
     # That user can be created through the administration interface
     username: xxxx
@@ -126,17 +124,15 @@ bot:
 # This main section is only used by the backend project
 # Note: The postgresql connection string is provided by Heroku as an environment variable
 backend:
-
   # Configure a list of allowed domains through CORS
   # Useful for another frontend to use data from that backend
   # Like on the Taskcluster builds
   cors-domains:
-    - 'https://community.taskcluster-artifacts.net'
+    - "https://community.taskcluster-artifacts.net"
 
   # Sentry connection string to publish system exceptions
   # Each project has its own Sentry environment
   SENTRY_DSN: https://xxx:yyy@sentry.com
-
 
 # This main section is only used by the events project
 # Note: The redis connection string is provided by Heroku as an environment variable

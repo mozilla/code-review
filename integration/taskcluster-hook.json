@@ -1,62 +1,60 @@
 {
-    "bindings": [],
+  "bindings": [],
+  "metadata": {
+    "description": "Run code-review integration tests once every day",
+    "emailOnError": true,
+    "name": "Code review hook (CHANNEL)",
+    "owner": "babadie@mozilla.com"
+  },
+  "schedule": ["0 0 7 * * *"],
+  "task": {
+    "created": {
+      "$fromNow": "0 seconds"
+    },
+    "deadline": {
+      "$fromNow": "2 hours"
+    },
+    "expires": {
+      "$fromNow": "1 month"
+    },
+    "extra": {},
     "metadata": {
-        "description": "Run code-review integration tests once every day",
-        "emailOnError": true,
-        "name": "Code review hook (CHANNEL)",
-        "owner": "babadie@mozilla.com"
+      "description": "Integration tests for the code-review bot workflow",
+      "name": "Code review integration tests (CHANNEL)",
+      "owner": "babadie@mozilla.com",
+      "source": "https://github.com/mozilla/code-review"
     },
-    "schedule": [
-        "0 0 7 * * *"
+    "payload": {
+      "artifacts": {},
+      "cache": {
+        "code-review-integration-CHANNEL": "/cache"
+      },
+      "capabilities": {},
+      "env": {
+        "CLONE_DIR": "/cache",
+        "TASKCLUSTER_SECRET": "project/relman/code-review/integration-CHANNEL"
+      },
+      "features": {
+        "taskclusterProxy": true
+      },
+      "image": "mozilla/code-review:integration-REVISION",
+      "maxRunTime": 7200
+    },
+    "priority": "normal",
+    "provisionerId": "proj-relman",
+    "retries": 1,
+    "routes": [],
+    "schedulerId": "-",
+    "scopes": [
+      "secrets:get:project/relman/code-review/integration-CHANNEL",
+      "docker-worker:cache:code-review-integration-CHANNEL",
+      "notify:email:*"
     ],
-    "task": {
-        "created": {
-            "$fromNow": "0 seconds"
-        },
-        "deadline": {
-            "$fromNow": "2 hours"
-        },
-        "expires": {
-            "$fromNow": "1 month"
-        },
-        "extra": {},
-        "metadata": {
-            "description": "Integration tests for the code-review bot workflow",
-            "name": "Code review integration tests (CHANNEL)",
-            "owner": "babadie@mozilla.com",
-            "source": "https://github.com/mozilla/code-review"
-        },
-        "payload": {
-            "artifacts": {},
-            "cache": {
-              "code-review-integration-CHANNEL": "/cache"
-            },
-            "capabilities": {},
-            "env": {
-                "CLONE_DIR": "/cache",
-                "TASKCLUSTER_SECRET": "project/relman/code-review/integration-CHANNEL"
-            },
-            "features": {
-                "taskclusterProxy": true
-            },
-            "image": "mozilla/code-review:integration-REVISION",
-            "maxRunTime": 7200
-        },
-        "priority": "normal",
-        "provisionerId": "proj-relman",
-        "retries": 1,
-        "routes": [],
-        "schedulerId": "-",
-        "scopes": [
-            "secrets:get:project/relman/code-review/integration-CHANNEL",
-            "docker-worker:cache:code-review-integration-CHANNEL",
-            "notify:email:*"
-        ],
-        "tags": {},
-        "workerType": "ci"
-    },
-    "triggerSchema": {
-        "additionalProperties": false,
-        "type": "object"
-    }
+    "tags": {},
+    "workerType": "ci"
+  },
+  "triggerSchema": {
+    "additionalProperties": false,
+    "type": "object"
+  }
 }

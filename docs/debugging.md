@@ -6,7 +6,7 @@ As a maintainer on the code review bot, you will face errors or bad behaviours. 
 
 ### Live logs with papertrail
 
-The 3 *back-end* projects (bot, backend & events) all use [papertrail](https://my.papertrailapp.com) to log every Python `logging` call.
+The 3 _back-end_ projects (bot, backend & events) all use [papertrail](https://my.papertrailapp.com) to log every Python `logging` call.
 
 The events are organized with a hierarchy so that you can filter:
 
@@ -18,7 +18,7 @@ To get access to Papertrail, you need to file a bug and ask `:catlee` for permis
 
 ### Exceptions with Sentry
 
-Every exception for the 3 *back-end* projects (bot, backend & events) are logged on the Mozilla sentry instance.
+Every exception for the 3 _back-end_ projects (bot, backend & events) are logged on the Mozilla sentry instance.
 
 To get access, you need to file a bug requesting access to the `sallt` project on https://sentry.prod.mozaws.net/. The bug should be assigned to cloudops.
 
@@ -57,7 +57,6 @@ You can update its hook in Taskcluster, to send you an email once a revision is 
 
 If the daily revision from the integration test does not show up, it's a good indicator that something is broken.
 
-
 ### Human probes
 
 Also known as "developers will complain". Our customers are great, and some of them rely heavily on the code review bot.
@@ -65,7 +64,7 @@ They will tell you if something goes wrong, as the code review bot adds a link t
 
 ## Is the platform still running ?
 
-Here is a list of troubleshooting steps when you *know* that something does not work, but don't know yet which part is buggy:
+Here is a list of troubleshooting steps when you _know_ that something does not work, but don't know yet which part is buggy:
 
 - Check the frontend. As mentioned above, that's the easiest and fastest way to see what's going on in real time
 - Check the logs. Start by looking for the events logs, as that's the first piece that could fail in the workflow.
@@ -84,7 +83,7 @@ When developing a new feature in the stack, it's primordial to test changes befo
 
 ### Running locally on same revision
 
-As a developer on the platform, you must be able to check your code changes locally. Each project has its own way to run, but the bot is the most interesting part as that's the most *public facing* part.
+As a developer on the platform, you must be able to check your code changes locally. Each project has its own way to run, but the bot is the most interesting part as that's the most _public facing_ part.
 
 A simple test is to pick a known try job with a set of issues (you need to know the task group id, and the code-review issues task id). Then you can run the bot before and after your changes with the Phabricator reporter disabled so you do not pollute an existing revision.
 

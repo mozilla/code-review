@@ -1,29 +1,24 @@
 {
-	"plugins": [
-		"@babel/plugin-syntax-dynamic-import"
-	],
-	"presets": [
-		[
-			"@babel/preset-env",
-			{
-				"debug": false,
-				"exclude": [
-					"transform-regenerator",
-					"transform-async-to-generator"
-				],
-				"modules": false,
-				"targets": {
-					"browsers": [
-						"last 2 Chrome versions",
-						"last 2 Firefox versions",
-						"last 2 Edge versions",
-						"last 2 Opera versions",
-						"last 2 Safari versions",
-						"last 2 iOS versions"
-					]
-				},
-				"useBuiltIns": false
-			}
-		]
-	]
+  "plugins": ["@babel/plugin-syntax-dynamic-import"],
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "debug": false,
+        "exclude": ["transform-regenerator", "transform-async-to-generator"],
+        "modules": false,
+        "targets": {
+          "browsers": [
+            "last 2 Chrome versions",
+            "last 2 Firefox versions",
+            "last 2 Edge versions",
+            "last 2 Opera versions",
+            "last 2 Safari versions",
+            "last 2 iOS versions"
+          ]
+        },
+        "useBuiltIns": false
+      }
+    ]
+  ]
 }

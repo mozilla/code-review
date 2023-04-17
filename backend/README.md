@@ -5,6 +5,7 @@
 ### Run the application
 
 You may want to install dependencies in a virtual environment an run the development test server with a base fixure for development purpose:
+
 ```
 mkvirtualenv -p /usr/bin/python3 code-review-backend
 cd backend
@@ -23,7 +24,7 @@ Run `pip install -r requirements-dev.txt` to install all the available optional 
 
 [Django Debug Toolbar](https://django-debug-toolbar.readthedocs.io/en/latest/) provides you with a neat debug sidebar that will help diagnosing slow API endpoints.
 
-[Django Extensions](https://django-extensions.readthedocs.io/en/latest/) adds a *lot* of `manage.py` commands ; the most important one is `./manage.py shell_plus` which runs the usual shell but with all the available models pre-imported.
+[Django Extensions](https://django-extensions.readthedocs.io/en/latest/) adds a _lot_ of `manage.py` commands ; the most important one is `./manage.py shell_plus` which runs the usual shell but with all the available models pre-imported.
 
 You may also want to use IPython (`pip install ipython`) to get a nicer shell with syntax highlighting, auto reloading and much more via `./manage.py shell`.
 
@@ -60,10 +61,10 @@ This will produce a local Postgres binary dump named `latest.dump`.
 
 To use this dump, you'll need a local PostgreSQL instance running. The following Docker configuration works well for local development:
 
-* a `code_review` database is created,
-* with user/password credentials `postgres` / `crdev1234`,
-* data is stored in a Docker volume named `code_review_postgres`,
-* default Postgres port **5432** on the host is mapped to the container.
+- a `code_review` database is created,
+- with user/password credentials `postgres` / `crdev1234`,
+- data is stored in a Docker volume named `code_review_postgres`,
+- default Postgres port **5432** on the host is mapped to the container.
 
 ```
 docker run --rm -p 5432:5432 \
@@ -84,8 +85,8 @@ It's also possible to use a direct one-step command from Heroku, but you need to
 ```
 heroku pg:pull  postgresql-concave-XXX --app code-review-backend-production postgresql://postgres@localhost:5432/prod
 ```
-The postgresql database name can be found through the CLI `pg:info` tool, or on the Heroku dashboard. More information on the [official documentation](https://devcenter.heroku.com/articles/heroku-postgresql#pg-push-and-pg-pull)
 
+The postgresql database name can be found through the CLI `pg:info` tool, or on the Heroku dashboard. More information on the [official documentation](https://devcenter.heroku.com/articles/heroku-postgresql#pg-push-and-pg-pull)
 
 Finally you can use that database with the backend as:
 

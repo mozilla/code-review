@@ -1,39 +1,44 @@
 <script>
 export default {
-  mounted () {
-    this.$store.dispatch('load_revision', { id: this.$route.params.revisionId })
-      .then(resp => { this.$set(this, 'state', 'loaded') })
-      .catch(err => { this.$set(this, 'state', err) })
+  mounted() {
+    this.$store
+      .dispatch("load_revision", { id: this.$route.params.revisionId })
+      .then((resp) => {
+        this.$set(this, "state", "loaded");
+      })
+      .catch((err) => {
+        this.$set(this, "state", err);
+      });
   },
-  data () {
+  data() {
     return {
-      state: 'loading'
-    }
+      state: "loading",
+    };
   },
   computed: {
-    revision () {
-      return this.$store.state.revision
+    revision() {
+      return this.$store.state.revision;
     },
-    paths () {
+    paths() {
       // Load all issues
-      const paths = new Set()
+      const paths = new Set();
       for (const diff of this.revision.diffs) {
-        const issues = this.$store.state.issues[diff.id] || []
+        const issues = this.$store.state.issues[diff.id] || [];
         for (const issue of issues) {
-          paths.add(issue.path)
+          paths.add(issue.path);
         }
       }
 
-      return [...paths].sort()
-    }
+      return [...paths].sort();
+    },
   },
   methods: {
-    path_issues (diffId, path) {
-      const issues = this.$store.state.issues[diffId] || []
-      return issues.filter(issue => issue.path === path)
-    }
-  }
-}
+    path_issues(diffId, path) {
+      const issues = this.$store.state.issues[diffId] || [];
+      return issues.filter((issue) => issue.path === path);
+    },
+  },
+};
 </script>
 
 <template>
@@ -44,9 +49,15 @@ export default {
     <div v-else-if="state == 'loaded'">
       <h2 class="subtitle">{{ revision.title }}</h2>
       <p>
-        On <strong>{{ revision.head_repository }}</strong> - <a :href="revision.phabricator_url" target="_blank">View on Phabricator</a>
+        On <strong>{{ revision.head_repository }}</strong> -
+        <a :href="revision.phabricator_url" target="_blank"
+          >View on Phabricator</a
+        >
         <span v-if="revision.bugzilla_id">
-          - <a :href="'https://bugzil.la/' + revision.bugzilla_id" target="_blank">View Bug {{ revision.bugzilla_id }}</a>
+          -
+          <a :href="'https://bugzil.la/' + revision.bugzilla_id" target="_blank"
+            >View Bug {{ revision.bugzilla_id }}</a
+          >
         </span>
       </p>
 
@@ -58,7 +69,9 @@ export default {
           <div class="columns">
             <div class="column" v-for="diff in revision.diffs">
               <p>
-                <router-link :to="{ name: 'diff', params: { diffId: diff.id }}">Diff {{ diff.id }}</router-link>
+                <router-link :to="{ name: 'diff', params: { diffId: diff.id } }"
+                  >Diff {{ diff.id }}</router-link
+                >
               </p>
 
               <table class="table">
@@ -70,7 +83,10 @@ export default {
                   <th>Check</th>
                   <th>Hash</th>
                 </tr>
-                <tr v-for="issue in path_issues(diff.id, path)" :class="{new_for_revision: issue.new_for_revision}">
+                <tr
+                  v-for="issue in path_issues(diff.id, path)"
+                  :class="{ new_for_revision: issue.new_for_revision }"
+                >
                   <td>
                     <span v-if="issue.new_for_revision">✔</span>
                     <span v-else>❌</span>
@@ -79,14 +95,15 @@ export default {
                   <td>{{ issue.char }}</td>
                   <td>{{ issue.analyzer }}</td>
                   <td>{{ issue.check }}</td>
-                  <td><samp>{{ issue.hash.substring(0, 8) }}</samp></td>
+                  <td>
+                    <samp>{{ issue.hash.substring(0, 8) }}</samp>
+                  </td>
                 </tr>
               </table>
             </div>
           </div>
         </div>
       </nav>
-
     </div>
     <div class="notification is-danger" v-else>
       <h4 class="title">Error</h4>

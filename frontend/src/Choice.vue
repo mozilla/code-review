@@ -3,17 +3,28 @@
     <div class="dropdown-trigger">
       <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
         <span v-if="current === null">{{ default_choice_name }}</span>
-        <span v-else>{{ current|name }}</span>
+        <span v-else>{{ current | name }}</span>
       </button>
     </div>
     <div class="dropdown-menu" id="dropdown-menu" role="menu">
       <div class="dropdown-content">
-        <a class="dropdown-item" v-on:click="select(null, $event)" :class="{'is-active': current === null }">
+        <a
+          class="dropdown-item"
+          v-on:click="select(null, $event)"
+          :class="{ 'is-active': current === null }"
+        >
           No filter
         </a>
-        <hr class="dropdown-divider">
-        <a class="dropdown-item" v-for="choice in choices" v-on:click="select(choice, $event)" :class="{'is-active': current === choice  || current === choice.value}">
-          {{ choice|name }}
+        <hr class="dropdown-divider" />
+        <a
+          class="dropdown-item"
+          v-for="choice in choices"
+          v-on:click="select(choice, $event)"
+          :class="{
+            'is-active': current === choice || current === choice.value,
+          }"
+        >
+          {{ choice | name }}
         </a>
       </div>
     </div>
@@ -21,50 +32,48 @@
 </template>
 
 <script>
-import mixins from './mixins.js'
+import mixins from "./mixins.js";
 
 export default {
   props: {
     name: String,
-    choices: Array
+    choices: Array,
   },
-  mixins: [
-    mixins.query
-  ],
-  data () {
+  mixins: [mixins.query],
+  data() {
     return {
-      choice: null
-    }
+      choice: null,
+    };
   },
   methods: {
     select: function (choice, evt) {
-      evt.stopPropagation()
+      evt.stopPropagation();
 
       // Save new choice
-      this.$set(this, 'choice', choice)
-      this.$emit('new-choice', choice)
-    }
+      this.$set(this, "choice", choice);
+      this.$emit("new-choice", choice);
+    },
   },
   computed: {
-    current () {
-      let current = null
-      const choice = this.choice || this.$route.query[this.name]
+    current() {
+      let current = null;
+      const choice = this.choice || this.$route.query[this.name];
       if (choice && this.choices) {
-        current = this.choices.find(c => c === choice || c.value === choice)
+        current = this.choices.find((c) => c === choice || c.value === choice);
         if (!current) {
-          current = isNaN(parseInt(choice)) ? choice : this.choices[choice]
+          current = isNaN(parseInt(choice)) ? choice : this.choices[choice];
         }
       }
-      return current
+      return current;
     },
     default_choice_name: function () {
-      return 'Filter by ' + this.name
-    }
+      return "Filter by " + this.name;
+    },
   },
   filters: {
     name: function (choice) {
-      return typeof choice === 'string' ? choice : (choice.slug || choice.name)
-    }
-  }
-}
+      return typeof choice === "string" ? choice : choice.slug || choice.name;
+    },
+  },
+};
 </script>

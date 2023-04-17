@@ -1,19 +1,16 @@
 <script>
-import mixins from './mixins.js'
-import Progress from './Progress.vue'
-import Choice from './Choice.vue'
-import Chartist from 'chartist'
+import mixins from "./mixins.js";
+import Progress from "./Progress.vue";
+import Choice from "./Choice.vue";
+import Chartist from "chartist";
 
 export default {
-  mixins: [
-    mixins.stats,
-    mixins.date
-  ],
-  data () {
+  mixins: [mixins.stats, mixins.date],
+  data() {
     // Set default to since one month back
-    let since = new Date()
-    since.setMonth(since.getMonth() - 1)
-    since = since.toISOString().substring(0, 10)
+    let since = new Date();
+    since.setMonth(since.getMonth() - 1);
+    since = since.toISOString().substring(0, 10);
 
     return {
       // Data filters
@@ -23,7 +20,7 @@ export default {
       check: null,
 
       // Sort by a column
-      sortColumn: 'total',
+      sortColumn: "total",
 
       // Options for chartist
       chartOptions: {
@@ -32,100 +29,106 @@ export default {
           type: Chartist.FixedScaleAxis,
           divisor: 15,
           labelInterpolationFnc: function (value) {
-            const date = new Date(value)
-            return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
-          }
-        }
-      }
-    }
+            const date = new Date(value);
+            return `${date.getDate()}/${
+              date.getMonth() + 1
+            }/${date.getFullYear()}`;
+          },
+        },
+      },
+    };
   },
   components: { Progress, Choice },
-  mounted () {
-    this.load()
+  mounted() {
+    this.load();
   },
   methods: {
-    load (reset) {
-      const payload = {}
-      if (reset === true || this.since === '') {
-        this.$set(this, 'since', null)
+    load(reset) {
+      const payload = {};
+      if (reset === true || this.since === "") {
+        this.$set(this, "since", null);
       } else {
-        payload.since = this.since
+        payload.since = this.since;
       }
 
       // Stats since provided date
-      this.$store.dispatch('load_stats', payload)
+      this.$store.dispatch("load_stats", payload);
 
       // History since provided date
-      this.$store.dispatch('load_history', payload)
+      this.$store.dispatch("load_history", payload);
     },
-    use_filter (name, value) {
+    use_filter(name, value) {
       // Store new filter value
-      this.$set(this, name, value)
+      this.$set(this, name, value);
 
       // Load new history data
-      this.$store.dispatch('load_history', {
+      this.$store.dispatch("load_history", {
         repository: this.repository,
         analyzer: this.analyzer,
         check: this.check,
-        since: this.since
-      })
+        since: this.since,
+      });
     },
-    sort_by (column) {
+    sort_by(column) {
       // Store new sort column
-      this.$set(this, 'sortColumn', column)
-    }
+      this.$set(this, "sortColumn", column);
+    },
   },
   computed: {
-    stats_filtered () {
+    stats_filtered() {
       if (!this.stats) {
-        return null
+        return null;
       }
 
       // Sort by specified column
-      let stats = this.stats.sort((x, y) => x[this.sortColumn] < y[this.sortColumn])
+      let stats = this.stats.sort(
+        (x, y) => x[this.sortColumn] < y[this.sortColumn]
+      );
 
       // Apply filters
       if (this.repository !== null) {
-        stats = stats.filter(s => s.repository === this.repository)
+        stats = stats.filter((s) => s.repository === this.repository);
       }
       if (this.analyzer !== null) {
-        stats = stats.filter(s => s.analyzer === this.analyzer)
+        stats = stats.filter((s) => s.analyzer === this.analyzer);
       }
       if (this.check !== null) {
-        stats = stats.filter(s => s.check === this.check)
+        stats = stats.filter((s) => s.check === this.check);
       }
 
-      return stats
+      return stats;
     },
 
     // Available filtering data
-    repositories () {
-      return [...new Set(this.stats_filtered.map(x => x.repository))].sort()
+    repositories() {
+      return [...new Set(this.stats_filtered.map((x) => x.repository))].sort();
     },
-    analyzers () {
-      return [...new Set(this.stats_filtered.map(x => x.analyzer))].sort()
+    analyzers() {
+      return [...new Set(this.stats_filtered.map((x) => x.analyzer))].sort();
     },
-    checks () {
-      return [...new Set(this.stats_filtered.map(x => x.check))].sort()
+    checks() {
+      return [...new Set(this.stats_filtered.map((x) => x.check))].sort();
     },
 
-    history () {
-      const history = this.$store.state.history
+    history() {
+      const history = this.$store.state.history;
       if (!history) {
-        return null
+        return null;
       }
 
       return {
         series: [
           {
-            name: 'Total issues',
-            data: history.map(point => { return { x: new Date(point.date), y: point.total } })
-          }
-        ]
-      }
-    }
-  }
-}
+            name: "Total issues",
+            data: history.map((point) => {
+              return { x: new Date(point.date), y: point.total };
+            }),
+          },
+        ],
+      };
+    },
+  },
+};
 </script>
 
 <template>
@@ -136,18 +139,27 @@ export default {
       <label>Issues created since:</label>
       <div class="field has-addons">
         <div class="control">
-          <input class="input" type="date" v-model="since" v-on:change="load()" />
+          <input
+            class="input"
+            type="date"
+            v-model="since"
+            v-on:change="load()"
+          />
         </div>
         <div class="control">
-          <button class="button is-info" v-on:click="load(true)">Beginning</button>
+          <button class="button is-info" v-on:click="load(true)">
+            Beginning
+          </button>
         </div>
       </div>
     </div>
 
-    <chartist v-if="history !== null"
-        type="Line"
-        :data="history"
-        :options="chartOptions" >
+    <chartist
+      v-if="history !== null"
+      type="Line"
+      :data="history"
+      :options="chartOptions"
+    >
     </chartist>
 
     <div v-if="stats">
@@ -155,42 +167,81 @@ export default {
         <thead>
           <tr>
             <th>
-              <Choice :choices="repositories" name="repository" v-on:new-choice="use_filter('repository', $event)"/>
+              <Choice
+                :choices="repositories"
+                name="repository"
+                v-on:new-choice="use_filter('repository', $event)"
+              />
             </th>
             <th>
-              <Choice :choices="analyzers" name="analyzer" v-on:new-choice="use_filter('analyzer', $event)"/>
+              <Choice
+                :choices="analyzers"
+                name="analyzer"
+                v-on:new-choice="use_filter('analyzer', $event)"
+              />
             </th>
             <th>
-              <Choice :choices="checks" name="check" v-on:new-choice="use_filter('check', $event)"/>
+              <Choice
+                :choices="checks"
+                name="check"
+                v-on:new-choice="use_filter('check', $event)"
+              />
             </th>
             <th>
-              <button class="button is-info" v-on:click="sort_by('total')" :disabled="sortColumn == 'total'">Detected</button>
+              <button
+                class="button is-info"
+                v-on:click="sort_by('total')"
+                :disabled="sortColumn == 'total'"
+              >
+                Detected
+              </button>
             </th>
             <th>
-              <button class="button is-info" v-on:click="sort_by('publishable')" :disabled="sortColumn == 'publishable'">Publishable</button>
+              <button
+                class="button is-info"
+                v-on:click="sort_by('publishable')"
+                :disabled="sortColumn == 'publishable'"
+              >
+                Publishable
+              </button>
             </th>
             <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          <tr v-for="stat in stats_filtered" :class="{'publishable': stat.publishable > 0}">
+          <tr
+            v-for="stat in stats_filtered"
+            :class="{ publishable: stat.publishable > 0 }"
+          >
             <td>{{ stat.repository }}</td>
             <td>{{ stat.analyzer }}</td>
             <td>{{ stat.check }}</td>
             <td>{{ stat.total }}</td>
             <td>
-              <strong v-if="stat.publishable > 0">{{ stat.publishable }}</strong>
+              <strong v-if="stat.publishable > 0">{{
+                stat.publishable
+              }}</strong>
               <span class="has-text-grey" v-else>0</span>
             </td>
             <td>
-              <router-link class="button is-small" :to="{ name: 'check', params: { repository: stat.repository, analyzer: stat.analyzer, check: stat.check }}">View issues</router-link>
+              <router-link
+                class="button is-small"
+                :to="{
+                  name: 'check',
+                  params: {
+                    repository: stat.repository,
+                    analyzer: stat.analyzer,
+                    check: stat.check,
+                  },
+                }"
+                >View issues</router-link
+              >
             </td>
           </tr>
         </tbody>
       </table>
     </div>
     <div class="notification is-info" v-else>Loading tasks...</div>
-
   </div>
 </template>
 

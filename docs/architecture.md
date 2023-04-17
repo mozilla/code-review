@@ -58,14 +58,15 @@ In an ideal world, we would only support that format, and convert the existing a
 
 ## Publication task
 
-You may have noticed the *pulse message dance* in the workflow above. It may seem weird to add a task only sending a Pulse message to trigger another task in the same Taskcluster instance.
+You may have noticed the _pulse message dance_ in the workflow above. It may seem weird to add a task only sending a Pulse message to trigger another task in the same Taskcluster instance.
 
 This has brought us several advantages:
+
 - we do not [ever](https://hg.mozilla.org/mozilla-central/log/tip/taskcluster/ci/code-review/kind.yml) need to update the first task, so we do not have a direct dependency on mozilla-central
 - we can update the publication code (the **bot** part) easily, just like any other Taskcluster hook payload
 - we can trigger the hook from different projects, with different rules and workflows
 - we get a trigger history for free thanks to the Taskcluster hook system
-- we can run several versions of the hook in parallel (the testing environment can receive the same pulse messages than production, allowing to run in *shadow mode* - see [debugging](debugging.md) for that)
+- we can run several versions of the hook in parallel (the testing environment can receive the same pulse messages than production, allowing to run in _shadow mode_ - see [debugging](debugging.md) for that)
 
 ## Backend
 
@@ -83,6 +84,7 @@ The frontend is a simple [Vue.js](https://vuejs.org) Single Page Application hos
 It uses the backend as its main source of information, no authentication is implemented as all information is already public (we do not support security bugs).
 
 With the frontend, you can:
+
 - browse analysis tasks (also called reports)
 - search them by revision, bugzilla id, name, ...
 - list all the issues detected in a diff
