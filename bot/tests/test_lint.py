@@ -6,8 +6,9 @@
 import json
 import os
 
-from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 from conftest import FIXTURES_DIR
+
+from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 
 
 def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):

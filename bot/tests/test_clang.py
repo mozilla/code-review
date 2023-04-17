@@ -2,10 +2,10 @@
 import os.path
 
 import pytest
+from conftest import FIXTURES_DIR
 
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
-from conftest import FIXTURES_DIR
 
 
 def test_expanded_macros(mock_revision, mock_task):
