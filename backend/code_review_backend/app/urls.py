@@ -6,8 +6,7 @@
 from django.conf import settings
 from django.contrib import admin
 from django.shortcuts import redirect
-from django.urls import include
-from django.urls import path
+from django.urls import include, path
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions

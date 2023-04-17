@@ -10,10 +10,12 @@ from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 
-from code_review_backend.issues.models import LEVEL_ERROR
-from code_review_backend.issues.models import LEVEL_WARNING
-from code_review_backend.issues.models import Issue
-from code_review_backend.issues.models import Repository
+from code_review_backend.issues.models import (
+    LEVEL_ERROR,
+    LEVEL_WARNING,
+    Issue,
+    Repository,
+)
 
 
 class IssueTestCase(TestCase):

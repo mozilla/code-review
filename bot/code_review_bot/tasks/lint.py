@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import structlog
 
-from code_review_bot import Issue
-from code_review_bot import Level
+from code_review_bot import Issue, Level
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)

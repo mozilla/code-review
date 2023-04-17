@@ -11,14 +11,14 @@ from pathlib import Path
 import structlog
 import yaml
 from libmozdata.lando import LandoWarnings
-from libmozdata.phabricator import BuildState
-from libmozdata.phabricator import PhabricatorAPI
-from libmozdata.phabricator import UnitResult
-from libmozdata.phabricator import UnitResultState
+from libmozdata.phabricator import (
+    BuildState,
+    PhabricatorAPI,
+    UnitResult,
+    UnitResultState,
+)
 
-from code_review_bot import AnalysisException
-from code_review_bot import stats
-from code_review_bot import taskcluster
+from code_review_bot import AnalysisException, stats, taskcluster
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision

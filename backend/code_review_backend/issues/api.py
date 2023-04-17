@@ -4,43 +4,39 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
-from datetime import date
-from datetime import datetime
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.db import transaction
-from django.db.models import Count
-from django.db.models import Prefetch
-from django.db.models import Q
+from django.db.models import Count, Prefetch, Q
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
 from django.urls import path
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from rest_framework import generics
-from rest_framework import mixins
-from rest_framework import routers
-from rest_framework import viewsets
-from rest_framework.exceptions import APIException
-from rest_framework.exceptions import ValidationError
+from rest_framework import generics, mixins, routers, viewsets
+from rest_framework.exceptions import APIException, ValidationError
 
 from code_review_backend.issues.compare import detect_new_for_revision
-from code_review_backend.issues.models import LEVEL_ERROR
-from code_review_backend.issues.models import Diff
-from code_review_backend.issues.models import Issue
-from code_review_backend.issues.models import IssueLink
-from code_review_backend.issues.models import Repository
-from code_review_backend.issues.models import Revision
-from code_review_backend.issues.serializers import DiffFullSerializer
-from code_review_backend.issues.serializers import DiffSerializer
-from code_review_backend.issues.serializers import HistoryPointSerializer
-from code_review_backend.issues.serializers import IssueBulkSerializer
-from code_review_backend.issues.serializers import IssueCheckSerializer
-from code_review_backend.issues.serializers import IssueCheckStatsSerializer
-from code_review_backend.issues.serializers import IssueSerializer
-from code_review_backend.issues.serializers import RepositorySerializer
-from code_review_backend.issues.serializers import RevisionSerializer
+from code_review_backend.issues.models import (
+    LEVEL_ERROR,
+    Diff,
+    Issue,
+    IssueLink,
+    Repository,
+    Revision,
+)
+from code_review_backend.issues.serializers import (
+    DiffFullSerializer,
+    DiffSerializer,
+    HistoryPointSerializer,
+    IssueBulkSerializer,
+    IssueCheckSerializer,
+    IssueCheckStatsSerializer,
+    IssueSerializer,
+    RepositorySerializer,
+    RevisionSerializer,
+)
 
 
 class CachedView(object):

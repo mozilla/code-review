@@ -6,8 +6,7 @@ import tempfile
 import structlog
 import yaml
 
-from code_review_events import community_taskcluster_config
-from code_review_events import taskcluster_config
+from code_review_events import community_taskcluster_config, taskcluster_config
 from code_review_events.workflow import Events
 from code_review_tools.log import init_logger
 

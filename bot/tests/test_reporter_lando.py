@@ -3,8 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from code_review_bot.report.lando import LANDO_MESSAGE
-from code_review_bot.report.lando import LandoReporter
+from code_review_bot.report.lando import LANDO_MESSAGE, LandoReporter
 
 MOCK_LANDO_API_URL = "http://api.lando.test"
 MOCK_LANDO_TOKEN = "Some Test Token"

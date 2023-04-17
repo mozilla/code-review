@@ -3,25 +3,18 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import structlog
-from libmozdata.phabricator import BuildState
-from libmozdata.phabricator import PhabricatorAPI
+from libmozdata.phabricator import BuildState, PhabricatorAPI
 from taskcluster.utils import stringDate
 
-from code_review_bot import Level
-from code_review_bot import stats
+from code_review_bot import Level, stats
 from code_review_bot.backend import BackendAPI
-from code_review_bot.config import REPO_AUTOLAND
-from code_review_bot.config import REPO_MOZILLA_CENTRAL
-from code_review_bot.config import settings
+from code_review_bot.config import REPO_AUTOLAND, REPO_MOZILLA_CENTRAL, settings
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
-from code_review_bot.tasks.base import AnalysisTask
-from code_review_bot.tasks.base import BaseTask
-from code_review_bot.tasks.base import NoticeTask
+from code_review_bot.tasks.base import AnalysisTask, BaseTask, NoticeTask
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask

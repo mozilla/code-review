@@ -10,20 +10,17 @@ import re
 import urllib
 import urllib.parse
 import uuid
-from collections import defaultdict
-from collections import namedtuple
+from collections import defaultdict, namedtuple
 from contextlib import contextmanager
 
 import pytest
 import responses
 from libmozdata.phabricator import PhabricatorAPI
 
-from code_review_bot import Level
-from code_review_bot import stats
+from code_review_bot import Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
-from code_review_bot.tasks.clang_tidy import ClangTidyIssue
-from code_review_bot.tasks.clang_tidy import ClangTidyTask
+from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from code_review_bot.tasks.default import DefaultTask
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")

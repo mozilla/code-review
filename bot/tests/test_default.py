@@ -6,8 +6,7 @@
 import pytest
 
 from code_review_bot import Level
-from code_review_bot.tasks.default import DefaultIssue
-from code_review_bot.tasks.default import DefaultTask
+from code_review_bot.tasks.default import DefaultIssue, DefaultTask
 
 
 @pytest.mark.parametrize(

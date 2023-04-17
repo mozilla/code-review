@@ -6,8 +6,7 @@
 
 import re
 import time
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import requests
 from taskcluster.helper import TaskclusterConfig

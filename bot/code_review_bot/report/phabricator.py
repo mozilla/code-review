@@ -8,11 +8,9 @@ from typing import List
 from urllib.parse import urljoin
 
 import structlog
-from libmozdata.phabricator import BuildState
-from libmozdata.phabricator import PhabricatorAPI
+from libmozdata.phabricator import BuildState, PhabricatorAPI
 
-from code_review_bot import Issue
-from code_review_bot import stats
+from code_review_bot import Issue, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.report.base import Reporter
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue

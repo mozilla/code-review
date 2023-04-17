@@ -7,8 +7,7 @@ import hashlib
 
 import pytest
 
-from code_review_bot.tasks.lint import MozLintIssue
-from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 
 
 def test_build_hash(mock_revision, mock_hgmo, mock_task):

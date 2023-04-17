@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
 import pytest
-from libmozdata.phabricator import BuildState
-from libmozdata.phabricator import ConduitError
-from libmozdata.phabricator import UnitResultState
+from libmozdata.phabricator import BuildState, ConduitError, UnitResultState
 from libmozevent.bus import MessageBus
 from libmozevent.phabricator import PhabricatorBuild
 from structlog.testing import capture_logs
 
-from code_review_events import QUEUE_BUGBUG
-from code_review_events import QUEUE_MERCURIAL
-from code_review_events.workflow import LANDO_FAILURE_HG_MESSAGE
-from code_review_events.workflow import LANDO_FAILURE_MESSAGE
-from code_review_events.workflow import LANDO_WARNING_MESSAGE
-from code_review_events.workflow import CodeReview
+from code_review_events import QUEUE_BUGBUG, QUEUE_MERCURIAL
+from code_review_events.workflow import (
+    LANDO_FAILURE_HG_MESSAGE,
+    LANDO_FAILURE_MESSAGE,
+    LANDO_WARNING_MESSAGE,
+    CodeReview,
+)
 
 MOCK_LANDO_API_URL = "http://api.lando.test"
 MOCK_LANDO_TOKEN = "Some Test Token"

@@ -12,21 +12,17 @@ from structlog.testing import capture_logs
 
 from code_review_bot import Level
 from code_review_bot.report.phabricator import PhabricatorReporter
-from code_review_bot.revisions import ImprovementPatch
-from code_review_bot.revisions import Revision
-from code_review_bot.tasks.clang_format import ClangFormatIssue
-from code_review_bot.tasks.clang_format import ClangFormatTask
-from code_review_bot.tasks.clang_tidy import ClangTidyIssue
-from code_review_bot.tasks.clang_tidy import ClangTidyTask
-from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
-from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
-from code_review_bot.tasks.coverage import CoverageIssue
-from code_review_bot.tasks.coverage import ZeroCoverageTask
-from code_review_bot.tasks.default import DefaultIssue
-from code_review_bot.tasks.default import DefaultTask
+from code_review_bot.revisions import ImprovementPatch, Revision
+from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
+from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
+from code_review_bot.tasks.clang_tidy_external import (
+    ExternalTidyIssue,
+    ExternalTidyTask,
+)
+from code_review_bot.tasks.coverage import CoverageIssue, ZeroCoverageTask
+from code_review_bot.tasks.default import DefaultIssue, DefaultTask
 from code_review_bot.tasks.docupload import COMMENT_LINK_TO_DOC
-from code_review_bot.tasks.lint import MozLintIssue
-from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
 
 VALID_CLANG_TIDY_MESSAGE = """

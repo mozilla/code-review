@@ -9,9 +9,11 @@ from libmozdata.phabricator import UnitResultState
 from libmozevent.bus import MessageBus
 from libmozevent.phabricator import PhabricatorBuild
 
-from code_review_events import QUEUE_MONITORING_COMMUNITY
-from code_review_events import QUEUE_PHABRICATOR_RESULTS
-from code_review_events import taskcluster_config
+from code_review_events import (
+    QUEUE_MONITORING_COMMUNITY,
+    QUEUE_PHABRICATOR_RESULTS,
+    taskcluster_config,
+)
 from code_review_events.bugbug_utils import BugbugUtils
 
 
