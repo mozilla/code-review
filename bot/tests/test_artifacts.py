@@ -3,8 +3,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from code_review_bot.tasks.base import AnalysisTask
 from conftest import MockQueue
+
+from code_review_bot.tasks.base import AnalysisTask
 
 
 class TestTask(AnalysisTask):
