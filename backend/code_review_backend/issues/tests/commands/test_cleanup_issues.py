@@ -10,12 +10,14 @@ from django.core.management import call_command
 from django.test import TestCase
 from django.utils import timezone
 
-from code_review_backend.issues.models import LEVEL_ERROR
-from code_review_backend.issues.models import Diff
-from code_review_backend.issues.models import Issue
-from code_review_backend.issues.models import IssueLink
-from code_review_backend.issues.models import Repository
-from code_review_backend.issues.models import Revision
+from code_review_backend.issues.models import (
+    LEVEL_ERROR,
+    Diff,
+    Issue,
+    IssueLink,
+    Repository,
+    Revision,
+)
 
 LOG_PREFIX = "INFO:code_review_backend.issues.management.commands.cleanup_issues:"
 

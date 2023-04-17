@@ -12,9 +12,7 @@ from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from code_review_backend.issues.models import Issue
-from code_review_backend.issues.models import IssueLink
-from code_review_backend.issues.models import Repository
+from code_review_backend.issues.models import Issue, IssueLink, Repository
 
 
 class StatsAPITestCase(APITestCase):

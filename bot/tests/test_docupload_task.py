@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 import pytest
 
-from code_review_bot.tasks.docupload import MAX_LINKS
-from code_review_bot.tasks.docupload import DocUploadTask
+from code_review_bot.tasks.docupload import MAX_LINKS, DocUploadTask
 
 ARTIFACTS = {
     "public/firefox-source-docs-url.txt": b"http://firefox-test-docs.mozilla.org/index.html",

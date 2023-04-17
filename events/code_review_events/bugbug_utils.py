@@ -6,16 +6,17 @@ import jsone
 import jsonschema
 import structlog
 from libmozdata.phabricator import UnitResultState
-from libmozevent.phabricator import PhabricatorBuild
-from libmozevent.phabricator import PhabricatorBuildState
+from libmozevent.phabricator import PhabricatorBuild, PhabricatorBuildState
 from libmozevent.storage import EphemeralStorage
 
-from code_review_events import QUEUE_BUGBUG
-from code_review_events import QUEUE_BUGBUG_TRY_PUSH
-from code_review_events import QUEUE_MONITORING_COMMUNITY
-from code_review_events import QUEUE_PHABRICATOR_RESULTS
-from code_review_events import community_taskcluster_config
-from code_review_events import taskcluster_config
+from code_review_events import (
+    QUEUE_BUGBUG,
+    QUEUE_BUGBUG_TRY_PUSH,
+    QUEUE_MONITORING_COMMUNITY,
+    QUEUE_PHABRICATOR_RESULTS,
+    community_taskcluster_config,
+    taskcluster_config,
+)
 from code_review_tools.treeherder import get_job_url
 
 logger = structlog.get_logger(__name__)

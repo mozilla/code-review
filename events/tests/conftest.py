@@ -12,8 +12,7 @@ import pytest
 import responses
 from libmozevent.phabricator import PhabricatorActions
 
-from code_review_events import community_taskcluster_config
-from code_review_events import taskcluster_config
+from code_review_events import community_taskcluster_config, taskcluster_config
 
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 

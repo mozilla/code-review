@@ -5,10 +5,7 @@
 
 from django.contrib import admin
 
-from code_review_backend.issues.models import Diff
-from code_review_backend.issues.models import Issue
-from code_review_backend.issues.models import Repository
-from code_review_backend.issues.models import Revision
+from code_review_backend.issues.models import Diff, Issue, Repository, Revision
 
 
 class RepositoryAdmin(admin.ModelAdmin):

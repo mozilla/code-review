@@ -6,8 +6,7 @@
 from django.conf import settings
 from rest_framework.test import APITestCase
 
-from code_review_backend.issues.models import Repository
-from code_review_backend.issues.models import Revision
+from code_review_backend.issues.models import Repository, Revision
 
 
 class RevisionAPITestCase(APITestCase):

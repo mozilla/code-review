@@ -11,9 +11,7 @@ import os
 
 import requests
 import structlog
-from libmozdata.phabricator import LintResult
-from libmozdata.phabricator import UnitResult
-from libmozdata.phabricator import UnitResultState
+from libmozdata.phabricator import LintResult, UnitResult, UnitResultState
 from taskcluster.helper import TaskclusterConfig
 
 from code_review_bot.stats import InfluxDb

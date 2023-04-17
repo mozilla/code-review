@@ -11,8 +11,7 @@ from django import db
 from django.core.management.base import BaseCommand
 from parsepatch.patch import Patch
 
-from code_review_backend.issues.models import Diff
-from code_review_backend.issues.models import Issue
+from code_review_backend.issues.models import Diff, Issue
 
 logging.basicConfig(level=logging.INFO)
 

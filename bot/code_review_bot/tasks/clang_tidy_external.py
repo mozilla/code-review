@@ -8,10 +8,8 @@ import re
 
 import structlog
 
-from code_review_bot import Level
-from code_review_bot import Reliability
-from code_review_bot.tasks.clang_tidy import ClangTidyIssue
-from code_review_bot.tasks.clang_tidy import ClangTidyTask
+from code_review_bot import Level, Reliability
+from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 
 logger = structlog.get_logger(__name__)
 

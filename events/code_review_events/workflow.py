@@ -4,35 +4,36 @@ import os
 
 import structlog
 from libmozdata.lando import LandoWarnings
-from libmozdata.phabricator import BuildState
-from libmozdata.phabricator import UnitResult
-from libmozdata.phabricator import UnitResultState
+from libmozdata.phabricator import BuildState, UnitResult, UnitResultState
 from libmozevent.bus import MessageBus
-from libmozevent.mercurial import MercurialWorker
-from libmozevent.mercurial import Repository
+from libmozevent.mercurial import MercurialWorker, Repository
 from libmozevent.monitoring import Monitoring
-from libmozevent.phabricator import PhabricatorActions
-from libmozevent.phabricator import PhabricatorBuild
-from libmozevent.phabricator import PhabricatorBuildState
+from libmozevent.phabricator import (
+    PhabricatorActions,
+    PhabricatorBuild,
+    PhabricatorBuildState,
+)
 from libmozevent.pulse import PulseListener
 from libmozevent.utils import run_tasks
 from libmozevent.web import WebServer
 
-from code_review_events import MONITORING_PERIOD
-from code_review_events import QUEUE_BUGBUG
-from code_review_events import QUEUE_BUGBUG_TRY_PUSH
-from code_review_events import QUEUE_MERCURIAL
-from code_review_events import QUEUE_MERCURIAL_APPLIED
-from code_review_events import QUEUE_MONITORING
-from code_review_events import QUEUE_MONITORING_COMMUNITY
-from code_review_events import QUEUE_PHABRICATOR_RESULTS
-from code_review_events import QUEUE_PULSE_AUTOLAND
-from code_review_events import QUEUE_PULSE_BUGBUG_TEST_SELECT
-from code_review_events import QUEUE_PULSE_MOZILLA_CENTRAL
-from code_review_events import QUEUE_PULSE_TRY_TASK_END
-from code_review_events import QUEUE_WEB_BUILDS
-from code_review_events import community_taskcluster_config
-from code_review_events import taskcluster_config
+from code_review_events import (
+    MONITORING_PERIOD,
+    QUEUE_BUGBUG,
+    QUEUE_BUGBUG_TRY_PUSH,
+    QUEUE_MERCURIAL,
+    QUEUE_MERCURIAL_APPLIED,
+    QUEUE_MONITORING,
+    QUEUE_MONITORING_COMMUNITY,
+    QUEUE_PHABRICATOR_RESULTS,
+    QUEUE_PULSE_AUTOLAND,
+    QUEUE_PULSE_BUGBUG_TEST_SELECT,
+    QUEUE_PULSE_MOZILLA_CENTRAL,
+    QUEUE_PULSE_TRY_TASK_END,
+    QUEUE_WEB_BUILDS,
+    community_taskcluster_config,
+    taskcluster_config,
+)
 from code_review_events.bugbug_utils import BugbugUtils
 from code_review_tools import heroku
 

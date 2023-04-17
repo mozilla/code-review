@@ -2,8 +2,7 @@
 import rs_parsepatch
 import structlog
 
-from code_review_bot import Issue
-from code_review_bot import Level
+from code_review_bot import Issue, Level
 from code_review_bot.config import settings
 from code_review_bot.tasks.base import AnalysisTask
 

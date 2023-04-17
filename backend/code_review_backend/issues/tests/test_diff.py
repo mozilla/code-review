@@ -10,8 +10,7 @@ from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from code_review_backend.issues.models import Diff
-from code_review_backend.issues.models import Repository
+from code_review_backend.issues.models import Diff, Repository
 
 
 class DiffAPITestCase(APITestCase):

@@ -4,8 +4,7 @@ import os.path
 import pytest
 
 from code_review_bot.tasks.clang_format import ClangFormatTask
-from code_review_bot.tasks.clang_tidy import ClangTidyIssue
-from code_review_bot.tasks.clang_tidy import ClangTidyTask
+from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from conftest import FIXTURES_DIR
 
 
@@ -80,8 +79,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task):
     """
     Test text export for ClangTidyIssue
     """
-    from code_review_bot import Level
-    from code_review_bot import Reliability
+    from code_review_bot import Level, Reliability
 
     issue = ClangTidyIssue(
         mock_task(ClangTidyTask, "clang-tidy"),
@@ -116,8 +114,7 @@ def test_as_markdown(mock_revision, mock_task):
     """
     Test markdown generation for ClangTidyIssue
     """
-    from code_review_bot import Level
-    from code_review_bot import Reliability
+    from code_review_bot import Level, Reliability
 
     issue = ClangTidyIssue(
         mock_task(ClangTidyTask, "clang-tidy"),

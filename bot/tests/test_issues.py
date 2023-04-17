@@ -3,8 +3,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from code_review_bot.tasks.clang_format import ClangFormatIssue
-from code_review_bot.tasks.clang_format import ClangFormatTask
+from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 
 
 def test_allowed_paths(mock_config, mock_revision, mock_task):

@@ -6,11 +6,13 @@
 from django.db import transaction
 from rest_framework import serializers
 
-from code_review_backend.issues.models import Diff
-from code_review_backend.issues.models import Issue
-from code_review_backend.issues.models import IssueLink
-from code_review_backend.issues.models import Repository
-from code_review_backend.issues.models import Revision
+from code_review_backend.issues.models import (
+    Diff,
+    Issue,
+    IssueLink,
+    Repository,
+    Revision,
+)
 
 
 class RepositorySerializer(serializers.ModelSerializer):

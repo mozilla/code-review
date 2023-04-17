@@ -14,9 +14,7 @@ from django.db import transaction
 from requests.exceptions import HTTPError
 
 from code_review_backend.issues.compare import detect_new_for_revision
-from code_review_backend.issues.models import Issue
-from code_review_backend.issues.models import IssueLink
-from code_review_backend.issues.models import Repository
+from code_review_backend.issues.models import Issue, IssueLink, Repository
 
 logger = logging.getLogger(__name__)
 

@@ -4,13 +4,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import django.db.models.deletion
-from django.db import migrations
-from django.db import models
-from django.db.models import Count
-from django.db.models import F
-from django.db.models import OuterRef
-from django.db.models import Q
-from django.db.models import Subquery
+from django.db import migrations, models
+from django.db.models import Count, F, OuterRef, Q, Subquery
 
 
 def update_revisions(apps, schema_editor):

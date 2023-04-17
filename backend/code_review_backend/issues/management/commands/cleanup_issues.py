@@ -9,8 +9,7 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from code_review_backend.issues.models import Issue
-from code_review_backend.issues.models import Revision
+from code_review_backend.issues.models import Issue, Revision
 
 logging.basicConfig(level=logging.INFO)
 

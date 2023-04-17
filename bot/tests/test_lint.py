@@ -6,8 +6,7 @@
 import json
 import os
 
-from code_review_bot.tasks.lint import MozLintIssue
-from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 from conftest import FIXTURES_DIR
 
 
