@@ -12,8 +12,6 @@ export default {
 }
 </script>
 
-</script>
-
 <template>
   <div>
     <h1 class="title">{{ name }}</h1>
