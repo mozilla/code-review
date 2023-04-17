@@ -33,19 +33,19 @@ tasks:
       then:
         $if: 'event.ref in ["refs/heads/testing", "refs/heads/production"]'
         then: ${event.ref[11:]}
-        else: 'dev'
-      else: 'dev'
+        else: "dev"
+      else: "dev"
 
     backend_url:
       $if: 'tasks_for == "github-push"'
       then:
         $if: 'event.ref == "refs/heads/testing"'
-        then: 'https://api.code-review.testing.moz.tools'
-        else: 'https://api.code-review.moz.tools'
+        then: "https://api.code-review.testing.moz.tools"
+        else: "https://api.code-review.moz.tools"
       else:
         $if: 'tasks_for == "github-pull-request"'
-        then: 'https://api.code-review.testing.moz.tools'
-        else: 'https://api.code-review.moz.tools'
+        then: "https://api.code-review.testing.moz.tools"
+        else: "https://api.code-review.moz.tools"
 
     taskboot_image: "mozilla/taskboot:0.3.6"
 
@@ -55,9 +55,9 @@ tasks:
     provisionerId:
       $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
       then:
-          $if: 'tasks_for == "github-push"'
-          then: 'code-analysis-3'
-          else: 'code-analysis-1'
+        $if: 'tasks_for == "github-push"'
+        then: "code-analysis-3"
+        else: "code-analysis-1"
       else: proj-relman
 
     workerType:
@@ -71,11 +71,11 @@ tasks:
         $match:
           # Always run those tasks
           "true":
-            - taskId: {$eval: as_slugid("check_lint")}
+            - taskId: { $eval: as_slugid("check_lint") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
                 image: "python:${python_version}"
@@ -93,11 +93,11 @@ tasks:
 
           # Run only on firefoxci Taskcluster
           'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"':
-            - taskId: {$eval: as_slugid("bot_check_tests")}
+            - taskId: { $eval: as_slugid("bot_check_tests") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
                 image: "python:${python_version}-slim"
@@ -115,14 +115,14 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-            - taskId: {$eval: as_slugid("bot_build_dind")}
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+            - taskId: { $eval: as_slugid("bot_build_dind") }
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
               dependencies:
-                - {$eval: as_slugid("check_lint")}
-                - {$eval: as_slugid("bot_check_tests")}
+                - { $eval: as_slugid("check_lint") }
+                - { $eval: as_slugid("bot_check_tests") }
               payload:
                 features:
                   dind: true
@@ -147,7 +147,7 @@ tasks:
                   - bot/docker/Dockerfile
                 artifacts:
                   public/code-review-bot.tar.zst:
-                    expires: {$fromNow: '6 months'}
+                    expires: { $fromNow: "6 months" }
                     path: /bot.tar.zst
                     type: file
               routes:
@@ -166,11 +166,11 @@ tasks:
 
           # Run only on community Taskcluster
           'taskcluster_root_url == "https://community-tc.services.mozilla.com"':
-            - taskId: {$eval: as_slugid("events_check_tests")}
+            - taskId: { $eval: as_slugid("events_check_tests") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
                 image: "python:${python_version}"
@@ -189,11 +189,11 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-            - taskId: {$eval: as_slugid("backend_check_tests")}
+            - taskId: { $eval: as_slugid("backend_check_tests") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
                 image: "python:${python_version}"
@@ -210,11 +210,11 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-            - taskId: {$eval: as_slugid("frontend_build")}
+            - taskId: { $eval: as_slugid("frontend_build") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
                 image: node:16-alpine
@@ -228,7 +228,7 @@ tasks:
                     npm install && npm run build"
                 artifacts:
                   public/frontend:
-                    expires: {$fromNow: '2 weeks'}
+                    expires: { $fromNow: "2 weeks" }
                     path: /src/frontend/build
                     type: directory
               metadata:
@@ -237,14 +237,14 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-            - taskId: {$eval: as_slugid("events_build")}
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+            - taskId: { $eval: as_slugid("events_build") }
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
               dependencies:
-                - {$eval: as_slugid("check_lint")}
-                - {$eval: as_slugid("events_check_tests")}
+                - { $eval: as_slugid("check_lint") }
+                - { $eval: as_slugid("events_check_tests") }
               payload:
                 capabilities:
                   privileged: true
@@ -257,7 +257,7 @@ tasks:
                     && events/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
                 artifacts:
                   public/code-review-events.tar.zst:
-                    expires: {$fromNow: '2 weeks'}
+                    expires: { $fromNow: "2 weeks" }
                     path: /events.tar.zst
                     type: file
               scopes:
@@ -268,14 +268,14 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-            - taskId: {$eval: as_slugid("backend_build")}
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+            - taskId: { $eval: as_slugid("backend_build") }
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
               dependencies:
-                - {$eval: as_slugid("check_lint")}
-                - {$eval: as_slugid("backend_check_tests")}
+                - { $eval: as_slugid("check_lint") }
+                - { $eval: as_slugid("backend_check_tests") }
               payload:
                 capabilities:
                   privileged: true
@@ -288,7 +288,7 @@ tasks:
                     && backend/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
                 artifacts:
                   public/code-review-backend.tar.zst:
-                    expires: {$fromNow: '2 weeks'}
+                    expires: { $fromNow: "2 weeks" }
                     path: /backend.tar.zst
                     type: file
               scopes:
@@ -299,11 +299,11 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-            - taskId: {$eval: as_slugid("integration_check_tests")}
+            - taskId: { $eval: as_slugid("integration_check_tests") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
                 image: "python:${python_version}"
@@ -320,14 +320,14 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-            - taskId: {$eval: as_slugid("integration_build")}
-              created: {$fromNow: ''}
-              deadline: {$fromNow: '1 hour'}
+            - taskId: { $eval: as_slugid("integration_build") }
+              created: { $fromNow: "" }
+              deadline: { $fromNow: "1 hour" }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
               dependencies:
-                - {$eval: as_slugid("check_lint")}
-                - {$eval: as_slugid("integration_check_tests")}
+                - { $eval: as_slugid("check_lint") }
+                - { $eval: as_slugid("integration_check_tests") }
               payload:
                 capabilities:
                   privileged: true
@@ -350,7 +350,7 @@ tasks:
                   - integration/docker/Dockerfile
                 artifacts:
                   public/code-review-integration.tar.zst:
-                    expires: {$fromNow: '2 weeks'}
+                    expires: { $fromNow: "2 weeks" }
                     path: /integration.tar.zst
                     type: file
               scopes:
@@ -363,13 +363,13 @@ tasks:
 
             - $if: 'channel in ["testing", "production"]'
               then:
-                taskId: {$eval: as_slugid("frontend_deploy")}
-                created: {$fromNow: ''}
-                deadline: {$fromNow: '1 hour'}
+                taskId: { $eval: as_slugid("frontend_deploy") }
+                created: { $fromNow: "" }
+                deadline: { $fromNow: "1 hour" }
                 provisionerId: "${provisionerId}"
                 workerType: "${workerType}"
                 dependencies:
-                  - {$eval: as_slugid("frontend_build")}
+                  - { $eval: as_slugid("frontend_build") }
                 payload:
                   features:
                     # Needed for access to secret
@@ -395,13 +395,13 @@ tasks:
 
             - $if: 'channel in ["testing", "production"]'
               then:
-                taskId: {$eval: as_slugid("events_deploy")}
-                created: {$fromNow: ''}
-                deadline: {$fromNow: '1 hour'}
+                taskId: { $eval: as_slugid("events_deploy") }
+                created: { $fromNow: "" }
+                deadline: { $fromNow: "1 hour" }
                 provisionerId: "${provisionerId}"
                 workerType: "${workerType}"
                 dependencies:
-                  - {$eval: as_slugid("events_build")}
+                  - { $eval: as_slugid("events_build") }
                 payload:
                   features:
                     taskclusterProxy: true
@@ -426,13 +426,13 @@ tasks:
 
             - $if: 'channel in ["testing", "production"]'
               then:
-                taskId: {$eval: as_slugid("backend_deploy")}
-                created: {$fromNow: ''}
-                deadline: {$fromNow: '1 hour'}
+                taskId: { $eval: as_slugid("backend_deploy") }
+                created: { $fromNow: "" }
+                deadline: { $fromNow: "1 hour" }
                 provisionerId: "${provisionerId}"
                 workerType: "${workerType}"
                 dependencies:
-                  - {$eval: as_slugid("backend_build")}
+                  - { $eval: as_slugid("backend_build") }
                 payload:
                   features:
                     taskclusterProxy: true
@@ -456,13 +456,13 @@ tasks:
 
             - $if: 'channel in ["testing", "production"]'
               then:
-                taskId: {$eval: as_slugid("integration_deploy")}
-                created: {$fromNow: ''}
-                deadline: {$fromNow: '1 hour'}
+                taskId: { $eval: as_slugid("integration_deploy") }
+                created: { $fromNow: "" }
+                deadline: { $fromNow: "1 hour" }
                 provisionerId: "${provisionerId}"
                 workerType: "${workerType}"
                 dependencies:
-                  - {$eval: as_slugid("integration_build")}
+                  - { $eval: as_slugid("integration_build") }
                 payload:
                   features:
                     # Needed for access to secret
@@ -484,14 +484,14 @@ tasks:
 
             - $if: 'channel in ["testing", "production"]'
               then:
-                taskId: {$eval: as_slugid("integration_hook")}
+                taskId: { $eval: as_slugid("integration_hook") }
                 dependencies:
-                  - {$eval: as_slugid("integration_deploy")}
+                  - { $eval: as_slugid("integration_deploy") }
                 scopes:
                   - "assume:hook-id:project-relman/code-review-integration-${channel}"
                   - "hooks:modify-hook:project-relman/code-review-integration-${channel}"
-                created: {$fromNow: ''}
-                deadline: {$fromNow: '5 hours'}
+                created: { $fromNow: "" }
+                deadline: { $fromNow: "5 hours" }
                 provisionerId: "${provisionerId}"
                 workerType: "${workerType}"
                 payload:
@@ -517,16 +517,16 @@ tasks:
             - $if: 'tasks_for == "github-push" && head_branch[:10] == "refs/tags/"'
               then:
                 $let:
-                  version: {$eval: 'head_branch[10:]'}
+                  version: { $eval: "head_branch[10:]" }
                 in:
-                  taskId: {$eval: as_slugid("release")}
+                  taskId: { $eval: as_slugid("release") }
                   dependencies:
-                    - {$eval: as_slugid("backend_build")}
-                    - {$eval: as_slugid("events_build")}
-                    - {$eval: as_slugid("frontend_build")}
-                    - {$eval: as_slugid("integration_build")}
-                  created: {$fromNow: ''}
-                  deadline: {$fromNow: '2 hours'}
+                    - { $eval: as_slugid("backend_build") }
+                    - { $eval: as_slugid("events_build") }
+                    - { $eval: as_slugid("frontend_build") }
+                    - { $eval: as_slugid("integration_build") }
+                  created: { $fromNow: "" }
+                  deadline: { $fromNow: "2 hours" }
                   provisionerId: "${provisionerId}"
                   workerType: "${workerType}"
                   scopes:

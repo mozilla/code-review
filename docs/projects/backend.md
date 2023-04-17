@@ -11,6 +11,7 @@ This project is used by the bot and the frontend: the bot publishes issues at th
 The application is hosted on Heroku (more information in [debugging](/docs/debugging.md) to get access).
 
 It uses currently a single web dyno on each environment:
+
 - https://api.code-review.moz.tools on production
 - https://api.code-review.testing.moz.tools on testing
 

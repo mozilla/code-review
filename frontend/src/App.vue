@@ -1,26 +1,34 @@
 <script>
 export default {
-  name: 'App',
+  name: "App",
   computed: {
-    backend_url () {
-      return BACKEND_URL
-    }
-  }
-}
+    backend_url() {
+      return BACKEND_URL;
+    },
+  },
+};
 </script>
 
 <template>
   <div id="app">
     <main>
-      <nav class="navbar is-dark" role="navigation" aria-label="main navigation">
+      <nav
+        class="navbar is-dark"
+        role="navigation"
+        aria-label="main navigation"
+      >
         <div class="container is-fluid">
           <div class="navbar-brand">
-            <router-link to="/" v-slot="{ href, route, navigate, isActive, isExactActive }">
-              <a class="navbar-item" :href="href" v-on:click="navigate">🤖 Code Review Bot</a>
+            <router-link
+              to="/"
+              v-slot="{ href, route, navigate, isActive, isExactActive }"
+            >
+              <a class="navbar-item" :href="href" v-on:click="navigate"
+                >🤖 Code Review Bot</a
+              >
             </router-link>
           </div>
           <div class="navbar-menu">
-
             <div class="navbar-start">
               <div class="navbar-item">
                 <span class="navbar-item">Connected to {{ backend_url }}</span>
@@ -28,14 +36,41 @@ export default {
             </div>
 
             <div class="navbar-end">
-              <router-link to="/stats" v-slot="{ href, route, navigate, isActive, isExactActive }">
-                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">💥 All checks</a>
+              <router-link
+                to="/stats"
+                v-slot="{ href, route, navigate, isActive, isExactActive }"
+              >
+                <a
+                  :href="href"
+                  v-on:click="navigate"
+                  class="navbar-item"
+                  :class="{ 'is-active': isExactActive }"
+                  >💥 All checks</a
+                >
               </router-link>
-              <router-link to="/" v-slot="{ href, route, navigate, isActive, isExactActive }">
-                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">🔍 Browse diffs</a>
+              <router-link
+                to="/"
+                v-slot="{ href, route, navigate, isActive, isExactActive }"
+              >
+                <a
+                  :href="href"
+                  v-on:click="navigate"
+                  class="navbar-item"
+                  :class="{ 'is-active': isExactActive }"
+                  >🔍 Browse diffs</a
+                >
               </router-link>
-              <router-link to="/tasks" v-slot="{ href, route, navigate, isActive, isExactActive }">
-                <a :href="href" v-on:click="navigate" class="navbar-item" :class="{'is-active': isExactActive}">📜 All tasks</a>
+              <router-link
+                to="/tasks"
+                v-slot="{ href, route, navigate, isActive, isExactActive }"
+              >
+                <a
+                  :href="href"
+                  v-on:click="navigate"
+                  class="navbar-item"
+                  :class="{ 'is-active': isExactActive }"
+                  >📜 All tasks</a
+                >
               </router-link>
             </div>
           </div>
@@ -46,11 +81,20 @@ export default {
       </div>
     </main>
     <footer>
-      Built by <a href="https://wiki.mozilla.org/Release_Management" target="_blank">Release Management team</a>
+      Built by
+      <a href="https://wiki.mozilla.org/Release_Management" target="_blank"
+        >Release Management team</a
+      >
       <span>&bull;</span>
-      <a href="https://github.com/mozilla/code-review/tree/master/frontend" target="_blank">Source Code</a>
+      <a
+        href="https://github.com/mozilla/code-review/tree/master/frontend"
+        target="_blank"
+        >Source Code</a
+      >
       <span>&bull;</span>
-      <a href="https://github.com/mozilla/code-review/issues" target="_blank">Report an issue</a>
+      <a href="https://github.com/mozilla/code-review/issues" target="_blank"
+        >Report an issue</a
+      >
     </footer>
   </div>
 </template>
@@ -78,11 +122,11 @@ div#app main {
 }
 
 div#app footer {
-  border-top: 1px solid #CCC;
+  border-top: 1px solid #ccc;
   padding: 2px;
   font-size: 0.9em;
   color: #444;
-  background: #EEE;
+  background: #eee;
   text-align: right;
 }
 
@@ -92,6 +136,6 @@ div#app footer a:hover {
 }
 
 div#app footer span {
-  color: #CCC;
+  color: #ccc;
 }
 </style>

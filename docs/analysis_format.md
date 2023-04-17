@@ -6,13 +6,13 @@ The file **must** be available as `public/code-review/issues.json`.
 
 The [default format](https://github.com/mozilla/code-review/blob/1.0.5/bot/code_review_bot/tasks/default.py#L170) (loosely based on Mozlint format) has the following fields for each issue:
 
-* `path` **relative** to the repository
-* `column` & `line` where the issue is happening in the file. They must be positive integers, or `null` when unknown or for an issue linked to a full file.
-* `nb_lines` (optional) is a positive integer when your issue spans across several lines. It will default to 1 line.
-* `level` (warning | error) of the issue
-* `check` (optional) describing the issue detected (often a unique shorthand code). It can be optional when the analyzer only produce one type of issues. In that case, the analyzer name will be used instead.
-* `message` with all the details to provide to the developer
-* `analyzer` (optional) if you have multiple analyzers using the same format. It will default to the task name.
+- `path` **relative** to the repository
+- `column` & `line` where the issue is happening in the file. They must be positive integers, or `null` when unknown or for an issue linked to a full file.
+- `nb_lines` (optional) is a positive integer when your issue spans across several lines. It will default to 1 line.
+- `level` (warning | error) of the issue
+- `check` (optional) describing the issue detected (often a unique shorthand code). It can be optional when the analyzer only produce one type of issues. In that case, the analyzer name will be used instead.
+- `message` with all the details to provide to the developer
+- `analyzer` (optional) if you have multiple analyzers using the same format. It will default to the task name.
 
 The issues should be grouped by relative paths, as a list of issues per file.
 
@@ -45,6 +45,5 @@ python validator.py path/to/issues.json
 ```
 
 If your format is valid, no error should be displayed and the exit status should be `0`. If you encounter an error, you can get more information by adding the `--verbose` (or `-v`) flag to the command line.
-
 
 To have more information about Mozlint, please see the [mozlint documentation](https://firefox-source-docs.mozilla.org/tools/lint/index.html)

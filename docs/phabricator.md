@@ -31,24 +31,23 @@ When a build is restarted, or a new diff is created, previous results are cleare
 
 Lastly it's possible to publish a **Comment** on the revision, but it will not be tied to a **Diff** or **Harbormaster Build**. We use that to publish generic and persistent information about issues (the summary comment).
 
-
 ## API
 
-To interact with Phabricator, we need to use their *~REST* API. It's self documented on the `/conduit` endpoint:
+To interact with Phabricator, we need to use their _~REST_ API. It's self documented on the `/conduit` endpoint:
 
 - https://phabricator.services.mozilla.com/conduit/ for the production instance
 - https://phabricator-dev.allizom.org/conduit/ for the testing instance
 
 Our Phabricator API client is developed in a separate repository [libmozdata](https://github.com/mozilla/libmozdata/blob/master/libmozdata/phabricator.py), but still maintained by the same team.
 
-Please note that the Phabricator API use a *weird* style to pass parameters (only POST requests, with a JSON payload inside a dict urlencoded: use the existing client instead of writing your own).
+Please note that the Phabricator API use a _weird_ style to pass parameters (only POST requests, with a JSON payload inside a dict urlencoded: use the existing client instead of writing your own).
 
 ## Endpoints
 
 All the endpoints we use in the project are implemented with some high level function in the Phabricator API client hosted in libmozdata.
 
 | Endpoint                     | Description                                                                                 |
-|------------------------------|---------------------------------------------------------------------------------------------|
+| ---------------------------- | ------------------------------------------------------------------------------------------- |
 | differential.createcomment   | Publish a comment on a Revision                                                             |
 | differential.diff.search     | Lookup a Phabricator Diff                                                                   |
 | differential.getrawdiff      | Get the raw patch for a given Diff, hosted on Phabricator, not HGMO                         |
@@ -70,11 +69,9 @@ Phabricator uses two IDs per object: a numerical value `ID`, which is exposed to
 
 To get details about a specific object, you need to use the `xxx.search` endpoint with an ID constraint. There is no `xxx.details` endpoint. You'll see that a lot in libmozdata.
 
-
 ### Unit tests
 
 There is an extensive test suite in the bot, using several mockups to build fake Phabricator [responses](https://github.com/getsentry/responses). The Conduit team has also a great test system in the lando-api project - it would be great to share that as a library.
-
 
 ## Help
 

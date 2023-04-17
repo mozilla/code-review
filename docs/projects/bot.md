@@ -77,6 +77,7 @@ The publication task support several reporters to publish issues. They are defin
 This is definitely the most important reporter. It will publish all issues deemed publishable on the Phabricator revision & build being analysed.
 
 We publish two things (when issues are published):
+
 - a summary comment listing the number of issues found, their type, and some help text
 - one **LintResult** per issue found.
 
@@ -101,26 +102,33 @@ The backend has no reporter as it's more tightly coupled to the bot system, but 
 Each Issue also has a unique hash calculated, using the modified lines source code, the issue summary. It's used to be able to compare issues between each other.
 
 ## Test the publication on Phabricator
+
 ### Submit a fake patch on Firefox
+
 There is an [online documentation](https://firefox-source-docs.mozilla.org/contributing/contribution_quickref.html) that explains how to publish a patch on Firefox. Here are a few tips on how to simplify/accelerate this workflow.
 
 In the repository, you can install dependencies using the command:
+
 ```
 ./mach bootstrap
 ```
+
 :warning: Using `./mach build` as suggested in the documentation will result in a build that can take forever to complete.
 
 Make a patch by editing one of Firefox files and then run the desired linter using the command:
+
 ```
 ./mach lint -l my_linter
 ```
 
 For example, to run flake8 on the repository, you can use:
+
 ```
 ./mach lint -l flake8
 ```
 
 ### Retrieve `TRY_TASK_GROUP_ID` and `TRY_TASK_ID`
+
 Once you have submitted a patch on Phabricator using `moz-phab`, you'll need to retrieve two values to run the Code Review Bot locally on this specific diff.
 
 First, you have to find your patch on Phabricator, for example, this one was created for testing purposes:
@@ -129,6 +137,7 @@ https://phabricator.services.mozilla.com/D150515
 Then you have two ways to retrieve the desired information.
 
 #### First option
+
 1. On the Phabricator page for your diff, find the **Build 111111: Source Code Analysis** link in the **Diff Detail** panel, next to the **Build Status** label.
 2. Next to this link, you should have a link called **CI (Treeherder) Jobs**, click on it and you'll be redirected to Treeherder.
 3. On the Treeherder page, find the green **D** next to **Gecko Decision Task opt** and click on it, a panel will appear on the bottom of the page.
@@ -138,7 +147,8 @@ Then you have two ways to retrieve the desired information.
 7. Once you have this first ID, you can find the task named **code-review-issues** in the displayed list, click on it.
 8. There you can retrieve the ID after `https://firefox-ci-tc.services.mozilla.com/tasks/` in the URL, that's the `TRY_TASK_ID` needed to launch the Code Review Bot.
 
-***Example***
+**_Example_**
+
 1. On https://phabricator.services.mozilla.com/D150515
 2. Redirected to https://treeherder.mozilla.org/jobs?repo=try&revision=5ec034a3e77223ee58d2bad5689b99e09c61a4bb
 3. Panel opened https://treeherder.mozilla.org/jobs?repo=try&revision=5ec034a3e77223ee58d2bad5689b99e09c61a4bb&selectedTaskRun=Y44yN6dtSsWQ6oyTYMYhQw.0
@@ -149,19 +159,23 @@ Then you have two ways to retrieve the desired information.
 8. Here `TRY_TASK_ID=LfiiQNAXR4WV9e1RT4PVsQ`
 
 #### Second option
+
 1. On the Phabricator page for your diff, retrieve your diff ID in the URL after `https://phabricator.services.mozilla.com/D`.
 2. Then go to `https://firefox-ci-tc.services.mozilla.com/tasks/index/project.relman.production.code-review.phabricator.<diff_id>`.
 3. Click on the first Indexed Task.
 4. Under the **Data** label you'll have a JSON payload containing both needed information, `try_task_id` and `try_group_id`.
 
-***Example***
+**_Example_**
+
 1. On https://phabricator.services.mozilla.com/D150515, here `diff_id=150515`
 2. Go to https://firefox-ci-tc.services.mozilla.com/tasks/index/project.relman.production.code-review.phabricator.150515
 3. On https://firefox-ci-tc.services.mozilla.com/tasks/index/project.relman.production.code-review.phabricator.150515/AUAnqdfRTPq64aBFHS0g3Q
 4. Here `TRY_TASK_ID=LfiiQNAXR4WV9e1RT4PVsQ` (`try_task_id`) and `TRY_TASK_GROUP_ID=Y44yN6dtSsWQ6oyTYMYhQw` (`try_group_id`)
 
 ### Launch the Code Review Bot
+
 An example of a working development configuration:
+
 ```
 ---
 bot:
@@ -195,6 +209,7 @@ common:
 **Note**: You can generate/find your Phabricator API Token on this page: https://phabricator.services.mozilla.com/settings/user/--phabricator_username--/page/apitokens/.
 
 Then, you can create a script named `code_review_testing.sh`, containing the following lines:
+
 ```
 export TRY_TASK_GROUP_ID="<TASK_GROUP_ID>"
 export TRY_TASK_ID="<TASK_ID>"
@@ -203,6 +218,7 @@ code-review-bot -c <path/to/your/configuration>.yml
 ```
 
 Run the script with:
+
 ```
 bash code_review_testing.sh
 ```

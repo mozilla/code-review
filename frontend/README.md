@@ -1,12 +1,10 @@
-Code Review Frontend
-====================
+# Code Review Frontend
 
 This is a simple Vue.JS administration frontend, the production instance is publicly available at https://code-review.moz.tools/
 
 You'll need Node 16+ to be able to build it.
 
-Developer setup
----------------
+## Developer setup
 
 ```
 npm install
@@ -15,9 +13,7 @@ npm run build:dev # to build once in development mode
 npm run start # to start a dev server on port 8010
 ```
 
-
-Linting
--------
+## Linting
 
 eslint is available through:
 

@@ -1,8 +1,8 @@
 <script>
 export default {
-  name: 'Bool',
-  props: ['value', 'name']
-}
+  name: "Bool",
+  props: ["value", "name"],
+};
 </script>
 
 <template>

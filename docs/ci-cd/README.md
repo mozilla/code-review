@@ -10,11 +10,10 @@ We use both Mozilla's Taskcluster instances:
 We use a pretty simple convention related to the git workflow:
 
 1. Every pull request triggers a pipeline of tasks check unit tests, code format, ultimately building docker images.
-2. The `master` branch must always be *clean* and deployable. That branch is protected.
+2. The `master` branch must always be _clean_ and deployable. That branch is protected.
 3. Tags are only used to represent a release, using semantic versioning (example on [release 1.2.1](https://github.com/mozilla/code-review/releases/tag/1.2.1))
 4. A push on `testing` will run the full pipeline, building Docker images, and deploying them on the different providers for the **testing** environment (Taskcluster & Heroku)
 5. A push on `production` will run the full pipeline, building Docker images, and deploying them on the different providers for the **production** environment (Taskcluster & Heroku)
-
 
 ## Firefox-CI instance
 

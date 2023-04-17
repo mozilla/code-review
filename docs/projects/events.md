@@ -11,6 +11,7 @@ This project is used by the Phabricator Harbormaster build plan: every patch pub
 The application is hosted on Heroku (more information in [debugging](/docs/debugging.md) to get access).
 
 It uses currently a single web dyno on each environment:
+
 - https://events.code-review.moz.tools on production
 - https://events.code-review.testing.moz.tools on testing
 
@@ -22,6 +23,7 @@ The worker dynos are slow to start though, as they need to clone the repositorie
 ## Workflow
 
 Here is a sequence diagram showcasing the main exchanges between relevant parties:
+
 - Phabricator
 - the **web** dyno on Heroku
 - the shared Redis database on Heroku
@@ -38,7 +40,7 @@ This allows us to have the same code run in a single process in development, but
 
 Each subsystem has input and output queues, and just consumes input queues to get new data to work on (whatever that data may be). Once its process is done, it puts in the relevant output queues the results (it's basically a plugin system, split on a network).
 
-A big advantage of that system is that the high level code in this repository is relatively simple, and mainly *plugs* the right subsystems together. It's also easier to create unit tests for each subsystem, as you can interact with their queues.
+A big advantage of that system is that the high level code in this repository is relatively simple, and mainly _plugs_ the right subsystems together. It's also easier to create unit tests for each subsystem, as you can interact with their queues.
 
 ## TERM signal handling
 
