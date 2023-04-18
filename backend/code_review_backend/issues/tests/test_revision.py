@@ -18,7 +18,7 @@ class RevisionAPITestCase(APITestCase):
 
     def test_phabricator_url(self):
         rev = Revision.objects.create(
-            id=12,
+            numerical_phid=12,
             phid="PHID-REV-12345",
             base_repository=self.repo,
             head_repository=self.repo,

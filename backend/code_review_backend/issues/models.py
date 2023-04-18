@@ -42,6 +42,10 @@ class Repository(PhabricatorModel):
 
 
 class Revision(PhabricatorModel):
+    id = models.BigAutoField(primary_key=True)
+    numerical_phid = models.PositiveIntegerField(unique=True, null=True, blank=True)
+    phid = models.CharField(max_length=40, unique=True, null=True, blank=True)
+
     base_repository = models.ForeignKey(
         Repository,
         related_name="base_revisions",
@@ -72,12 +76,12 @@ class Revision(PhabricatorModel):
     bugzilla_id = models.PositiveIntegerField(null=True)
 
     def __str__(self):
-        return f"D{self.id} - {self.title}"
+        return f"D{self.numerical_phid} - {self.title}"
 
     @property
     def phabricator_url(self):
         parser = urllib.parse.urlparse(settings.PHABRICATOR_HOST)
-        return f"{parser.scheme}://{parser.netloc}/D{self.id}"
+        return f"{parser.scheme}://{parser.netloc}/D{self.numerical_phid}"
 
 
 class Diff(PhabricatorModel):

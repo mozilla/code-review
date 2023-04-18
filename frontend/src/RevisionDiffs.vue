@@ -46,7 +46,7 @@ export default {
 <template>
   <div>
     <p v-for="group in groupedDiffs" class="is-nowrap">
-      <a :href="group.revision.phabricator_url" target="_blank">D{{ group.revision.id }}</a>
+      <a :href="group.revision.phabricator_url" target="_blank">D{{ group.revision.numerical_phid }}</a>
       ({{ group.msg }}<template v-if="group.remaining >= 1"> +{{ group.remaining }}</template>)
     </p>
   </div>

@@ -638,7 +638,8 @@ def mock_backend(mock_backend_secret):
     def post_revision(request):
         """Create a revision when not available in db"""
         payload = json.loads(request.body)
-        revision_id = payload["id"]
+        revision_id = len(revisions) + 1
+        payload["id"] = revision_id
         if revision_id in revisions:
             return (400, {}, "")
 
