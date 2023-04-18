@@ -4,7 +4,7 @@ async-timeout==4.0.2
 # Limit idna to avid conflicts
 idna>=2.5,<3.5
 multidict==6.0.4
-rs_parsepatch==0.3.8
+rs_parsepatch==0.3.9
 sentry-sdk==1.19.1
 structlog==23.1.0
 taskcluster==49.1.0
