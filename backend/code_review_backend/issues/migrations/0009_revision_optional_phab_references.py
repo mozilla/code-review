@@ -21,6 +21,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.AlterModelOptions(
+            name="revision",
+            options={"ordering": ("phabricator_id", "id")},
+        ),
         migrations.AddField(
             model_name="revision",
             name="phabricator_id",
@@ -45,5 +49,21 @@ class Migration(migrations.Migration):
             model_name="revision",
             name="id",
             field=models.BigAutoField(primary_key=True, serialize=False),
+        ),
+        migrations.AddConstraint(
+            model_name="revision",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("phabricator_id__isnull", False)),
+                fields=("phabricator_id",),
+                name="revision_unique_phab_id",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="revision",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("phabricator_phid__isnull", False)),
+                fields=("phabricator_phid",),
+                name="revision_unique_phab_phabid",
+            ),
         ),
     ]

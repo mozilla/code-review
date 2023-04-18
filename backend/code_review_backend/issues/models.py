@@ -82,7 +82,20 @@ class Revision(models.Model):
     bugzilla_id = models.PositiveIntegerField(null=True)
 
     class Meta:
-        ordering = ("id",)
+        ordering = ("phabricator_id", "id")
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["phabricator_id"],
+                name="revision_unique_phab_id",
+                condition=Q(phabricator_id__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=["phabricator_phid"],
+                name="revision_unique_phab_phabid",
+                condition=Q(phabricator_phid__isnull=False),
+            ),
+        ]
 
     def __str__(self):
         return f"D{self.phabricator_id} - {self.title}"
