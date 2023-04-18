@@ -43,10 +43,10 @@ export default {
 
 <template>
   <section>
-    <h1 class="title">Revision D{{ $route.params.revisionId }}</h1>
-
     <div class="notification is-info" v-if="state == 'loading'">Loading...</div>
     <div v-else-if="state == 'loaded'">
+      <h1 class="title">Revision D{{ revision.numerical_phid }}</h1>
+
       <h2 class="subtitle">{{ revision.title }}</h2>
       <p>
         On <strong>{{ revision.head_repository }}</strong> -

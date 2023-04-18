@@ -31,14 +31,15 @@ def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_h
 
     # Check the revision in the backend
     assert len(revisions) == 1
-    assert 51 in revisions
-    assert revisions[51] == {
+    assert 1 in revisions
+    assert revisions[1] == {
+        "id": 1,
         "bugzilla_id": 1234567,
-        "id": 51,
+        "numerical_phid": 51,
         "phid": "PHID-DREV-zzzzz",
         "title": "Static Analysis tests",
-        "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
-        "issues_bulk_url": "http://code-review-backend.test/v1/revision/51/issues/",
+        "diffs_url": "http://code-review-backend.test/v1/revision/1/diffs/",
+        "issues_bulk_url": "http://code-review-backend.test/v1/revision/1/issues/",
         "head_repository": "http://hgmo/test-try",
         "base_repository": "https://hgmo/test",
         "head_changeset": "deadbeef1234",
@@ -126,14 +127,15 @@ def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
     r.publish_revision(mock_revision)
 
     assert len(revisions) == 1
-    assert 51 in revisions
-    assert revisions[51] == {
+    assert 1 in revisions
+    assert revisions[1] == {
+        "id": 1,
         "bugzilla_id": None,
-        "id": 51,
+        "numerical_phid": 51,
         "phid": "PHID-DREV-zzzzz",
         "title": "Static Analysis tests",
-        "diffs_url": "http://code-review-backend.test/v1/revision/51/diffs/",
-        "issues_bulk_url": "http://code-review-backend.test/v1/revision/51/issues/",
+        "diffs_url": "http://code-review-backend.test/v1/revision/1/diffs/",
+        "issues_bulk_url": "http://code-review-backend.test/v1/revision/1/issues/",
         "head_repository": "http://hgmo/test-try",
         "base_repository": "https://hgmo/test",
         "head_changeset": "deadbeef1234",

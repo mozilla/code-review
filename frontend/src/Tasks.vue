@@ -70,6 +70,7 @@ export default {
 
       // Filter by revision
       if (this.filters.revision !== null) {
+<<<<<<< HEAD
         tasks = _.filter(tasks, (t) => {
           const payload =
             t.data.title +
@@ -84,6 +85,12 @@ export default {
               .indexOf(this.filters.revision.toLowerCase()) !== -1
           );
         });
+=======
+        tasks = _.filter(tasks, t => {
+          const payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid + t.data.numerical_phid + t.data.diff_id
+          return payload.toLowerCase().indexOf(this.filters.revision.toLowerCase()) !== -1
+        })
+>>>>>>> fa65299 (Draft implementation to use optional Phab references on the Revision model)
       }
 
       // Sort by indexation date
@@ -239,6 +246,7 @@ export default {
               - diff {{ task.data.diff_id || "unknown" }}
             </p>
             <p>
+<<<<<<< HEAD
               <small class="mono has-text-grey-light">{{
                 task.data.phid
               }}</small>
@@ -247,6 +255,9 @@ export default {
                 :to="{ name: 'revision', params: { revisionId: task.data.id } }"
                 >rev {{ task.data.id }}</router-link
               >
+=======
+              <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - <router-link :to="{ name: 'revision', params: { revisionId: task.data.id }}">rev {{ task.data.numerical_phid }}</router-link>
+>>>>>>> fa65299 (Draft implementation to use optional Phab references on the Revision model)
             </p>
           </td>
 
