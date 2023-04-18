@@ -1,6 +1,6 @@
 aioamqp==0.15.0
 -e ../tools #egg=code-review-tools
-json-e==4.5.1
+json-e==4.5.2
 jsonschema==4.17.3
 libmozdata==0.2.0
 libmozevent==1.1.24
