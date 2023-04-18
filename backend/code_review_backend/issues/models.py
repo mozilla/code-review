@@ -41,10 +41,16 @@ class Repository(PhabricatorModel):
         return self.slug
 
 
-class Revision(PhabricatorModel):
+class Revision(models.Model):
     id = models.BigAutoField(primary_key=True)
-    numerical_phid = models.PositiveIntegerField(unique=True, null=True, blank=True)
-    phid = models.CharField(max_length=40, unique=True, null=True, blank=True)
+    # Phabricator references will be left empty when ingesting a decision task (e.g. from MC or autoland)
+    phabricator_id = models.PositiveIntegerField(unique=True, null=True, blank=True)
+    phabricator_phid = models.CharField(
+        max_length=40, unique=True, null=True, blank=True
+    )
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     base_repository = models.ForeignKey(
         Repository,
@@ -75,13 +81,16 @@ class Revision(PhabricatorModel):
     title = models.CharField(max_length=250)
     bugzilla_id = models.PositiveIntegerField(null=True)
 
+    class Meta:
+        ordering = ("id",)
+
     def __str__(self):
-        return f"D{self.numerical_phid} - {self.title}"
+        return f"D{self.phabricator_id} - {self.title}"
 
     @property
     def phabricator_url(self):
         parser = urllib.parse.urlparse(settings.PHABRICATOR_HOST)
-        return f"{parser.scheme}://{parser.netloc}/D{self.numerical_phid}"
+        return f"{parser.scheme}://{parser.netloc}/D{self.phabricator_id}"
 
 
 class Diff(PhabricatorModel):

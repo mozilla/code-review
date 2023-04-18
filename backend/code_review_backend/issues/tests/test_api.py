@@ -24,7 +24,7 @@ class CreationAPITestCase(APITestCase):
         )
         # Create revision and diff
         self.revision = self.repo_try.head_revisions.create(
-            numerical_phid=456,
+            phabricator_id=456,
             phid="PHID-REV-XXX",
             title="Bug XXX - Yet Another bug",
             bugzilla_id=78901,
@@ -44,7 +44,7 @@ class CreationAPITestCase(APITestCase):
         """
         self.revision.delete()
         data = {
-            "numerical_phid": 123,
+            "phabricator_id": 123,
             "phid": "PHID-REV-xxx",
             "title": "Bug XXX - Some bug",
             "bugzilla_id": 123456,
@@ -66,7 +66,7 @@ class CreationAPITestCase(APITestCase):
 
         # Check a revision has been created
         self.assertEqual(Revision.objects.count(), 1)
-        revision = Revision.objects.get(numerical_phid=123)
+        revision = Revision.objects.get(phabricator_id=123)
         self.assertEqual(revision.title, "Bug XXX - Some bug")
         self.assertEqual(revision.bugzilla_id, 123456)
         self.assertDictEqual(
@@ -77,7 +77,7 @@ class CreationAPITestCase(APITestCase):
                 "diffs_url": "http://testserver/v1/revision/2/diffs/",
                 "issues_bulk_url": "http://testserver/v1/revision/2/issues/",
                 "phabricator_url": "https://phabricator.services.mozilla.com/D123",
-                "numerical_phid": 123,
+                "phabricator_id": 123,
                 "phid": "PHID-REV-xxx",
                 "base_repository": "http://repo.test/myrepo",
                 "head_repository": "http://repo.test/myrepo",
@@ -325,9 +325,9 @@ class CreationAPITestCase(APITestCase):
             )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        self.assertEqual(Issue.objects.filter(revisions__numerical_phid=456).count(), 1)
+        self.assertEqual(Issue.objects.filter(revisions__phabricator_id=456).count(), 1)
 
-        issue = Issue.objects.filter(revisions__numerical_phid=456).get()
+        issue = Issue.objects.filter(revisions__phabricator_id=456).get()
         self.assertDictEqual(
             response.json(),
             {

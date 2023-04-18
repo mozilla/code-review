@@ -6,9 +6,13 @@ from django.db import models
 from django.db.models import F
 
 
-def populate_numerical_phid(apps, schema_editor):
+def populate_phabricator_id(apps, schema_editor):
+    """
+    Before that migration, revisions used the Phabricator
+    numerical ID as their primary key.
+    """
     Revision = apps.get_model("issues", "Revision")
-    Revision.objects.all().update(numerical_phid=F("id"))
+    Revision.objects.all().update(phabricator_id=F("id"))
 
 
 class Migration(migrations.Migration):
@@ -19,7 +23,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="revision",
-            name="numerical_phid",
+            name="phabricator_id",
             field=models.PositiveIntegerField(blank=True, null=True, unique=True),
         ),
         migrations.AlterField(
@@ -27,8 +31,13 @@ class Migration(migrations.Migration):
             name="phid",
             field=models.CharField(blank=True, max_length=40, null=True, unique=True),
         ),
+        migrations.RenameField(
+            model_name="revision",
+            old_name="phid",
+            new_name="phabricator_phid",
+        ),
         migrations.RunPython(
-            populate_numerical_phid,
+            populate_phabricator_id,
             reverse_code=migrations.RunPython.noop,
             elidable=True,
         ),

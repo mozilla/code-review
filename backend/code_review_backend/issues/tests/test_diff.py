@@ -29,7 +29,7 @@ class DiffAPITestCase(APITestCase):
         # Create a stack with 2 revisions & 3 diffs
         for i in range(2):
             self.repo_try.head_revisions.create(
-                numerical_phid=i + 1,
+                phabricator_id=i + 1,
                 phid=f"PHID-DREV-{i+1}",
                 title=f"Revision {i+1}",
                 bugzilla_id=10000 + i,
@@ -72,7 +72,7 @@ class DiffAPITestCase(APITestCase):
                             "head_repository": "http://repo.test/try",
                             "base_changeset": None,
                             "head_changeset": None,
-                            "numerical_phid": 1,
+                            "phabricator_id": 1,
                             "phid": "PHID-DREV-1",
                             "title": "Revision 1",
                             "bugzilla_id": 10000,
@@ -104,7 +104,7 @@ class DiffAPITestCase(APITestCase):
                             "head_repository": "http://repo.test/try",
                             "base_changeset": None,
                             "head_changeset": None,
-                            "numerical_phid": 2,
+                            "phabricator_id": 2,
                             "phid": "PHID-DREV-2",
                             "title": "Revision 2",
                             "bugzilla_id": 10001,
@@ -136,7 +136,7 @@ class DiffAPITestCase(APITestCase):
                             "head_repository": "http://repo.test/try",
                             "base_changeset": None,
                             "head_changeset": None,
-                            "numerical_phid": 1,
+                            "phabricator_id": 1,
                             "phid": "PHID-DREV-1",
                             "title": "Revision 1",
                             "bugzilla_id": 10000,

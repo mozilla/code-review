@@ -19,7 +19,14 @@ class DiffInline(admin.TabularInline):
 
 
 class RevisionAdmin(admin.ModelAdmin):
-    list_display = ("id", "title", "bugzilla_id", "base_repository", "head_repository")
+    list_display = (
+        "id",
+        "phabricator_id",
+        "title",
+        "bugzilla_id",
+        "base_repository",
+        "head_repository",
+    )
     list_filter = ("base_repository", "head_repository")
     inlines = (DiffInline,)
 

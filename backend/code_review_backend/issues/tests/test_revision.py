@@ -12,13 +12,16 @@ from code_review_backend.issues.models import Repository, Revision
 class RevisionAPITestCase(APITestCase):
     def setUp(self):
         self.repo = Repository.objects.create(
-            id=1, phid="PHID-REPO-xxx", slug="myrepo", url="http://repo.test/myrepo"
+            id=1,
+            phabricator_phid="PHID-REPO-xxx",
+            slug="myrepo",
+            url="http://repo.test/myrepo",
         )
 
     def test_phabricator_url(self):
         rev = Revision.objects.create(
-            numerical_phid=12,
-            phid="PHID-REV-12345",
+            phabricator_id=12,
+            phabricator_phid="PHID-REV-12345",
             base_repository=self.repo,
             head_repository=self.repo,
         )

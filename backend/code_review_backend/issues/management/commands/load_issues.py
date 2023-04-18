@@ -193,7 +193,7 @@ class Command(BaseCommand):
             return None, None
 
         revision, _ = head_repository.head_revisions.get_or_create(
-            numerical_phid=data["id"],
+            phabricator_id=data["id"],
             defaults={
                 "phid": data["phid"],
                 "title": data["title"],
