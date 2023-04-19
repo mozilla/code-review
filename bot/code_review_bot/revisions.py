@@ -326,7 +326,7 @@ class Revision(object):
 
         return Revision(
             phabricator_id=revision_phabricator_id,
-            phid=revision["phid"],
+            phabricator_phid=revision["phid"],
             head_changeset=head_changeset,
             base_changeset=base_changeset,
             head_repository=head_repository,

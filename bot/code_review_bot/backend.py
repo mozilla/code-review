@@ -112,6 +112,7 @@ class BackendAPI(object):
         backend_revision = response.json()
 
         revision.issues_url = backend_revision["issues_bulk_url"]
+        revision.id = backend_revision["id"]
 
         # A revision may have no diff (e.g. Mozilla-central group tasks)
         if not revision.diff_id:
