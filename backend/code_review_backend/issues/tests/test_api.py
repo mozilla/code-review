@@ -25,7 +25,7 @@ class CreationAPITestCase(APITestCase):
         # Create revision and diff
         self.revision = self.repo_try.head_revisions.create(
             phabricator_id=456,
-            phid="PHID-REV-XXX",
+            phabricator_phid="PHID-REV-XXX",
             title="Bug XXX - Yet Another bug",
             bugzilla_id=78901,
             base_repository=self.repo,
@@ -45,7 +45,7 @@ class CreationAPITestCase(APITestCase):
         self.revision.delete()
         data = {
             "phabricator_id": 123,
-            "phid": "PHID-REV-xxx",
+            "phabricator_phid": "PHID-REV-xxx",
             "title": "Bug XXX - Some bug",
             "bugzilla_id": 123456,
             "base_repository": "http://repo.test/myrepo",
@@ -78,7 +78,7 @@ class CreationAPITestCase(APITestCase):
                 "issues_bulk_url": "http://testserver/v1/revision/2/issues/",
                 "phabricator_url": "https://phabricator.services.mozilla.com/D123",
                 "phabricator_id": 123,
-                "phid": "PHID-REV-xxx",
+                "phabricator_phid": "PHID-REV-xxx",
                 "base_repository": "http://repo.test/myrepo",
                 "head_repository": "http://repo.test/myrepo",
                 "base_changeset": "123456789ABCDEF",
