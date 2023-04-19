@@ -76,8 +76,8 @@ class Revision(object):
 
     def __init__(
         self,
-        id,
-        phid=None,
+        phabricator_id,
+        phabricator_phid=None,
         diff_id=None,
         diff_phid=None,
         revision=None,
@@ -93,8 +93,8 @@ class Revision(object):
         patch=None,
     ):
         # Identification
-        self.id = id
-        self.phid = phid
+        self.phabricator_id = phabricator_id
+        self.phabricator_phid = phabricator_phid
         self.diff_id = diff_id
         self.diff_phid = diff_phid
         self.build_target_phid = build_target_phid
@@ -132,9 +132,9 @@ class Revision(object):
     @property
     def namespaces(self):
         return [
-            "phabricator.{}".format(self.id),
+            "phabricator.{}".format(self.phabricator_id),
             "phabricator.diff.{}".format(self.diff_id),
-            "phabricator.phid.{}".format(self.phid),
+            "phabricator.phabricator_phid.{}".format(self.phabricator_phid),
             "phabricator.diffphid.{}".format(self.diff_phid),
         ]
 
@@ -241,8 +241,8 @@ class Revision(object):
         # Build a revision without repositories as they are retrieved later
         # when analyzing the full task group
         return Revision(
-            id=revision["id"],
-            phid=phid,
+            phabricator_id=revision["id"],
+            phabricator_phid=phid,
             diff_id=diff_id,
             diff_phid=diff_phid,
             build_target_phid=build_target_phid,
@@ -288,12 +288,16 @@ class Revision(object):
         if match is None:
             raise Exception(f"No phabricator revision found in commit {commit_url}")
 
-        url, revision_id = match.groups()
-        revision_id = int(revision_id)
-        logger.info("Found phabricator revision", id=revision_id, url=url)
+        url, revision_phabricator_id = match.groups()
+        revision_phabricator_id = int(revision_phabricator_id)
+        logger.info(
+            "Found phabricator revision",
+            phabricator_id=revision_phabricator_id,
+            url=url,
+        )
 
         # Lookup the Phabricator revision to get details (phid, title, bugzilla_id, ...)
-        revision = phabricator.load_revision(rev_id=revision_id)
+        revision = phabricator.load_revision(rev_id=revision_phabricator_id)
 
         diff_attrs = {}
         if head_repository != REPO_MOZILLA_CENTRAL:
@@ -312,7 +316,7 @@ class Revision(object):
             )
             assert (
                 diff is not None
-            ), f"No Phabricator diff found for D{revision_id} and mercurial revision {head_changeset}"
+            ), f"No Phabricator diff found for D{revision_phabricator_id} and mercurial revision {head_changeset}"
             logger.info("Found phabricator diff", id=diff["id"])
             diff_attrs = {
                 "diff": diff,
@@ -321,7 +325,7 @@ class Revision(object):
             }
 
         return Revision(
-            id=revision_id,
+            phabricator_id=revision_phabricator_id,
             phid=revision["phid"],
             head_changeset=head_changeset,
             base_changeset=base_changeset,

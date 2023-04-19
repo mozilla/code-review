@@ -168,7 +168,7 @@ class PhabricatorReporter(Reporter):
 
             if phids:
                 self.api.edit_revision(
-                    revision.id,
+                    revision.phabricator_id,
                     [
                         {
                             "type": "reviewers.add",
@@ -196,7 +196,7 @@ class PhabricatorReporter(Reporter):
             self.publish_harbormaster(revision, issues)
 
         # Retrieve all diffs for the current revision
-        rev_diffs = self.api.search_diffs(revision_phid=revision.phid)
+        rev_diffs = self.api.search_diffs(revision_phid=revision.phabricator_phid)
 
         if any(diff["id"] > revision.diff_id for diff in rev_diffs):
             logger.warning(
@@ -278,7 +278,7 @@ class PhabricatorReporter(Reporter):
         Summarize publishable issues through Phabricator comment
         """
         self.api.comment(
-            revision.id,
+            revision.phabricator_id,
             self.build_comment(
                 revision=revision,
                 issues=issues,
@@ -359,7 +359,7 @@ class PhabricatorReporter(Reporter):
         # Add extra hint when errors are published outside of the patch
         defects_details = ""
         # Only display the hint when the revision has parents in his stack
-        rev_parents_count = len(self.api.load_parents(revision.phid))
+        rev_parents_count = len(self.api.load_parents(revision.phabricator_phid))
         external_failures_count = rev_parents_count and sum(
             1
             for issue in issues
