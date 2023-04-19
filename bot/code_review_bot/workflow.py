@@ -299,8 +299,11 @@ class Workflow(object):
         assert len(tasks) > 0
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
 
-        # Store the revision in the backend
-        self.backend_api.publish_revision(revision)
+        # Store the revision in the backend (or retrieve an existing one)
+        rev = self.backend_api.publish_revision(revision)
+        assert (
+            rev is not None
+        ), "Stopping early because revision could not be created nor retrieved from the backend"
 
         # Load task description
         task = tasks.get(settings.try_task_id)
