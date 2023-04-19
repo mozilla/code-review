@@ -48,7 +48,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="revision",
             name="id",
-            field=models.BigAutoField(primary_key=True, serialize=False),
+            field=models.AutoField(primary_key=True, serialize=False),
         ),
         migrations.AddConstraint(
             model_name="revision",
