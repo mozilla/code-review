@@ -444,9 +444,9 @@ class Revision(object):
         """
         return {
             "diff_phid": self.diff_phid,
-            "phid": self.phid,
+            "phid": self.phabricator_phid,
             "diff_id": self.diff_id,
-            "id": self.id,
+            "id": self.phabricator_id,
             "url": self.url,
             "has_clang_files": self.has_clang_files,
             # Extra infos for frontend
