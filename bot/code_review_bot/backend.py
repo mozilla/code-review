@@ -238,3 +238,24 @@ class BackendAPI(object):
         out = response.json()
         logger.info("Created item on backend", url=url_post, id=out.get("id"))
         return out
+
+    def list_repo_issues(self, repo_slug, date=None, revision_id=None, path=None):
+        """
+        List issues detected from a specific repository.
+        Optional `date` and `revision_id` parameters can be used to look for a
+        specific revision (defaults to the revision closest to the given date).
+        """
+        params = {
+            key: value
+            for key, value in (
+                ("path", path),
+                ("date", date),
+                ("revision", revision_id),
+            )
+            if value is not None
+        }
+        d = list(
+            self.paginate(f"/v1/issues/{repo_slug}/?{urllib.parse.urlencode(params)}")
+        )
+        logger.error(f"count {len(d)}")
+        return d

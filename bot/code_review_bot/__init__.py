@@ -103,6 +103,9 @@ class Issue(abc.ABC):
         if self.fix is not None:
             assert self.language is not None, "Missing fix language"
 
+        # Mark the issue as unknown for the backend by default
+        self.new_issue = True
+
     def __str__(self):
         line = f"line {self.line}" if self.line is not None else "full file"
         return f"{self.analyzer.name} issue {self.check}@{self.level.value} {self.path} {line}"
