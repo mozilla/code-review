@@ -15,7 +15,6 @@ from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import Issue, stats, taskcluster
 from code_review_bot.config import (
-    REGEX_PHABRICATOR_COMMIT,
     REPO_AUTOLAND,
     REPO_MOZILLA_CENTRAL,
     settings,
@@ -76,7 +75,7 @@ class Revision(object):
 
     def __init__(
         self,
-        phabricator_id,
+        phabricator_id=None,
         phabricator_phid=None,
         diff_id=None,
         diff_phid=None,
@@ -261,7 +260,8 @@ class Revision(object):
     @staticmethod
     def from_decision_task(task: dict, phabricator: PhabricatorAPI):
         """
-        Build a revision from a Mozilla decision task (e.g. from Autoland or Mozilla-central)
+        Build a revision from a Mozilla decision task (e.g. from Autoland or Mozilla-central).
+        No Phabricator reference nor diff is saved.
         """
         # Load repositories
         head_repository = task["payload"]["env"]["GECKO_HEAD_REPOSITORY"]
@@ -276,64 +276,11 @@ class Revision(object):
         head_changeset = task["payload"]["env"]["GECKO_HEAD_REV"]
         base_changeset = task["payload"]["env"]["GECKO_BASE_REV"]
 
-        # Look for the Phabricator revision from the commit message
-        commit_url = os.path.join(
-            head_repository,
-            f"json-rev/{head_changeset}",
-        )
-        response = requests.get(commit_url)
-        response.raise_for_status()
-        description = response.json()["desc"]
-        match = REGEX_PHABRICATOR_COMMIT.search(description)
-        if match is None:
-            raise Exception(f"No phabricator revision found in commit {commit_url}")
-
-        url, revision_phabricator_id = match.groups()
-        revision_phabricator_id = int(revision_phabricator_id)
-        logger.info(
-            "Found phabricator revision",
-            phabricator_id=revision_phabricator_id,
-            url=url,
-        )
-
-        # Lookup the Phabricator revision to get details (phid, title, bugzilla_id, ...)
-        revision = phabricator.load_revision(rev_id=revision_phabricator_id)
-
-        diff_attrs = {}
-        if head_repository != REPO_MOZILLA_CENTRAL:
-            # Search the Phabricator diff with the same commit identifier, except on Mozilla-central
-            diffs = phabricator.search_diffs(
-                revision_phid=revision["phid"], attachments={"commits": True}
-            )
-            diff = next(
-                iter(
-                    d
-                    for d in diffs
-                    if d["attachments"]["commits"]["commits"][0]["identifier"]
-                    == head_changeset
-                ),
-                None,
-            )
-            assert (
-                diff is not None
-            ), f"No Phabricator diff found for D{revision_phabricator_id} and mercurial revision {head_changeset}"
-            logger.info("Found phabricator diff", id=diff["id"])
-            diff_attrs = {
-                "diff": diff,
-                "diff_id": diff["id"],
-                "diff_phid": diff["phid"],
-            }
-
         return Revision(
-            phabricator_id=revision_phabricator_id,
-            phabricator_phid=revision["phid"],
             head_changeset=head_changeset,
             base_changeset=base_changeset,
             head_repository=head_repository,
             base_repository=base_repository,
-            revision=revision,
-            url=url,
-            **diff_attrs,
         )
 
     def analyze_patch(self):
@@ -482,9 +429,14 @@ class Revision(object):
 
     @property
     def title(self):
-        if self.revision is None:
+        if self.revision:
+            return self.revision["fields"].get("title")
+        if self.head_changeset is None:
             return None
-        return self.revision["fields"].get("title")
+        title = f"Changeset {self.head_changeset[:12]}"
+        if self.head_repository:
+            title += f" ({self.head_repository})"
+        return title
 
     def as_dict(self):
         """

@@ -113,9 +113,9 @@ class Workflow(object):
         ), "Need a revision from autoland or mozilla-central"
         logger.info(
             "Starting revision ingestion",
-            revision=revision.id,
             bugzilla=revision.bugzilla_id,
             title=revision.title,
+            head_repository=revision.head_repository,
             head_changeset=revision.head_changeset,
         )
 
