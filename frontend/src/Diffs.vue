@@ -162,8 +162,8 @@ export default {
               @ base: {{ diff.revision.base_repository | short_repo }} - head:
               {{ diff.revision.head_repository | short_repo }}
 =======
-              Revision <router-link :to="{ name: 'revision', params: { revisionId: diff.revision.id }}">D{{ diff.revision.numerical_phid }}</router-link> @ base: {{ diff.revision.base_repository | short_repo }} - head: {{ diff.revision.head_repository | short_repo }}
->>>>>>> fa65299 (Draft implementation to use optional Phab references on the Revision model)
+              Revision <router-link :to="{ name: 'revision', params: { revisionId: diff.revision.id }}">D{{ diff.revision.phabricator_id }}</router-link> @ base: {{ diff.revision.base_repository | short_repo }} - head: {{ diff.revision.head_repository | short_repo }}
+>>>>>>> 4188521 (Update the frontend)
             </p>
           </td>
 
@@ -242,7 +242,7 @@ export default {
                     >
 =======
                     <hr class="dropdown-divider">
-                    <a class="dropdown-item" :href="diff.revision.phabricator_url" target="_blank">Phabricator D{{ diff.revision.numerical_phid }}</a>
+                    <a class="dropdown-item" :href="diff.revision.phabricator_url" target="_blank">Phabricator D{{ diff.revision.phabricator_id }}</a>
                     <a class="dropdown-item" v-if="diff.revision.bugzilla_id" :href="'https://bugzil.la/' + diff.revision.bugzilla_id" target="_blank">Bug {{ diff.revision.bugzilla_id }}</a>
                     <a class="dropdown-item" :href="diff | treeherder_url" target="_blank">Treeherder tasks</a>
 >>>>>>> fa65299 (Draft implementation to use optional Phab references on the Revision model)

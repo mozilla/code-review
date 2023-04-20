@@ -45,7 +45,7 @@ export default {
   <section>
     <div class="notification is-info" v-if="state == 'loading'">Loading...</div>
     <div v-else-if="state == 'loaded'">
-      <h1 class="title">Revision D{{ revision.numerical_phid }}</h1>
+      <h1 class="title">Revision D{{ revision.phabricator_id }}</h1>
 
       <h2 class="subtitle">{{ revision.title }}</h2>
       <p>

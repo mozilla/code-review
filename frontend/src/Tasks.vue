@@ -87,7 +87,7 @@ export default {
         });
 =======
         tasks = _.filter(tasks, t => {
-          const payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid + t.data.numerical_phid + t.data.diff_id
+          const payload = t.data.title + t.data.bugzilla_id + t.data.phid + t.data.diff_phid + t.data.phabricator_id + t.data.diff_id
           return payload.toLowerCase().indexOf(this.filters.revision.toLowerCase()) !== -1
         })
 >>>>>>> fa65299 (Draft implementation to use optional Phab references on the Revision model)
@@ -256,8 +256,8 @@ export default {
                 >rev {{ task.data.id }}</router-link
               >
 =======
-              <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - <router-link :to="{ name: 'revision', params: { revisionId: task.data.id }}">rev {{ task.data.numerical_phid }}</router-link>
->>>>>>> fa65299 (Draft implementation to use optional Phab references on the Revision model)
+              <small class="mono has-text-grey-light">{{ task.data.phid}}</small> - <router-link :to="{ name: 'revision', params: { revisionId: task.data.id }}">rev {{ task.data.phabricator_id }}</router-link>
+>>>>>>> 4188521 (Update the frontend)
             </p>
           </td>
 
