@@ -33,10 +33,10 @@ def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_h
     assert len(revisions) == 1
     assert 1 in revisions
     assert revisions[1] == {
-        "id": 1,
         "bugzilla_id": 1234567,
-        "numerical_phid": 51,
-        "phid": "PHID-DREV-zzzzz",
+        "id": 1,
+        "phabricator_id": 51,
+        "phabricator_phid": "PHID-DREV-zzzzz",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/1/diffs/",
         "issues_bulk_url": "http://code-review-backend.test/v1/revision/1/issues/",
@@ -131,8 +131,8 @@ def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
     assert revisions[1] == {
         "id": 1,
         "bugzilla_id": None,
-        "numerical_phid": 51,
-        "phid": "PHID-DREV-zzzzz",
+        "phabricator_id": 51,
+        "phabricator_phid": "PHID-DREV-zzzzz",
         "title": "Static Analysis tests",
         "diffs_url": "http://code-review-backend.test/v1/revision/1/diffs/",
         "issues_bulk_url": "http://code-review-backend.test/v1/revision/1/issues/",

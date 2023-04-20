@@ -10,6 +10,12 @@ from libmozdata.phabricator import BuildState
 from code_review_bot import stats
 
 
+@pytest.fixture
+def bypass_publication_check(mock_workflow, mock_revision):
+    mock_workflow.backend_api.publish_revision = lambda rev: {}
+    mock_revision.id = 1337
+
+
 def check_stats(summary_check):
     """
     Helper to check stat metrics after a workflow has run
@@ -33,7 +39,9 @@ def check_stats(summary_check):
     return True
 
 
-def test_no_deps(mock_config, mock_revision, mock_workflow, mock_backend):
+def test_no_deps(
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+):
     """
     Test an error occurs when no dependencies are found on root task
     """
@@ -49,7 +57,14 @@ def test_no_deps(mock_config, mock_revision, mock_workflow, mock_backend):
     assert str(e.value) == "No task dependencies to analyze"
 
 
-def test_baseline(mock_config, mock_revision, mock_workflow, mock_backend, mock_hgmo):
+def test_baseline(
+    mock_config,
+    mock_revision,
+    mock_workflow,
+    mock_backend,
+    mock_hgmo,
+    bypass_publication_check,
+):
     """
     Test a normal remote workflow (aka Try mode)
     - current task with analyzer deps
@@ -139,7 +154,9 @@ def test_baseline(mock_config, mock_revision, mock_workflow, mock_backend, mock_
     assert mock_revision._state == BuildState.Fail
 
 
-def test_no_failed(mock_config, mock_revision, mock_workflow, mock_backend):
+def test_no_failed(
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+):
     """
     Test a remote workflow without any failed tasks
     """
@@ -157,7 +174,9 @@ def test_no_failed(mock_config, mock_revision, mock_workflow, mock_backend):
     assert mock_revision._state == BuildState.Pass
 
 
-def test_no_issues(mock_config, mock_revision, mock_workflow, mock_backend):
+def test_no_issues(
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+):
     """
     Test a remote workflow without any issues in its artifacts
     """
@@ -190,7 +209,7 @@ def test_no_issues(mock_config, mock_revision, mock_workflow, mock_backend):
 
 
 def test_build_status_fail_on_error(
-    mock_config, mock_revision, mock_workflow, mock_backend
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
 ):
     """
     Test a remote workflow with an error causes the build to be reported as failing
@@ -236,7 +255,7 @@ def test_build_status_fail_on_error(
 
 
 def test_build_status_pass_on_warning(
-    mock_config, mock_revision, mock_workflow, mock_backend
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
 ):
     """
     Test a remote workflow with no errors causes the build to be reported as passing
@@ -281,7 +300,9 @@ def test_build_status_pass_on_warning(
     assert mock_revision._state == BuildState.Pass
 
 
-def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_backend):
+def test_unsupported_analyzer(
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+):
     """
     Test a remote workflow with an unsupported analyzer (not mozlint)
     """
@@ -305,7 +326,9 @@ def test_unsupported_analyzer(mock_config, mock_revision, mock_workflow, mock_ba
     assert mock_revision._state == BuildState.Pass
 
 
-def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_backend):
+def test_mozlint_task(
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+):
     """
     Test a remote workflow with a mozlint analyzer
     """
@@ -360,7 +383,9 @@ def test_mozlint_task(mock_config, mock_revision, mock_workflow, mock_backend):
     assert mock_revision._state == BuildState.Fail
 
 
-def test_clang_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend):
+def test_clang_tidy_task(
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+):
     """
     Test a remote workflow with a clang-tidy analyzer
     """
@@ -455,7 +480,12 @@ CLANG_FORMAT_PATCH = """
 
 
 def test_clang_format_task(
-    mock_config, mock_revision, mock_workflow, mock_hgmo, mock_backend
+    mock_config,
+    mock_revision,
+    mock_workflow,
+    mock_hgmo,
+    mock_backend,
+    bypass_publication_check,
 ):
     """
     Test a remote workflow with a clang-format analyzer
@@ -534,7 +564,9 @@ def test_clang_format_task(
     assert mock_revision._state == BuildState.Pass
 
 
-def test_no_tasks(mock_config, mock_revision, mock_workflow, mock_backend):
+def test_no_tasks(
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+):
     """
     Test a remote workflow with only a Gecko decision task as dep
     https://github.com/mozilla/release-services/issues/2055
@@ -550,7 +582,9 @@ def test_no_tasks(mock_config, mock_revision, mock_workflow, mock_backend):
     assert mock_revision._state == BuildState.Pass
 
 
-def test_zero_coverage_option(mock_config, mock_revision, mock_workflow, mock_backend):
+def test_zero_coverage_option(
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+):
     """
     Test the zero coverage trigger on the workflow
     """
@@ -590,7 +624,9 @@ def test_zero_coverage_option(mock_config, mock_revision, mock_workflow, mock_ba
     assert mock_revision._state == BuildState.Pass
 
 
-def test_external_tidy_task(mock_config, mock_revision, mock_workflow, mock_backend):
+def test_external_tidy_task(
+    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+):
     """
     Test a remote workflow with a clang-tidy-externak analyzer
     """

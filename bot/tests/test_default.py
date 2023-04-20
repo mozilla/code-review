@@ -62,6 +62,10 @@ def test_parser(mock_workflow, mock_revision, mock_hgmo, mock_backend):
             "extra-task": {},
         }
     )
+    # Bypass revision publication check
+    mock_workflow.backend_api.publish_revision = lambda rev: {}
+    mock_revision.id = 1337
+
     issues = mock_workflow.run(mock_revision)
     assert len(issues) == 1
     issue = issues.pop()
