@@ -22,15 +22,9 @@ export default new VueRouter({
       component: Tasks,
     },
     {
-<<<<<<< HEAD
-      path: "/D:revisionId",
-      name: "revision",
-      component: Revision,
-=======
-      path: '/:revisionId',
+      path: '/revision/:revisionId',
       name: 'revision',
-      component: Revision
->>>>>>> fa65299 (Draft implementation to use optional Phab references on the Revision model)
+      component: Revision,
     },
     {
       path: "/diff/:diffId",
