@@ -150,20 +150,16 @@ export default {
             <p v-if="diff.revision.title">{{ diff.revision.title }}</p>
             <p class="has-text-danger" v-else>No title</p>
             <p>
-<<<<<<< HEAD
               Revision
               <router-link
                 :to="{
                   name: 'revision',
                   params: { revisionId: diff.revision.id },
                 }"
-                >D{{ diff.revision.id }}</router-link
+                >D{{ diff.revision.phabricator_id }}</router-link
               >
               @ base: {{ diff.revision.base_repository | short_repo }} - head:
               {{ diff.revision.head_repository | short_repo }}
-=======
-              Revision <router-link :to="{ name: 'revision', params: { revisionId: diff.revision.id }}">D{{ diff.revision.phabricator_id }}</router-link> @ base: {{ diff.revision.base_repository | short_repo }} - head: {{ diff.revision.head_repository | short_repo }}
->>>>>>> 4188521 (Update the frontend)
             </p>
           </td>
 
@@ -219,13 +215,12 @@ export default {
                 </div>
                 <div class="dropdown-menu" id="dropdown-menu4" role="menu">
                   <div class="dropdown-content">
-<<<<<<< HEAD
                     <hr class="dropdown-divider" />
                     <a
                       class="dropdown-item"
                       :href="diff.revision.phabricator_url"
                       target="_blank"
-                      >Phabricator D{{ diff.revision.id }}</a
+                      >Phabricator D{{ diff.revision.phabricator_id }}</a
                     >
                     <a
                       class="dropdown-item"
@@ -240,12 +235,6 @@ export default {
                       target="_blank"
                       >Treeherder tasks</a
                     >
-=======
-                    <hr class="dropdown-divider">
-                    <a class="dropdown-item" :href="diff.revision.phabricator_url" target="_blank">Phabricator D{{ diff.revision.phabricator_id }}</a>
-                    <a class="dropdown-item" v-if="diff.revision.bugzilla_id" :href="'https://bugzil.la/' + diff.revision.bugzilla_id" target="_blank">Bug {{ diff.revision.bugzilla_id }}</a>
-                    <a class="dropdown-item" :href="diff | treeherder_url" target="_blank">Treeherder tasks</a>
->>>>>>> fa65299 (Draft implementation to use optional Phab references on the Revision model)
                   </div>
                 </div>
               </div>
