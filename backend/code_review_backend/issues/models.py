@@ -98,7 +98,9 @@ class Revision(models.Model):
         ]
 
     def __str__(self):
-        return f"D{self.phabricator_id} - {self.title}"
+        if self.phabricator_id is not None:
+            return f"D{self.phabricator_id} - {self.title}"
+        return f"#{self.id} - {self.title}"
 
     @property
     def phabricator_url(self):
