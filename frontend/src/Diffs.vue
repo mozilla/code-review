@@ -156,7 +156,7 @@ export default {
                   name: 'revision',
                   params: { revisionId: diff.revision.id },
                 }"
-                >D{{ diff.revision.id }}</router-link
+                >D{{ diff.revision.phabricator_id }}</router-link
               >
               @ base: {{ diff.revision.base_repository | short_repo }} - head:
               {{ diff.revision.head_repository | short_repo }}
@@ -220,7 +220,7 @@ export default {
                       class="dropdown-item"
                       :href="diff.revision.phabricator_url"
                       target="_blank"
-                      >Phabricator D{{ diff.revision.id }}</a
+                      >Phabricator D{{ diff.revision.phabricator_id }}</a
                     >
                     <a
                       class="dropdown-item"

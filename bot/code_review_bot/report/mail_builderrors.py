@@ -10,10 +10,12 @@ from code_review_bot.report.base import Reporter
 
 logger = structlog.get_logger(__name__)
 
-EMAIL_SUBJECT = """Code Review bot found {build_errors} build errors on D{phab_id}"""
+EMAIL_SUBJECT = (
+    """Code Review bot found {build_errors} build errors on D{phabricator_id}"""
+)
 
 EMAIL_HEADER = """
-# [Code Review bot](https://github.com/mozilla/code-review) found {build_errors} build errors on [D{phab_id}]({review_url})
+# [Code Review bot](https://github.com/mozilla/code-review) found {build_errors} build errors on [D{phabricator_id}]({review_url})
 
 {content}"""
 
@@ -33,16 +35,22 @@ class BuildErrorsReporter(Reporter):
         """
         Send an email to the author of the revision
         """
-
+        assert (
+            revision.phabricator_id and revision.phabricator_phid
+        ), "Revision must have a Phabricator ID and PHID"
         assert (
             "attachments" in revision.diff
-        ), "Unable to find the commits for revision {}.".format(revision.phid)
+        ), "Unable to find the commits for revision with phid {}.".format(
+            revision.phabricator_phid
+        )
 
         attachments = revision.diff["attachments"]
 
         if "commits" not in attachments and "commits" not in attachments["commits"]:
             logger.info(
-                "Unable to find the commits for revision {}.".format(revision.phid)
+                "Unable to find the commits for revision with phid {}.".format(
+                    revision.phabricator_phid
+                )
             )
             return
 
@@ -54,7 +62,7 @@ class BuildErrorsReporter(Reporter):
 
         content = EMAIL_HEADER.format(
             build_errors=len(build_errors),
-            phab_id=revision.id,
+            phabricator_id=revision.phabricator_id,
             review_url=revision.url,
             content="\n".join([i.as_error() for i in build_errors]),
         )
@@ -77,7 +85,8 @@ class BuildErrorsReporter(Reporter):
             {
                 "address": commit["author"]["email"],
                 "subject": EMAIL_SUBJECT.format(
-                    build_errors=len(build_errors), phab_id=revision.id
+                    build_errors=len(build_errors),
+                    phabricator_id=revision.phabricator_id,
                 ),
                 "content": content,
             }

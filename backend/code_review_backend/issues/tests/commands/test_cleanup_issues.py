@@ -56,7 +56,8 @@ class CleanupIssuesCommandTestCase(TestCase):
             [
                 Revision(
                     id=i,
-                    phid=i,
+                    phabricator_id=i,
+                    phabricator_phid=i,
                     title=f"Revision {i}",
                     base_repository=repo,
                     head_repository=repo,

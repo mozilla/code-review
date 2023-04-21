@@ -22,7 +22,7 @@ export default new VueRouter({
       component: Tasks,
     },
     {
-      path: "/D:revisionId",
+      path: "/revision/:revisionId",
       name: "revision",
       component: Revision,
     },

@@ -62,8 +62,8 @@ class BackendAPI(object):
 
         # Create revision on backend if it does not exists
         data = {
-            "id": revision.id,
-            "phid": revision.phid,
+            "phabricator_id": revision.phabricator_id,
+            "phabricator_phid": revision.phabricator_phid,
             "title": revision.title,
             "bugzilla_id": revision.bugzilla_id,
             "base_repository": revision.base_repository,
@@ -71,17 +71,24 @@ class BackendAPI(object):
             "base_changeset": revision.base_changeset,
             "head_changeset": revision.head_changeset,
         }
-        backend_revision = self.create("/v1/revision/", data)
 
-        # If we are dealing with None `backend_revision` bail out
-        if backend_revision is None:
+        # Try to create the revision, or retrieve it in case it exists with that Phabricator ID.
+        # The backend always returns a revisions, either a new one, or a pre-existing one
+        revision_url = "/v1/revision/"
+        auth = (self.username, self.password)
+        url_post = urllib.parse.urljoin(self.url, revision_url)
+        response = requests.post(url_post, json=data, auth=auth)
+        if not response.ok:
+            logger.warn("Backend rejected the payload: {}".format(response.content))
             return
 
+        backend_revision = response.json()
         revision.issues_url = backend_revision["issues_bulk_url"]
+        revision.id = backend_revision["id"]
 
         # A revision may have no diff (e.g. Mozilla-central group tasks)
         if not revision.diff_id:
-            return
+            return backend_revision
 
         # Create diff attached to revision on backend
         data = {
@@ -95,10 +102,12 @@ class BackendAPI(object):
 
         # If we are dealing with a None `backend_revision` bail out
         if backend_diff is None:
-            return
+            return backend_revision
 
         # Store the issues url on the revision
         revision.diff_issues_url = backend_diff["issues_url"]
+
+        return backend_revision
 
     def publish_issues(self, issues, revision, mercurial_repository=None, bulk=0):
         """

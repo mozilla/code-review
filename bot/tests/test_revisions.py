@@ -14,7 +14,7 @@ def test_phabricator(mock_config, mock_revision):
     assert mock_revision.diff_phid == "PHID-DIFF-test"
     assert mock_revision.url == "https://phabricator.test/D51"
     assert repr(mock_revision) == "PHID-DIFF-test"
-    assert mock_revision.id == 51  # revision
+    assert mock_revision.phabricator_id == 51
 
     # Patch is automatically loaded from Phabricator
     assert mock_revision.patch is not None

@@ -24,8 +24,8 @@ class CreationAPITestCase(APITestCase):
         )
         # Create revision and diff
         self.revision = self.repo_try.head_revisions.create(
-            id=456,
-            phid="PHID-REV-XXX",
+            phabricator_id=456,
+            phabricator_phid="PHID-REV-XXX",
             title="Bug XXX - Yet Another bug",
             bugzilla_id=78901,
             base_repository=self.repo,
@@ -44,8 +44,8 @@ class CreationAPITestCase(APITestCase):
         """
         self.revision.delete()
         data = {
-            "id": 123,
-            "phid": "PHID-REV-xxx",
+            "phabricator_id": 123,
+            "phabricator_phid": "PHID-REV-xxx",
             "title": "Bug XXX - Some bug",
             "bugzilla_id": 123456,
             "base_repository": "http://repo.test/myrepo",
@@ -65,26 +65,32 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Check a revision has been created
+        expected_response = {
+            "id": 2,
+            "bugzilla_id": 123456,
+            "diffs_url": "http://testserver/v1/revision/2/diffs/",
+            "issues_bulk_url": "http://testserver/v1/revision/2/issues/",
+            "phabricator_url": "https://phabricator.services.mozilla.com/D123",
+            "phabricator_id": 123,
+            "phabricator_phid": "PHID-REV-xxx",
+            "base_repository": "http://repo.test/myrepo",
+            "head_repository": "http://repo.test/myrepo",
+            "base_changeset": "123456789ABCDEF",
+            "head_changeset": "FEDCBA987654321",
+            "title": "Bug XXX - Some bug",
+        }
         self.assertEqual(Revision.objects.count(), 1)
-        revision = Revision.objects.get(pk=123)
+        revision = Revision.objects.get(phabricator_id=123)
         self.assertEqual(revision.title, "Bug XXX - Some bug")
         self.assertEqual(revision.bugzilla_id, 123456)
-        self.assertDictEqual(
-            response.json(),
-            {
-                "id": 123,
-                "bugzilla_id": 123456,
-                "diffs_url": "http://testserver/v1/revision/123/diffs/",
-                "issues_bulk_url": "http://testserver/v1/revision/123/issues/",
-                "phabricator_url": "https://phabricator.services.mozilla.com/D123",
-                "phid": "PHID-REV-xxx",
-                "base_repository": "http://repo.test/myrepo",
-                "head_repository": "http://repo.test/myrepo",
-                "base_changeset": "123456789ABCDEF",
-                "head_changeset": "FEDCBA987654321",
-                "title": "Bug XXX - Some bug",
-            },
-        )
+        self.assertDictEqual(response.json(), expected_response)
+
+        # Check that the same creation call returns the same payload
+        # with the same ID, and no other revisions were created
+        response = self.client.post("/v1/revision/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertDictEqual(response.json(), expected_response)
+        self.assertEqual(Revision.objects.count(), 1)
 
     def test_create_diff(self):
         """
@@ -100,19 +106,23 @@ class CreationAPITestCase(APITestCase):
         }
 
         # No auth will give a permission denied
-        response = self.client.post("/v1/revision/456/diffs/", data, format="json")
+        response = self.client.post(
+            f"/v1/revision/{self.revision.id}/diffs/", data, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Once authenticated, creation will require the revision to exist
         self.assertEqual(Diff.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        response = self.client.post("/v1/revision/123/diffs/", data, format="json")
+        response = self.client.post("/v1/revision/999999/diffs/", data, format="json")
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
         # Now creation will work
         self.assertEqual(Diff.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        response = self.client.post("/v1/revision/456/diffs/", data, format="json")
+        response = self.client.post(
+            f"/v1/revision/{self.revision.id}/diffs/", data, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Response should have url to create issues
@@ -227,14 +237,18 @@ class CreationAPITestCase(APITestCase):
         }
 
         # No auth will give a permission denied
-        response = self.client.post("/v1/revision/456/issues/", data, format="json")
+        response = self.client.post(
+            f"/v1/revision/{self.revision.id}/issues/", data, format="json"
+        )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
         # Once authenticated, creation will work
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
         with self.assertNumQueries(5):
-            response = self.client.post("/v1/revision/456/issues/", data, format="json")
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", data, format="json"
+            )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         issues = list(Issue.objects.order_by("created"))
@@ -311,12 +325,14 @@ class CreationAPITestCase(APITestCase):
         }
         self.client.force_authenticate(user=self.user)
         with self.assertNumQueries(6):
-            response = self.client.post("/v1/revision/456/issues/", data, format="json")
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", data, format="json"
+            )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        self.assertEqual(Issue.objects.filter(revisions__id=456).count(), 1)
+        self.assertEqual(Issue.objects.filter(revisions__phabricator_id=456).count(), 1)
 
-        issue = Issue.objects.filter(revisions__id=456).get()
+        issue = Issue.objects.filter(revisions__phabricator_id=456).get()
         self.assertDictEqual(
             response.json(),
             {

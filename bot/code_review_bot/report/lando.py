@@ -29,6 +29,10 @@ class LandoReporter(Reporter):
         """
         Send an email to administrators
         """
+        assert (
+            revision.phabricator_id and revision.phabricator_phid and revision.diff
+        ), "Revision must have a Phabricator ID, a PHID and a diff"
+
         if self.lando_api is None:
             logger.info("Lando integration is not set!")
             return
@@ -44,14 +48,16 @@ class LandoReporter(Reporter):
             "Publishing warnings to lando for {0} errors and {1} warnings".format(
                 nb_publishable_errors, nb_publishable_warnings
             ),
-            revision=revision.id,
+            revision=revision.phabricator_id,
             diff=revision.diff["id"],
         )
 
         try:
             # code-review.events sends an initial warning message to lando to specify that the analysis is in progress,
             # we should remove it
-            self.lando_api.del_all_warnings(revision.id, revision.diff["id"])
+            self.lando_api.del_all_warnings(
+                revision.phabricator_id, revision.diff["id"]
+            )
 
             if nb_publishable > 0:
                 self.lando_api.add_warning(
@@ -63,7 +69,7 @@ class LandoReporter(Reporter):
                         if nb_publishable_warnings == 1
                         else "warnings",
                     ),
-                    revision.id,
+                    revision.phabricator_id,
                     revision.diff["id"],
                 )
         except Exception as ex:

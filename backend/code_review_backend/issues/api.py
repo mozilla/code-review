@@ -14,8 +14,9 @@ from django.shortcuts import get_object_or_404
 from django.urls import path
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
-from rest_framework import generics, mixins, routers, viewsets
+from rest_framework import generics, mixins, routers, status, viewsets
 from rest_framework.exceptions import APIException, ValidationError
+from rest_framework.response import Response
 
 from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import (
@@ -71,6 +72,21 @@ class RevisionViewSet(CreateListRetrieveViewSet):
 
     queryset = Revision.objects.all()
     serializer_class = RevisionSerializer
+
+    def create(self, request, *args, **kwargs):
+        """Override CreateModelMixin.create to avoid creating duplicates"""
+
+        # When a revision already exists with that phabricator ID we return its data without creating a new one
+        # This value is used by the bot to identify a revision and publish new Phabricator diffs.
+        if revision := Revision.objects.filter(
+            phabricator_id=request.data["phabricator_id"]
+        ).first():
+            serializer = RevisionSerializer(
+                instance=revision, context={"request": request}
+            )
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        return super().create(request, *args, **kwargs)
 
 
 class RevisionDiffViewSet(CreateListRetrieveViewSet):
@@ -137,7 +153,7 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
         if query is not None:
             search_query = (
                 Q(id__icontains=query)
-                | Q(revision__id__icontains=query)
+                | Q(revision__phabricator_id__icontains=query)
                 | Q(revision__bugzilla_id__icontains=query)
                 | Q(revision__title__icontains=query)
             )
@@ -399,8 +415,8 @@ class IssueList(generics.ListAPIView):
             raise ValidationError(errors)
 
         # Only use the revision filter in case some issues are found
-        if revision and qs.filter(revisions__id=revision).exists():
-            qs = qs.filter(revisions__id=revision)
+        if revision and qs.filter(revisions__phabricator_id=revision).exists():
+            qs = qs.filter(revisions__phabricator_id=revision)
         elif revision and not date_revision:
             qs = Issue.objects.none()
         # Defaults to filtering by the revision closest to the given date

@@ -41,7 +41,17 @@ class Repository(PhabricatorModel):
         return self.slug
 
 
-class Revision(PhabricatorModel):
+class Revision(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    # Phabricator references will be left empty when ingesting a decision task (e.g. from MC or autoland)
+    phabricator_id = models.PositiveIntegerField(unique=True, null=True, blank=True)
+    phabricator_phid = models.CharField(
+        max_length=40, unique=True, null=True, blank=True
+    )
+
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+
     base_repository = models.ForeignKey(
         Repository,
         related_name="base_revisions",
@@ -71,13 +81,33 @@ class Revision(PhabricatorModel):
     title = models.CharField(max_length=250)
     bugzilla_id = models.PositiveIntegerField(null=True)
 
+    class Meta:
+        ordering = ("phabricator_id", "id")
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=["phabricator_id"],
+                name="revision_unique_phab_id",
+                condition=Q(phabricator_id__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=["phabricator_phid"],
+                name="revision_unique_phab_phabid",
+                condition=Q(phabricator_phid__isnull=False),
+            ),
+        ]
+
     def __str__(self):
-        return f"D{self.id} - {self.title}"
+        if self.phabricator_id is not None:
+            return f"D{self.phabricator_id} - {self.title}"
+        return f"#{self.id} - {self.title}"
 
     @property
     def phabricator_url(self):
+        if self.phabricator_id is None:
+            return
         parser = urllib.parse.urlparse(settings.PHABRICATOR_HOST)
-        return f"{parser.scheme}://{parser.netloc}/D{self.id}"
+        return f"{parser.scheme}://{parser.netloc}/D{self.phabricator_id}"
 
 
 class Diff(PhabricatorModel):

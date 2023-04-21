@@ -9,7 +9,6 @@ import atexit
 import collections
 import fnmatch
 import os
-import re
 import shutil
 import tempfile
 
@@ -17,9 +16,6 @@ import structlog
 
 REPO_MOZILLA_CENTRAL = "https://hg.mozilla.org/mozilla-central"
 REPO_AUTOLAND = "https://hg.mozilla.org/integration/autoland"
-REGEX_PHABRICATOR_COMMIT = re.compile(
-    r"^Differential Revision: (https://[\w\-\.]+/D(\d+))$", re.MULTILINE
-)
 
 logger = structlog.get_logger(__name__)
 

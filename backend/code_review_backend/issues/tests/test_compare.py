@@ -29,8 +29,8 @@ class CompareAPITestCase(APITestCase):
 
         # Create a simple stack with 2 diffs
         self.revision = self.repo_try.head_revisions.create(
-            id=1,
-            phid="PHID-DREV-1",
+            phabricator_id=1,
+            phabricator_phid="PHID-DREV-1",
             title="Revision XYZ",
             bugzilla_id=1234567,
             base_repository=self.repo,

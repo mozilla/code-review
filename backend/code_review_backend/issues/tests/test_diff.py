@@ -29,8 +29,8 @@ class DiffAPITestCase(APITestCase):
         # Create a stack with 2 revisions & 3 diffs
         for i in range(2):
             self.repo_try.head_revisions.create(
-                id=i + 1,
-                phid=f"PHID-DREV-{i+1}",
+                phabricator_id=i + 1,
+                phabricator_phid=f"PHID-DREV-{i+1}",
                 title=f"Revision {i+1}",
                 bugzilla_id=10000 + i,
                 base_repository=self.repo,
@@ -57,6 +57,7 @@ class DiffAPITestCase(APITestCase):
         """
         response = self.client.get("/v1/diff/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.maxDiff = None
         self.assertDictEqual(
             response.json(),
             {
@@ -72,7 +73,8 @@ class DiffAPITestCase(APITestCase):
                             "head_repository": "http://repo.test/try",
                             "base_changeset": None,
                             "head_changeset": None,
-                            "phid": "PHID-DREV-1",
+                            "phabricator_id": 1,
+                            "phabricator_phid": "PHID-DREV-1",
                             "title": "Revision 1",
                             "bugzilla_id": 10000,
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
@@ -103,7 +105,8 @@ class DiffAPITestCase(APITestCase):
                             "head_repository": "http://repo.test/try",
                             "base_changeset": None,
                             "head_changeset": None,
-                            "phid": "PHID-DREV-2",
+                            "phabricator_id": 2,
+                            "phabricator_phid": "PHID-DREV-2",
                             "title": "Revision 2",
                             "bugzilla_id": 10001,
                             "diffs_url": "http://testserver/v1/revision/2/diffs/",
@@ -134,7 +137,8 @@ class DiffAPITestCase(APITestCase):
                             "head_repository": "http://repo.test/try",
                             "base_changeset": None,
                             "head_changeset": None,
-                            "phid": "PHID-DREV-1",
+                            "phabricator_id": 1,
+                            "phabricator_phid": "PHID-DREV-1",
                             "title": "Revision 1",
                             "bugzilla_id": 10000,
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
