@@ -65,27 +65,32 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Check a revision has been created
+        expected_response = {
+            "id": 2,
+            "bugzilla_id": 123456,
+            "diffs_url": "http://testserver/v1/revision/2/diffs/",
+            "issues_bulk_url": "http://testserver/v1/revision/2/issues/",
+            "phabricator_url": "https://phabricator.services.mozilla.com/D123",
+            "phabricator_id": 123,
+            "phabricator_phid": "PHID-REV-xxx",
+            "base_repository": "http://repo.test/myrepo",
+            "head_repository": "http://repo.test/myrepo",
+            "base_changeset": "123456789ABCDEF",
+            "head_changeset": "FEDCBA987654321",
+            "title": "Bug XXX - Some bug",
+        }
         self.assertEqual(Revision.objects.count(), 1)
         revision = Revision.objects.get(phabricator_id=123)
         self.assertEqual(revision.title, "Bug XXX - Some bug")
         self.assertEqual(revision.bugzilla_id, 123456)
-        self.assertDictEqual(
-            response.json(),
-            {
-                "id": 2,
-                "bugzilla_id": 123456,
-                "diffs_url": "http://testserver/v1/revision/2/diffs/",
-                "issues_bulk_url": "http://testserver/v1/revision/2/issues/",
-                "phabricator_url": "https://phabricator.services.mozilla.com/D123",
-                "phabricator_id": 123,
-                "phabricator_phid": "PHID-REV-xxx",
-                "base_repository": "http://repo.test/myrepo",
-                "head_repository": "http://repo.test/myrepo",
-                "base_changeset": "123456789ABCDEF",
-                "head_changeset": "FEDCBA987654321",
-                "title": "Bug XXX - Some bug",
-            },
-        )
+        self.assertDictEqual(response.json(), expected_response)
+
+        # Check that the same creation call returns the same payload
+        # with the same ID, and no other revisions were created
+        response = self.client.post("/v1/revision/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertDictEqual(response.json(), expected_response)
+        self.assertEqual(Revision.objects.count(), 1)
 
     def test_create_diff(self):
         """

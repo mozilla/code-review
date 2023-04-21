@@ -5,7 +5,6 @@
 
 from django.db import transaction
 from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
 
 from code_review_backend.issues.models import (
     Diff,
@@ -67,15 +66,6 @@ class RevisionSerializer(serializers.ModelSerializer):
             "issues_bulk_url",
             "phabricator_url",
         )
-
-    def validate_phabricator_id(self, phid):
-        """
-        Ensure no revision exist with that Phabricator ID, otherwise explicitly returns its ID.
-        This value is used by the bot to identify a revision and publish new Phabricator diffs.
-        """
-        if revision := Revision.objects.filter(phabricator_id=phid).first():
-            raise ValidationError([f"A revision already exists with ID {revision.id}."])
-        return phid
 
 
 class RevisionLightSerializer(serializers.ModelSerializer):

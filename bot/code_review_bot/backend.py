@@ -3,7 +3,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import re
 import urllib.parse
 
 import requests
@@ -13,8 +12,6 @@ from code_review_bot import taskcluster
 from code_review_bot.config import settings
 
 logger = structlog.get_logger(__name__)
-
-REGEX_EXISTING_REV = re.compile(r"^A revision already exists with ID (\d+).$")
 
 
 class BackendAPI(object):
@@ -76,41 +73,16 @@ class BackendAPI(object):
         }
 
         # Try to create the revision, or retrieve it in case it exists with that Phabricator ID.
-        # We cannot use the default behavior, identifying a revision by its PK because it is not
-        # linked to Phabricator (Mozilla-central revision support for the before/after feature).
+        # The backend always returns a revisions, either a new one, or a pre-existing one
         revision_url = "/v1/revision/"
         auth = (self.username, self.password)
         url_post = urllib.parse.urljoin(self.url, revision_url)
         response = requests.post(url_post, json=data, auth=auth)
         if not response.ok:
-            # Look for an existing revision in API error messages
-            phid_messages = response.json().get("phabricator_id", [])
-            rev_id = None
-            for msg in phid_messages:
-                if re_match := REGEX_EXISTING_REV.search(msg):
-                    (rev_id,) = re_match.groups()
-                    break
-            if not rev_id:
-                logger.warn("Backend rejected the payload: {}".format(response.content))
-                return None
-            # Retrieve an existing revision
-            url_get = urllib.parse.urljoin(self.url, f"{revision_url}{rev_id}/")
-            logger.info(
-                "Retrieving existing revision on backend", id=rev_id, url=url_get
-            )
-            response = requests.get(url_get, auth=auth)
-            if not response.ok:
-                logger.warning(
-                    "An error occurred retrieving revision: {}".format(
-                        response.content
-                    ),
-                    id=rev_id,
-                    url=url_get,
-                )
-                return None
+            logger.warn("Backend rejected the payload: {}".format(response.content))
+            return
 
         backend_revision = response.json()
-
         revision.issues_url = backend_revision["issues_bulk_url"]
         revision.id = backend_revision["id"]
 
