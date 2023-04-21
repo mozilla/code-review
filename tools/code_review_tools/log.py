@@ -6,7 +6,6 @@
 import logging
 import logging.handlers
 import os
-import sys
 
 import pkg_resources
 import sentry_sdk
@@ -132,12 +131,16 @@ def init_logger(
     if not channel:
         channel = os.environ.get("APP_CHANNEL")
 
-    logging.basicConfig(
-        format="%(asctime)s.%(msecs)06d [%(levelname)-8s] %(filename)s: %(message)s",
+    # Render extra information from structlog on default logging output
+    formatter = ExtraFormatter(
+        "%(asctime)s.%(msecs)06d [%(levelname)-8s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        stream=sys.stdout,
-        level=level,
     )
+    handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
+    root_logger = logging.getLogger()
+    root_logger.addHandler(handler)
+    root_logger.setLevel(level)
 
     # Log to papertrail
     if channel and PAPERTRAIL_HOST and PAPERTRAIL_PORT:
