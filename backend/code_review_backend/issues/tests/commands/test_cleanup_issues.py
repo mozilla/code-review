@@ -55,6 +55,7 @@ class CleanupIssuesCommandTestCase(TestCase):
         rev_1, rev_2, rev_3 = Revision.objects.bulk_create(
             [
                 Revision(
+                    id=i,
                     phabricator_id=i,
                     phabricator_phid=i,
                     title=f"Revision {i}",
