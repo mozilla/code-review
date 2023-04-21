@@ -104,6 +104,8 @@ class Revision(models.Model):
 
     @property
     def phabricator_url(self):
+        if self.phabricator_id is None:
+            return
         parser = urllib.parse.urlparse(settings.PHABRICATOR_HOST)
         return f"{parser.scheme}://{parser.netloc}/D{self.phabricator_id}"
 
