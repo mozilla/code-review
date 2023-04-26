@@ -78,13 +78,16 @@ class RevisionViewSet(CreateListRetrieveViewSet):
 
         # When a revision already exists with that phabricator ID we return its data without creating a new one
         # This value is used by the bot to identify a revision and publish new Phabricator diffs.
-        if revision := Revision.objects.filter(
-            phabricator_id=request.data["phabricator_id"]
-        ).first():
-            serializer = RevisionSerializer(
-                instance=revision, context={"request": request}
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
+        # The phabricator ID can be null (on mozilla-central) so we must always try to create a revision for that case
+        phabricator_id = request.data["phabricator_id"]
+        if phabricator_id is not None:
+            if revision := Revision.objects.filter(
+                phabricator_id=phabricator_id
+            ).first():
+                serializer = RevisionSerializer(
+                    instance=revision, context={"request": request}
+                )
+                return Response(serializer.data, status=status.HTTP_200_OK)
 
         return super().create(request, *args, **kwargs)
 
