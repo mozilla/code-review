@@ -403,24 +403,30 @@ class IssueList(generics.ListAPIView):
                 # Look for a revision matching this date, going back to 2 days maximum
                 date_revision = (
                     Revision.objects.filter(
+                        head_repository=repo,
                         created__gte=date - timedelta(2),
                         created__lt=date,
                     )
-                    .order_by("-created")
-                    .first()
+                    .order_by("created")
+                    .last()
                 )
 
-        revision = self.request.query_params.get("revision")
-        if revision and not revision.isdecimal():
-            errors["revision"].append("invalid revision - should be a number")
+        rev_changeset = self.request.query_params.get("revision_changeset")
+        if rev_changeset is not None and len(rev_changeset) != 40:
+            errors["revision_changeset"].append(
+                "invalid revision_changeset - should be the mercurial hash on the head repository"
+            )
 
         if errors:
             raise ValidationError(errors)
 
         # Only use the revision filter in case some issues are found
-        if revision and qs.filter(revisions__phabricator_id=revision).exists():
-            qs = qs.filter(revisions__phabricator_id=revision)
-        elif revision and not date_revision:
+        if (
+            rev_changeset
+            and qs.filter(revisions__head_changeset=rev_changeset).exists()
+        ):
+            qs = qs.filter(revisions__head_changeset=rev_changeset)
+        elif rev_changeset and not date_revision:
             qs = Issue.objects.none()
         # Defaults to filtering by the revision closest to the given date
         elif date_revision:
