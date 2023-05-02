@@ -150,9 +150,10 @@ class Issue(abc.ABC):
             return self.on_backend["publishable"]
 
         # Fallback to in_patch detection
-        return self.is_in_patch()
+        return self.in_patch
 
-    def is_in_patch(self):
+    @property
+    def in_patch(self):
         return self.revision.contains(self)
 
     @cached_property
@@ -279,7 +280,7 @@ class Issue(abc.ABC):
             "check": self.check,
             "level": self.level.value,
             "message": self.message,
-            "in_patch": self.is_in_patch(),
+            "in_patch": self.in_patch,
             "validates": self.validates(),
             "publishable": self.is_publishable(),
             "hash": issue_hash,

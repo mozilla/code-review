@@ -115,7 +115,7 @@ class Workflow(object):
 
             # Mark know issues to avoid publishing them on this patch
             self.find_previous_issues(issues, base_rev_changeset)
-            new_issues_count = sum(1 for issue in issues if issue.new_issue is True)
+            new_issues_count = sum(issue.new_issue for issue in issues)
             logger.info(
                 f"Found {new_issues_count} new issues (over {len(issues)} total detected issues)",
                 task=settings.try_group_id,
