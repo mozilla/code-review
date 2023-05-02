@@ -12,8 +12,7 @@ import responses
 
 from code_review_bot.config import Settings
 from code_review_bot.revisions import Revision
-from code_review_bot.tasks.clang_format import ClangFormatIssue
-from code_review_bot.tasks.clang_format import ClangFormatTask
+from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
 from code_review_bot.tasks.lint import MozLintTask
@@ -194,10 +193,8 @@ def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_re
     mock_workflow.backend_api.username = "root"
     mock_workflow.backend_api.password = "hunter2"
     for index, hash_val in enumerate(("aaaa", "bbbb")):
-        issues[index].get_hash = mock.Mock()
-        issues[index].get_hash.return_value = hash_val
+        issues[index].hash = hash_val
 
-    # There is a very small chance that a race condition occurs here
     current_date = datetime.now().strftime("%Y-%m-%d")
     responses.add(
         responses.GET,
@@ -213,6 +210,9 @@ def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_re
         },
     )
 
+    # Set backend ID as the publication is disabled for tests
+    mock_revision.id = 1337
+    assert mock_revision.before_after_feature is True
     mock_workflow.run(mock_revision)
     assert mock_workflow.publish.call_args_list == [
         mock.call(

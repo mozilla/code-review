@@ -289,6 +289,7 @@ def test_phabricator_clang_tidy(
             "another_test.cpp": [41, 42, 43]
         }
         revision.files = ["another_test.cpp"]
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy"]}, api=api)
 
     issue = ClangTidyIssue(
@@ -324,6 +325,7 @@ def test_phabricator_clang_format(
             "test.cpp": [41, 42, 43],
             "dom/test.cpp": [42],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["clang-format"]}, api=api)
 
     task = mock_task(ClangFormatTask, "source-test-clang-format")
@@ -367,6 +369,7 @@ def test_phabricator_mozlint(
             "dom/test.cpp": [42],
         }
         revision.files = revision.lines.keys()
+        revision.id = 52
         reporter = PhabricatorReporter({}, api=api)
 
     issue_flake = MozLintIssue(
@@ -449,6 +452,7 @@ def test_phabricator_coverage(
             "path/to/test.cpp": [0],
             "dom/test.cpp": [42],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
 
     issue = CoverageIssue(
@@ -503,6 +507,7 @@ def test_phabricator_clang_tidy_and_coverage(
             "another_test.cpp": [41, 42, 43],
         }
         revision.files = ["test.txt", "test.cpp", "another_test.cpp"]
+        revision.id = 52
         reporter = PhabricatorReporter(
             {"analyzers": ["coverage", "clang-tidy"]}, api=api
         )
@@ -619,6 +624,7 @@ def test_phabricator_analyzers(
         # Always use the same setup, only varies the analyzers
         revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
         revision.lines = {"test.cpp": [0, 41, 42, 43], "dom/test.cpp": [42]}
+        revision.id = 52
         reporter = PhabricatorReporter(
             {"analyzers_skipped": analyzers_skipped}, api=api
         )
@@ -705,6 +711,7 @@ def test_phabricator_clang_tidy_build_error(
             # Add dummy lines diff
             "test.cpp": [41, 42, 43]
         }
+        revision.id = 52
         revision.build_target_phid = "PHID-HMBD-deadbeef12456"
 
         reporter = PhabricatorReporter({}, api=api)
@@ -763,6 +770,7 @@ def test_full_file(
             "xx.cpp": [123, 124, 125]
         }
         revision.files = list(revision.lines.keys())
+        revision.id = 52
         reporter = PhabricatorReporter(api=api)
 
     issue = DefaultIssue(
@@ -819,6 +827,7 @@ def test_task_failures(mock_phabricator, phab, mock_try_task, mock_decision_task
 
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy"]}, api=api)
 
     status = {
@@ -845,6 +854,7 @@ def test_extra_errors(
         revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
         revision.lines = {"path/to/file.py": [1, 2, 3]}
         revision.files = ["path/to/file.py"]
+        revision.id = 52
         reporter = PhabricatorReporter({}, api=api)
 
     task = mock_task(MozLintTask, "source-test-mozlint-dummy")
@@ -937,6 +947,7 @@ def test_phabricator_notices(mock_phabricator, phab, mock_try_task, mock_decisio
             # Add dummy lines diff
             "test.rst": [41, 42, 43],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
 
     doc_url = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
@@ -984,6 +995,7 @@ def test_phabricator_tgdiff(mock_phabricator, phab, mock_try_task, mock_decision
             # Add dummy lines diff
             "test.rst": [41, 42, 43],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
 
     doc_url = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
@@ -1020,6 +1032,7 @@ def test_phabricator_external_tidy(
             "another_test.cpp": [41, 42, 43]
         }
         revision.files = ["another_test.cpp"]
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy-external"]}, api=api)
 
     issue_clang_diagnostic = ExternalTidyIssue(
@@ -1148,6 +1161,7 @@ def test_phabricator_former_diff_comparison(
             "path/to/test.cpp": [0],
             "dom/test.cpp": [42],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
 
     issues = [
@@ -1294,6 +1308,7 @@ def test_phabricator_before_after_comment(
             "path/to/test.cpp": [0],
             "dom/test.cpp": [42],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
 
     assert revision.before_after_feature is True

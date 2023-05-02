@@ -202,7 +202,7 @@ def test_revision_before_after(mock_config, mock_revision, mock_taskcluster_conf
     Ensure before/after feature is always run on specific revisions
     """
     mock_taskcluster_config.secrets["BEFORE_AFTER_RATIO"] = 0.5
-    assert mock_revision.id == 51
+    mock_revision.id = 51
     assert mock_revision.before_after_feature is True
     mock_revision.id = 42
     assert mock_revision.before_after_feature is False

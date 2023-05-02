@@ -111,10 +111,9 @@ class BackendAPI(object):
 
         return backend_revision
 
-    def publish_issues(self, issues, revision, mercurial_repository=None, bulk=0):
+    def publish_issues(self, issues, revision, bulk=0):
         """
         Publish all issues on the backend.
-        `mercurial_repository` parameter should be path to the local repository at the given revision.
         If set to an integer, `bulk` parameter allow to use the bulk creation endpoint of the backend.
         """
         if not self.enabled:
@@ -133,14 +132,13 @@ class BackendAPI(object):
                 valid_data = []
                 # Build issues' payload for that given chunk
                 for issue in issues_chunk:
-                    issue_hash = issue.get_hash(local_repository=mercurial_repository)
-                    if issue_hash is None:
+                    if issue.hash is None:
                         logger.warning(
                             "Missing issue hash, cannot publish on backend",
                             issue=str(issue),
                         )
                         continue
-                    valid_data.append((issue, issue.as_dict(issue_hash=issue_hash)))
+                    valid_data.append((issue, issue.as_dict()))
 
                 response = self.create(
                     revision.issues_url,
@@ -162,16 +160,15 @@ class BackendAPI(object):
 
             for issue in issues:
                 try:
-                    issue_hash = issue.get_hash(local_repository=mercurial_repository)
+                    assert issue.hash is not None
                 except Exception:
-                    issue_hash = None
-                if issue_hash is None:
+                    # An exception may occur computing issues hash (e.g. network error)
                     logger.warning(
                         "Missing issue hash, cannot publish on backend",
                         issue=str(issue),
                     )
                     continue
-                payload = issue.as_dict(issue_hash=issue_hash)
+                payload = issue.as_dict()
                 issue.on_backend = self.create(revision.diff_issues_url, payload)
                 if issue.on_backend is not None:
                     published += 1

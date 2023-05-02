@@ -140,4 +140,4 @@ def test_licence_payload(mock_revision, mock_hgmo):
         == "source-test-mozlint-license issue source-test-mozlint-license@error intl/locale/rust/unic-langid-ffi/src/lib.rs full file"
     )
     assert issue.check == issue.analyzer.name == "source-test-mozlint-license"
-    assert issue.get_hash() == "7142c536e10b31925b018c37b0e6f9f8"
+    assert issue.hash == "7142c536e10b31925b018c37b0e6f9f8"

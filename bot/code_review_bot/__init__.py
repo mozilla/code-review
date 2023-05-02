@@ -8,12 +8,14 @@ import enum
 import hashlib
 import json
 import os
+from functools import cached_property
 
 import requests
 import structlog
 from libmozdata.phabricator import LintResult, UnitResult, UnitResultState
 from taskcluster.helper import TaskclusterConfig
 
+from code_review_bot.config import settings
 from code_review_bot.stats import InfluxDb
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -153,7 +155,8 @@ class Issue(abc.ABC):
     def is_in_patch(self):
         return self.revision.contains(self)
 
-    def get_hash(self, local_repository=None):
+    @cached_property
+    def hash(self):
         """
         Build a unique hash identifying that issue and cache the resulting value
         The text concerned by the issue is used and not its position in the file
@@ -161,12 +164,11 @@ class Issue(abc.ABC):
         We make the assumption that the message does not contain the line number
         If an error occurs reading the file content (locally or remotely), None is returned
         """
-        if hasattr(self, "_hash"):
-            return self._hash
-
         assert self.revision is not None, "Missing revision"
 
+        local_repository = settings.runtime.get("mercurial_repository")
         if local_repository:
+            logger.debug("Using the local repository to build issue's hash")
             try:
                 with open(local_repository / self.path) as f:
                     file_content = f.read()
@@ -227,8 +229,7 @@ class Issue(abc.ABC):
         ).encode("utf-8")
 
         # Finally build the MD5 hash
-        self._hash = hashlib.md5(payload).hexdigest()
-        return self._hash
+        return hashlib.md5(payload).hexdigest()
 
     @abc.abstractmethod
     def validates(self):
@@ -258,16 +259,16 @@ class Issue(abc.ABC):
         """
         raise NotImplementedError
 
-    def as_dict(self, issue_hash=None):
+    def as_dict(self):
         """
         Build the serializable dict representation of the issue
         Used by debugging tools
         """
-        if not issue_hash:
-            try:
-                issue_hash = self.get_hash()
-            except Exception as e:
-                logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
+        issue_hash = None
+        try:
+            issue_hash = self.hash
+        except Exception as e:
+            logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
 
         return {
             "analyzer": self.analyzer.name,

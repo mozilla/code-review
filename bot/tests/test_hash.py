@@ -51,7 +51,7 @@ def test_get_hash(mock_revision, mock_hgmo, mock_task):
         "A random & fake linting issue"
     )
     hash_check = hashlib.md5(payload.encode("utf-8")).hexdigest()
-    assert hash_check == "b06e5b92a609496d1473ca90fec1749c" == issue.get_hash()
+    assert hash_check == "b06e5b92a609496d1473ca90fec1749c" == issue.hash
 
 
 def test_indentation_effect(mock_revision, mock_hgmo, mock_task):
@@ -94,9 +94,7 @@ def test_indentation_effect(mock_revision, mock_hgmo, mock_task):
 
     # Check the hashes are equal
     assert (
-        issue_indent.get_hash()
-        == issue_no_indent.get_hash()
-        == "a8c5c52b21c12b483617adc60cdd5dc2"
+        issue_indent.hash == issue_no_indent.hash == "a8c5c52b21c12b483617adc60cdd5dc2"
     )
 
 
@@ -126,7 +124,7 @@ def test_full_file(mock_revision, mock_hgmo, mock_task):
     assert issue.line is None
 
     # Build hash should use the full file
-    assert issue.get_hash() == "65fe9040e64b3617e4cbf40ef478f62d"
+    assert issue.hash == "65fe9040e64b3617e4cbf40ef478f62d"
 
     # Check positive integers or None are used in report
     assert issue.as_dict() == {

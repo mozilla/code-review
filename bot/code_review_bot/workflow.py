@@ -53,7 +53,6 @@ class Workflow(object):
         zero_coverage_enabled=True,
         update_build=True,
         task_failures_ignored=[],
-        mercurial_repository=None,
     ):
         self.zero_coverage_enabled = zero_coverage_enabled
         self.update_build = update_build
@@ -80,9 +79,6 @@ class Workflow(object):
 
         # Setup Backend API client
         self.backend_api = BackendAPI()
-
-        # Path to the mercurial repository
-        self.mercurial_repository = mercurial_repository
 
     def run(self, revision):
         """
@@ -224,7 +220,6 @@ class Workflow(object):
             self.backend_api.publish_issues(
                 issues,
                 revision,
-                mercurial_repository=repo_path,
                 bulk=BULK_ISSUE_CHUNKS,
             )
 
@@ -372,8 +367,7 @@ class Workflow(object):
             )
             hashes = [issue["hash"] for issue in known_issues]
             for issue in group_issues:
-                issue_hash = issue.get_hash(local_repository=self.mercurial_repository)
-                issue.new_issue = bool(issue_hash and issue_hash not in hashes)
+                issue.new_issue = bool(issue.hash and issue.hash not in hashes)
 
     def find_issues(self, revision, group_id):
         """

@@ -51,6 +51,8 @@ class Settings(object):
         self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
         self.repositories = []
         self.decision_env_prefixes = []
+        # Runtime settings
+        self.runtime = {}
 
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
