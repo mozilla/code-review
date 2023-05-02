@@ -145,8 +145,12 @@ class Revision(object):
         Randomly run the before/after feature depending on a configured ratio.
         All the diffs of a revision must be analysed with or without the feature.
         """
+        # Set a pseudo-random seed depending on the revision ID
+        # so the result is always the same for a given revision
         random.seed(self.id)
         return random.random() < taskcluster.secrets.get("BEFORE_AFTER_RATIO", 0)
+        # Reset random module seed to prevent deterministic values
+        random.seed(os.urandom(128))
 
     def __repr__(self):
         return self.diff_phid
