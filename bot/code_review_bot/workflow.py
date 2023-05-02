@@ -3,9 +3,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from collections import defaultdict
 from contextlib import nullcontext
 from datetime import datetime, timedelta
+from itertools import groupby
 
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
@@ -349,16 +349,16 @@ class Workflow(object):
         current_date = datetime.now().strftime("%Y-%m-%d")
 
         # Group issues by path, so we only list know issues for the affected files
-        groups = defaultdict(list)
-        for i in issues:
-            groups[i.path].append(i)
-
+        issues_groups = groupby(
+            sorted(issues, key=lambda i: i.path),
+            lambda i: i.path,
+        )
         logger.info(
-            f"Checking for existing issues in the backend ({len(groups)} paths)",
+            "Checking for existing issues in the backend",
             base_revision_changeset=base_rev_changeset,
         )
 
-        for path, group_issues in groups.items():
+        for path, group_issues in issues_groups:
             known_issues = self.backend_api.list_repo_issues(
                 "mozilla-central",
                 date=current_date,
