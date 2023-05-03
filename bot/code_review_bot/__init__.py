@@ -137,12 +137,12 @@ class Issue(abc.ABC):
         if not self.validates():
             return False
 
+        if self.revision.before_after_feature:
+            # Only publish new issues or issues inside the diff
+            return self.new_issue or self.in_patch
+
         # An error is always published
         if self.level == Level.Error:
-            return True
-
-        # Issues that are new are reported
-        if self.new_issue:
             return True
 
         # Then check if the backend marks this issue as publishable

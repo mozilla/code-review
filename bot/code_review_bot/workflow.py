@@ -236,13 +236,7 @@ class Workflow(object):
                 patch.publish()
 
         # Publish issues on backend to retrieve their comparison state
-        # Only publish errors and "in patch" warnings due to a backend timeout
         publishable_issues = [i for i in issues if i.is_publishable()]
-
-        if revision.before_after_feature:
-            # In case before/after feature is enabled, only store issues that are new
-            # That is required to specify the number of unresolved or closed issues
-            publishable_issues = [i for i in publishable_issues if i.new_issue]
 
         self.backend_api.publish_issues(publishable_issues, revision)
 
