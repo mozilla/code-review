@@ -145,9 +145,11 @@ class Revision(object):
         Randomly run the before/after feature depending on a configured ratio.
         All the diffs of a revision must be analysed with or without the feature.
         """
-        assert (
-            getattr(self, "id", None) is not None
-        ), "Backend ID must be set to determine if using the before/after feature"
+        if getattr(self, "id", None) is None:
+            logger.debug(
+                "Backend ID must be set to determine if using the before/after feature. Skipping."
+            )
+            return False
         # Set random module pseudo-random seed based on the revision ID to
         # ensure that successive calls to random.random will return deterministic values
         random.seed(self.id)
