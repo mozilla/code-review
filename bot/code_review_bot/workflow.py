@@ -107,7 +107,7 @@ class Workflow(object):
                 decision.get("payload", {}).get("env", {}).get("GECKO_BASE_REV")
             )
             if not base_rev_changeset:
-                logger.info(
+                logger.warning(
                     "Base revision changeset could not be fetched from Phabricator, "
                     "looking for existing issues based on the current date",
                     task=settings.try_group_id,
