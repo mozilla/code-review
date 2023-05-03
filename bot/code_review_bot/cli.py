@@ -51,8 +51,10 @@ def parse_cli():
     )
     parser.add_argument(
         "--mercurial-repository",
-        help="Optional path to a mercurial repository matching the analyzed revision.\n"
-        "Improves reading the updated files, i.e. to compute the unique hash of an issue.",
+        help="Optional path to a up-to-date mercurial repository matching the analyzed revision.\n"
+        "Reduce the time required to read updated files, i.e. to compute the unique hash of multiple issues.\n"
+        "A clone is automatically performed when ingesting a revision and this option is unset, "
+        "except on a developer instance (where HGMO is used).",
         type=Path,
         default=None,
     )
