@@ -11,9 +11,10 @@ from datetime import datetime, timedelta
 import requests
 from taskcluster.helper import TaskclusterConfig
 
+from code_review_bot.config import GetAppUserAgent
+
 TREEHERDER_PUSH_URL = "https://treeherder.mozilla.org/api/project/try/push/"
 TREEHERDER_JOBS_URL = "https://treeherder.mozilla.org/api/jobs/"
-TREEHERDER_HEADERS = {"user-agent": "code-review-bot/1.0.0"}
 BACKEND_URL = "https://api.code-review.moz.tools/v1/diff/"
 REGEX_PHAB_ID = re.compile(
     r"try_task_config for https://phabricator.services.mozilla.com/D(\d+)"
@@ -42,8 +43,9 @@ def list_diffs(min_date, max_date):
     revisions = []
     updates = {}
 
+    headers = {"User-Agent": "Mozilla ReviewBot/1.0"}
     while True:
-        resp = requests.get(url)
+        resp = requests.get(url, headers=headers)
         resp.raise_for_status()
         data = resp.json()
 
@@ -80,7 +82,7 @@ def list_pushes(known_revisions, updates, min_date, max_date):
     }
 
     while True:
-        resp = requests.get(TREEHERDER_PUSH_URL, params, headers=TREEHERDER_HEADERS)
+        resp = requests.get(TREEHERDER_PUSH_URL, params, headers=GetAppUserAgent())
         resp.raise_for_status()
         data = resp.json()
 
@@ -125,7 +127,7 @@ def list_pushes(known_revisions, updates, min_date, max_date):
 def find_task(push_id):
     # Find the task ids from Treeherder
     resp = requests.get(
-        TREEHERDER_JOBS_URL, {"push_id": push_id}, headers=TREEHERDER_HEADERS
+        TREEHERDER_JOBS_URL, {"push_id": push_id}, headers=GetAppUserAgent()
     )
     resp.raise_for_status()
     data = resp.json()

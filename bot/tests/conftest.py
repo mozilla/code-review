@@ -19,7 +19,7 @@ from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import Level, stats
 from code_review_bot.backend import BackendAPI
-from code_review_bot.config import settings
+from code_review_bot.config import GetAppUserAgent, settings
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from code_review_bot.tasks.default import DefaultTask
 
@@ -582,6 +582,9 @@ def mock_hgmo():
         assert repo != "None", "Missing repo"
         assert revision != "None", "Missing revision"
 
+        # Check for the correct user agent
+        assert GetAppUserAgent()["user-agent"] == request.headers["user-agent"]
+
         mock_path = os.path.join(MOCK_DIR, f"hgmo_{path}")
         if os.path.exists(mock_path):
             # Read existing mock file
@@ -594,6 +597,7 @@ def mock_hgmo():
         return (200, {}, content)
 
     def fake_json_rev(request):
+        assert GetAppUserAgent()["user-agent"] == request.headers["user-agent"]
         *repo, _, revision = request.path_url[1:].split("/")
         repo = "-".join(repo)
 
@@ -628,6 +632,7 @@ def mock_backend(mock_backend_secret):
     def get_revision(request):
         """Get a revision when available in db"""
         revision_id = int(request.path_url.split("/")[3])
+        assert GetAppUserAgent()["user-agent"] == request.headers["user-agent"]
         if revision_id in revisions:
             return (200, {}, json.dumps(revisions[revision_id]))
         return (404, {}, "")
@@ -635,6 +640,7 @@ def mock_backend(mock_backend_secret):
     def post_revision(request):
         """Create a revision when not available in db"""
         payload = json.loads(request.body)
+        assert GetAppUserAgent()["user-agent"] == request.headers["user-agent"]
         revision_id = len(revisions) + 1
         payload["id"] = revision_id
         if revision_id in revisions:
@@ -650,6 +656,7 @@ def mock_backend(mock_backend_secret):
     def get_diff(request):
         """Get a diff when available in db"""
         diff_id = int(request.path_url.split("/")[5])
+        assert GetAppUserAgent()["user-agent"] == request.headers["user-agent"]
         if diff_id in diffs:
             return (200, {}, json.dumps(diffs[diff_id]))
         return (404, {}, "")
@@ -657,6 +664,7 @@ def mock_backend(mock_backend_secret):
     def post_diff(request):
         """Create a diff when not available in db"""
         payload = json.loads(request.body)
+        assert GetAppUserAgent()["user-agent"] == request.headers["user-agent"]
         diff_id = payload["id"]
         if diff_id in diffs:
             return (400, {}, "")
@@ -672,6 +680,8 @@ def mock_backend(mock_backend_secret):
         diff_id = int(request.path_url.split("/")[3])
         payload = json.loads(request.body)
 
+        assert GetAppUserAgent()["user-agent"] == request.headers["user-agent"]
+
         # Add a constant uuid as issue id
         payload["id"] = str(
             uuid.uuid5(uuid.NAMESPACE_URL, request.url + str(len(issues[diff_id])))
@@ -683,6 +693,8 @@ def mock_backend(mock_backend_secret):
     def post_issues_bulk(request):
         """Create issues in bulk on a revision"""
         payload = json.loads(request.body)
+
+        assert GetAppUserAgent()["user-agent"] == request.headers["user-agent"]
 
         # Add a constant UUIDs for issues
         for index, issue in enumerate(payload["issues"]):
