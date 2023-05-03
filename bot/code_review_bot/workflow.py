@@ -185,10 +185,10 @@ class Workflow(object):
             and settings.taskcluster.task_id != "local instance"
         ):
             logger.info(
-                f"Cloning revision to build issues (checkout to {revision.mercurial_revision})"
+                f"Cloning revision to build issues (checkout to {revision.head_changeset})"
             )
             context_manager = clone_repository(
-                repo_url=revision.repository, branch=revision.mercurial_revision
+                repo_url=revision.head_repository, branch=revision.head_changeset
             )
 
         with context_manager as repo_path:
