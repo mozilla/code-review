@@ -6,13 +6,14 @@
 import requests
 
 from code_review_bot import taskcluster
+from code_review_bot.config import GetAppUserAgent
 
 TC_INDEX_URL = "https://firefox-ci-tc.services.mozilla.com/api/index/v1/tasks/project.relman.{}.code-review.phabricator"
 
 
 def list_tasks(env):
     url = TC_INDEX_URL.format(env)
-    resp = requests.get(url)
+    resp = requests.get(url, headers=GetAppUserAgent())
     resp.raise_for_status()
     return list(map(lambda t: t["data"], resp.json()["tasks"]))
 

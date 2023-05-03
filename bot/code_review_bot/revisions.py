@@ -14,7 +14,12 @@ import structlog
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import Issue, stats, taskcluster
-from code_review_bot.config import REPO_AUTOLAND, REPO_MOZILLA_CENTRAL, settings
+from code_review_bot.config import (
+    REPO_AUTOLAND,
+    REPO_MOZILLA_CENTRAL,
+    GetAppUserAgent,
+    settings,
+)
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
@@ -322,7 +327,8 @@ class Revision(object):
             f"{self.head_repository}/raw-file/{self.head_changeset}/{path}",
         )
         logger.info("Downloading HGMO file", url=url)
-        response = requests.get(url)
+
+        response = requests.get(url, headers=GetAppUserAgent())
         response.raise_for_status()
 
         # Store in cache

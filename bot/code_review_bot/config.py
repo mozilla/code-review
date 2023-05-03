@@ -12,6 +12,7 @@ import os
 import shutil
 import tempfile
 
+import pkg_resources
 import structlog
 
 REPO_MOZILLA_CENTRAL = "https://hg.mozilla.org/mozilla-central"
@@ -26,6 +27,10 @@ RepositoryConf = collections.namedtuple(
     "RepositoryConf",
     "name, try_name, url, decision_env_prefix",
 )
+
+
+def GetAppUserAgent():
+    return {"user-agent": "code-review-bot/{}".format(settings.version)}
 
 
 class Settings(object):
@@ -49,6 +54,8 @@ class Settings(object):
 
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
+        # caching the versions of the app
+        self.version = pkg_resources.require("code-review-bot")[0].version
 
     def setup(self, app_channel, allowed_paths, repositories):
         # Detect source from env

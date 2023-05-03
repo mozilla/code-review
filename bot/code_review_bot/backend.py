@@ -9,7 +9,7 @@ import requests
 import structlog
 
 from code_review_bot import taskcluster
-from code_review_bot.config import settings
+from code_review_bot.config import GetAppUserAgent, settings
 
 logger = structlog.get_logger(__name__)
 
@@ -77,7 +77,9 @@ class BackendAPI(object):
         revision_url = "/v1/revision/"
         auth = (self.username, self.password)
         url_post = urllib.parse.urljoin(self.url, revision_url)
-        response = requests.post(url_post, json=data, auth=auth)
+        response = requests.post(
+            url_post, headers=GetAppUserAgent(), json=data, auth=auth
+        )
         if not response.ok:
             logger.warn("Backend rejected the payload: {}".format(response.content))
             return
@@ -201,7 +203,7 @@ class BackendAPI(object):
 
         # Iterate until there is no page left or a status error happen
         while next_url:
-            resp = requests.get(next_url, auth=auth)
+            resp = requests.get(next_url, auth=auth, headers=GetAppUserAgent())
             resp.raise_for_status()
             data = resp.json()
             for result in data.get("results", []):
@@ -220,14 +222,16 @@ class BackendAPI(object):
         if "id" in data:
             # Check that the item does not already exists
             url_get = urllib.parse.urljoin(self.url, f"{url_path}{data['id']}/")
-            response = requests.get(url_get, auth=auth)
+            response = requests.get(url_get, auth=auth, headers=GetAppUserAgent())
             if response.ok:
                 logger.info("Found existing item on backend", url=url_get)
                 return response.json()
 
         # Create the requested item
         url_post = urllib.parse.urljoin(self.url, url_path)
-        response = requests.post(url_post, json=data, auth=auth)
+        response = requests.post(
+            url_post, headers=GetAppUserAgent(), json=data, auth=auth
+        )
         if not response.ok:
             logger.warn("Backend rejected the payload: {}".format(response.content))
             return None
