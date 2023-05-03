@@ -148,11 +148,11 @@ class Revision(object):
         assert (
             getattr(self, "id", None) is not None
         ), "Backend ID must be set to determine if using the before/after feature"
-        # Set a pseudo-random seed depending on the revision ID
-        # so the result is always the same for a given revision
+        # Set random module pseudo-random seed based on the revision ID to
+        # ensure that successive calls to random.random will return deterministic values
         random.seed(self.id)
         return random.random() < taskcluster.secrets.get("BEFORE_AFTER_RATIO", 0)
-        # Reset random module seed to prevent deterministic values
+        # Reset random module seed to prevent deterministic values after calling that function
         random.seed(os.urandom(128))
 
     def __repr__(self):
