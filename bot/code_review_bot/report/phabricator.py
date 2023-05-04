@@ -198,8 +198,6 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        # Publish a statistic about issues already known on mozilla-central
-        known_issues = [issue for issue in issues if issue.new_issue is False]
         if publishable_issues:
             # Publish detected patch's issues on Harbormaster, all at once, as lint issues
             self.publish_harbormaster(revision, publishable_issues)
@@ -246,7 +244,6 @@ class PhabricatorReporter(Reporter):
             former_diff_id=former_diff_id,
             unresolved_count=len(unresolved_issues),
             closed_count=len(closed_issues),
-            known_issues=known_issues,
         )
 
         # Publish statistics
@@ -286,7 +283,6 @@ class PhabricatorReporter(Reporter):
         former_diff_id,
         unresolved_count,
         closed_count,
-        known_issues,
     ):
         """
         Summarize publishable issues through Phabricator comment
@@ -303,7 +299,6 @@ class PhabricatorReporter(Reporter):
                 former_diff_id=former_diff_id,
                 unresolved=unresolved_count,
                 closed=closed_count,
-                known_issues=known_issues,
             ),
         )
         logger.info("Published phabricator summary")
@@ -319,7 +314,6 @@ class PhabricatorReporter(Reporter):
         former_diff_id=None,
         unresolved=0,
         closed=0,
-        known_issues=[],
     ):
         """
         Build a Markdown comment about published issues
@@ -430,24 +424,8 @@ class PhabricatorReporter(Reporter):
 
         assert comment != "", "Empty comment"
 
-        known_stats = defaultdict(int)
-        for i in known_issues:
-            known_stats[i.level.value] += 1
-
         # Display more information in the footer section
-        comment += "\n\n---\n\n"
-
-        # Publish the number of known issues in case running with before/after
-        if revision.before_after_feature and known_stats:
-            known_issues_msg = " and ".join(
-                self.pluralize(level, nb) for level, nb in known_stats.items()
-            )
-            plural = sum(known_stats.values()) > 1
-            known_issues_msg = (
-                known_issues_msg
-                + f" {'were' if plural else 'was'} detected but already existing on the mozilla-central repository.\n"
-            )
-            comment += known_issues_msg
+        comment += "\n\n---\n"
 
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
