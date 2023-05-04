@@ -203,25 +203,28 @@ class Workflow(object):
             logger.info("No issues for that revision")
             return
 
-        context_manager = nullcontext(self.mercurial_repository)
+        runtime_repo = settings.runtime.get("mercurial_repository")
+        context_manager = nullcontext(runtime_repo)
         # Do always clone the repository on production to speed up reading issues
-        if (
-            self.mercurial_repository is None
-            and settings.taskcluster.task_id != "local instance"
-        ):
+        if runtime_repo is None and settings.taskcluster.task_id != "local instance":
             logger.info(
-                f"Cloning revision to build issues (checkout to {revision.head_changeset})"
+                "Cloning revision to build issues",
+                repo=revision.head_repository,
+                changeset=revision.head_changeset,
             )
             context_manager = clone_repository(
                 repo_url=revision.head_repository, branch=revision.head_changeset
             )
 
         with context_manager as repo_path:
-            self.backend_api.publish_issues(
-                issues,
-                revision,
-                bulk=BULK_ISSUE_CHUNKS,
-            )
+            # Override runtime settings with the cloned repository
+            with settings.override_runtime_setting("mercurial_repository", repo_path):
+                # Publish issues in the backend
+                self.backend_api.publish_issues(
+                    issues,
+                    revision,
+                    bulk=BULK_ISSUE_CHUNKS,
+                )
 
     def publish(self, revision, issues, task_failures, notices, reviewers):
         """

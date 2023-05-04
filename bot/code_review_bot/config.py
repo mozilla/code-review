@@ -11,6 +11,7 @@ import fnmatch
 import os
 import shutil
 import tempfile
+from contextlib import contextmanager
 
 import pkg_resources
 import structlog
@@ -128,6 +129,16 @@ class Settings(object):
         Is this path allowed for reporting ?
         """
         return any([fnmatch.fnmatch(path, rule) for rule in self.allowed_paths])
+
+    @contextmanager
+    def override_runtime_setting(self, key, value):
+        """
+        Overrides a runtime setting, then restores the default value
+        """
+        copy = {**self.runtime}
+        self.runtime[key] = value
+        yield
+        self.runtime = copy
 
     def cleanup(self):
         shutil.rmtree(self.hgmo_cache)
