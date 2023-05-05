@@ -10,7 +10,7 @@ from urllib.parse import urljoin
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
 
-from code_review_bot import Issue, stats
+from code_review_bot import Issue, Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.report.base import Reporter
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
@@ -20,7 +20,7 @@ from code_review_tools import treeherder
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
 COMMENT_FAILURE = """
-Code analysis found {defects_total}{defects_details} in the diff [{diff_id}]({phabricator_diff_url}):
+Code analysis found {defects_total} in diff [{diff_id}]({phabricator_diff_url}):
 """
 
 COMMENT_WARNINGS = """
@@ -49,8 +49,6 @@ Should they have tests, or are they dead code?
 
 # Use two line breaks to force '---' to be rendered as a horizontal rule in Phabricator's markdown
 BUG_REPORT = """
-
----
 If you see a problem in this automated review, [please report it here]({bug_report_url}).
 """
 
@@ -59,7 +57,7 @@ For your convenience, [here is a patch]({url}) that fixes all the {analyzer} def
 """
 
 COMMENT_TASK_FAILURE = """
-The analysis task [{name}]({url}) failed, but we could not detect any issue.
+The analysis task [{name}]({url}) failed, but we could not detect any defect.
 Please check this task manually.
 """
 
@@ -103,6 +101,15 @@ class PhabricatorReporter(Reporter):
         assert isinstance(api, PhabricatorAPI)
         self.api = api
         logger.info("Phabricator reporter enabled")
+
+    @staticmethod
+    def pluralize(word, nb):
+        """
+        Simple helper to pluralize a noun depending of the number of elements
+        """
+        assert isinstance(word, str)
+        assert isinstance(nb, int)
+        return "{} {}".format(nb, nb == 1 and word or word + "s")
 
     def compare_issues(self, former_diff_id, issues):
         """
@@ -179,7 +186,7 @@ class PhabricatorReporter(Reporter):
 
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
-        issues = [
+        publishable_issues = [
             issue
             for issue in issues
             if issue.is_publishable()
@@ -191,9 +198,9 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if issues:
+        if publishable_issues:
             # Publish detected patch's issues on Harbormaster, all at once, as lint issues
-            self.publish_harbormaster(revision, issues)
+            self.publish_harbormaster(revision, publishable_issues)
 
         # Retrieve all diffs for the current revision
         rev_diffs = self.api.search_diffs(revision_phid=revision.phabricator_phid)
@@ -202,16 +209,19 @@ class PhabricatorReporter(Reporter):
             logger.warning(
                 "A newer diff exists on this patch, skipping the comment publication"
             )
-            return issues, patches
+            return publishable_issues, patches
 
+        # Compare issues that are not known on the repository to a previous diff
         older_diff_ids = [
             diff["id"] for diff in rev_diffs if diff["id"] < revision.diff_id
         ]
         former_diff_id = sorted(older_diff_ids)[-1] if older_diff_ids else None
-        unresolved_issues, closed_issues = self.compare_issues(former_diff_id, issues)
+        unresolved_issues, closed_issues = self.compare_issues(
+            former_diff_id, publishable_issues
+        )
 
         if (
-            len(unresolved_issues) == len(issues)
+            len(unresolved_issues) == len(publishable_issues)
             and not closed_issues
             and not task_failures
             and not notices
@@ -222,12 +232,12 @@ class PhabricatorReporter(Reporter):
                 "Skipping comment publication (some issues are unresolved)",
                 unresolved_count=len(unresolved_issues),
             )
-            return issues, patches
+            return publishable_issues, patches
 
         # Publish comment summarizing detected, unresolved and closed issues
         self.publish_summary(
             revision,
-            issues,
+            publishable_issues,
             patches,
             task_failures,
             notices,
@@ -240,7 +250,7 @@ class PhabricatorReporter(Reporter):
         stats.add_metric("report.phabricator.issues", len(issues))
         stats.add_metric("report.phabricator")
 
-        return issues, patches
+        return publishable_issues, patches
 
     def publish_harbormaster(
         self, revision, lint_issues: Issues = [], unit_issues: Issues = []
@@ -308,44 +318,7 @@ class PhabricatorReporter(Reporter):
         """
         Build a Markdown comment about published issues
         """
-
-        def pluralize(word, nb):
-            assert isinstance(word, str)
-            assert isinstance(nb, int)
-            return "{} {}".format(nb, nb == 1 and word or word + "s")
-
-        # List all the issues classes
-        issue_classes = {issue.__class__ for issue in issues}
-
-        # Calc stats for issues, grouped by class
-        stats = self.calc_stats(issues)
-
-        # Build parts depending on issues
-        defects, analyzers = set(), set()
-        total_warnings = 0
-        total_errors = 0
-        for stat in stats:
-            defect_nb = []
-            if stat["nb_build_errors"] > 0:
-                defect_nb.append(pluralize("build error", stat["nb_build_errors"]))
-            if stat["nb_defects"] > 0:
-                defect_nb.append(pluralize("defect", stat["nb_defects"]))
-
-            defects.add(
-                " - {nb} found by {analyzer}".format(
-                    analyzer=stat["analyzer"], nb=" and ".join(defect_nb)
-                )
-            )
-            _help = stat.get("help")
-            if _help is not None:
-                analyzers.add(f" - {_help}")
-
-            total_warnings += stat["nb_warnings"]
-            total_errors += stat["nb_errors"]
-
-        # Order both sets
-        defects = sorted(defects)
-        analyzers = sorted(analyzers)
+        comment = ""
 
         # Comment with an absolute link to the revision diff in Phabricator
         # Relative links are not supported in comment and non readable in related emails
@@ -353,34 +326,29 @@ class PhabricatorReporter(Reporter):
             diff_id=revision.diff_id
         )
 
-        # Build top comment
-        nb = len(issues)
-
-        # Add extra hint when errors are published outside of the patch
-        defects_details = ""
-        # Only display the hint when the revision has parents in his stack
-        rev_parents_count = len(self.api.load_parents(revision.phabricator_phid))
-        external_failures_count = rev_parents_count and sum(
-            1
-            for issue in issues
-            if issue.is_publishable() and not revision.contains(issue)
-        )
-        if nb == 1 and external_failures_count == 1:
-            defects_details = " (in a parent revision)"
-        elif nb > 1 and external_failures_count > 0:
-            defects_details = f" ({external_failures_count} in a parent revision)"
-
-        if nb > 0:
+        # Build main comment for issues inside the patch
+        if (nb := len(issues)) > 0:
             comment = COMMENT_FAILURE.format(
-                defects_total=pluralize("defect", nb),
-                defects_details=defects_details,
+                defects_total=self.pluralize("defect", nb),
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
             )
-        else:
-            comment = ""
 
-        # Add defects
+        # Calc stats for issues inside the patch, grouped by class and sorted by number of issues
+        defects = []
+        stats = self.calc_stats(issues)
+        for stat in sorted(stats, key=lambda x: (x["total"], x["analyzer"])):
+            defect_nb = []
+            if stat["nb_build_errors"] > 0:
+                defect_nb.append(self.pluralize("build error", stat["nb_build_errors"]))
+            if stat["nb_defects"] > 0:
+                defect_nb.append(self.pluralize("defect", stat["nb_defects"]))
+
+            defects.append(
+                " - {nb} found by {analyzer}".format(
+                    analyzer=stat["analyzer"], nb=" and ".join(defect_nb)
+                )
+            )
         if defects:
             comment += "\n".join(defects) + "\n"
 
@@ -388,11 +356,13 @@ class PhabricatorReporter(Reporter):
         if unresolved or closed:
             followup_comment = ""
             if unresolved:
-                followup_comment += pluralize("issue", unresolved) + " unresolved "
+                followup_comment += (
+                    self.pluralize("defect", unresolved) + " unresolved "
+                )
                 if closed:
                     followup_comment += "and "
             if closed:
-                followup_comment += pluralize("issue", closed) + " closed "
+                followup_comment += self.pluralize("defect", closed) + " closed "
             followup_comment += COMMENT_DIFF_FOLLOWUP.format(
                 phabricator_diff_url=self.phabricator_diff_url.format(
                     diff_id=former_diff_id
@@ -402,15 +372,25 @@ class PhabricatorReporter(Reporter):
             comment += followup_comment
 
         # Add colored warning section
+        total_warnings = sum(1 for i in issues if i.level == Level.Warning)
         if total_warnings:
             comment += COMMENT_WARNINGS.format(
-                nb_warnings=pluralize("issue", total_warnings)
+                nb_warnings=self.pluralize("defect", total_warnings)
             )
 
         # Add colored error section
+        total_errors = sum(1 for i in issues if i.level == Level.Error)
         if total_errors:
-            comment += COMMENT_ERRORS.format(nb_errors=pluralize("issue", total_errors))
+            comment += COMMENT_ERRORS.format(
+                nb_errors=self.pluralize("defect", total_errors)
+            )
 
+        # Build analyzers help comment for all issues
+        analyzers = set()
+        for stat in stats:
+            _help = stat.get("help")
+            if _help is not None:
+                analyzers.add(f" - {_help}")
         if analyzers:
             comment += COMMENT_RUN_ANALYZERS.format(analyzers="\n".join(analyzers))
 
@@ -434,6 +414,7 @@ class PhabricatorReporter(Reporter):
             comment += COMMENT_TASK_FAILURE.format(name=task.name, url=treeherder_url)
 
         # Add coverage reporting details when a coverage issue is published
+        issue_classes = {issue.__class__ for issue in issues}
         if CoverageIssue in issue_classes:
             comment += COMMENT_COVERAGE
 
@@ -443,6 +424,9 @@ class PhabricatorReporter(Reporter):
 
         assert comment != "", "Empty comment"
 
+        # Display more information in the footer section
+        comment += "\n\n---\n"
+
         comment += BUG_REPORT.format(bug_report_url=bug_report_url)
 
         if defects:
@@ -450,4 +434,5 @@ class PhabricatorReporter(Reporter):
                 diff_id=revision.diff_id,
                 phabricator_diff_url=phabricator_diff_url,
             )
+
         return comment

@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import os
+import random
 import urllib.parse
 from datetime import timedelta
 from pathlib import Path
@@ -137,6 +138,24 @@ class Revision(object):
             "phabricator.phabricator_phid.{}".format(self.phabricator_phid),
             "phabricator.diffphid.{}".format(self.diff_phid),
         ]
+
+    @property
+    def before_after_feature(self):
+        """
+        Randomly run the before/after feature depending on a configured ratio.
+        All the diffs of a revision must be analysed with or without the feature.
+        """
+        if getattr(self, "id", None) is None:
+            logger.debug(
+                "Backend ID must be set to determine if using the before/after feature. Skipping."
+            )
+            return False
+        # Set random module pseudo-random seed based on the revision ID to
+        # ensure that successive calls to random.random will return deterministic values
+        random.seed(self.id)
+        return random.random() < taskcluster.secrets.get("BEFORE_AFTER_RATIO", 0)
+        # Reset random module seed to prevent deterministic values after calling that function
+        random.seed(os.urandom(128))
 
     def __repr__(self):
         return self.diff_phid

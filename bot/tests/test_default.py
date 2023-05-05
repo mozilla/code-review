@@ -97,7 +97,7 @@ A random issue happened here
 """
     )
 
-    assert issue.build_hash() == "533d1aefc79ef542b3e7d677c1c5724e"
+    assert issue.hash == "533d1aefc79ef542b3e7d677c1c5724e"
     assert issue.as_dict() == {
         "analyzer": "any-analyzer-name",
         "check": "XYZ",

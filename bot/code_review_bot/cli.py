@@ -104,6 +104,13 @@ def main():
         taskcluster.secrets["ALLOWED_PATHS"],
         taskcluster.secrets["repositories"],
     )
+
+    # Store some CLI parameters in the global settings
+    settings.runtime.update(
+        {
+            "mercurial_repository": args.mercurial_repository,
+        }
+    )
     # Setup statistics
     influx_conf = taskcluster.secrets.get("influxdb")
     if influx_conf:
@@ -182,7 +189,6 @@ def main():
         # Update build status only when phabricator reporting is enabled
         update_build=phabricator_reporting_enabled,
         task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
-        mercurial_repository=args.mercurial_repository,
     )
     try:
         if settings.autoland_group_id:

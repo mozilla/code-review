@@ -26,42 +26,44 @@ from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
 
 VALID_CLANG_TIDY_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-tidy
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_BUILD_ERROR_MESSAGE = """
-Code analysis found 1 defect (in a parent revision) in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 build error found by clang-tidy
 
-IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
+IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
 
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_CLANG_FORMAT_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-format
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach clang-format -p dom/test.cpp`
@@ -70,35 +72,37 @@ For your convenience, [here is a patch]({results}/source-test-clang-format-PHID-
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_FLAKE8_MESSAGE = """
-Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by eslint (Mozlint)
  - 1 defect found by py-flake8 (Mozlint)
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
-IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
+IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
 
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_COVERAGE_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by code coverage analysis
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 In our previous code coverage analysis run, we found some files which had no coverage and are being modified in this patch:
 Should they have tests, or are they dead code?
@@ -108,57 +112,61 @@ Should they have tests, or are they dead code?
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_DEFAULT_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by full-file-analyzer
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_TASK_FAILURES_MESSAGE = """
-The analysis task [mock-clang-tidy](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadc0ffee&selectedTaskRun=ab3NrysvSZyEwsOHL2MZfw-0) failed, but we could not detect any issue.
+The analysis task [mock-clang-tidy](https://treeherder.mozilla.org/#/jobs?repo=try&revision=deadc0ffee&selectedTaskRun=ab3NrysvSZyEwsOHL2MZfw-0) failed, but we could not detect any defect.
 Please check this task manually.
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """
 
 VALID_MOZLINT_MESSAGE = """
-Code analysis found 2 defects (1 in a parent revision) in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 2 defects found by dummy (Mozlint)
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
-IMPORTANT: Found 1 issue (error level) that must be fixed before landing.
+IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
 
 You can run this analysis locally with:
  - `./mach lint --warnings --outgoing`
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
-Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-tidy
  - 1 defect found by code coverage analysis
 
-WARNING: Found 2 issues (warning level) that can be dismissed.
+WARNING: Found 2 defects (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach static-analysis check --outgoing` (C/C++)
@@ -171,6 +179,7 @@ Should they have tests, or are they dead code?
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
@@ -181,14 +190,15 @@ VALID_NOTICE_MESSAGE = """
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 """
 
 VALID_EXTERNAL_TIDY_MESSAGE = """
-Code analysis found 1 defect in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by private static analysis
 
-WARNING: Found 1 issue (warning level) that can be dismissed.
+WARNING: Found 1 defect (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - For private static analysis, please see [our private docs in Mana](https://mana.mozilla.org/wiki/pages/viewpage.action?pageId=130909687), if you cannot access this resource, ask your reviewer to help you resolve the issue.
@@ -203,18 +213,19 @@ You can run this analysis locally with:
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
 FOLLOW_UP_DIFF_MESSAGE = """
-Code analysis found 2 defects in the diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by clang-format
  - 1 defect found by code coverage analysis
-1 issue unresolved and 1 issue closed compared to the previous diff [41](https://phabricator.services.mozilla.com/differential/diff/41/).
+1 defect unresolved and 1 defect closed compared to the previous diff [41](https://phabricator.services.mozilla.com/differential/diff/41/).
 
-WARNING: Found 2 issues (warning level) that can be dismissed.
+WARNING: Found 2 defects (warning level) that can be dismissed.
 
 You can run this analysis locally with:
  - `./mach clang-format -p dom/test.cpp`
@@ -227,7 +238,25 @@ Should they have tests, or are they dead code?
 
 
 ---
+
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).\n
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+"""
+
+VALID_CLANG_BEFORE_AFTER_MESSAGE = """
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+ - 1 defect found by clang-format
+
+WARNING: Found 1 defect (warning level) that can be dismissed.
+
+You can run this analysis locally with:
+ - `./mach clang-format -p outside/of/the/patch.cpp`
+
+
+---
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
@@ -246,6 +275,7 @@ def test_phabricator_clang_tidy(
             "another_test.cpp": [41, 42, 43]
         }
         revision.files = ["another_test.cpp"]
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy"]}, api=api)
 
     issue = ClangTidyIssue(
@@ -281,6 +311,7 @@ def test_phabricator_clang_format(
             "test.cpp": [41, 42, 43],
             "dom/test.cpp": [42],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["clang-format"]}, api=api)
 
     task = mock_task(ClangFormatTask, "source-test-clang-format")
@@ -324,6 +355,7 @@ def test_phabricator_mozlint(
             "dom/test.cpp": [42],
         }
         revision.files = revision.lines.keys()
+        revision.id = 52
         reporter = PhabricatorReporter({}, api=api)
 
     issue_flake = MozLintIssue(
@@ -406,6 +438,7 @@ def test_phabricator_coverage(
             "path/to/test.cpp": [0],
             "dom/test.cpp": [42],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
 
     issue = CoverageIssue(
@@ -460,6 +493,7 @@ def test_phabricator_clang_tidy_and_coverage(
             "another_test.cpp": [41, 42, 43],
         }
         revision.files = ["test.txt", "test.cpp", "another_test.cpp"]
+        revision.id = 52
         reporter = PhabricatorReporter(
             {"analyzers": ["coverage", "clang-tidy"]}, api=api
         )
@@ -576,6 +610,7 @@ def test_phabricator_analyzers(
         # Always use the same setup, only varies the analyzers
         revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
         revision.lines = {"test.cpp": [0, 41, 42, 43], "dom/test.cpp": [42]}
+        revision.id = 52
         reporter = PhabricatorReporter(
             {"analyzers_skipped": analyzers_skipped}, api=api
         )
@@ -662,6 +697,7 @@ def test_phabricator_clang_tidy_build_error(
             # Add dummy lines diff
             "test.cpp": [41, 42, 43]
         }
+        revision.id = 52
         revision.build_target_phid = "PHID-HMBD-deadbeef12456"
 
         reporter = PhabricatorReporter({}, api=api)
@@ -720,6 +756,7 @@ def test_full_file(
             "xx.cpp": [123, 124, 125]
         }
         revision.files = list(revision.lines.keys())
+        revision.id = 52
         reporter = PhabricatorReporter(api=api)
 
     issue = DefaultIssue(
@@ -776,6 +813,7 @@ def test_task_failures(mock_phabricator, phab, mock_try_task, mock_decision_task
 
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy"]}, api=api)
 
     status = {
@@ -802,6 +840,7 @@ def test_extra_errors(
         revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
         revision.lines = {"path/to/file.py": [1, 2, 3]}
         revision.files = ["path/to/file.py"]
+        revision.id = 52
         reporter = PhabricatorReporter({}, api=api)
 
     task = mock_task(MozLintTask, "source-test-mozlint-dummy")
@@ -894,6 +933,7 @@ def test_phabricator_notices(mock_phabricator, phab, mock_try_task, mock_decisio
             # Add dummy lines diff
             "test.rst": [41, 42, 43],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
 
     doc_url = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
@@ -941,10 +981,12 @@ def test_phabricator_tgdiff(mock_phabricator, phab, mock_try_task, mock_decision
             # Add dummy lines diff
             "test.rst": [41, 42, 43],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["doc-upload"]}, api=api)
 
     doc_url = "http://gecko-docs.mozilla.org-l1.s3-website.us-west-2.amazonaws.com/59dc75b0-e207-11ea-8fa5-0242ac110004/index.html"
     doc_notice = COMMENT_LINK_TO_DOC.format(diff_id=42, doc_url=doc_url)
+
     reporter.publish(
         [],
         revision,
@@ -976,6 +1018,7 @@ def test_phabricator_external_tidy(
             "another_test.cpp": [41, 42, 43]
         }
         revision.files = ["another_test.cpp"]
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["clang-tidy-external"]}, api=api)
 
     issue_clang_diagnostic = ExternalTidyIssue(
@@ -1104,6 +1147,7 @@ def test_phabricator_former_diff_comparison(
             "path/to/test.cpp": [0],
             "dom/test.cpp": [42],
         }
+        revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
 
     issues = [
@@ -1218,8 +1262,108 @@ def test_phabricator_former_diff_comparison(
         }
     ]
 
-    # Check the comment hasn't been posted
     assert phab.comments[51] == [FOLLOW_UP_DIFF_MESSAGE]
 
     # Clear the environment
     del os.environ["SPECIAL_NAME"]
+
+
+def test_phabricator_before_after_comment(
+    monkeypatch,
+    mock_phabricator,
+    phab,
+    mock_try_task,
+    mock_decision_task,
+    mock_task,
+    mock_taskcluster_config,
+):
+    """
+    Test Phabricator reporter publication shows all type of issues depending on their existence
+    on the backend while running the before/after feature.
+
+    Two warnings are detected, one is reported because it is a new issue while the other one
+    is marked as existing on the backend (resumed by a line in the footer).
+    """
+    mock_taskcluster_config.secrets = {"BEFORE_AFTER_RATIO": 1}
+
+    with mock_phabricator as api:
+        revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+        revision.lines = {
+            # Add dummy lines diff
+            "test.txt": [0],
+            "path/to/test.cpp": [0],
+            "dom/test.cpp": [42],
+        }
+        revision.id = 52
+        reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
+
+    assert revision.before_after_feature is True
+
+    # A new warning issue outside of the patch
+    clang_issue = ClangFormatIssue(
+        mock_task(ClangFormatTask, "source-test-clang-format"),
+        "outside/of/the/patch.cpp",
+        [(42, 42, b"That line is wrong. Good luck debugging")],
+        revision,
+    )
+    clang_issue.validates = lambda: True
+    clang_issue.new_issue = True
+    # A warning already existing on the mozilla-central repository
+    cov_issue = CoverageIssue(
+        mock_task(ZeroCoverageTask, "coverage"),
+        "outside/of/the/patch.txt",
+        42,
+        "Coverage warning",
+        revision,
+    )
+
+    # New issues are publishable by default
+    assert clang_issue.is_publishable() is True
+    assert cov_issue.is_publishable() is False
+
+    # Tag the coverage issue as a new issue (nor unresolved nor closed)
+    reporter.compare_issues = lambda former_diff, issues: ([], [])
+
+    with capture_logs() as cap_logs:
+        issues, patches = reporter.publish(
+            [cov_issue, clang_issue], revision, [], [], []
+        )
+
+    assert cap_logs == [
+        {
+            "event": "Updated Harbormaster build state with issues",
+            "log_level": "info",
+            "nb_lint": 1,
+            "nb_unit": 0,
+        },
+        {
+            "event": "Published phabricator summary",
+            "log_level": "info",
+        },
+    ]
+
+    # Check the lint results
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "receiver": "PHID-HMBT-test",
+            "lint": [
+                {
+                    "code": "invalid-styling",
+                    "description": (
+                        "WARNING: The change does not follow the C/C++ "
+                        "coding style, please reformat\n\n"
+                        "  lang=c++\n"
+                        "  That line is wrong. Good luck debugging"
+                    ),
+                    "line": 42,
+                    "name": "clang-format",
+                    "path": "outside/of/the/patch.cpp",
+                    "severity": "warning",
+                },
+            ],
+            "type": "work",
+            "unit": [],
+        }
+    ]
+
+    assert phab.comments[51] == [VALID_CLANG_BEFORE_AFTER_MESSAGE]
