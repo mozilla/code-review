@@ -108,6 +108,10 @@ bot:
   # Boolean option to enable/disable the low coverage warning
   ZERO_COVERAGE_ENABLED: true
 
+  # Float ratio (between 0.0 and 1.0) defining the chance for a patch to be analyzed with
+  # the before/after feature (filters out known issues and warn about issues outside the patch)
+  BEFORE_AFTER_RATIO: 0.3
+
   # Connection information to publish issues on the backend
   # On local development it should be set to the local backend running in Docker
   backend:

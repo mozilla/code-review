@@ -8,12 +8,14 @@ import enum
 import hashlib
 import json
 import os
+from functools import cached_property
 
 import requests
 import structlog
 from libmozdata.phabricator import LintResult, UnitResult, UnitResultState
 from taskcluster.helper import TaskclusterConfig
 
+from code_review_bot.config import settings
 from code_review_bot.stats import InfluxDb
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -103,6 +105,10 @@ class Issue(abc.ABC):
         if self.fix is not None:
             assert self.language is not None, "Missing fix language"
 
+        # Mark the issue as known by default, so only errors are reported
+        # The before/after feature may tag some issues as new, so they are reported
+        self.new_issue = False
+
     def __str__(self):
         line = f"line {self.line}" if self.line is not None else "full file"
         return f"{self.analyzer.name} issue {self.check}@{self.level.value} {self.path} {line}"
@@ -131,6 +137,10 @@ class Issue(abc.ABC):
         if not self.validates():
             return False
 
+        if self.revision.before_after_feature:
+            # Only publish new issues or issues inside the diff
+            return self.new_issue or self.in_patch
+
         # An error is always published
         if self.level == Level.Error:
             return True
@@ -140,11 +150,16 @@ class Issue(abc.ABC):
             return self.on_backend["publishable"]
 
         # Fallback to in_patch detection
+        return self.in_patch
+
+    @property
+    def in_patch(self):
         return self.revision.contains(self)
 
-    def build_hash(self, local_repository=None):
+    @cached_property
+    def hash(self):
         """
-        Build a unique hash identifying that issue
+        Build a unique hash identifying that issue and cache the resulting value
         The text concerned by the issue is used and not its position in the file
         Message content is hashed as a single linter may return multiple issues on a single line
         We make the assumption that the message does not contain the line number
@@ -152,7 +167,9 @@ class Issue(abc.ABC):
         """
         assert self.revision is not None, "Missing revision"
 
+        local_repository = settings.runtime.get("mercurial_repository")
         if local_repository:
+            logger.debug("Using the local repository to build issue's hash")
             try:
                 with open(local_repository / self.path) as f:
                     file_content = f.read()
@@ -179,7 +196,8 @@ class Issue(abc.ABC):
                     raise
 
         if file_content is None:
-            return None
+            self._hash = None
+            return self._hash
 
         # Build raw content:
         # 1. lines affected by patch
@@ -242,16 +260,16 @@ class Issue(abc.ABC):
         """
         raise NotImplementedError
 
-    def as_dict(self, issue_hash=None):
+    def as_dict(self):
         """
         Build the serializable dict representation of the issue
         Used by debugging tools
         """
-        if not issue_hash:
-            try:
-                issue_hash = self.build_hash()
-            except Exception as e:
-                logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
+        issue_hash = None
+        try:
+            issue_hash = self.hash
+        except Exception as e:
+            logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
 
         return {
             "analyzer": self.analyzer.name,
@@ -262,7 +280,7 @@ class Issue(abc.ABC):
             "check": self.check,
             "level": self.level.value,
             "message": self.message,
-            "in_patch": self.revision.contains(self),
+            "in_patch": self.in_patch,
             "validates": self.validates(),
             "publishable": self.is_publishable(),
             "hash": issue_hash,

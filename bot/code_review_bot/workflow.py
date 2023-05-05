@@ -5,6 +5,7 @@
 
 from contextlib import nullcontext
 from datetime import datetime, timedelta
+from itertools import groupby
 
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
@@ -52,7 +53,6 @@ class Workflow(object):
         zero_coverage_enabled=True,
         update_build=True,
         task_failures_ignored=[],
-        mercurial_repository=None,
     ):
         self.zero_coverage_enabled = zero_coverage_enabled
         self.update_build = update_build
@@ -80,9 +80,6 @@ class Workflow(object):
         # Setup Backend API client
         self.backend_api = BackendAPI()
 
-        # Path to the mercurial repository
-        self.mercurial_repository = mercurial_repository
-
     def run(self, revision):
         """
         Find all issues on remote tasks and publish them
@@ -100,8 +97,36 @@ class Workflow(object):
         issues, task_failures, notices, reviewers = self.find_issues(
             revision, settings.try_group_id
         )
-        if not issues and not task_failures and not notices:
-            logger.info("No issues or notices, stopping there.")
+
+        # Analyze issues in case the before/after feature is enabled
+        if revision.before_after_feature:
+            logger.info("Running the before/after feature")
+            # Search a base revision from the decision task
+            decision = self.queue_service.task(settings.try_group_id)
+            base_rev_changeset = (
+                decision.get("payload", {}).get("env", {}).get("GECKO_BASE_REV")
+            )
+            if not base_rev_changeset:
+                logger.warning(
+                    "Base revision changeset could not be fetched from Phabricator, "
+                    "looking for existing issues based on the current date",
+                    task=settings.try_group_id,
+                )
+
+            # Mark know issues to avoid publishing them on this patch
+            self.find_previous_issues(issues, base_rev_changeset)
+            new_issues_count = sum(issue.new_issue for issue in issues)
+            logger.info(
+                f"Found {new_issues_count} new issues (over {len(issues)} total detected issues)",
+                task=settings.try_group_id,
+            )
+
+        if (
+            all(issue.new_issue is False for issue in issues)
+            and not task_failures
+            and not notices
+        ):
+            logger.info("No issues nor notices, stopping there.")
 
         # Publish all issues
         self.publish(revision, issues, task_failures, notices, reviewers)
@@ -178,26 +203,28 @@ class Workflow(object):
             logger.info("No issues for that revision")
             return
 
-        context_manager = nullcontext(self.mercurial_repository)
+        runtime_repo = settings.runtime.get("mercurial_repository")
+        context_manager = nullcontext(runtime_repo)
         # Do always clone the repository on production to speed up reading issues
-        if (
-            self.mercurial_repository is None
-            and settings.taskcluster.task_id != "local instance"
-        ):
+        if runtime_repo is None and settings.taskcluster.task_id != "local instance":
             logger.info(
-                f"Cloning revision to build issues (checkout to {revision.head_changeset})"
+                "Cloning revision to build issues",
+                repo=revision.head_repository,
+                changeset=revision.head_changeset,
             )
             context_manager = clone_repository(
                 repo_url=revision.head_repository, branch=revision.head_changeset
             )
 
         with context_manager as repo_path:
-            self.backend_api.publish_issues(
-                issues,
-                revision,
-                mercurial_repository=repo_path,
-                bulk=BULK_ISSUE_CHUNKS,
-            )
+            # Override runtime settings with the cloned repository
+            with settings.override_runtime_setting("mercurial_repository", repo_path):
+                # Publish issues in the backend
+                self.backend_api.publish_issues(
+                    issues,
+                    revision,
+                    bulk=BULK_ISSUE_CHUNKS,
+                )
 
     def publish(self, revision, issues, task_failures, notices, reviewers):
         """
@@ -212,7 +239,6 @@ class Workflow(object):
                 patch.publish()
 
         # Publish issues on backend to retrieve their comparison state
-        # Only publish errors and "in patch" warnings due to a backend timeout
         publishable_issues = [i for i in issues if i.is_publishable()]
 
         self.backend_api.publish_issues(publishable_issues, revision)
@@ -305,6 +331,40 @@ class Workflow(object):
                     "expires": stringDate(now + timedelta(days=TASKCLUSTER_INDEX_TTL)),
                 },
             )
+
+    def find_previous_issues(self, issues, base_rev_changeset=None):
+        """
+        Look for known issues in the backend matching the given list of issues
+
+        If a base revision ID is provided, compare to issues detected on this revision
+        Otherwise, compare to issues detected on last ingested revision
+        """
+        assert (
+            self.backend_api.enabled
+        ), "Backend storage is disabled, comparing issues is not possible"
+
+        current_date = datetime.now().strftime("%Y-%m-%d")
+
+        # Group issues by path, so we only list know issues for the affected files
+        issues_groups = groupby(
+            sorted(issues, key=lambda i: i.path),
+            lambda i: i.path,
+        )
+        logger.info(
+            "Checking for existing issues in the backend",
+            base_revision_changeset=base_rev_changeset,
+        )
+
+        for path, group_issues in issues_groups:
+            known_issues = self.backend_api.list_repo_issues(
+                "mozilla-central",
+                date=current_date,
+                revision_changeset=base_rev_changeset,
+                path=path,
+            )
+            hashes = [issue["hash"] for issue in known_issues]
+            for issue in group_issues:
+                issue.new_issue = bool(issue.hash and issue.hash not in hashes)
 
     def find_issues(self, revision, group_id):
         """
