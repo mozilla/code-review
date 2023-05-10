@@ -140,6 +140,15 @@ class BackendAPI(object):
                         continue
                     valid_data.append((issue, issue.as_dict()))
 
+                if not valid_data:
+                    # May happen when a series of issues are missing a hash
+                    logger.warning(
+                        "No issue is valid over an entire chunk",
+                        head_repository=revision.head_repository,
+                        head_changeset=revision.head_changeset,
+                    )
+                    continue
+
                 response = self.create(
                     revision.issues_url,
                     {"issues": [json_data for _, json_data in valid_data]},
