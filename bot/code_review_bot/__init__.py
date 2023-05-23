@@ -174,7 +174,7 @@ class Issue(abc.ABC):
                 with open(local_repository / self.path) as f:
                     file_content = f.read()
             except (FileNotFoundError, IsADirectoryError):
-                logger.warning(f"Failed to find issue's related file at {self.path}")
+                logger.warning("Failed to find issue's related file", path=self.path)
                 file_content = None
         else:
             try:
