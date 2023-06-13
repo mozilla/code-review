@@ -289,7 +289,7 @@ class CodeReview(PhabricatorActions):
                     name="mercurial",
                     result=UnitResultState.Unsound,
                     details="WARNING: The base revision of your patch is not available in the current repository.\nYour patch has been rebased on central (revision {}): issues may be positioned on the wrong lines.".format(
-                        build.revision["id"]
+                        build.actual_base_revision
                     ),
                 )
                 self.api.update_build_target(
