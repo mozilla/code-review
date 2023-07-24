@@ -4,7 +4,7 @@ Django==4.2.3
 django-cors-headers==4.2.0
 djangorestframework==3.14.0
 dockerflow==2022.8.0
-drf-yasg==1.21.6
+drf-yasg==1.21.7
 gunicorn==20.1.0
 psycopg2-binary==2.9.6
 sqlparse==0.4.4
