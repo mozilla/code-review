@@ -260,8 +260,6 @@ tasks:
                     expires: { $fromNow: "2 weeks" }
                     path: /events.tar.zst
                     type: file
-              scopes:
-                - docker-worker:capability:privileged
               metadata:
                 name: Code Review Events docker build
                 description: Build docker image of code review events
@@ -291,8 +289,6 @@ tasks:
                     expires: { $fromNow: "2 weeks" }
                     path: /backend.tar.zst
                     type: file
-              scopes:
-                - docker-worker:capability:privileged
               metadata:
                 name: Code Review Backend docker build
                 description: Build docker image of code review backend
@@ -353,8 +349,6 @@ tasks:
                     expires: { $fromNow: "2 weeks" }
                     path: /integration.tar.zst
                     type: file
-              scopes:
-                - docker-worker:capability:privileged
               metadata:
                 name: Code Review Integration docker build
                 description: Build docker image of code review integration tests
