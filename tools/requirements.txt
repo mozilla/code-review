@@ -1,5 +1,5 @@
-aiohttp==3.8.4
-async-timeout==4.0.2
+aiohttp==3.8.5
+async-timeout==4.0.3
 
 # Limit idna to avid conflicts
 idna>=2.5,<3.5
@@ -9,9 +9,9 @@ rs_parsepatch==0.3.9
 # The introduction of loguru to the sdk broke our integration.
 sentry-sdk==1.22.2
 structlog==23.1.0
-taskcluster==54.0.0
+taskcluster==54.4.1
 treeherder-client==5.0.0
 # Please see #1416, this eventually must be removed!
 # Also this must be below 2.0.0 until we move sentry-sdk to 1.23
-urllib3==1.26.15
+urllib3==2.0.4
 yarl==1.9.2

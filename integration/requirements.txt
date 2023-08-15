@@ -1,2 +1,2 @@
 MozPhab==1.4.3
-pyyaml==6.0
+pyyaml==6.0.1
