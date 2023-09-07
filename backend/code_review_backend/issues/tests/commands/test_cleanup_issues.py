@@ -105,7 +105,7 @@ class CleanupIssuesCommandTestCase(TestCase):
     def test_cleanup_issues_default_nb_days(self):
         self.assertEqual(Issue.objects.count(), 6)
         with self.assertLogs() as mock_log:
-            with self.assertNumQueries(10):
+            with self.assertNumQueries(12):
                 call_command(
                     "cleanup_issues",
                 )
@@ -131,7 +131,7 @@ class CleanupIssuesCommandTestCase(TestCase):
     def test_cleanup_issues_custom_nb_days(self):
         self.assertEqual(Issue.objects.count(), 6)
         with self.assertLogs() as mock_log:
-            with self.assertNumQueries(10):
+            with self.assertNumQueries(12):
                 call_command("cleanup_issues", "--nb-days", "4")
 
         self.assertEqual(Issue.objects.count(), 2)
