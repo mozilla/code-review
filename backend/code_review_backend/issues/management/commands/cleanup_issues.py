@@ -55,7 +55,7 @@ class Command(BaseCommand):
         for start in range(0, count_rev, DEL_CHUNK_SIZE):
             # First fetch revisions IDs in a first DB request
             chunk_rev_ids = rev_to_delete.order_by("id")[
-                start : start + UPDATE_CHUNK_SIZE
+                start : start + DEL_CHUNK_SIZE
             ].values_list("id", flat=True)
             # Delete IssueLink for this chunk
             _, links_stats = IssueLink.objects.filter(
