@@ -124,6 +124,7 @@ class CleanupIssuesCommandTestCase(TestCase):
             mock_log.output,
             [
                 f"{LOG_PREFIX}Retrieved 1 old revisions from either autoland or mozilla-central to be deleted.",
+                f"{LOG_PREFIX}Page 1/1.",
                 f"{LOG_PREFIX}Deleted 4 issues.IssueLink, 1 issues.Diff, 1 issues.Revision, 2 issues.Issue.",
             ],
         )
@@ -144,6 +145,7 @@ class CleanupIssuesCommandTestCase(TestCase):
             mock_log.output,
             [
                 f"{LOG_PREFIX}Retrieved 2 old revisions from either autoland or mozilla-central to be deleted.",
+                f"{LOG_PREFIX}Page 1/1.",
                 f"{LOG_PREFIX}Deleted 6 issues.IssueLink, 1 issues.Diff, 2 issues.Revision, 4 issues.Issue.",
             ],
         )

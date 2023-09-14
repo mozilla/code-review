@@ -4,6 +4,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import logging
+import math
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand
@@ -16,7 +17,6 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 DEL_CHUNK_SIZE = 10000
-UPDATE_CHUNK_SIZE = 10000
 
 
 class Command(BaseCommand):
@@ -33,9 +33,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         clean_until = timezone.now() - timedelta(days=options["nb_days"])
 
-        # For issue and issuelink we can use _raw_delete since it's faster and doesn't
-        # give OOM since there are no CASCADE directives in the model since django
-        # doesn't need to query the model and compute the dependencies.
         rev_to_delete = Revision.objects.filter(
             base_repository__slug__in=["autoland", "mozilla-central"],
             head_repository__slug__in=["autoland", "mozilla-central"],
@@ -52,7 +49,12 @@ class Command(BaseCommand):
         )
 
         stats = {}
+
+        iterations = math.ceil(count_rev / DEL_CHUNK_SIZE)
+        i = 0
         for start in range(0, count_rev, DEL_CHUNK_SIZE):
+            i += 1
+            logger.info(f"Page {i}/{iterations}.")
             # First fetch revisions IDs in a first DB request
             chunk_rev_ids = rev_to_delete.order_by("id")[
                 start : start + DEL_CHUNK_SIZE
