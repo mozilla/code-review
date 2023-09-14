@@ -5,6 +5,7 @@
 
 import logging
 import math
+from collections import defaultdict
 from datetime import timedelta
 
 from django.core.management.base import BaseCommand
@@ -16,7 +17,7 @@ logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-DEL_CHUNK_SIZE = 1000
+DEL_CHUNK_SIZE = 500
 
 
 class Command(BaseCommand):
@@ -38,43 +39,45 @@ class Command(BaseCommand):
             head_repository__slug__in=["autoland", "mozilla-central"],
             created__lte=clean_until,
         )
-        count_rev = rev_to_delete.count()
+        total_rev_count = rev_to_delete.count()
 
-        if not count_rev:
+        if not total_rev_count:
             logger.info("Didn't find any old revision to delete.")
             return
 
         logger.info(
-            f"Retrieved {count_rev} old revisions from either autoland or mozilla-central to be deleted."
+            f"Retrieved {total_rev_count} old revisions from either autoland or mozilla-central to be deleted."
         )
 
-        stats = {}
+        stats = defaultdict(int)
 
-        iterations = math.ceil(count_rev / DEL_CHUNK_SIZE)
-        i = 0
-        for i, start in enumerate(range(0, count_rev, DEL_CHUNK_SIZE), start=1):
+        iterations = math.ceil(total_rev_count / DEL_CHUNK_SIZE)
+        for i, start in enumerate(range(0, total_rev_count, DEL_CHUNK_SIZE), start=1):
             logger.info(f"Page {i}/{iterations}.")
             # First fetch revisions IDs in a first DB request
             chunk_rev_ids = rev_to_delete.order_by("id")[
                 start : start + DEL_CHUNK_SIZE
             ].values_list("id", flat=True)
 
+            # Store IDs of related Issues, to make issues deletion faster later on
+            chunk_issues_ids = list(
+                Issue.objects.filter(
+                    issue_links__revision_id__in=chunk_rev_ids
+                ).values_list("id", flat=True)
+            )
+
             # Delete IssueLink for this chunk
             links_qs = IssueLink.objects.filter(revision_id__in=chunk_rev_ids)
-            # Store IDs of related Issues, to make issues deletion faster later on
-            chunk_issues_ids = Issue.objects.filter(
-                issue_link__revision_id__in=chunk_rev_ids
-            ).values_list("id", flat=True)
-            _, links_stats = links_qs.delete()
-            stats.update(links_stats)
+            links_count = links_qs._raw_delete(links_qs.db)
+            stats["IssueLink"] += links_count
 
-            # Delete Diff for this chunk
-            _, diffs_stats = Diff.objects.filter(
-                revision__id__in=chunk_rev_ids
-            ).delete()
-            stats.update(diffs_stats)
+            # Perform a raw deletion to avoid Django performing lookups to IssueLink
+            # as the M2M has already be cleaned up at this stage.
+            diffs_qs = Diff.objects.filter(revision__id__in=chunk_rev_ids)
+            diffs_count = diffs_qs._raw_delete(diffs_qs.db)
+            stats["Diff"] += diffs_count
 
-            # Delete issues that are not linked to a revision anymore
+            # Only delete issues that are not linked to a revision anymore
             issues_qs = Issue.objects.filter(
                 id__in=chunk_issues_ids,
                 issue_links=None,
@@ -82,11 +85,12 @@ class Command(BaseCommand):
             # Perform a raw deletion to avoid Django performing lookups to IssueLink
             # as the M2M has already be cleaned up at this stage.
             issues_count = issues_qs._raw_delete(issues_qs.db)
-            stats.update(issues_count)
+            stats["Issue"] += issues_count
 
-        # Drop the revisions
-        _, rev_stats = rev_to_delete.delete()
-        stats.update(rev_stats)
+        # Drop the revisions with a raw deletion to avoid Django performing lookups to IssueLink
+        # as the M2M has already be cleaned up at this stage.
+        rev_count = rev_to_delete._raw_delete(rev_to_delete.db)
+        stats["Revision"] += rev_count
 
         msg = ", ".join((f"{n} {key}" for key, n in stats.items()))
         logger.info(f"Deleted {msg}.")
