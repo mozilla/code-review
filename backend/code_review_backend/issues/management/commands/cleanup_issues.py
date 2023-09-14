@@ -52,7 +52,7 @@ class Command(BaseCommand):
 
         iterations = math.ceil(count_rev / DEL_CHUNK_SIZE)
         i = 0
-        for start in range(0, count_rev, DEL_CHUNK_SIZE):
+        for i, start in enumerate(range(0, count_rev, DEL_CHUNK_SIZE), start=1):
             i += 1
             logger.info(f"Page {i}/{iterations}.")
             # First fetch revisions IDs in a first DB request
