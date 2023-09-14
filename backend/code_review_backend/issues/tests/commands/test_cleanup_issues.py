@@ -105,7 +105,7 @@ class CleanupIssuesCommandTestCase(TestCase):
     def test_cleanup_issues_default_nb_days(self):
         self.assertEqual(Issue.objects.count(), 6)
         with self.assertLogs() as mock_log:
-            with self.assertNumQueries(10):
+            with self.assertNumQueries(6):
                 call_command(
                     "cleanup_issues",
                 )
@@ -124,14 +124,15 @@ class CleanupIssuesCommandTestCase(TestCase):
             mock_log.output,
             [
                 f"{LOG_PREFIX}Retrieved 1 old revisions from either autoland or mozilla-central to be deleted.",
-                f"{LOG_PREFIX}Deleted 4 issues.IssueLink, 1 issues.Diff, 1 issues.Revision, 2 issues.Issue.",
+                f"{LOG_PREFIX}Page 1/1.",
+                f"{LOG_PREFIX}Deleted 4 IssueLink, 1 Diff, 2 Issue, 1 Revision.",
             ],
         )
 
     def test_cleanup_issues_custom_nb_days(self):
         self.assertEqual(Issue.objects.count(), 6)
         with self.assertLogs() as mock_log:
-            with self.assertNumQueries(10):
+            with self.assertNumQueries(6):
                 call_command("cleanup_issues", "--nb-days", "4")
 
         self.assertEqual(Issue.objects.count(), 2)
@@ -144,6 +145,7 @@ class CleanupIssuesCommandTestCase(TestCase):
             mock_log.output,
             [
                 f"{LOG_PREFIX}Retrieved 2 old revisions from either autoland or mozilla-central to be deleted.",
-                f"{LOG_PREFIX}Deleted 6 issues.IssueLink, 1 issues.Diff, 2 issues.Revision, 4 issues.Issue.",
+                f"{LOG_PREFIX}Page 1/1.",
+                f"{LOG_PREFIX}Deleted 6 IssueLink, 1 Diff, 4 Issue, 2 Revision.",
             ],
         )
