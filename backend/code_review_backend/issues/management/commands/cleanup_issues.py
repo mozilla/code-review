@@ -58,27 +58,35 @@ class Command(BaseCommand):
             chunk_rev_ids = rev_to_delete.order_by("id")[
                 start : start + DEL_CHUNK_SIZE
             ].values_list("id", flat=True)
+
             # Delete IssueLink for this chunk
-            _, links_stats = IssueLink.objects.filter(
-                revision_id__in=chunk_rev_ids
-            ).delete()
+            links_qs = IssueLink.objects.filter(revision_id__in=chunk_rev_ids)
+            # Store IDs of related Issues, to make issues deletion faster later on
+            chunk_issues_ids = Issue.objects.filter(
+                issue_link__revision_id__in=chunk_rev_ids
+            ).values_list("id", flat=True)
+            _, links_stats = links_qs.delete()
             stats.update(links_stats)
+
             # Delete Diff for this chunk
             _, diffs_stats = Diff.objects.filter(
                 revision__id__in=chunk_rev_ids
             ).delete()
             stats.update(diffs_stats)
 
+            # Delete issues that are not linked to a revision anymore
+            issues_qs = Issue.objects.filter(
+                id__in=chunk_issues_ids,
+                issue_links=None,
+            )
+            # Perform a raw deletion to avoid Django performing lookups to IssueLink
+            # as the M2M has already be cleaned up at this stage.
+            issues_count = issues_qs._raw_delete(issues_qs.db)
+            stats.update(issues_count)
+
         # Drop the revisions
         _, rev_stats = rev_to_delete.delete()
         stats.update(rev_stats)
-
-        # Finally, delete issues that are not linked to any revision anymore
-        issues_qs = Issue.objects.filter(issue_links=None)
-        # Perform a raw deletion to avoid Django performing lookups to IssueLink
-        # as the M2M has already be cleaned up at this stage.
-        issues_count = issues_qs._raw_delete(issues_qs.db)
-        stats.update(issues_count)
 
         msg = ", ".join((f"{n} {key}" for key, n in stats.items()))
         logger.info(f"Deleted {msg}.")
