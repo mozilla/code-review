@@ -16,7 +16,7 @@ logging.basicConfig(level=logging.INFO)
 
 logger = logging.getLogger(__name__)
 
-DEL_CHUNK_SIZE = 10000
+DEL_CHUNK_SIZE = 1000
 
 
 class Command(BaseCommand):
@@ -75,7 +75,10 @@ class Command(BaseCommand):
         stats.update(rev_stats)
 
         # Finally, delete issues that are not linked to any revision anymore
-        _, issues_count = Issue.objects.filter(issue_links=None).delete()
+        issues_qs = Issue.objects.filter(issue_links=None)
+        # Perform a raw deletion to avoid Django performing lookups to IssueLink
+        # as the M2M has already be cleaned up at this stage.
+        issues_count = issues_qs._raw_delete(issues_qs.db)
         stats.update(issues_count)
 
         msg = ", ".join((f"{n} {key}" for key, n in stats.items()))
