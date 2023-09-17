@@ -127,6 +127,19 @@ class Issue(abc.ABC):
         """
         return {}
 
+    @property
+    def allow_before_and_after_publish(self):
+        """
+        Allow the possibility for an issue to avoid being published based on before/after.
+        This allow publishing issues based on other criteria, like in_patch.
+        """
+        if taskcluster.secrets.get(
+            f"{self.display_name.upper()}_DISABLE_PUBLICATION_BEFORE_AFTER", False
+        ):
+            return False
+
+        return self.revision.before_after_feature
+
     def is_publishable(self):
         """
         Is this issue publishable on reporters ?
@@ -137,7 +150,7 @@ class Issue(abc.ABC):
         if not self.validates():
             return False
 
-        if self.revision.before_after_feature:
+        if self.allow_before_and_after_publish:
             # Only publish new issues or issues inside the diff
             return self.new_issue or self.in_patch
 
