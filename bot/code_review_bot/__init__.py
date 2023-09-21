@@ -134,7 +134,7 @@ class Issue(abc.ABC):
         This allow publishing issues based on other criteria, like in_patch.
         """
         if taskcluster.secrets.get(
-            f"{self.display_name.upper()}_DISABLE_PUBLICATION_BEFORE_AFTER", False
+            f"{self.analyzer.name.upper()}_DISABLE_PUBLICATION_BEFORE_AFTER", False
         ):
             return False
 
