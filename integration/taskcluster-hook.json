@@ -48,6 +48,7 @@
     "scopes": [
       "secrets:get:project/relman/code-review/integration-CHANNEL",
       "docker-worker:cache:code-review-integration-CHANNEL",
+      "generic-worker:cache:code-review-integration-CHANNEL",
       "notify:email:*"
     ],
     "tags": {},
