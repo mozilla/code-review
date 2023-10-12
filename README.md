@@ -12,3 +12,5 @@ This project has 4 parts:
 :blue_book: Documentation is available in this repository [in the docs folder](docs/README.md). A good starting point is the [architecture description](docs/architecture.md).
 
 :loudspeaker: You can contact the code review bot's developers [on Matrix](https://chat.mozilla.org/#/room/#code-review-bot:mozilla.org) or on Slack in #code-review-bot.
+
+Test pipeline
