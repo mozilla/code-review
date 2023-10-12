@@ -1,6 +1,7 @@
 version: 1
 policy:
   pullRequests: public
+reporting: checks-v1
 tasks:
   $let:
     head_branch:
