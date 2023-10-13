@@ -215,13 +215,13 @@ def test_real_patch(mock_revision, mock_task):
                                       aFontSmoothingBackgroundColor,
                                       aUseFontSmoothing, aApplySyntheticBold);
 }
-#endif""",
+#endif\n""",
             "hash": None,
             "in_patch": False,
             "level": "warning",
             "line": 616,
             "message": "The change does not follow the C/C++ coding style, please reformat",
-            "nb_lines": 4,
+            "nb_lines": 5,
             "path": "gfx/2d/Factory.cpp",
             "publishable": False,
             "validates": False,
@@ -235,13 +235,13 @@ def test_real_patch(mock_revision, mock_task):
     const auto x = "aa";
   }
   return true;
-}""",
+}\n""",
             "hash": None,
             "in_patch": False,
             "level": "warning",
             "line": 118,
             "message": "The change does not follow the C/C++ coding style, please reformat",
-            "nb_lines": 6,
+            "nb_lines": 7,
             "path": "dom/canvas/ClientWebGLContext.cpp",
             "publishable": False,
             "validates": True,
@@ -252,13 +252,13 @@ def test_real_patch(mock_revision, mock_task):
             "column": None,
             "fix": """  if (false) return true;
   return eNameOK;
-}""",
+}\n""",
             "hash": None,
             "in_patch": False,
             "level": "warning",
             "line": 36,
             "message": "The change does not follow the C/C++ coding style, please reformat",
-            "nb_lines": 3,
+            "nb_lines": 4,
             "path": "accessible/xul/XULAlertAccessible.cpp",
             "publishable": False,
             "validates": False,
