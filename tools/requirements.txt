@@ -13,5 +13,5 @@ taskcluster==56.0.2
 treeherder-client==5.0.0
 # Please see #1416, this eventually must be removed!
 # Also this must be below 2.0.0 until we move sentry-sdk to 1.23
-urllib3==1.26.15
+urllib3==1.26.18
 yarl==1.9.2
