@@ -77,6 +77,8 @@ tasks:
               workerType: "${workerType}"
               created: { $fromNow: "" }
               deadline: { $fromNow: "1 hour" }
+              scopes:
+                  - "secrets:get:project/relman/code-review/deploy-production"
               payload:
                 features:
                   taskclusterProxy: true
