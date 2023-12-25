@@ -80,8 +80,6 @@ tasks:
               payload:
                 features:
                   taskclusterProxy: true
-                capabilities:
-                  privileged: true
                 maxRunTime: 3600
                 image: "python:${python_version}"
                 command:
