@@ -119,17 +119,28 @@ class CodeReview(PhabricatorActions):
             assert config["ssh_key"] is not None, "Missing ssh key"
             return config
 
-        repositories = {
+        repository_mapping = {
             phab_repo["phid"]: Repository(_build_conf(conf), cache_root)
             for phab_repo in self.api.list_repositories()
             for conf in repositories
             if phab_repo["fields"]["name"] == conf["name"]
         }
-        assert len(repositories) > 0, "No repositories configured"
-        logger.info(
-            "Configured repositories", names=[r.name for r in repositories.values()]
+        assert len(repository_mapping) > 0, "No repositories configured"
+
+        assert len(repositories) == len(
+            repository_mapping
+        ), "Repositories {} couldn't be found on Phabricator".format(
+            ", ".join(
+                set(r["name"] for r in repositories)
+                - set(r.name for r in repository_mapping.values())
+            )
         )
-        return repositories
+
+        logger.info(
+            "Configured repositories",
+            names=[r.name for r in repository_mapping.values()],
+        )
+        return repository_mapping
 
     async def process_build(self, build):
         """
