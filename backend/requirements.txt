@@ -3,7 +3,7 @@ dj-database-url==2.1.0
 Django==4.2.7
 django-cors-headers==4.3.1
 djangorestframework==3.14.0
-dockerflow==2022.8.0
+dockerflow==2024.1.0
 drf-yasg==1.21.7
 gunicorn==21.2.0
 psycopg2-binary==2.9.9
