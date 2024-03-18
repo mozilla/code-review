@@ -7,7 +7,7 @@ multidict==6.0.5
 rs_parsepatch==0.4.0
 # sentry-sdk 1.23 and after has some issues with our code, keep this until we fix it.
 # The introduction of loguru to the sdk broke our integration.
-sentry-sdk==1.22.2
+sentry-sdk==1.42.0
 structlog==23.3.0
 taskcluster==60.3.5
 treeherder-client==5.0.0
