@@ -1,4 +1,4 @@
-FROM python:3.11.5-slim
+FROM python:3.12.3-slim
 
 ADD tools /src/tools
 ADD integration /src/integration
