@@ -7,7 +7,7 @@
   "main": "index.js",
   "dependencies": {
     "axios": "^1.7.1",
-    "bulma": "^0.9.4",
+    "bulma": "^1.0.1",
     "chartist": "^0.11.4",
     "lodash": "^4.17.21",
     "vue": "^2.7.15",
