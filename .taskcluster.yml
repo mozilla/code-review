@@ -135,8 +135,6 @@ tasks:
                 command:
                   - taskboot
                   - build
-                  - --build-tool
-                  - dind
                   - --image
                   - mozilla/code-review
                   - --tag
