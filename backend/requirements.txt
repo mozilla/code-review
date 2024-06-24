@@ -2,7 +2,7 @@
 dj-database-url==2.1.0
 Django==4.2.10
 django-cors-headers==4.3.1
-djangorestframework==3.15.1
+djangorestframework==3.15.2
 dockerflow==2024.4.2
 drf-yasg==1.21.7
 gunicorn==22.0.0
