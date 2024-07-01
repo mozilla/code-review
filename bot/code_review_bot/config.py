@@ -11,7 +11,7 @@ import fnmatch
 import os
 import shutil
 import tempfile
-from contextlib import contextmanager
+from pathlib import Path
 
 import pkg_resources
 import structlog
@@ -49,18 +49,21 @@ class Settings(object):
         self.try_group_id = None
         self.autoland_group_id = None
         self.mozilla_central_group_id = None
-        self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
         self.repositories = []
         self.decision_env_prefixes = []
-        # Runtime settings
-        self.runtime = {}
+
+        # Cache to store file-by-file from HGMO Rest API
+        self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
+
+        # Cache to store whole repositories
+        self.mercurial_cache = None
 
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
         # caching the versions of the app
         self.version = pkg_resources.require("code-review-bot")[0].version
 
-    def setup(self, app_channel, allowed_paths, repositories):
+    def setup(self, app_channel, allowed_paths, repositories, mercurial_cache=None):
         # Detect source from env
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
             self.try_task_id = os.environ["TRY_TASK_ID"]
@@ -112,6 +115,13 @@ class Settings(object):
             repo.decision_env_prefix for repo in self.repositories
         ]
 
+        # Store mercurial cache path
+        if mercurial_cache is not None:
+            self.mercurial_cache = Path(mercurial_cache)
+            assert (
+                self.mercurial_cache.exists()
+            ), f"Mercurial cache does not exist {self.mercurial_cache}"
+
     def __getattr__(self, key):
         if key not in self.config:
             raise AttributeError
@@ -124,21 +134,29 @@ class Settings(object):
         """
         return self.app_channel == "production" and self.taskcluster.local is False
 
+    @property
+    def mercurial_cache_checkout(self):
+        """
+        When local mercurial cache is enabled, path to the checkout
+        """
+        if self.mercurial_cache is None:
+            return
+        return self.mercurial_cache / "checkout"
+
+    @property
+    def mercurial_cache_sharebase(self):
+        """
+        When local mercurial cache is enabled, path to the shared folder for robust checkout
+        """
+        if self.mercurial_cache is None:
+            return
+        return self.mercurial_cache / "shared"
+
     def is_allowed_path(self, path):
         """
         Is this path allowed for reporting ?
         """
         return any([fnmatch.fnmatch(path, rule) for rule in self.allowed_paths])
-
-    @contextmanager
-    def override_runtime_setting(self, key, value):
-        """
-        Overrides a runtime setting, then restores the default value
-        """
-        copy = {**self.runtime}
-        self.runtime[key] = value
-        yield
-        self.runtime = copy
 
     def cleanup(self):
         shutil.rmtree(self.hgmo_cache)

@@ -103,14 +103,9 @@ def main():
         taskcluster.secrets["APP_CHANNEL"],
         taskcluster.secrets["ALLOWED_PATHS"],
         taskcluster.secrets["repositories"],
+        args.mercurial_repository,
     )
 
-    # Store some CLI parameters in the global settings
-    settings.runtime.update(
-        {
-            "mercurial_repository": args.mercurial_repository,
-        }
-    )
     # Setup statistics
     influx_conf = taskcluster.secrets.get("influxdb")
     if influx_conf:
