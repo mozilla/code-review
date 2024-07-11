@@ -1,4 +1,4 @@
-json-e==4.7.0
+json-e==4.7.1
 jsonschema==4.22.0
 pytest==8.2.1
 
