@@ -26,23 +26,6 @@ class AppNameFilter(logging.Filter):
         return True
 
 
-class ExtraFormatter(logging.Formatter):
-    def format(self, record):
-        log = super().format(record)
-
-        extra = {
-            key: value
-            for key, value in record.__dict__.items()
-            if key
-            not in list(sentry_sdk.integrations.logging.COMMON_RECORD_ATTRS)
-            + ["asctime", "app_name"]
-        }
-        if len(extra) > 0:
-            log += " | extra=" + str(extra)
-
-        return log
-
-
 def setup_papertrail(project_name, channel, PAPERTRAIL_HOST, PAPERTRAIL_PORT):
     """
     Setup papertrail account using taskcluster secrets
@@ -52,7 +35,7 @@ def setup_papertrail(project_name, channel, PAPERTRAIL_HOST, PAPERTRAIL_PORT):
     papertrail = logging.handlers.SysLogHandler(
         address=(PAPERTRAIL_HOST, int(PAPERTRAIL_PORT)),
     )
-    formatter = ExtraFormatter(
+    formatter = logging.Formatter(
         "%(app_name)s: %(asctime)s %(filename)s: %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -100,26 +83,6 @@ def setup_sentry(name, channel, dsn):
         sentry_sdk.set_context("task", {"task_id": task_id})
 
 
-class RenameAttrsProcessor(structlog.processors.KeyValueRenderer):
-    """
-    Rename event_dict keys that will attempt to overwrite LogRecord common
-    attributes during structlog.stdlib.render_to_log_kwargs processing
-    """
-
-    def __call__(self, logger, method_name, event_dict):
-        to_rename = [
-            key
-            for key in event_dict
-            if key in sentry_sdk.integrations.logging.COMMON_RECORD_ATTRS
-        ]
-
-        for key in to_rename:
-            event_dict[f"{key}_"] = event_dict[key]
-            event_dict.pop(key)
-
-        return event_dict
-
-
 def init_logger(
     project_name,
     channel=None,
@@ -132,7 +95,7 @@ def init_logger(
         channel = os.environ.get("APP_CHANNEL")
 
     # Render extra information from structlog on default logging output
-    formatter = ExtraFormatter(
+    formatter = logging.Formatter(
         "%(asctime)s.%(msecs)06d [%(levelname)-8s] %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
@@ -152,14 +115,11 @@ def init_logger(
 
     # Setup structlog
     processors = [
-        structlog.stdlib.PositionalArgumentsFormatter(),
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
         structlog.processors.StackInfoRenderer(),
-        structlog.processors.format_exc_info,
-        RenameAttrsProcessor(),
-        # Transpose the 'event_dict' from structlog into keyword arguments for logging.log
-        # E.g.: 'event' become 'msg' and, at the end, all remaining values from 'event_dict'
-        # are added as 'extra'
-        structlog.stdlib.render_to_log_kwargs,
+        structlog.dev.set_exc_info,
+        structlog.dev.ConsoleRenderer(),
     ]
 
     structlog.configure(
