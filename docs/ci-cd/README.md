@@ -50,7 +50,7 @@ As mentioned in the previous paragraph, the pre-configured hooks rely on the `in
 
 ### Configuration
 
-The firefox-ci configuration is stored in https://hg.mozilla.org/ci/ci-configuration/
+The firefox-ci configuration is stored in https://github.com/mozilla-releng/fxci-config/
 
 To make changes, lookup the relevant code-review sections in the `grants.yml`, `hooks.yml` and `projects.yml` files. You'll need to submit your patch on Phabricator, linked to a Bugzilla bug filed under **Release Engineering :: Firefox-CI Administration** (example on [Bug 1604227](https://bugzilla.mozilla.org/show_bug.cgi?id=1604227))
 
