@@ -8,7 +8,7 @@ The technical information on how to get started is available in the [project REA
 
 The project is built as a Docker in Docker image, on the firefox-ci instance (more information in [CI/CD](/docs/ci-cd/README.md)).
 
-Two hooks are available and configured through [ci-configuration](https://hg.mozilla.org/ci/ci-configuration/file/tip/hooks.yml):
+Two hooks are available and configured through [ci-configuration](https://github.com/mozilla-releng/fxci-config/blob/main/hooks.yml):
 
 - [project-relman/code-review-production](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-production)
 - [project-relman/code-review-testing](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-testing)
