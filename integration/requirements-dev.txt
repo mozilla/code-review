@@ -1,4 +1,4 @@
 json-e==4.7.1
 jsonschema==4.23.0
-pytest==8.2.2
+pytest==8.3.1
 
