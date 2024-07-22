@@ -233,12 +233,12 @@ class Workflow(object):
 
         logger.info(
             "Cloning revision to build issues",
-            repo=revision.head_repository,
+            repo=revision.base_repository,
             changeset=revision.head_changeset,
             dest=settings.mercurial_cache_checkout,
         )
         robust_checkout(
-            repo_url=revision.head_repository,
+            repo_url=revision.base_repository,
             branch=revision.head_changeset,
             checkout_dir=settings.mercurial_cache_checkout,
             sharebase_dir=settings.mercurial_cache_sharebase,
