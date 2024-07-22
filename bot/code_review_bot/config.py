@@ -121,6 +121,7 @@ class Settings(object):
             assert (
                 self.mercurial_cache.exists()
             ), f"Mercurial cache does not exist {self.mercurial_cache}"
+            logger.info("Using mercurial cache", path=self.mercurial_cache)
 
     def __getattr__(self, key):
         if key not in self.config:

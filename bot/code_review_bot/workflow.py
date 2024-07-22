@@ -79,6 +79,9 @@ class Workflow(object):
         # Setup Backend API client
         self.backend_api = BackendAPI()
 
+        # Is local clone already setup ?
+        self.clone_available = False
+
     def run(self, revision):
         """
         Find all issues on remote tasks and publish them
@@ -111,6 +114,10 @@ class Workflow(object):
                     "looking for existing issues based on the current date",
                     task=settings.try_group_id,
                 )
+
+            # Clone local repo when required
+            # as find_previous_issues will build the hashes
+            self.clone_repository(revision)
 
             # Mark know issues to avoid publishing them on this patch
             self.find_previous_issues(issues, base_rev_changeset)
@@ -202,20 +209,8 @@ class Workflow(object):
             logger.info("No issues for that revision")
             return
 
-        # Clone the repo locally when configured
-        # On production this should use a Taskcluster cache
-        if settings.mercurial_cache:
-            logger.info(
-                "Cloning revision to build issues",
-                repo=revision.head_repository,
-                changeset=revision.head_changeset,
-            )
-            robust_checkout(
-                repo_url=revision.head_repository,
-                branch=revision.head_changeset,
-                checkout_dir=settings.mercurial_cache_checkout,
-                sharebase_dir=settings.mercurial_cache_sharebase,
-            )
+        # Clone local repo when required
+        self.clone_repository(revision)
 
         # Publish issues in the backend
         self.backend_api.publish_issues(
@@ -223,6 +218,32 @@ class Workflow(object):
             revision,
             bulk=BULK_ISSUE_CHUNKS,
         )
+
+    def clone_repository(self, revision):
+        """
+        Clone the repo locally when configured
+        On production this should use a Taskcluster cache
+        """
+        if not settings.mercurial_cache:
+            logger.debug("Local clone not required")
+            return
+        if self.clone_available:
+            logger.debug("Local clone already setup")
+            return
+
+        logger.info(
+            "Cloning revision to build issues",
+            repo=revision.head_repository,
+            changeset=revision.head_changeset,
+            dest=settings.mercurial_cache_checkout,
+        )
+        robust_checkout(
+            repo_url=revision.head_repository,
+            branch=revision.head_changeset,
+            checkout_dir=settings.mercurial_cache_checkout,
+            sharebase_dir=settings.mercurial_cache_sharebase,
+        )
+        self.clone_available = True
 
     def publish(self, revision, issues, task_failures, notices, reviewers):
         """
