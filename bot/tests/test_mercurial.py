@@ -45,8 +45,9 @@ def test_robustcheckout(monkeypatch):
     monkeypatch.setattr("hglib.util.popen", popen_mock)
 
     mercurial.robust_checkout(
-        "https://hg.repo/",
-        branch="default",
+        repo_url="https://hg.repo/try",
+        repo_upstream_url="https://hg.repo/mc",
+        revision="deadbeef1234",
         checkout_dir="/tmp/checkout",
         sharebase_dir="/tmp/shared",
     )
@@ -56,8 +57,9 @@ def test_robustcheckout(monkeypatch):
         "robustcheckout",
         b"--purge",
         b"--sharebase=/tmp/shared",
-        b"--branch=default",
+        b"--revision=deadbeef1234",
+        b"--upstream=https://hg.repo/mc",
         b"--",
-        "https://hg.repo/",
+        "https://hg.repo/try",
         "/tmp/checkout",
     ]

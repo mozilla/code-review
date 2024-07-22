@@ -238,8 +238,9 @@ class Workflow(object):
             dest=settings.mercurial_cache_checkout,
         )
         robust_checkout(
-            repo_url=revision.base_repository,
-            branch=revision.head_changeset,
+            repo_upstream_url=revision.base_repository,
+            repo_url=revision.head_repository,
+            revision=revision.head_changeset,
             checkout_dir=settings.mercurial_cache_checkout,
             sharebase_dir=settings.mercurial_cache_sharebase,
         )

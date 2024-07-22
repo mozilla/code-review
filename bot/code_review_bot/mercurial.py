@@ -59,13 +59,16 @@ def hg_run(cmd):
     return out
 
 
-def robust_checkout(repo_url, checkout_dir, sharebase_dir, branch="tip"):
+def robust_checkout(
+    repo_url, checkout_dir, sharebase_dir, revision, repo_upstream_url=None
+):
     cmd = hglib.util.cmdbuilder(
         "robustcheckout",
         repo_url,
         checkout_dir,
         purge=True,
         sharebase=sharebase_dir,
-        branch=branch,
+        revision=revision,
+        upstream=repo_upstream_url,
     )
     hg_run(cmd)
