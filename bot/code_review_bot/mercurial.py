@@ -6,9 +6,6 @@
 import fcntl
 import os
 import time
-from contextlib import contextmanager
-from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import hglib
 import structlog
@@ -62,28 +59,16 @@ def hg_run(cmd):
     return out
 
 
-def robust_checkout(repo_url, checkout_dir, sharebase_dir, branch):
+def robust_checkout(
+    repo_url, checkout_dir, sharebase_dir, revision, repo_upstream_url=None
+):
     cmd = hglib.util.cmdbuilder(
         "robustcheckout",
         repo_url,
         checkout_dir,
         purge=True,
         sharebase=sharebase_dir,
-        branch=branch,
+        revision=revision,
+        upstream=repo_upstream_url,
     )
     hg_run(cmd)
-
-
-@contextmanager
-def clone_repository(repo_url, branch="tip"):
-    """
-    Clones a repository to a temporary directory using robustcheckout.
-    """
-    with TemporaryDirectory() as temp_path:
-        temp_path = Path(temp_path)
-        sharebase_dir = (temp_path / "shared").absolute()
-        sharebase_dir.mkdir()
-        # Do not create the checkout folder or Mercurial will complain about a missing .hg file
-        checkout_dir = (temp_path / "checkout").absolute()
-        robust_checkout(repo_url, str(checkout_dir), str(sharebase_dir), branch)
-        yield checkout_dir

@@ -185,11 +185,10 @@ class Issue(abc.ABC):
         #  format `obj-x86_64-pc-linux-gnu`
         file_content = None
         if "/obj-" not in self.path:
-            local_repository = settings.runtime.get("mercurial_repository")
-            if local_repository:
+            if settings.mercurial_cache_checkout:
                 logger.debug("Using the local repository to build issue's hash")
                 try:
-                    with open(local_repository / self.path) as f:
+                    with (settings.mercurial_cache_checkout / self.path).open() as f:
                         file_content = f.read()
                 except (FileNotFoundError, IsADirectoryError):
                     logger.warning(

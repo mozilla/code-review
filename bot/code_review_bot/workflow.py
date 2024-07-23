@@ -3,7 +3,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from contextlib import nullcontext
 from datetime import datetime, timedelta
 from itertools import groupby
 
@@ -14,7 +13,7 @@ from taskcluster.utils import stringDate
 from code_review_bot import Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND, REPO_MOZILLA_CENTRAL, settings
-from code_review_bot.mercurial import clone_repository
+from code_review_bot.mercurial import robust_checkout
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask, BaseTask, NoticeTask
@@ -80,6 +79,9 @@ class Workflow(object):
         # Setup Backend API client
         self.backend_api = BackendAPI()
 
+        # Is local clone already setup ?
+        self.clone_available = False
+
     def run(self, revision):
         """
         Find all issues on remote tasks and publish them
@@ -112,6 +114,10 @@ class Workflow(object):
                     "looking for existing issues based on the current date",
                     task=settings.try_group_id,
                 )
+
+            # Clone local repo when required
+            # as find_previous_issues will build the hashes
+            self.clone_repository(revision)
 
             # Mark know issues to avoid publishing them on this patch
             self.find_previous_issues(issues, base_rev_changeset)
@@ -203,28 +209,42 @@ class Workflow(object):
             logger.info("No issues for that revision")
             return
 
-        runtime_repo = settings.runtime.get("mercurial_repository")
-        context_manager = nullcontext(runtime_repo)
-        # Do always clone the repository on production to speed up reading issues
-        if runtime_repo is None and settings.taskcluster.task_id != "local instance":
-            logger.info(
-                "Cloning revision to build issues",
-                repo=revision.head_repository,
-                changeset=revision.head_changeset,
-            )
-            context_manager = clone_repository(
-                repo_url=revision.head_repository, branch=revision.head_changeset
-            )
+        # Clone local repo when required
+        self.clone_repository(revision)
 
-        with context_manager as repo_path:
-            # Override runtime settings with the cloned repository
-            with settings.override_runtime_setting("mercurial_repository", repo_path):
-                # Publish issues in the backend
-                self.backend_api.publish_issues(
-                    issues,
-                    revision,
-                    bulk=BULK_ISSUE_CHUNKS,
-                )
+        # Publish issues in the backend
+        self.backend_api.publish_issues(
+            issues,
+            revision,
+            bulk=BULK_ISSUE_CHUNKS,
+        )
+
+    def clone_repository(self, revision):
+        """
+        Clone the repo locally when configured
+        On production this should use a Taskcluster cache
+        """
+        if not settings.mercurial_cache:
+            logger.debug("Local clone not required")
+            return
+        if self.clone_available:
+            logger.debug("Local clone already setup")
+            return
+
+        logger.info(
+            "Cloning revision to build issues",
+            repo=revision.base_repository,
+            changeset=revision.head_changeset,
+            dest=settings.mercurial_cache_checkout,
+        )
+        robust_checkout(
+            repo_upstream_url=revision.base_repository,
+            repo_url=revision.head_repository,
+            revision=revision.head_changeset,
+            checkout_dir=settings.mercurial_cache_checkout,
+            sharebase_dir=settings.mercurial_cache_sharebase,
+        )
+        self.clone_available = True
 
     def publish(self, revision, issues, task_failures, notices, reviewers):
         """
