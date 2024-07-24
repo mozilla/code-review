@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import structlog
 
 from code_review_bot import Issue, Level, taskcluster
@@ -32,7 +31,7 @@ class DefaultIssue(Issue):
         """
         Build the text content for reporters
         """
-        return "{}: {} [{}]".format(self.level.name, self.message, self.check)
+        return f"{self.level.name}: {self.message} [{self.check}]"
 
     def as_markdown(self):
         """

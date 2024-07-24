@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import asyncio
 import random
 
@@ -249,7 +248,7 @@ class BugbugUtils:
 
         # Get the decision task of the push to try.
         decision_task_index = self.index_service.findTask(
-            "gecko.v2.try.revision.{}.taskgraph.decision".format(revision)
+            f"gecko.v2.try.revision.{revision}.taskgraph.decision"
         )
         decision_task_id = decision_task_index["taskId"]
 

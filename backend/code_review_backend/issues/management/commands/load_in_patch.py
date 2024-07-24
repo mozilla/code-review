@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -73,9 +72,7 @@ def process_diff(diff: Diff):
 
         issues = [detect_in_patch(issue, lines) for issue in diff.issues.all()]
         logging.info(
-            "Found {} issues in patch for {}".format(
-                len([i for i in issues if i.in_patch]), diff.id
-            )
+            f"Found {len([i for i in issues if i.in_patch])} issues in patch for {diff.id}"
         )
         Issue.objects.bulk_update(issues, ["in_patch"])
     except Exception as e:
@@ -98,7 +95,7 @@ class Command(BaseCommand):
         diffs = (
             Diff.objects.filter(issues__in_patch__isnull=True).order_by("id").distinct()
         )
-        logger.debug("Will process {} diffs".format(diffs.count()))
+        logger.debug(f"Will process {diffs.count()} diffs")
 
         # Close all DB connection so each process get its own
         db.connections.close_all()

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -26,8 +25,8 @@ def PhabricatorMock():
     json_headers = {"Content-Type": "application/json"}
 
     def _response(name):
-        path = os.path.join(FIXTURES_DIR, "phabricator", "{}.json".format(name))
-        assert os.path.exists(path), "Missing mock {}".format(path)
+        path = os.path.join(FIXTURES_DIR, "phabricator", f"{name}.json")
+        assert os.path.exists(path), f"Missing mock {path}"
         return open(path).read()
 
     def _phab_params(request):
@@ -43,12 +42,12 @@ def PhabricatorMock():
         elif "phids" in params["constraints"]:
             # Search from diffs
             diffs = "-".join(params["constraints"]["phids"])
-            mock_name = "search-{}".format(diffs)
+            mock_name = f"search-{diffs}"
         elif "ids" in params["constraints"]:
             assert len(params["constraints"]["ids"]) == 1
             mock_name = "search-{}".format(params["constraints"]["ids"][0])
         else:
-            raise Exception("Unsupported diff mock {}".format(params))
+            raise Exception(f"Unsupported diff mock {params}")
         return (200, json_headers, _response(mock_name))
 
     def _diff_raw(request):
@@ -196,7 +195,7 @@ def mock_taskcluster():
 
     def _response(name):
         path = os.path.join(FIXTURES_DIR, "taskcluster", name)
-        assert os.path.exists(path), "Missing mock {}".format(path)
+        assert os.path.exists(path), f"Missing mock {path}"
         return open(path).read()
 
     responses.add(
@@ -212,7 +211,7 @@ def mock_taskcluster():
 def mock_treeherder():
     def _response(name):
         path = os.path.join(FIXTURES_DIR, "treeherder", name)
-        assert os.path.exists(path), "Missing mock {}".format(path)
+        assert os.path.exists(path), f"Missing mock {path}"
         return open(path).read()
 
     return _response

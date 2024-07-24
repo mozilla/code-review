@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -67,7 +66,7 @@ def mock_issues(mock_task):
     """
     task = mock_task(DefaultTask, "mock-analyzer")
 
-    class MockIssue(object):
+    class MockIssue:
         def __init__(self, nb):
             self.nb = nb
             self.path = "/path/to/file"
@@ -75,7 +74,7 @@ def mock_issues(mock_task):
             self.level = Level.Error if self.nb % 2 else Level.Warning
 
         def as_markdown(self):
-            return "This is the mock issue n°{}".format(self.nb)
+            return f"This is the mock issue n°{self.nb}"
 
         def as_text(self):
             return str(self.nb)
@@ -134,7 +133,7 @@ def mock_phabricator(mock_config):
     """
 
     def _response(name):
-        path = os.path.join(MOCK_DIR, "phabricator_{}.json".format(name))
+        path = os.path.join(MOCK_DIR, f"phabricator_{name}.json")
         assert os.path.exists(path)
         return open(path).read()
 
@@ -305,7 +304,7 @@ def mock_revision(mock_phabricator, mock_try_task, mock_decision_task, mock_conf
         return Revision.from_try_task(mock_try_task, mock_decision_task, api)
 
 
-class Response(object):
+class Response:
     "A simple response encoded as JSON"
 
     def __init__(self, body=None, code=200):
@@ -326,7 +325,7 @@ class Response(object):
         return self.body
 
 
-class SessionMock(object):
+class SessionMock:
     """
     Basic mock of a request session, that returns a JSON body
     """
@@ -350,7 +349,7 @@ class SessionMock(object):
             return Response(self._callable[("get", url)])
 
 
-class MockQueue(object):
+class MockQueue:
     """
     Mock the Taskcluster queue, by using fake tasks descriptions, relations and artifacts
     """
@@ -369,7 +368,7 @@ class MockQueue(object):
             task_id: {
                 "dependencies": desc.get("dependencies", []),
                 "metadata": {
-                    "name": desc.get("name", "source-test-mozlint-{}".format(task_id))
+                    "name": desc.get("name", f"source-test-mozlint-{task_id}")
                 },
                 "payload": {
                     "image": desc.get("image", "alpine"),
@@ -445,12 +444,12 @@ class MockQueue(object):
         self._artifacts[task_id]["artifacts"].append(payload)
         return {
             "storageType": "s3",
-            "putUrl": "http://storage.test/{}".format(name),
+            "putUrl": f"http://storage.test/{name}",
             "contentType": payload["contentType"],
         }
 
 
-class MockIndex(object):
+class MockIndex:
     def configure(self, tasks):
         self.tasks = tasks
 
@@ -469,11 +468,11 @@ class MockIndex(object):
             None,
         )
         if task_id is None:
-            raise Exception("Task {} not found".format(route))
+            raise Exception(f"Task {route} not found")
         return {"taskId": task_id}
 
 
-class MockNotify(object):
+class MockNotify:
     emails = []
 
     def email(self, payload):
@@ -746,7 +745,7 @@ def mock_backend(mock_backend_secret):
     return revisions, diffs, issues
 
 
-class MockPhabricator(object):
+class MockPhabricator:
     """
     A Mock Phabricator API server using responses
     """

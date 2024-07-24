@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -26,7 +25,7 @@ from code_review_bot.tasks.base import AnalysisTask
 logger = structlog.get_logger(__name__)
 
 
-class ImprovementPatch(object):
+class ImprovementPatch:
     """
     An improvement patch built by the bot
     """
@@ -36,13 +35,13 @@ class ImprovementPatch(object):
 
         # Build name from analyzer and revision
         self.analyzer = analyzer
-        self.name = "{}-{}.diff".format(self.analyzer.name, patch_name)
+        self.name = f"{self.analyzer.name}-{patch_name}.diff"
         self.content = content
         self.url = None
         self.path = None
 
     def __str__(self):
-        return "{}: {}".format(self.analyzer.name, self.url or self.path or self.name)
+        return f"{self.analyzer.name}: {self.url or self.path or self.name}"
 
     def write(self):
         """
@@ -62,7 +61,7 @@ class ImprovementPatch(object):
             not settings.taskcluster.local
         ), "Only publish on online Taskcluster tasks"
         self.url = taskcluster.upload_artifact(
-            "public/patch/{}".format(self.name),
+            f"public/patch/{self.name}",
             self.content.encode(),
             content_type="text/plain; charset=utf-8",  # Displays instead of download
             ttl=timedelta(days=days_ttl - 1),
@@ -70,7 +69,7 @@ class ImprovementPatch(object):
         logger.info("Improvement patch published", url=self.url)
 
 
-class Revision(object):
+class Revision:
     """
     A Phabricator revision to analyze and report on
     """
@@ -133,10 +132,10 @@ class Revision(object):
     @property
     def namespaces(self):
         return [
-            "phabricator.{}".format(self.phabricator_id),
-            "phabricator.diff.{}".format(self.diff_id),
-            "phabricator.phabricator_phid.{}".format(self.phabricator_phid),
-            "phabricator.diffphid.{}".format(self.diff_phid),
+            f"phabricator.{self.phabricator_id}",
+            f"phabricator.diff.{self.diff_id}",
+            f"phabricator.phabricator_phid.{self.phabricator_phid}",
+            f"phabricator.diffphid.{self.diff_phid}",
         ]
 
     @property
@@ -161,7 +160,7 @@ class Revision(object):
         return self.diff_phid
 
     def __str__(self):
-        return "Phabricator #{} - {}".format(self.diff_id, self.diff_phid)
+        return f"Phabricator #{self.diff_id} - {self.diff_phid}"
 
     @staticmethod
     def from_try_task(try_task: dict, decision_task: dict, phabricator: PhabricatorAPI):
@@ -190,7 +189,7 @@ class Revision(object):
         diffs = phabricator.search_diffs(
             diff_phid=diff_phid, attachments={"commits": True}
         )
-        assert len(diffs) == 1, "No diff available for {}".format(diff_phid)
+        assert len(diffs) == 1, f"No diff available for {diff_phid}"
         diff = diffs[0]
         diff_id = diff["id"]
         phid = diff["revisionPHID"]

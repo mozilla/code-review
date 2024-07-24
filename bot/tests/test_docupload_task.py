@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import pytest
 
 from code_review_bot.tasks.docupload import MAX_LINKS, DocUploadTask

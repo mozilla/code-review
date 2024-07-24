@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -14,7 +13,7 @@ from code_review_bot.config import GetAppUserAgent, settings
 logger = structlog.get_logger(__name__)
 
 
-class BackendAPI(object):
+class BackendAPI:
     """
     API client for our own code-review backend
     """
@@ -81,7 +80,7 @@ class BackendAPI(object):
             url_post, headers=GetAppUserAgent(), json=data, auth=auth
         )
         if not response.ok:
-            logger.warn("Backend rejected the payload: {}".format(response.content))
+            logger.warn(f"Backend rejected the payload: {response.content}")
             return
 
         backend_revision = response.json()
@@ -212,8 +211,7 @@ class BackendAPI(object):
             resp = requests.get(next_url, auth=auth, headers=GetAppUserAgent())
             resp.raise_for_status()
             data = resp.json()
-            for result in data.get("results", []):
-                yield result
+            yield from data.get("results", [])
             next_url = data.get("next")
 
     def create(self, url_path, data):
@@ -239,7 +237,7 @@ class BackendAPI(object):
             url_post, headers=GetAppUserAgent(), json=data, auth=auth
         )
         if not response.ok:
-            logger.warn("Backend rejected the payload: {}".format(response.content))
+            logger.warn(f"Backend rejected the payload: {response.content}")
             return None
         out = response.json()
         logger.info("Created item on backend", url=url_post, id=out.get("id"))

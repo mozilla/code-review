@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -20,7 +19,7 @@ class DockerflowEndpointsTestCase(TestCase):
         response = self.client.get("/__version__")
         self.assertEqual(response.status_code, 200)
 
-        with open(f"{settings.BASE_DIR}/version.json", "r") as version_file:
+        with open(f"{settings.BASE_DIR}/version.json") as version_file:
             self.assertEqual(response.json(), json.loads(version_file.read()))
 
     def test_get_heartbeat_debug(self):

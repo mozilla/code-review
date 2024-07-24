@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -90,7 +88,7 @@ class ClangTidyIssue(Issue):
         assert self.is_build_error(), "ClangTidyIssue is not a build error."
 
         return ERROR_MARKDOWN.format(
-            message=self.message, location="{}:{}".format(self.path, self.line)
+            message=self.message, location=f"{self.path}:{self.line}"
         )
 
     @property
@@ -133,23 +131,21 @@ class ClangTidyIssue(Issue):
         message = self.message
         if len(message) > 0:
             message = message[0].capitalize() + message[1:]
-        body = "{}: {} [clang-tidy: {}]".format(self.level.name, message, self.check)
+        body = f"{self.level.name}: {message} [clang-tidy: {self.check}]"
 
         # Always add body as it's been cleaned up
         if self.reason:
-            body += "\n{}".format(self.reason)
+            body += f"\n{self.reason}"
         # Also add the reliability of the checker
         if self.reliability != Reliability.Unknown:
-            body += "\nChecker reliability is {0}, meaning that the false positive ratio is {1}.".format(
-                self.reliability.value, self.reliability.invert
-            )
+            body += f"\nChecker reliability is {self.reliability.value}, meaning that the false positive ratio is {self.reliability.invert}."
         return body
 
     def as_markdown(self):
         return ISSUE_MARKDOWN.format(
             level=self.level.value,
             message=self.message,
-            location="{}:{}:{}".format(self.path, self.line, self.column),
+            location=f"{self.path}:{self.line}:{self.column}",
             reason=self.reason,
             check=self.check,
             in_patch="yes" if self.revision.contains(self) else "no",
@@ -161,7 +157,7 @@ class ClangTidyIssue(Issue):
                 [
                     ISSUE_NOTE_MARKDOWN.format(
                         message=n.message,
-                        location="{}:{}:{}".format(n.path, n.line, n.column),
+                        location=f"{n.path}:{n.line}:{n.column}",
                         body=n.body,
                     )
                     for n in self.notes

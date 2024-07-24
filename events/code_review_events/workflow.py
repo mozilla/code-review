@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import asyncio
 import os
 
@@ -248,9 +247,7 @@ class CodeReview(PhabricatorActions):
         elif mode == "fail:mercurial":
             extra_content = ""
             if build.missing_base_revision:
-                extra_content = " because the parent revision ({}) does not exist on mozilla-unified. If possible, you should publish that revision".format(
-                    build.base_revision
-                )
+                extra_content = f" because the parent revision ({build.base_revision}) does not exist on mozilla-unified. If possible, you should publish that revision"
 
             failure = UnitResult(
                 namespace="code-review",
@@ -299,9 +296,7 @@ class CodeReview(PhabricatorActions):
                     namespace="code-review",
                     name="mercurial",
                     result=UnitResultState.Unsound,
-                    details="WARNING: The base revision of your patch is not available in the current repository.\nYour patch has been rebased on central (revision {}): issues may be positioned on the wrong lines.".format(
-                        build.actual_base_revision
-                    ),
+                    details=f"WARNING: The base revision of your patch is not available in the current repository.\nYour patch has been rebased on central (revision {build.actual_base_revision}): issues may be positioned on the wrong lines.",
                 )
                 self.api.update_build_target(
                     build.target_phid, BuildState.Work, unit=[warning]
@@ -368,7 +363,7 @@ class CodeReview(PhabricatorActions):
             )
 
 
-class Events(object):
+class Events:
     """
     Listen to HTTP notifications from phabricator and trigger new try jobs
     """

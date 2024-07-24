@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -30,7 +29,7 @@ def hg_run(cmd):
             return
         text = filter(None, out.decode("utf-8").splitlines())
         for line in text:
-            logger.info("{}: {}".format(name, line))
+            logger.info(f"{name}: {line}")
 
     # Start process
     main_cmd = cmd[0]
@@ -46,14 +45,12 @@ def hg_run(cmd):
 
     while proc.poll() is None:
         _log_process(proc.stdout, main_cmd)
-        _log_process(proc.stderr, "{} (err)".format(main_cmd))
+        _log_process(proc.stderr, f"{main_cmd} (err)")
         time.sleep(2)
 
     out, err = proc.communicate()
     if proc.returncode != 0:
-        logger.error(
-            "Mercurial {} failure".format(main_cmd), out=out, err=err, exc_info=True
-        )
+        logger.error(f"Mercurial {main_cmd} failure", out=out, err=err, exc_info=True)
         raise hglib.error.CommandError(cmd, proc.returncode, out, err)
 
     return out

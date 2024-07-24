@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 from urllib.parse import urlencode
 
 JOBS_URL = "https://treeherder.mozilla.org/#/jobs"

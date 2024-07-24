@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -46,14 +45,12 @@ def generate_issue_links(apps, schema_editor):
         )
         issues = qs[index * ISSUES_INSERT_SIZE : (index + 1) * ISSUES_INSERT_SIZE]
         IssueLink.objects.bulk_create(
-            (
-                IssueLink(
-                    issue_id=issue["id"],
-                    diff_id=issue["diff_id"],
-                    revision_id=issue["diff__revision_id"],
-                )
-                for issue in issues
+            IssueLink(
+                issue_id=issue["id"],
+                diff_id=issue["diff_id"],
+                revision_id=issue["diff__revision_id"],
             )
+            for issue in issues
         )
 
 

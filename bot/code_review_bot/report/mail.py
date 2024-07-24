@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -78,7 +77,7 @@ class MailReporter(Reporter):
         if len(content) > 102400:
             # Content is 102400 chars max
             content = content[:102000] + "\n\n... Content max limit reached!"
-        subject = "[{}] New Static Analysis {}".format(settings.app_channel, revision)
+        subject = f"[{settings.app_channel}] New Static Analysis {revision}"
         for email in self.emails:
             self.notify.email(
                 {
