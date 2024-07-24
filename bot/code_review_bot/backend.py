@@ -211,8 +211,7 @@ class BackendAPI:
             resp = requests.get(next_url, auth=auth, headers=GetAppUserAgent())
             resp.raise_for_status()
             data = resp.json()
-            for result in data.get("results", []):
-                yield result
+            yield from data.get("results", [])
             next_url = data.get("next")
 
     def create(self, url_path, data):
