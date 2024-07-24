@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import structlog
 
 from code_review_bot import Issue, Level
@@ -80,8 +79,8 @@ class MozLintIssue(Issue):
         message = self.message
         if len(message) > 0:
             message = message[0].capitalize() + message[1:]
-        linter = "{}: {}".format(self.linter, self.check) if self.check else self.linter
-        return "{}: {} [{}]".format(self.level.name, message, linter)
+        linter = f"{self.linter}: {self.check}" if self.check else self.linter
+        return f"{self.level.name}: {message} [{linter}]"
 
     def as_markdown(self):
         """

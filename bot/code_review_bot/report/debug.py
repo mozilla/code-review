@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -40,7 +39,7 @@ class DebugReporter(Reporter):
         for task in task_failures:
             logger.info("Task failure detected", name=task.name, task=task.id)
         for patch in revision.improvement_patches:
-            logger.info("Patch {}".format(patch))
+            logger.info(f"Patch {patch}")
 
         # Output json report in public directory
         report = {

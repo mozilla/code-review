@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -35,7 +34,7 @@ TASKCLUSTER_INDEX_TTL = 7  # in days
 BULK_ISSUE_CHUNKS = 100
 
 
-class Workflow(object):
+class Workflow:
     """
     Full static analysis workflow
     - setup remote analysis workflow
@@ -195,7 +194,7 @@ class Workflow(object):
             if artifacts is not None:
                 task_issues = task.parse_issues(artifacts, revision)
                 logger.info(
-                    "Found {} issues".format(len(task_issues)),
+                    f"Found {len(task_issues)} issues",
                     task=task.name,
                     id=task.id,
                 )
@@ -330,7 +329,7 @@ class Workflow(object):
         # Add a sub namespace with the task id to be able to list
         # tasks from the parent namespace
         namespaces = revision.namespaces + [
-            "{}.{}".format(namespace, settings.taskcluster.task_id)
+            f"{namespace}.{settings.taskcluster.task_id}"
             for namespace in revision.namespaces
         ]
 
@@ -405,7 +404,7 @@ class Workflow(object):
 
         # Load task description
         task = tasks.get(settings.try_task_id)
-        assert task is not None, "Missing task {}".format(settings.try_task_id)
+        assert task is not None, f"Missing task {settings.try_task_id}"
         dependencies = task["task"]["dependencies"]
         assert len(dependencies) > 0, "No task dependencies to analyze"
 
@@ -454,7 +453,7 @@ class Workflow(object):
                     if isinstance(task, AnalysisTask):
                         task_issues = task.parse_issues(artifacts, revision)
                         logger.info(
-                            "Found {} issues".format(len(task_issues)),
+                            f"Found {len(task_issues)} issues",
                             task=task.name,
                             id=task.id,
                         )
@@ -508,11 +507,11 @@ class Workflow(object):
         try:
             task_id = task_status["status"]["taskId"]
         except KeyError:
-            raise Exception("Cannot read task name {}".format(task_id))
+            raise Exception(f"Cannot read task name {task_id}")
         try:
             name = task_status["task"]["metadata"]["name"]
         except KeyError:
-            raise Exception("Cannot read task name {}".format(task_id))
+            raise Exception(f"Cannot read task name {task_id}")
 
         # Default format is used first when the correct artifact is available
         if DefaultTask.matches(task_id):

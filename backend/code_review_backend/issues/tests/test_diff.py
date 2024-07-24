@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -41,7 +40,7 @@ class DiffAPITestCase(APITestCase):
                 phid=f"PHID-DIFF-{i+1}",
                 revision_id=(i % 2) + 1,
                 review_task_id=f"task-{i}",
-                mercurial_hash=hashlib.sha1(f"hg {i}".encode("utf-8")).hexdigest(),
+                mercurial_hash=hashlib.sha1(f"hg {i}".encode()).hexdigest(),
                 repository=self.repo_try,
             )
 

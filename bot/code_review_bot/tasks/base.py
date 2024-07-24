@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -20,8 +19,8 @@ class BaseTask:
 
     def __init__(self, task_id, task_status):
         self.id = task_id
-        assert "task" in task_status, "No task data for {}".format(self.id)
-        assert "status" in task_status, "No status data for {}".format(self.id)
+        assert "task" in task_status, f"No task data for {self.id}"
+        assert "status" in task_status, f"No status data for {self.id}"
         self.task = task_status["task"]
         self.status = task_status["status"]
 
@@ -51,7 +50,7 @@ class BaseTask:
         """
         Build the task instance from a configured Taskcluster route
         """
-        assert cls.route is not None, "Missing route on {}".format(cls)
+        assert cls.route is not None, f"Missing route on {cls}"
 
         # Load its task id
         try:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -45,9 +44,7 @@ class LandoReporter(Reporter):
         nb_publishable_warnings = nb_publishable - nb_publishable_errors
 
         logger.info(
-            "Publishing warnings to lando for {0} errors and {1} warnings".format(
-                nb_publishable_errors, nb_publishable_warnings
-            ),
+            f"Publishing warnings to lando for {nb_publishable_errors} errors and {nb_publishable_warnings} warnings",
             revision=revision.phabricator_id,
             diff=revision.diff["id"],
         )

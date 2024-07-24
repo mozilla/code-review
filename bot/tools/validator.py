@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -20,7 +19,7 @@ def validate_path(value):
     assert isinstance(value, str), "Path should be a string"
     assert len(value) > 0, "Path should not be empty"
     assert not os.path.isabs(value), "Path should not be absolute"
-    logger.debug("Path {} is valid".format(value))
+    logger.debug(f"Path {value} is valid")
 
 
 def validate_all_types(iterable, t):
@@ -80,16 +79,16 @@ def validate_issue(payload):
     # Validate all fields one by one
     for field in FIELDS:
         if field.name in payload:
-            logger.debug("Validating field {}".format(field.name))
+            logger.debug(f"Validating field {field.name}")
             for validator in field.validators:
                 try:
                     validator(payload[field.name])
                 except Exception as e:
-                    raise Exception("{} {}".format(field.name, e))
+                    raise Exception(f"{field.name} {e}")
         else:
             if field.required is True:
-                raise Exception("Missing required field {}".format(field.name))
-            logger.debug("Missing optional field {}".format(field.name))
+                raise Exception(f"Missing required field {field.name}")
+            logger.debug(f"Missing optional field {field.name}")
 
     return True
 
@@ -107,17 +106,15 @@ def validate(payload):
     assert validate_all_types(payload.values(), list), "All top values must be lists"
 
     for path, issues in payload.items():
-        logger.debug("Validating section {}".format(path))
+        logger.debug(f"Validating section {path}")
         validate_path(path)
 
         # All issues must be dicts
-        assert validate_all_types(
-            issues, dict
-        ), "All issues for {} must be dicts".format(path)
+        assert validate_all_types(issues, dict), f"All issues for {path} must be dicts"
 
         # Validate all issues
         for i, issue in enumerate(issues):
-            logger.debug("Validating issue n°{} for {}".format(i + 1, path))
+            logger.debug(f"Validating issue n°{i + 1} for {path}")
             try:
                 validate_issue(issue)
 
@@ -128,7 +125,7 @@ def validate(payload):
                     path, issue["path"]
                 )
             except Exception as e:
-                raise Exception("Invalid issue n°{} for {} : {}".format(i + 1, path, e))
+                raise Exception(f"Invalid issue n°{i + 1} for {path} : {e}")
 
     return True
 
@@ -157,10 +154,10 @@ if __name__ == "__main__":
         payload = json.load(args.issues_file)
         validate(payload)
     except json.decoder.JSONDecodeError as e:
-        logger.error("Invalid JSON payload: {}".format(e), exc_info=True)
+        logger.error(f"Invalid JSON payload: {e}", exc_info=True)
         sys.exit(1)
     except Exception as e:
-        logger.error("Invalid issues format: {}".format(e), exc_info=True)
+        logger.error(f"Invalid issues format: {e}", exc_info=True)
         sys.exit(1)
 
     logger.info("Your file is valid !")

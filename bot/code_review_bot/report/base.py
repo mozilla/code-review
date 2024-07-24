@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -8,7 +7,7 @@ import itertools
 from code_review_bot import Level
 
 
-class Reporter(object):
+class Reporter:
     """
     Common interface to post reports on a website
     Will configure & build reports
@@ -34,9 +33,7 @@ class Reporter(object):
 
         out = []
         for key in keys:
-            assert key in configuration, "Missing {} {}".format(
-                self.__class__.__name__, key
-            )
+            assert key in configuration, f"Missing {self.__class__.__name__} {key}"
             out.append(configuration[key])
 
         return out

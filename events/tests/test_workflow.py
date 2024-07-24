@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import pytest
 from libmozdata.phabricator import BuildState, ConduitError, UnitResultState
 from libmozevent.bus import MessageBus
@@ -18,7 +16,7 @@ MOCK_LANDO_API_URL = "http://api.lando.test"
 MOCK_LANDO_TOKEN = "Some Test Token"
 
 
-class MockLandoWarnings(object):
+class MockLandoWarnings:
     """
     LandoWarnings Mock class
     """

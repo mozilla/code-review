@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 from code_review_bot.tasks.coverage import ZeroCoverageTask
 
 

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -36,6 +35,6 @@ def get_reporters(configuration):
                 raise Exception("Missing reporter class {}".format(conf["reporter"]))
             out[name] = cls(conf)
         except Exception as e:
-            logger.warning("Failed to create reporter: {}".format(e))
+            logger.warning(f"Failed to create reporter: {e}")
 
     return out

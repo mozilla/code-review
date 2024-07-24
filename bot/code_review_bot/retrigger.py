@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -46,17 +45,15 @@ def main(env):
         print("Triggering {} > {}".format(phid, task["title"]))
 
         if phid in skip_phids:
-            print(">> Skipping, phid {} has already a non-erroneous task".format(phid))
+            print(f">> Skipping, phid {phid} has already a non-erroneous task")
             continue
 
         extra_env = {"ANALYSIS_SOURCE": "phabricator", "ANALYSIS_ID": phid}
-        task = hooks.triggerHook(
-            "project-relman", "code-review-{}".format(env), extra_env
-        )
+        task = hooks.triggerHook("project-relman", f"code-review-{env}", extra_env)
         print(">> New task {}".format(task["status"]["taskId"]))
         total += 1
 
-    print("Triggered {} tasks".format(total))
+    print(f"Triggered {total} tasks")
 
 
 if __name__ == "__main__":

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
@@ -32,7 +31,7 @@ async def test_get_version(aiohttp_client, webserver):
     response = await client.get("/__version__")
     assert response.status == 200
 
-    with open(VERSION_PATH, "r") as version_file:
+    with open(VERSION_PATH) as version_file:
         assert await response.json() == json.loads(version_file.read())
 
 
