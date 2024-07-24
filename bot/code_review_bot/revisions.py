@@ -213,9 +213,9 @@ class Revision(object):
 
         # Match the decision task environment to get the mercurial information
         decision_env = decision_task["payload"]["env"]
-        head_repository = (
-            base_repository
-        ) = head_changeset = base_changeset = repository_try_name = None
+        head_repository = base_repository = head_changeset = base_changeset = (
+            repository_try_name
+        ) = None
         for prefix in settings.decision_env_prefixes:
             head_repository_key = f"{prefix}_HEAD_REPOSITORY"
             base_repository_key = f"{prefix}_BASE_REPOSITORY"

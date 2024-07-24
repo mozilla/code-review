@@ -1,0 +1,11 @@
+[tool.ruff]
+
+[tool.ruff.lint]
+select = ["W", "E", "F", "I", "T10"]
+ignore = [
+	# Line too long
+	"E501",
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["code_review_backend", "code_review_bot", "code_review_tools", "code_review_events"]
