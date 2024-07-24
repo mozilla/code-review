@@ -1,7 +1,7 @@
 [tool.ruff]
 
 [tool.ruff.lint]
-select = ["W", "E", "F", "I", "T10"]
+select = ["W", "E", "F", "I", "T10", "UP"]
 ignore = [
 	# Line too long
 	"E501",
