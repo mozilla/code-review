@@ -7,9 +7,9 @@
 You may want to install dependencies in a virtual environment an run the development test server with a base fixure for development purpose:
 
 ```
-mkvirtualenv -p /usr/bin/python3 code-review-backend
+mkvirtualenv code-review-backend
+pip install -e ./tools -e ./backend -r ./backend/requirements-dev.txt
 cd backend
-pip install -r requirements.txt
 ./manage.py migrate
 ./manage.py createsuperuser
 ./manage.py loaddata fixtures/repositories.json
