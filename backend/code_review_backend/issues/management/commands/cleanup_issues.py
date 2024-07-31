@@ -40,9 +40,7 @@ class Command(BaseCommand):
             logger.info("Didn't find any old revision to delete.")
             return
 
-        logger.info(
-            f"Retrieved {total_rev_count} old revisions to be deleted."
-        )
+        logger.info(f"Retrieved {total_rev_count} old revisions to be deleted.")
 
         stats = defaultdict(int)
 
