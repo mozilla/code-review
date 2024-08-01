@@ -12,15 +12,13 @@ from django.utils import timezone
 
 from code_review_backend.issues.models import Diff, Issue, IssueLink, Revision
 
-logging.basicConfig(level=logging.INFO)
-
 logger = logging.getLogger(__name__)
 
 DEL_CHUNK_SIZE = 500
 
 
 class Command(BaseCommand):
-    help = "Cleanup old issues from autoland and mozilla-central repositories"
+    help = "Cleanup old issues from all repositories"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -34,8 +32,6 @@ class Command(BaseCommand):
         clean_until = timezone.now() - timedelta(days=options["nb_days"])
 
         rev_to_delete = Revision.objects.filter(
-            base_repository__slug__in=["autoland", "mozilla-central"],
-            head_repository__slug__in=["autoland", "mozilla-central"],
             created__lte=clean_until,
         )
         total_rev_count = rev_to_delete.count()
@@ -44,9 +40,7 @@ class Command(BaseCommand):
             logger.info("Didn't find any old revision to delete.")
             return
 
-        logger.info(
-            f"Retrieved {total_rev_count} old revisions from either autoland or mozilla-central to be deleted."
-        )
+        logger.info(f"Retrieved {total_rev_count} old revisions to be deleted.")
 
         stats = defaultdict(int)
 

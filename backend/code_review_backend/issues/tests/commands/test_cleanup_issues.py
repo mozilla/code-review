@@ -122,7 +122,7 @@ class CleanupIssuesCommandTestCase(TestCase):
         self.assertListEqual(
             mock_log.output,
             [
-                f"{LOG_PREFIX}Retrieved 1 old revisions from either autoland or mozilla-central to be deleted.",
+                f"{LOG_PREFIX}Retrieved 1 old revisions to be deleted.",
                 f"{LOG_PREFIX}Page 1/1.",
                 f"{LOG_PREFIX}Deleted 4 IssueLink, 1 Diff, 2 Issue, 1 Revision.",
             ],
@@ -143,7 +143,7 @@ class CleanupIssuesCommandTestCase(TestCase):
         self.assertEqual(
             mock_log.output,
             [
-                f"{LOG_PREFIX}Retrieved 2 old revisions from either autoland or mozilla-central to be deleted.",
+                f"{LOG_PREFIX}Retrieved 2 old revisions to be deleted.",
                 f"{LOG_PREFIX}Page 1/1.",
                 f"{LOG_PREFIX}Deleted 6 IssueLink, 1 Diff, 4 Issue, 2 Revision.",
             ],
