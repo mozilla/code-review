@@ -30,5 +30,5 @@ You can download the backup from the Heroku datastore dedicated page.
 
 ```bash
 export PGPASSWORD=devdata
-pg_restore  -h localhost --user devuser -d code_review_dev path/to/dump
+pg_restore -h localhost --user devuser -d code_review_dev path/to/dump
 ```
