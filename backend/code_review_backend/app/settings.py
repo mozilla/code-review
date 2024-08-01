@@ -104,7 +104,8 @@ if "DATABASE_URL" in os.environ:
         "default": dj_database_url.parse(
             os.environ["DATABASE_URL"],
             conn_max_age=600,
-            ssl_require="DYNO" in os.environ,
+            ssl_require="DYNO" in os.environ
+            and os.environ.get("DATABASE_NO_SSL") is None,
         )
     }
 else:

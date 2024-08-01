@@ -1,5 +1,29 @@
 ---
 services:
+  backend:
+    container_name: code-review-backend
+    build:
+      dockerfile: ./backend/Dockerfile
+      context: .
+
+    environment:
+      DATABASE_URL: postgresql://devuser:devdata@db/code_review_dev
+
+      # Setup environment like on Heroku
+      DYNO: 1
+      HOST: 0.0.0.0
+      PORT: 80
+      SECRET_KEY: randomSecretKey123
+
+      # Special marker to skip SSL for Postgres
+      DATABASE_NO_SSL: 1
+
+    ports:
+      - 127.0.0.1:8000:80
+
+    depends_on:
+      - db
+
   db:
     container_name: code-review-db
     image: postgres:16-alpine
