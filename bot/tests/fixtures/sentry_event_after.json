@@ -1,0 +1,125 @@
+{
+    "breadcrumbs": {
+        "values": [
+            {
+                "category": "test.log",
+                "data": {
+                    "asctime": "2024-08-01 16:31:37"
+                },
+                "level": "info",
+                "message": "[info     ] This is Info                  ",
+                "timestamp": "2024-08-01T14:31:37.784756Z",
+                "type": "log"
+            },
+            {
+                "category": "test.log",
+                "data": {
+                    "asctime": "2024-08-01 16:31:37"
+                },
+                "level": "warning",
+                "message": "[warning  ] This is warning               ",
+                "timestamp": "2024-08-01T14:31:37.785234Z",
+                "type": "log"
+            }
+        ]
+    },
+    "contexts": {
+        "runtime": {
+            "build": "3.10.12 (main, Mar 22 2024, 16:50:05) [GCC 11.4.0]",
+            "name": "CPython",
+            "version": "3.10.12"
+        },
+        "trace": {
+            "dynamic_sampling_context": {
+                "environment": "dev",
+                "public_key": "3e4688ab0490667ddf863da3c8b074b3",
+                "release": "1.6.2",
+                "trace_id": "d6c4832c2380477c9f28efb0c5e36cdb"
+            },
+            "parent_span_id": null,
+            "span_id": "83670bdf42178356",
+            "trace_id": "d6c4832c2380477c9f28efb0c5e36cdb"
+        }
+    },
+    "environment": "dev",
+    "event_id": "6d93a346184743359d003cefb0371ce5",
+    "extra": {
+        "asctime": "2024-08-01 16:31:37",
+        "sys.argv": [
+            "log.py"
+        ]
+    },
+    "level": "error",
+    "logentry": {
+        "message": "[error    ] This is error                  my=arg test=ok",
+        "params": []
+    },
+    "logger": "test.log",
+    "modules": {
+        "aiohttp": "3.9.5",
+        "aiosignal": "1.3.1",
+        "async-timeout": "4.0.3",
+        "attrs": "22.2.0",
+        "certifi": "2022.12.7",
+        "charset-normalizer": "2.1.1",
+        "code-review-bot": "1.6.2",
+        "code-review-tools": "0.2.0",
+        "frozenlist": "1.3.3",
+        "icalendar": "5.0.4",
+        "idna": "3.4",
+        "influxdb": "5.3.1",
+        "libmozdata": "0.1.83",
+        "mohawk": "1.1.0",
+        "msgpack": "1.0.4",
+        "multidict": "6.0.5",
+        "pip": "22.0.2",
+        "python-dateutil": "2.8.2",
+        "python-hglib": "2.6.2",
+        "pytz": "2022.7.1",
+        "pyyaml": "6.0",
+        "requests": "2.28.2",
+        "requests-futures": "1.0.0",
+        "rs_parsepatch": "0.4.0",
+        "sentry-sdk": "2.11.0",
+        "setuptools": "59.6.0",
+        "six": "1.16.0",
+        "slugid": "2.0.0",
+        "structlog": "24.4.0",
+        "taskcluster": "67.1.0",
+        "taskcluster-urls": "13.0.1",
+        "treeherder-client": "5.0.0",
+        "urllib3": "1.26.14",
+        "whatthepatch": "1.0.4",
+        "wheel": "0.37.1",
+        "yarl": "1.9.4"
+    },
+    "platform": "python",
+    "release": "1.6.2",
+    "sdk": {
+        "integrations": [
+            "aiohttp",
+            "argv",
+            "atexit",
+            "dedupe",
+            "excepthook",
+            "logging",
+            "modules",
+            "stdlib",
+            "threading"
+        ],
+        "name": "sentry.python.aiohttp",
+        "packages": [
+            {
+                "name": "pypi:sentry-sdk",
+                "version": "2.11.0"
+            }
+        ],
+        "version": "2.11.0"
+    },
+    "server_name": "bot",
+    "tags": {
+        "site": "unknown"
+    },
+    "timestamp": "2024-08-01T14:31:37.819483Z",
+    "transaction_info": {}
+}

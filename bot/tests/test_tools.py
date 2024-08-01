@@ -5,6 +5,8 @@
 import pytest
 from taskcluster.helper import TaskclusterConfig
 
+from code_review_tools.log import remove_color_codes
+
 
 def test_taskcluster_service():
     """
@@ -18,3 +20,13 @@ def test_taskcluster_service():
     with pytest.raises(AssertionError) as e:
         taskcluster.get_service("nope")
     assert str(e.value) == "Invalid Taskcluster service nope"
+
+
+def test_remove_color_codes(sentry_event_with_colors, sentry_event_without_colors):
+    """
+    Test the removal of color codes from Sentry payloads
+    """
+    assert (
+        remove_color_codes(sentry_event_with_colors, hint=None)
+        == sentry_event_without_colors
+    )

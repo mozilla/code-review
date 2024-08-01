@@ -866,3 +866,17 @@ class MockPhabricator:
 @pytest.fixture
 def phab():
     return MockPhabricator("http://phabricator.test", "deadbeef")
+
+
+@pytest.fixture
+def sentry_event_with_colors():
+    path = os.path.join(FIXTURES_DIR, "sentry_event_before.json")
+    with open(path) as f:
+        return json.load(f)
+
+
+@pytest.fixture
+def sentry_event_without_colors():
+    path = os.path.join(FIXTURES_DIR, "sentry_event_after.json")
+    with open(path) as f:
+        return json.load(f)
