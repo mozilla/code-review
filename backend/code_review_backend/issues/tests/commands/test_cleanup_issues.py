@@ -62,7 +62,7 @@ class CleanupIssuesCommandTestCase(TestCase):
                     head_repository=repo,
                 )
                 for i, repo in enumerate(
-                    (self.moz_central, self.test_repo, self.autoland)
+                    (self.moz_central, self.autoland, self.test_repo)
                 )
             ]
         )
