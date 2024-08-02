@@ -51,7 +51,7 @@ tasks:
     taskboot_image: "mozilla/taskboot:0.4.1"
 
     pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
-    python_version: "3.9"
+    python_version: "3.12"
 
     provisionerId:
       $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
