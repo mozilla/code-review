@@ -1,6 +1,6 @@
 #!/bin/bash -ex
-MERCURIAL_VERSION="6.4.5"
-VERSION_CONTROL_TOOLS_REV="7436689a409528730ee6a7a2a5e763c9fb821a8f"
+MERCURIAL_VERSION="6.8.1"
+VERSION_CONTROL_TOOLS_REV="2bc1e1850664c7305ac9d26c52514a17cdc4f496"
 
 apt-get update
 apt-get install --no-install-recommends -y curl python-dev-is-python3 gcc openssh-client libjemalloc2
