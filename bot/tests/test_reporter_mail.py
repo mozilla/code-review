@@ -30,7 +30,9 @@ This is the mock issue n°2
 
 This is the mock issue n°3
 
-This is the mock issue n°4"""
+This is the mock issue n°4
+"""
+
 
 MAIL_CONTENT_BUILD_ERRORS = """
 # [Code Review bot](https://github.com/mozilla/code-review) found 2 build errors on [D51](https://phabricator.test/D51)
