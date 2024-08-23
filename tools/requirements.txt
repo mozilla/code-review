@@ -5,7 +5,7 @@ async-timeout==4.0.3
 idna>=2.5,<3.8
 multidict==6.0.5
 rs_parsepatch==0.4.0
-sentry-sdk==2.12.0
+sentry-sdk==2.13.0
 structlog==24.4.0
 taskcluster==67.1.0
 treeherder-client==5.0.0
