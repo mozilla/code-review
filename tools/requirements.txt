@@ -2,7 +2,7 @@ aiohttp==3.10.1
 async-timeout==4.0.3
 
 # Limit idna to avid conflicts
-idna>=2.5,<3.8
+idna>=2.5,<3.9
 multidict==6.0.5
 rs_parsepatch==0.4.0
 sentry-sdk==2.13.0
