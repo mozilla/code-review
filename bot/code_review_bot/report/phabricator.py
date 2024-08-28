@@ -226,11 +226,16 @@ class PhabricatorReporter(Reporter):
             and not notices
         ):
             # Nothing changed, no issue have been opened or closed
-            logger.warning(
-                "No new issues nor failures/notices were detected. "
-                "Skipping comment publication (some issues are unresolved)",
-                unresolved_count=len(unresolved_issues),
-            )
+            if len(unresolved_issues) == 0:
+                logger.info(
+                    "No new issues nor failures/notices were detected. Skipping comment publication."
+                )
+            else:
+                logger.warning(
+                    "No new issues nor failures/notices were detected. "
+                    "Skipping comment publication (some issues are unresolved)",
+                    unresolved_count=len(unresolved_issues),
+                )
             return publishable_issues, patches
 
         # Publish comment summarizing detected, unresolved and closed issues
