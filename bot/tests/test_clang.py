@@ -187,6 +187,18 @@ def test_empty_patch(patch):
     assert patches == []
 
 
+def test_missing_clang_format_diff(mock_task, mock_revision, capsys):
+    """
+    Clang format task requires diff artifact to detect issues
+    """
+    task = mock_task(ClangFormatTask, "mock-clang-format")
+    assert task.parse_issues({}, mock_revision) == []
+    assert (
+        "public/code-review/clang-format.diff is missing from artifacts"
+        in capsys.readouterr().out
+    )
+
+
 def test_real_patch(mock_revision, mock_task):
     """
     Test clang format patch parsing with a real patch
