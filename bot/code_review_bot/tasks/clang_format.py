@@ -93,9 +93,15 @@ class ClangFormatTask(AnalysisTask):
         return f"`./mach clang-format -p {files}`"
 
     def parse_issues(self, artifacts, revision):
-        artifact = artifacts.get("public/code-review/clang-format.diff")
+        if "public/code-review/clang-format.diff" not in artifacts:
+            logger.warn(
+                "public/code-review/clang-format.diff is missing from artifacts"
+            )
+            return []
+
+        artifact = artifacts["public/code-review/clang-format.diff"]
         if artifact is None:
-            logger.warn("Missing clang-format.diff")
+            logger.info("Empty clang-format.diff, no patches to process")
             return []
 
         # Use all chunks provided by parsepatch
