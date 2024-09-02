@@ -332,8 +332,8 @@ class Revision:
         # Check in hgmo cache first
         cache_path = os.path.join(settings.hgmo_cache, path)
         if Path(settings.hgmo_cache) not in Path(cache_path).resolve().parents:
-            logger.warning("Element is not valid for caching", path=path)
-            raise ValueError
+            logger.info("Element is not valid for caching, skipping", path=path)
+            return
 
         if os.path.exists(cache_path):
             with open(cache_path) as f:
