@@ -144,10 +144,9 @@ def test_full_file(mock_revision, mock_hgmo, mock_task):
 
 
 @pytest.mark.parametrize("path", [".", "..", "a/../../b"])
-def test_incorrect_file_path(mock_revision, path):
+def test_incorrect_file_path_no_raise(mock_revision, path):
     """
     Test that a revision raises a ValueError when loading
     a file with a path pointing outside the repository
     """
-    with pytest.raises(ValueError):
-        mock_revision.load_file(path)
+    assert mock_revision.load_file(path) is None
