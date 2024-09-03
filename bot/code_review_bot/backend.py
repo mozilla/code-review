@@ -152,6 +152,9 @@ class BackendAPI:
                     revision.issues_url,
                     {"issues": [json_data for _, json_data in valid_data]},
                 )
+                if response is None:
+                    # Backend rejected the payload, nothing more to do.
+                    continue
                 created = response.get("issues")
 
                 assert created and len(created) == len(valid_data)
