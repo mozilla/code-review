@@ -194,7 +194,7 @@ class Command(BaseCommand):
         revision, _ = head_repository.head_revisions.get_or_create(
             phabricator_id=data["id"],
             defaults={
-                "phid": data["phid"],
+                "phabricator_phid": data["phid"],
                 "title": data["title"],
                 "bugzilla_id": int(data["bugzilla_id"])
                 if data["bugzilla_id"]
