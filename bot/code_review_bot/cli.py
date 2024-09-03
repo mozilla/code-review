@@ -219,7 +219,11 @@ def main():
         )
 
         # Also update lando
-        if lando_publish_generic_failure:
+        if not hasattr(revision, "id") or not hasattr(revision, "diff"):
+            logger.info(
+                "Skipping lando generic failure publication as the revision is incomplete"
+            )
+        elif lando_publish_generic_failure:
             try:
                 lando_api.del_all_warnings(revision.id, revision.diff["id"])
                 lando_api.add_warning(
