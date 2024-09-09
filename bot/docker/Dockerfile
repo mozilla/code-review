@@ -1,5 +1,7 @@
 FROM python:3.12.5-slim
 
+RUN pip install setuptools==74.1.2 --disable-pip-version-check --no-cache-dir --quiet
+
 ADD tools /src/tools
 RUN cd /src/tools && python setup.py install
 
