@@ -2,8 +2,7 @@
 name: Build backend Docker image
 
 on:
-  # Trigger the action manually from the UI
-  workflow_dispatch:
+  push:
 
 jobs:
   build_backend_docker:
