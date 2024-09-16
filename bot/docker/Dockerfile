@@ -1,4 +1,4 @@
-FROM python:3.12.5-slim
+FROM python:3.12.6-slim
 
 RUN pip install setuptools==74.1.2 --disable-pip-version-check --no-cache-dir --quiet
 
