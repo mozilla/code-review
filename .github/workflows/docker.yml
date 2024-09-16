@@ -1,0 +1,24 @@
+---
+name: Build backend Docker image
+
+on:
+  # Trigger the action manually from the UI
+  workflow_dispatch:
+
+jobs:
+  build_backend_docker:
+    name: Build backend Docker image
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      # Build the Docker image
+      - name: Build the Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: "backend/Dockerfile"
+
+          # TODO: push is currently disabled
+          push: false
