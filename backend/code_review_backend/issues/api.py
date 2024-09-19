@@ -33,6 +33,7 @@ from code_review_backend.issues.serializers import (
     IssueBulkSerializer,
     IssueCheckSerializer,
     IssueCheckStatsSerializer,
+    IssueHashSerializer,
     IssueSerializer,
     RepositorySerializer,
     RevisionSerializer,
@@ -372,10 +373,10 @@ class IssueCheckHistory(CachedView, generics.ListAPIView):
 
 
 class IssueList(generics.ListAPIView):
-    serializer_class = IssueSerializer
+    serializer_class = IssueHashSerializer
 
     def get_queryset(self):
-        qs = Issue.objects.all()
+        qs = Issue.objects.all().only("id", "hash")
 
         errors = defaultdict(list)
         repo_slug = self.kwargs["repo_slug"]
