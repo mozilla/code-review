@@ -17,7 +17,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import logging
 import os
 
-import dj_database_url
+import environ
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -33,18 +33,33 @@ ROOT_DIR = os.path.dirname(BASE_DIR)
 with open(os.path.join(ROOT_DIR, "VERSION")) as f:
     VERSION = f.read().strip()
 
+
+# Initialize django-environ variables
+env = environ.Env(
+    DEBUG=(bool, True),
+    SECRET_KEY=(str, "t!+s!@x5p!85x19q83jufr#95_z0fv7$!u5z*c&gi!%hr3^w+s"),
+    # https://django-environ.readthedocs.io/en/latest/types.html#environ-env-db-url
+    DATABASE_URL=(str, f"sqlite:////{ROOT_DIR}/db.sqlite3"),
+    ALLOWED_HOSTS=(list[str], ["*"]),
+    CSRF_TRUSTED_ORIGINS=(
+        list[str],
+        ["http://localhost:8000", "http://localhost:8010"],
+    ),
+    DYNO=(str, ""),
+)
+
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "t!+s!@x5p!85x19q83jufr#95_z0fv7$!u5z*c&gi!%hr3^w+r"
+SECRET_KEY = env("SECRET_KEY")
 
 # Only use DEBUG mode for local development
 # When running on Heroku, we disable that mode (see end of file & DYNO mode)
-DEBUG = True
+DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = []
-
+ALLOWED_HOSTS = env("ALLOWED_HOSTS")
 
 # Application definition
 
@@ -95,28 +110,10 @@ TEMPLATES = [
 WSGI_APPLICATION = "code_review_backend.app.wsgi.application"
 
 
-# Database
-# https://docs.djangoproject.com/en/2.2/ref/settings/#databases
+DATABASES = {"default": env.db()}
 
-if "DATABASE_URL" in os.environ:
-    logger.info("Using remote database from $DATABASE_URL")
-    DATABASES = {
-        "default": dj_database_url.parse(
-            os.environ["DATABASE_URL"],
-            conn_max_age=600,
-            ssl_require="DYNO" in os.environ
-            and os.environ.get("DATABASE_NO_SSL") is None,
-        )
-    }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.path.join(ROOT_DIR, "db.sqlite3"),
-        }
-    }
-    logger.info("DATABASE_URL not found, will use sqlite. Data may be lost.")
-
+if DATABASES["default"]["ENGINE"] == "django.db.backends.sqlite3":
+    logger.warning("Running application with SQLite backend. Data may be lost.")
 
 # Password validation
 # https://docs.djangoproject.com/en/2.2/ref/settings/#auth-password-validators
@@ -165,19 +162,14 @@ INTERNAL_IPS = ["127.0.0.1"]
 STATIC_URL = "/static/"
 
 # Static files are set in a dedicated path in Docker image
-if "DJANGO_DOCKER" in os.environ:
+if DEBUG is False:
     STATIC_ROOT = "/static"
 
     # Enable GZip and cache, and build a manifest during collectstatic
     STATICFILES_STORAGE = "whitenoise.storage.CompressedStaticFilesStorage"
 
-    # Collect static in production mode
-    DEBUG = False
-
 # Setup CSRF trusted origins explicitly as it's needed from Django 4
-CSRF_TRUSTED_ORIGINS = os.getenv(
-    "CSRF_TRUSTED_ORIGINS", "http://localhost:8000,http://localhost:8010"
-).split(",")
+CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 
 # Internal logging setup
 LOGGING = {
@@ -213,18 +205,13 @@ CORS_ORIGIN_ALLOW_ALL = True
 # Use production Phabricator instance by default
 PHABRICATOR_HOST = "https://phabricator.services.mozilla.com"
 
-# Heroku settings override to run the web app in production mode
-if "DYNO" in os.environ:
+DYNO = env("DYNO")
+# Heroku settings override to run the web app through dyno
+if DYNO:
     logger.info("Setting up Heroku environment")
-    ALLOWED_HOSTS = ["*"]
-    DEBUG = os.environ.get("DEBUG", "false").lower() == "true"
 
     # Insert Whitenoise Middleware after the security and cors ones
     MIDDLEWARE.insert(2, "whitenoise.middleware.WhiteNoiseMiddleware")
-
-    # Use Secret key from env
-    assert "SECRET_KEY" in os.environ, "Missing SECRET_KEY in Heroku config"
-    SECRET_KEY = os.environ["SECRET_KEY"]
 
     # Cors closed on heroku
     CORS_ORIGIN_ALLOW_ALL = False

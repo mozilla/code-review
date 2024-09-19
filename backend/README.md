@@ -91,6 +91,5 @@ The postgresql database name can be found through the CLI `pg:info` tool, or on 
 Finally you can use that database with the backend as:
 
 ```
-export DATABASE_URL=postgres://postgres:crdev1234@localhost/code_review
-./manage.py runserver
+DATABASE_URL=psql://devuser:devdata@localhost/code_review_dev ./manage.py runserver
 ```

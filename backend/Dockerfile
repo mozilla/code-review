@@ -9,7 +9,7 @@ RUN cd /src/tools && pip install --disable-pip-version-check --no-cache-dir --qu
 WORKDIR /src/backend
 
 # Activate Django settings for in docker image
-ENV DJANGO_DOCKER=true
+ENV DEBUG=false
 
 RUN pip install --disable-pip-version-check --no-cache-dir --quiet .
 
