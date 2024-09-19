@@ -7,7 +7,7 @@ services:
       context: .
 
     environment:
-      DATABASE_URL: postgresql://devuser:devdata@db/code_review_dev
+      DATABASE_URL: psql://devuser:devdata@db/code_review_dev
 
       # Setup environment like on Heroku
       DYNO: 1
