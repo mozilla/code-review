@@ -106,7 +106,7 @@ class IssueTestCase(TestCase):
         )
 
     def test_list_repository_issues(self):
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(4):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
             )
@@ -118,8 +118,8 @@ class IssueTestCase(TestCase):
                 "next": None,
                 "previous": None,
                 "results": [
-                    self.serialize_issue(self.err_issue),
-                    self.serialize_issue(self.warn_issue),
+                    {"id": str(self.err_issue.id), "hash": ""},
+                    {"id": str(self.warn_issue.id), "hash": ""},
                 ],
             },
         )
@@ -128,7 +128,7 @@ class IssueTestCase(TestCase):
         """
         Primarily filter issues depending on an existing revision
         """
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
                 + "?date=1999-01-01&revision_changeset="
@@ -137,13 +137,18 @@ class IssueTestCase(TestCase):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["count"], 1)
-        self.assertEqual(data["results"], [self.serialize_issue(self.warn_issue)])
+        self.assertEqual(
+            data["results"],
+            [
+                {"id": str(self.warn_issue.id), "hash": ""},
+            ],
+        )
 
     def test_list_repository_issues_date_fallback(self):
         """
         Fall back to the date when no issue match the given revision
         """
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
                 + "?date=2000-01-02&revision_changeset="
@@ -152,10 +157,15 @@ class IssueTestCase(TestCase):
             self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["count"], 1)
-        self.assertEqual(data["results"], [self.serialize_issue(self.warn_issue)])
+        self.assertEqual(
+            data["results"],
+            [
+                {"id": str(self.warn_issue.id), "hash": ""},
+            ],
+        )
 
     def test_list_repository_issues_date_only(self):
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(5):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
                 + "?date=2010-01-01"
@@ -168,8 +178,8 @@ class IssueTestCase(TestCase):
                 "next": None,
                 "previous": None,
                 "results": [
-                    self.serialize_issue(self.err_issue),
-                    self.serialize_issue(self.warn_issue),
+                    {"id": str(self.err_issue.id), "hash": ""},
+                    {"id": str(self.warn_issue.id), "hash": ""},
                 ],
             },
         )

@@ -422,7 +422,10 @@ class IssueList(generics.ListAPIView):
             raise ValidationError(errors)
 
         # Only use the revision filter in case some issues are found
-        if rev_changeset:
+        if (
+            rev_changeset
+            and qs.filter(revisions__head_changeset=rev_changeset).exists()
+        ):
             filters["revisions__head_changeset"] = rev_changeset
         elif rev_changeset and not date_revision:
             qs = Issue.objects.none()
