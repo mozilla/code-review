@@ -83,6 +83,7 @@ class Revision(models.Model):
     class Meta:
         ordering = ("phabricator_id", "id")
 
+        indexes = (models.Index(fields=["head_repository", "head_changeset"]),)
         constraints = [
             models.UniqueConstraint(
                 fields=["phabricator_id"],
@@ -213,6 +214,7 @@ class Issue(models.Model):
 
     class Meta:
         ordering = ("created",)
+        indexes = (models.Index(fields=["path"]),)
 
     @property
     def publishable(self):

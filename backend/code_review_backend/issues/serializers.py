@@ -199,6 +199,20 @@ class IssueSerializer(serializers.ModelSerializer):
         read_only_fields = ("new_for_revision",)
 
 
+class IssueHashSerializer(serializers.ModelSerializer):
+    """
+    Serialize an Issue hash
+    """
+
+    class Meta:
+        model = Issue
+        fields = (
+            "id",
+            "hash",
+        )
+        read_only_fields = ("id", "hash")
+
+
 class IssueBulkSerializer(serializers.Serializer):
     diff_id = serializers.PrimaryKeyRelatedField(
         # Initialized depending on the revision used for the creation
