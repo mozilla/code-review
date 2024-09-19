@@ -376,10 +376,11 @@ class IssueList(generics.ListAPIView):
     serializer_class = IssueHashSerializer
 
     def get_queryset(self):
-        qs = Issue.objects.all().only("id", "hash")
+        qs = Issue.objects.all().only("id", "hash").prefetch_related("revisions")
 
         errors = defaultdict(list)
         repo_slug = self.kwargs["repo_slug"]
+        filters = {}
         try:
             repo = Repository.objects.get(slug=repo_slug)
         except Repository.DoesNotExist:
@@ -387,11 +388,11 @@ class IssueList(generics.ListAPIView):
                 "invalid repo_slug path argument - No repository match this slug"
             )
         else:
-            qs = qs.filter(revisions__head_repository=repo)
+            filters["revisions__head_repository"] = repo
 
         # Always filter by path when the parameter is set
         if path := self.request.query_params.get("path"):
-            qs = qs.filter(path=path)
+            filters["path"] = path
 
         date_revision = None
         if date := self.request.query_params.get("date"):
@@ -421,18 +422,15 @@ class IssueList(generics.ListAPIView):
             raise ValidationError(errors)
 
         # Only use the revision filter in case some issues are found
-        if (
-            rev_changeset
-            and qs.filter(revisions__head_changeset=rev_changeset).exists()
-        ):
-            qs = qs.filter(revisions__head_changeset=rev_changeset)
+        if rev_changeset:
+            filters["revisions__head_changeset"] = rev_changeset
         elif rev_changeset and not date_revision:
             qs = Issue.objects.none()
         # Defaults to filtering by the revision closest to the given date
         elif date_revision:
-            qs = qs.filter(revisions=date_revision)
+            filters["revisions"] = date_revision
 
-        return qs.order_by("created").distinct()
+        return qs.filter(**filters).order_by("created").distinct()
 
 
 # Build exposed urls for the API
