@@ -42,9 +42,8 @@ def list_diffs(min_date, max_date):
     revisions = []
     updates = {}
 
-    headers = {"User-Agent": "Mozilla ReviewBot/1.0"}
     while True:
-        resp = requests.get(url, headers=headers)
+        resp = requests.get(url, headers=GetAppUserAgent())
         resp.raise_for_status()
         data = resp.json()
 
