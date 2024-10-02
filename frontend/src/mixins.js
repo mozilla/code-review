@@ -29,7 +29,7 @@ export default {
     },
   },
   date: {
-    filters: {
+    methods: {
       // Display time since elapsed in a human format
       since(datetime) {
         const dspStep = (t, name) => {

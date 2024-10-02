@@ -314,7 +314,7 @@ export default {
 
           <td>
             <span :title="task.data.indexed"
-              >{{ task.data.indexed | since }} ago</span
+              >{{ since(task.data.indexed) }} ago</span
             >
           </td>
           <td>

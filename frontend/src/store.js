@@ -2,11 +2,12 @@ import Vue from "vue";
 import Vuex from "vuex";
 import axios from "axios";
 Vue.use(Vuex);
+import { createStore } from "vuex";
 
 const TASKCLUSTER_DIFF_INDEX =
   "https://index.taskcluster.net/v1/task/project.relman.production.code-review.phabricator.diff.";
 
-export default new Vuex.Store({
+const store = createStore({
   state: {
     backend_url: BACKEND_URL,
     tasks: [],
@@ -260,3 +261,5 @@ export default new Vuex.Store({
     },
   },
 });
+
+export default store;

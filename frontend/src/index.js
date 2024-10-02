@@ -1,12 +1,14 @@
-import Vue from "vue";
 import "bulma/css/bulma.css";
-import App from "./App.vue";
 import store from "./store.js";
 import router from "./routes.js";
+import App from "./App.vue";
 
-export default new Vue({
-  store,
-  router,
-  el: "#root",
-  render: (h) => h(App),
+import { createApp, h } from "vue";
+
+const app = createApp({
+  render: () => h(App),
 });
+app.use(store);
+app.use(router);
+
+app.mount("#root");

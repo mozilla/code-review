@@ -25,7 +25,7 @@ export default {
         / {{ stats.ids.length }} tasks with issues
       </span>
       <span v-if="stats && stats.start_date" :title="stats.start_date"
-        >, since {{ stats.start_date | since }} ago</span
+        >, since {{ since(stats.start_date) }} ago</span
       >
     </h2>
 

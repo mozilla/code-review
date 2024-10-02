@@ -13,6 +13,9 @@ const common = {
 
   resolve: {
     extensions: [".js", ".vue"],
+    alias: {
+      vue: "@vue/compat",
+    },
   },
 
   output: {
@@ -51,7 +54,18 @@ const common = {
       {
         test: /\.vue$/,
         loader: "vue-loader",
+        options: {
+          compilerOptions: {
+            compatConfig: {
+              MODE: 3,
+            },
+          },
+        },
       },
+      // {
+      //   test: /\.vue$/,
+      //   loader: "vue-loader",
+      // },
       {
         test: /\.js$/,
         exclude: /node_modules/,

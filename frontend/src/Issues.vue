@@ -98,7 +98,7 @@ export default {
       return issues;
     },
   },
-  filters: {
+  methods: {
     from_timestamp(value) {
       return new Date(value * 1000).toUTCString();
     },
@@ -146,7 +146,7 @@ export default {
         <div class="level-item has-text-centered">
           <div>
             <p class="heading">Diffed</p>
-            <p class="title">{{ diff.time | from_timestamp }}</p>
+            <p class="title">{{ from_timestamp(diff.time) }}</p>
           </div>
         </div>
       </nav>

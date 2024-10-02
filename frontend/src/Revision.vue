@@ -75,30 +75,32 @@ export default {
               </p>
 
               <table class="table">
-                <tr>
-                  <th>New</th>
-                  <th>Line</th>
-                  <th>Char</th>
-                  <th>Analyzer</th>
-                  <th>Check</th>
-                  <th>Hash</th>
-                </tr>
-                <tr
-                  v-for="issue in path_issues(diff.id, path)"
-                  :class="{ new_for_revision: issue.new_for_revision }"
-                >
-                  <td>
-                    <span v-if="issue.new_for_revision">✔</span>
-                    <span v-else>❌</span>
-                  </td>
-                  <td>{{ issue.line }}</td>
-                  <td>{{ issue.char }}</td>
-                  <td>{{ issue.analyzer }}</td>
-                  <td>{{ issue.check }}</td>
-                  <td>
-                    <samp>{{ issue.hash.substring(0, 8) }}</samp>
-                  </td>
-                </tr>
+                <tbody>
+                  <tr>
+                    <th>New</th>
+                    <th>Line</th>
+                    <th>Char</th>
+                    <th>Analyzer</th>
+                    <th>Check</th>
+                    <th>Hash</th>
+                  </tr>
+                  <tr
+                    v-for="issue in path_issues(diff.id, path)"
+                    :class="{ new_for_revision: issue.new_for_revision }"
+                  >
+                    <td>
+                      <span v-if="issue.new_for_revision">✔</span>
+                      <span v-else>❌</span>
+                    </td>
+                    <td>{{ issue.line }}</td>
+                    <td>{{ issue.char }}</td>
+                    <td>{{ issue.analyzer }}</td>
+                    <td>{{ issue.check }}</td>
+                    <td>
+                      <samp>{{ issue.hash.substring(0, 8) }}</samp>
+                    </td>
+                  </tr>
+                </tbody>
               </table>
             </div>
           </div>

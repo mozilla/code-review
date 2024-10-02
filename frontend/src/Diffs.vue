@@ -60,20 +60,6 @@ export default {
       this.$router.push({ query: {} });
       this.$store.dispatch("load_diffs", {});
     },
-  },
-  computed: {
-    diffs() {
-      if (!this.$store.state.diffs) {
-        return [];
-      }
-      return this.$store.state.diffs.results;
-    },
-    repositories() {
-      const repos = this.$store.state.repositories || [];
-      return repos.map((r) => r.slug);
-    },
-  },
-  filters: {
     treeherder_url(diff) {
       const rev = diff.mercurial_hash;
       const tryRepo =
@@ -85,6 +71,18 @@ export default {
         return url.substring(23);
       }
       return url;
+    },
+  },
+  computed: {
+    diffs() {
+      if (!this.$store.state.diffs) {
+        return [];
+      }
+      return this.$store.state.diffs.results;
+    },
+    repositories() {
+      const repos = this.$store.state.repositories || [];
+      return repos.map((r) => r.slug);
     },
   },
 };
@@ -158,8 +156,8 @@ export default {
                 }"
                 >D{{ diff.revision.phabricator_id }}</router-link
               >
-              @ base: {{ diff.revision.base_repository | short_repo }} - head:
-              {{ diff.revision.head_repository | short_repo }}
+              @ base: {{ short_repo(diff.revision.base_repository) }} - head:
+              {{ short_repo(diff.revision.head_repository) }}
             </p>
           </td>
 
@@ -193,7 +191,7 @@ export default {
           </td>
 
           <td>
-            <span :title="diff.created">{{ diff.created | since }} ago</span>
+            <span :title="diff.created">{{ since(diff.created) }} ago</span>
           </td>
           <td>
             <div class="buttons">
@@ -231,7 +229,7 @@ export default {
                     >
                     <a
                       class="dropdown-item"
-                      :href="diff | treeherder_url"
+                      :href="treeherder_url(diff)"
                       target="_blank"
                       >Treeherder tasks</a
                     >

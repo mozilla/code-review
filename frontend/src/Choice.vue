@@ -3,7 +3,7 @@
     <div class="dropdown-trigger">
       <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
         <span v-if="current === null">{{ default_choice_name }}</span>
-        <span v-else>{{ current | name }}</span>
+        <span v-else>{{ name(current) }}</span>
       </button>
     </div>
     <div class="dropdown-menu" id="dropdown-menu" role="menu">
@@ -24,7 +24,7 @@
             'is-active': current === choice || current === choice.value,
           }"
         >
-          {{ choice | name }}
+          {{ name(choice) }}
         </a>
       </div>
     </div>
@@ -70,8 +70,8 @@ export default {
       return "Filter by " + this.name;
     },
   },
-  filters: {
-    name: function (choice) {
+  methods: {
+    name(choice) {
       return typeof choice === "string" ? choice : choice.slug || choice.name;
     },
   },

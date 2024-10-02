@@ -6,14 +6,15 @@
   "description": "Mozilla Code Review frontend",
   "main": "index.js",
   "dependencies": {
+    "@vue/compat": "^3.1.0",
+    "@vue/compiler-sfc": "^3.1.0",
     "axios": "^1.7.2",
     "bulma": "^1.0.2",
     "lodash": "^4.17.21",
-    "vue": "^2.7.15",
+    "vue": "^3.1.0",
     "vue-chartjs": "^5.3.1",
-    "vue-router": "^3.6.5",
-    "vue-template-compiler": "^2.7.16",
-    "vuex": "^3.6.2"
+    "vue-router": "^4.4.5",
+    "vuex": "^4.0.0"
   },
   "devDependencies": {
     "@babel/eslint-parser": "^7.25.1",
@@ -21,6 +22,7 @@
     "@babel/preset-env": "^7.25.4",
     "babel-loader": "^9.2.1",
     "clean-webpack-plugin": "^4.0.0",
+    "css-loader": "^7.1.2",
     "eslint": "^8.57.1",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-babel": "^5.3.1",
@@ -32,7 +34,7 @@
     "mini-css-extract-plugin": "^2.9.1",
     "process": "^0.11.10",
     "style-loader": "^4.0.0",
-    "vue-loader": "^15.11.1",
+    "vue-loader": "^16.0.0",
     "webpack": "^5.95.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^5.1.0",
