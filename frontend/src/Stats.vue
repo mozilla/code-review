@@ -65,7 +65,7 @@ export default {
     load(reset) {
       const payload = {};
       if (reset === true || this.since === "") {
-        payload.since = null;
+        this.since = null;
       } else {
         payload.since = this.since;
       }

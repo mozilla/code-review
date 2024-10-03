@@ -58,6 +58,7 @@ const common = {
           compilerOptions: {
             compatConfig: {
               MODE: 3,
+              RENDER_FUNCTION: false,
             },
           },
         },

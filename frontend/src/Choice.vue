@@ -3,7 +3,7 @@
     <div class="dropdown-trigger">
       <button class="button" aria-haspopup="true" aria-controls="dropdown-menu">
         <span v-if="current === null">{{ default_choice_name }}</span>
-        <span v-else>{{ name(current) }}</span>
+        <span v-else>{{ displayName(current) }}</span>
       </button>
     </div>
     <div class="dropdown-menu" id="dropdown-menu" role="menu">
@@ -24,7 +24,7 @@
             'is-active': current === choice || current === choice.value,
           }"
         >
-          {{ name(choice) }}
+          {{ displayName(choice) }}
         </a>
       </div>
     </div>
@@ -40,18 +40,19 @@ export default {
     choices: Array,
   },
   mixins: [mixins.query],
-  data() {
-    return {
-      choice: null,
-    };
-  },
+  data: () => ({
+    choice: undefined,
+  }),
   methods: {
     select: function (choice, evt) {
       evt.stopPropagation();
 
       // Save new choice
-      this.$set(this, "choice", choice);
+      this.choice = choice;
       this.$emit("new-choice", choice);
+    },
+    displayName(choice) {
+      return typeof choice === "string" ? choice : choice.slug || choice.name;
     },
   },
   computed: {
@@ -68,11 +69,6 @@ export default {
     },
     default_choice_name: function () {
       return "Filter by " + this.name;
-    },
-  },
-  methods: {
-    name(choice) {
-      return typeof choice === "string" ? choice : choice.slug || choice.name;
     },
   },
 };

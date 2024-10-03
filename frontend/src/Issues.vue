@@ -43,14 +43,10 @@ export default {
     const diff = this.$store.dispatch("load_diff", this.$route.params.diffId);
     diff.then(
       (response) => {
-        this.$set(this, "state", "loaded");
+        this.state = "loaded";
       },
       (error) => {
-        this.$set(
-          this,
-          "state",
-          error.response.status === 404 ? "missing" : "error"
-        );
+        this.state = error.response.status === 404 ? "missing" : "error";
       }
     );
   },

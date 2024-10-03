@@ -7,7 +7,7 @@ export default {
   mounted() {
     // Use parameters from url as initial query
     if (this.$route.query) {
-      this.$set(this, "query", Object.assign({}, this.$route.query));
+      this.query = Object.assign({}, this.$route.query);
     }
 
     // Load new tasks at startup
@@ -42,7 +42,7 @@ export default {
       } else if (name in this.query) {
         delete this.query[name];
       }
-      this.$set(this, "query", this.query);
+      this.query = this.query;
       this.$store.dispatch("load_diffs", { query: this.query });
 
       // Update directly the router query with our filters
@@ -56,7 +56,7 @@ export default {
       this.use_filter("search", this.query.search);
     },
     reset_query() {
-      this.$set(this, "query", {});
+      this.query = {};
       this.$router.push({ query: {} });
       this.$store.dispatch("load_diffs", {});
     },
@@ -120,7 +120,7 @@ export default {
             <Choice
               :choices="choices.issues"
               name="issues"
-              v-on:new-choice="use_filter('issues', $event.value)"
+              v-on:new-choice="use_filter('issues', $event?.value)"
             />
           </td>
           <td>Created</td>

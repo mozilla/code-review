@@ -9,7 +9,7 @@ export default {
   },
   methods: {
     load_tasks(channel) {
-      this.$set(this, "channel", channel);
+      this.channel = channel;
       this.$store.commit("reset");
       this.$store.dispatch("load_index", { channel });
     },

@@ -4,10 +4,10 @@ export default {
     this.$store
       .dispatch("load_revision", { id: this.$route.params.revisionId })
       .then((resp) => {
-        this.$set(this, "state", "loaded");
+        this.state = "loaded";
       })
       .catch((err) => {
-        this.$set(this, "state", err);
+        this.state = err;
       });
   },
   data() {

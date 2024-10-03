@@ -39,7 +39,7 @@ export default {
     load_issues(name, evt) {
       // Use directly set value from v-model
       if (name !== undefined) {
-        this.$set(this, name, evt ? evt.value : null);
+        this.name = evt ? evt.value : null;
       }
 
       const payload = {
