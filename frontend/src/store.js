@@ -247,9 +247,6 @@ const store = createStore({
       const url = BACKEND_URL + "/v1/check/history/";
       const params = payload || {};
 
-      // Reset
-      state.commit("use_history", []);
-
       // Remove null values from params
       Object.entries(params).forEach(([k, v]) => {
         if (v === null) delete params[k];

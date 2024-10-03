@@ -36,9 +36,12 @@ const common = {
       process: "process/browser",
     }),
 
-    // Define backend url as constant
-    // using an environment variable with fallback for devs
     new webpack.DefinePlugin({
+      __VUE_OPTIONS_API__: "true",
+      __VUE_PROD_DEVTOOLS__: "false",
+      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "false",
+      // Define backend url as constant
+      // using an environment variable with fallback for devs
       BACKEND_URL: JSON.stringify(
         process.env.BACKEND_URL || "http://localhost:8000"
       ),
@@ -63,10 +66,6 @@ const common = {
           },
         },
       },
-      // {
-      //   test: /\.vue$/,
-      //   loader: "vue-loader",
-      // },
       {
         test: /\.js$/,
         exclude: /node_modules/,

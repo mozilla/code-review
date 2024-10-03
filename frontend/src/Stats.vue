@@ -12,7 +12,7 @@ import {
   CategoryScale,
   PointElement,
 } from "chart.js";
-import { Line as LineChart } from "vue-chartjs";
+import { Line } from "vue-chartjs";
 
 ChartJS.register(
   Title,
@@ -28,13 +28,13 @@ export default {
   mixins: [mixins.stats, mixins.date],
   data() {
     // Set default to since one month back
-    let since = new Date();
-    since.setMonth(since.getMonth() - 1);
-    since = since.toISOString().substring(0, 10);
+    let dateSince = new Date();
+    dateSince.setMonth(dateSince.getMonth() - 1);
+    dateSince = dateSince.toISOString().substring(0, 10);
 
     return {
       // Data filters
-      since,
+      dateSince,
       analyzer: null,
       repository: null,
       check: null,
@@ -57,17 +57,17 @@ export default {
       },
     };
   },
-  components: { Progress, Choice, LineChart },
+  components: { Progress, Choice, Line },
   mounted() {
     this.load();
   },
   methods: {
     load(reset) {
       const payload = {};
-      if (reset === true || this.since === "") {
-        this.since = null;
+      if (reset === true || this.dateSince === "") {
+        payload.since = null;
       } else {
-        payload.since = this.since;
+        payload.since = this.dateSince;
       }
 
       // Stats since provided date
@@ -85,7 +85,7 @@ export default {
         repository: this.repository,
         analyzer: this.analyzer,
         check: this.check,
-        since: this.since,
+        since: this.dateSince,
       });
     },
     sort_by(column) {
@@ -138,8 +138,6 @@ export default {
       const labels = history.flatMap((point) => point.date);
       const data = history.flatMap((point) => point.total);
 
-      console.log(labels, data);
-
       return {
         labels: labels,
         datasets: [
@@ -169,7 +167,7 @@ export default {
           <input
             class="input"
             type="date"
-            v-model="since"
+            v-model="dateSince"
             v-on:change="load()"
           />
         </div>
@@ -181,12 +179,12 @@ export default {
       </div>
     </div>
 
-    <LineChart
+    <Line
       v-if="history"
       :data="history"
       :options="chartOptions"
       :height="100"
-    ></LineChart>
+    ></Line>
 
     <div v-if="stats">
       <table class="table is-fullwidth" v-if="stats">
