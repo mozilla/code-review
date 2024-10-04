@@ -45,6 +45,10 @@ env = environ.Env(
         list[str],
         ["http://localhost:8000", "http://localhost:8010"],
     ),
+    CORS_ALLOWED_ORIGINS=(
+        list[str],
+        ["http://localhost:8000", "http://localhost:8010"],
+    ),
     DYNO=(str, ""),
 )
 
@@ -171,6 +175,9 @@ if DEBUG is False:
 # Setup CSRF trusted origins explicitly as it's needed from Django 4
 CSRF_TRUSTED_ORIGINS = env("CSRF_TRUSTED_ORIGINS")
 
+# Configure CORS origins from env variable
+CORS_ALLOWED_ORIGINS = env("CORS_ALLOWED_ORIGINS")
+
 # Internal logging setup
 LOGGING = {
     "version": 1,
@@ -198,9 +205,6 @@ LOGGING = {
         },
     },
 }
-
-# Cors open by default in dev
-CORS_ORIGIN_ALLOW_ALL = True
 
 # Use production Phabricator instance by default
 PHABRICATOR_HOST = "https://phabricator.services.mozilla.com"
@@ -237,7 +241,7 @@ if DYNO:
             logger.info("Enabled Sentry error reporting")
 
         # Setup Cors allowed domains
-        CORS_ORIGIN_WHITELIST = taskcluster.secrets.get("cors-domains", [])
+        CORS_ALLOWED_ORIGINS = taskcluster.secrets.get("cors-domains", [])
 
         # Setup CSRF trusted origins
         CSRF_TRUSTED_ORIGINS = taskcluster.secrets.get("csrf-trusted-origins", [])
