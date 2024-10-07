@@ -6,10 +6,12 @@ import collections
 import json
 import os.path
 import re
+import tempfile
 import urllib
 import urllib.parse
 import uuid
 from collections import defaultdict, namedtuple
+from configparser import ConfigParser
 from contextlib import contextmanager
 
 import pytest
@@ -244,6 +246,18 @@ def mock_phabricator(mock_config):
         body=_response("repository_search"),
         content_type="application/json",
     )
+
+    config_file = tempfile.NamedTemporaryFile()
+    with open(config_file.name, "w") as f:
+        custom_conf = ConfigParser()
+        custom_conf.add_section("User-Agent")
+        custom_conf.set("User-Agent", "name", "libmozdata")
+        custom_conf.write(f)
+        f.seek(0)
+
+    from libmozdata import config
+
+    config.set_config(config.ConfigIni(config_file.name))
 
     yield PhabricatorAPI(url="http://phabricator.test/api/", api_key="deadbeef")
 
@@ -758,6 +772,18 @@ class MockPhabricator:
         self.inline_comments = collections.defaultdict(list)
         self.build_messages = collections.defaultdict(list)
         self.transactions = collections.defaultdict(list)
+
+        config_file = tempfile.NamedTemporaryFile()
+        with open(config_file.name, "w") as f:
+            custom_conf = ConfigParser()
+            custom_conf.add_section("User-Agent")
+            custom_conf.set("User-Agent", "name", "libmozdata")
+            custom_conf.write(f)
+            f.seek(0)
+
+        from libmozdata import config
+
+        config.set_config(config.ConfigIni(config_file.name))
 
         endpoints = {
             "differential.createcomment": self.comment,
