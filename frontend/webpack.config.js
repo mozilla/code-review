@@ -37,9 +37,6 @@ const common = {
     }),
 
     new webpack.DefinePlugin({
-      __VUE_OPTIONS_API__: "true",
-      __VUE_PROD_DEVTOOLS__: "false",
-      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "false",
       // Define backend url as constant
       // using an environment variable with fallback for devs
       BACKEND_URL: JSON.stringify(
@@ -104,6 +101,14 @@ const development = {
     historyApiFallback: true,
     open: true,
   },
+
+  plugins: [
+    new webpack.DefinePlugin({
+      __VUE_OPTIONS_API__: "true",
+      __VUE_PROD_DEVTOOLS__: "true",
+      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "true",
+    }),
+  ],
 };
 
 const production = {
@@ -130,6 +135,11 @@ const production = {
   plugins: [
     new CleanWebpackPlugin({
       verbose: false,
+    }),
+    new webpack.DefinePlugin({
+      __VUE_OPTIONS_API__: "true",
+      __VUE_PROD_DEVTOOLS__: "false",
+      __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "false",
     }),
   ],
 };
