@@ -4,7 +4,9 @@
 
 import json
 import os.path
+import tempfile
 import urllib.parse
+from configparser import ConfigParser
 from contextlib import contextmanager
 
 import pytest
@@ -175,6 +177,18 @@ def PhabricatorMock():
             "http://phabricator.test/api/user.search",
             callback=_user_search,
         )
+
+        config_file = tempfile.NamedTemporaryFile()
+        with open(config_file.name, "w") as f:
+            custom_conf = ConfigParser()
+            custom_conf.add_section("User-Agent")
+            custom_conf.set("User-Agent", "name", "libmozdata")
+            custom_conf.write(f)
+            f.seek(0)
+
+        from libmozdata import config
+
+        config.set_config(config.ConfigIni(config_file.name))
 
         actions = PhabricatorActions(
             url="http://phabricator.test/api/", api_key="deadbeef"
