@@ -103,6 +103,10 @@ const development = {
   },
 
   plugins: [
+    /**
+     * The compile-time flags https://vuejs.org/api/compile-time-flags need to be set
+     * explicitly in vue3 (otherwise the console shows a warning)
+     */
     new webpack.DefinePlugin({
       __VUE_OPTIONS_API__: "true",
       __VUE_PROD_DEVTOOLS__: "true",
@@ -136,6 +140,10 @@ const production = {
     new CleanWebpackPlugin({
       verbose: false,
     }),
+    /**
+     * The compile-time flags https://vuejs.org/api/compile-time-flags need to be set
+     * explicitly in vue3 (otherwise the console shows a warning)
+     */
     new webpack.DefinePlugin({
       __VUE_OPTIONS_API__: "true",
       __VUE_PROD_DEVTOOLS__: "false",

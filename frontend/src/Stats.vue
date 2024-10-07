@@ -78,7 +78,7 @@ export default {
     },
     use_filter(name, value) {
       // Store new filter value
-      this.$set(this, name, value);
+      this[name] = value;
 
       // Load new history data
       this.$store.dispatch("load_history", {
@@ -90,7 +90,7 @@ export default {
     },
     sort_by(column) {
       // Store new sort column
-      this.$set(this, "sortColumn", column);
+      this.sortColumn = column;
     },
   },
   computed: {
