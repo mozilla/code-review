@@ -2,7 +2,27 @@
 import mixins from "./mixins.js";
 import Progress from "./Progress.vue";
 import Choice from "./Choice.vue";
-import Chartist from "chartist";
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  LinearScale,
+  CategoryScale,
+  PointElement,
+} from "chart.js";
+import { Line as LineChart } from "vue-chartjs";
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  LinearScale,
+  CategoryScale,
+  PointElement
+);
 
 export default {
   mixins: [mixins.stats, mixins.date],
@@ -22,11 +42,10 @@ export default {
       // Sort by a column
       sortColumn: "total",
 
-      // Options for chartist
+      // Options for Line chart
       chartOptions: {
-        height: 300,
         axisX: {
-          type: Chartist.FixedScaleAxis,
+          type: ChartJS.FixedScaleAxis,
           divisor: 15,
           labelInterpolationFnc: function (value) {
             const date = new Date(value);
@@ -38,7 +57,7 @@ export default {
       },
     };
   },
-  components: { Progress, Choice },
+  components: { Progress, Choice, LineChart },
   mounted() {
     this.load();
   },
@@ -46,7 +65,7 @@ export default {
     load(reset) {
       const payload = {};
       if (reset === true || this.since === "") {
-        this.$set(this, "since", null);
+        payload.since = null;
       } else {
         payload.since = this.since;
       }
@@ -116,13 +135,21 @@ export default {
         return null;
       }
 
+      const labels = history.flatMap((point) => point.date);
+      const data = history.flatMap((point) => point.total);
+
+      console.log(labels, data);
+
       return {
-        series: [
+        labels: labels,
+        datasets: [
           {
-            name: "Total issues",
-            data: history.map((point) => {
-              return { x: new Date(point.date), y: point.total };
-            }),
+            borderColor: "rgb(75, 192, 192)",
+            pointBorderColor: "rgb(75, 192, 192)",
+            pointBackgroundColor: "rgb(75, 192, 192)",
+            tension: 0.1,
+            label: "Total issues",
+            data: data,
           },
         ],
       };
@@ -154,13 +181,12 @@ export default {
       </div>
     </div>
 
-    <chartist
-      v-if="history !== null"
-      type="Line"
+    <LineChart
+      v-if="history"
       :data="history"
       :options="chartOptions"
-    >
-    </chartist>
+      :height="100"
+    ></LineChart>
 
     <div v-if="stats">
       <table class="table is-fullwidth" v-if="stats">
