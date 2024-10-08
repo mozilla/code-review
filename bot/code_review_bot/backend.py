@@ -131,6 +131,10 @@ class BackendAPI:
                 valid_data = []
                 # Build issues' payload for that given chunk
                 for issue in issues_chunk:
+                    if issue.linter == "rustfmt" and issue.path == ".":
+                        # Silently ignore issues with path "." from rustfmt, as they cannot be published
+                        # https://github.com/mozilla/code-review/issues/1577
+                        continue
                     if issue.hash is None:
                         logger.warning(
                             "Missing issue hash, cannot publish on backend",
