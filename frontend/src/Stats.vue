@@ -28,13 +28,13 @@ export default {
   mixins: [mixins.stats, mixins.date],
   data() {
     // Set default to since one month back
-    let since = new Date();
-    since.setMonth(since.getMonth() - 1);
-    since = since.toISOString().substring(0, 10);
+    let dateSince = new Date();
+    dateSince.setMonth(dateSince.getMonth() - 1);
+    dateSince = dateSince.toISOString().substring(0, 10);
 
     return {
       // Data filters
-      since,
+      dateSince,
       analyzer: null,
       repository: null,
       check: null,
@@ -53,6 +53,7 @@ export default {
               date.getMonth() + 1
             }/${date.getFullYear()}`;
           },
+          responsive: true,
         },
       },
     };
@@ -64,10 +65,10 @@ export default {
   methods: {
     load(reset) {
       const payload = {};
-      if (reset === true || this.since === "") {
+      if (reset === true || this.dateSince === "") {
         payload.since = null;
       } else {
-        payload.since = this.since;
+        payload.since = this.dateSince;
       }
 
       // Stats since provided date
@@ -78,19 +79,19 @@ export default {
     },
     use_filter(name, value) {
       // Store new filter value
-      this.$set(this, name, value);
+      this[name] = value;
 
       // Load new history data
       this.$store.dispatch("load_history", {
         repository: this.repository,
         analyzer: this.analyzer,
         check: this.check,
-        since: this.since,
+        since: this.dateSince,
       });
     },
     sort_by(column) {
       // Store new sort column
-      this.$set(this, "sortColumn", column);
+      this.sortColumn = column;
     },
   },
   computed: {
@@ -138,15 +139,13 @@ export default {
       const labels = history.flatMap((point) => point.date);
       const data = history.flatMap((point) => point.total);
 
-      console.log(labels, data);
-
       return {
         labels: labels,
         datasets: [
           {
-            borderColor: "rgb(75, 192, 192)",
-            pointBorderColor: "rgb(75, 192, 192)",
-            pointBackgroundColor: "rgb(75, 192, 192)",
+            borderColor: "#8b0000",
+            pointBorderColor: "#8b0000",
+            pointBackgroundColor: "#8b0000",
             tension: 0.1,
             label: "Total issues",
             data: data,
@@ -169,7 +168,7 @@ export default {
           <input
             class="input"
             type="date"
-            v-model="since"
+            v-model="dateSince"
             v-on:change="load()"
           />
         </div>
@@ -181,12 +180,13 @@ export default {
       </div>
     </div>
 
-    <LineChart
-      v-if="history"
-      :data="history"
-      :options="chartOptions"
-      :height="100"
-    ></LineChart>
+    <div class="chart-container">
+      <LineChart
+        v-if="history"
+        :data="history"
+        :options="chartOptions"
+      ></LineChart>
+    </div>
 
     <div v-if="stats">
       <table class="table is-fullwidth" v-if="stats">
@@ -279,5 +279,9 @@ tr.publishable {
 .ct-square {
   margin: 20px 0;
   height: 300px;
+}
+
+.chart-container {
+  max-height: 300px;
 }
 </style>
