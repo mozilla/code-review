@@ -10,6 +10,7 @@ from django import db
 from django.core.management.base import BaseCommand
 from parsepatch.patch import Patch
 
+from code_review_backend.app.settings import BACKEND_USER_AGENT
 from code_review_backend.issues.models import Diff, Issue
 
 logging.basicConfig(level=logging.INFO)
@@ -21,7 +22,7 @@ def load_hgmo_patch(diff):
     # Load the parent info as we have the try-task-config commit
     url = f"{diff.repository.url}/json-rev/{diff.mercurial_hash}"
     logging.info(f"Downloading {url}")
-    resp = requests.get(url)
+    resp = requests.get(url, headers={"user-agent": BACKEND_USER_AGENT})
     resp.raise_for_status()
     meta = resp.json()
     if meta["desc"].startswith("try_task_config"):
@@ -32,7 +33,7 @@ def load_hgmo_patch(diff):
     # Load the parent patch
     url = f"{diff.repository.url}/raw-rev/{patch_rev}"
     logging.info(f"Downloading {url}")
-    resp = requests.get(url)
+    resp = requests.get(url, headers={"user-agent": BACKEND_USER_AGENT})
     resp.raise_for_status()
 
     patch = Patch.parse_patch(resp.text, skip_comments=False)
