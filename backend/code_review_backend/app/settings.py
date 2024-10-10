@@ -52,6 +52,8 @@ env = environ.Env(
     DYNO=(str, ""),
 )
 
+# Set backend user agent
+BACKEND_USER_AGENT = f"code-review-backend/{VERSION}"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
