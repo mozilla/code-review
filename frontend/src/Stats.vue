@@ -2,19 +2,39 @@
 import mixins from "./mixins.js";
 import Progress from "./Progress.vue";
 import Choice from "./Choice.vue";
-import Chartist from "chartist";
+import {
+  Chart as ChartJS,
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  LinearScale,
+  CategoryScale,
+  PointElement,
+} from "chart.js";
+import { Line as LineChart } from "vue-chartjs";
+
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  LineElement,
+  LinearScale,
+  CategoryScale,
+  PointElement
+);
 
 export default {
   mixins: [mixins.stats, mixins.date],
   data() {
     // Set default to since one month back
-    let since = new Date();
-    since.setMonth(since.getMonth() - 1);
-    since = since.toISOString().substring(0, 10);
+    let dateSince = new Date();
+    dateSince.setMonth(dateSince.getMonth() - 1);
+    dateSince = dateSince.toISOString().substring(0, 10);
 
     return {
       // Data filters
-      since,
+      dateSince,
       analyzer: null,
       repository: null,
       check: null,
@@ -22,11 +42,10 @@ export default {
       // Sort by a column
       sortColumn: "total",
 
-      // Options for chartist
+      // Options for Line chart
       chartOptions: {
-        height: 300,
         axisX: {
-          type: Chartist.FixedScaleAxis,
+          type: ChartJS.FixedScaleAxis,
           divisor: 15,
           labelInterpolationFnc: function (value) {
             const date = new Date(value);
@@ -34,21 +53,22 @@ export default {
               date.getMonth() + 1
             }/${date.getFullYear()}`;
           },
+          responsive: true,
         },
       },
     };
   },
-  components: { Progress, Choice },
+  components: { Progress, Choice, LineChart },
   mounted() {
     this.load();
   },
   methods: {
     load(reset) {
       const payload = {};
-      if (reset === true || this.since === "") {
-        this.$set(this, "since", null);
+      if (reset === true || this.dateSince === "") {
+        payload.since = null;
       } else {
-        payload.since = this.since;
+        payload.since = this.dateSince;
       }
 
       // Stats since provided date
@@ -59,19 +79,19 @@ export default {
     },
     use_filter(name, value) {
       // Store new filter value
-      this.$set(this, name, value);
+      this[name] = value;
 
       // Load new history data
       this.$store.dispatch("load_history", {
         repository: this.repository,
         analyzer: this.analyzer,
         check: this.check,
-        since: this.since,
+        since: this.dateSince,
       });
     },
     sort_by(column) {
       // Store new sort column
-      this.$set(this, "sortColumn", column);
+      this.sortColumn = column;
     },
   },
   computed: {
@@ -116,13 +136,19 @@ export default {
         return null;
       }
 
+      const labels = history.flatMap((point) => point.date);
+      const data = history.flatMap((point) => point.total);
+
       return {
-        series: [
+        labels: labels,
+        datasets: [
           {
-            name: "Total issues",
-            data: history.map((point) => {
-              return { x: new Date(point.date), y: point.total };
-            }),
+            borderColor: "#8b0000",
+            pointBorderColor: "#8b0000",
+            pointBackgroundColor: "#8b0000",
+            tension: 0.1,
+            label: "Total issues",
+            data: data,
           },
         ],
       };
@@ -142,7 +168,7 @@ export default {
           <input
             class="input"
             type="date"
-            v-model="since"
+            v-model="dateSince"
             v-on:change="load()"
           />
         </div>
@@ -154,13 +180,13 @@ export default {
       </div>
     </div>
 
-    <chartist
-      v-if="history !== null"
-      type="Line"
-      :data="history"
-      :options="chartOptions"
-    >
-    </chartist>
+    <div class="chart-container">
+      <LineChart
+        v-if="history"
+        :data="history"
+        :options="chartOptions"
+      ></LineChart>
+    </div>
 
     <div v-if="stats">
       <table class="table is-fullwidth" v-if="stats">
@@ -253,5 +279,9 @@ tr.publishable {
 .ct-square {
   margin: 20px 0;
   height: 300px;
+}
+
+.chart-container {
+  max-height: 300px;
 }
 </style>

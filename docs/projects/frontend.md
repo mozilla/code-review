@@ -7,7 +7,7 @@ It's really a pretty simple application, not much complexity:
 - few views, and few components
 - uses [axios](https://github.com/axios/axios) to retrieve data from the backend
 - no authentication, everything is public
-- uses [chartist](https://gionkunz.github.io/chartist-js/) to build the stats graph
+- uses [vue-chartjs](https://vue-chartjs.org/) to build the stats graph
 - uses [vue-router](https://router.vuejs.org/) to handle routing
 
 The application is built with [neutrino](https://neutrinojs.org/) (a Mozilla project) using its defaults for Vue.js applications.
