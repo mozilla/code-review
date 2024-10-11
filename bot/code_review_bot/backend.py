@@ -179,6 +179,14 @@ class BackendAPI:
             )
 
             for issue in issues:
+                if (
+                    isinstance(issue, MozLintIssue)
+                    and issue.linter == "rust"
+                    and issue.path == "."
+                ):
+                    # Silently ignore issues with path "." from rustfmt, as they cannot be published
+                    # https://github.com/mozilla/code-review/issues/1577
+                    continue
                 try:
                     assert issue.hash is not None
                 except Exception:
