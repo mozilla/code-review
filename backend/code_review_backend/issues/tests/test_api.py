@@ -135,7 +135,7 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(diff.mercurial_hash, "coffee12345")
         self.assertEqual(diff.revision, self.revision)
 
-    def test_create_issue(self):
+    def test_create_issue_disabled(self):
         """
         Check we can create a issue through the API
         """
@@ -156,44 +156,12 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
         response = self.client.post("/v1/diff/1234/issues/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
 
         # Do not check the content of issue created as it's a random UUID
-        issue_data = response.json()
-        self.assertTrue("id" in issue_data)
-        del issue_data["id"]
-        self.assertDictEqual(
-            issue_data,
-            {
-                "analyzer": "remote-flake8",
-                "char": None,
-                "check": None,
-                "hash": "somemd5hash",
-                "level": "error",
-                "line": 1,
-                "message": None,
-                "nb_lines": None,
-                "new_for_revision": True,
-                "path": "path/to/file.py",
-                "in_patch": True,
-                "publishable": True,
-            },
+        self.assertEqual(
+            response.content, b'{"detail":"Method \\"POST\\" not allowed."}'
         )
-
-        # Check a revision has been created
-        self.assertEqual(Diff.objects.count(), 1)
-        issue = Issue.objects.first()
-        self.assertEqual(issue.path, "path/to/file.py")
-        self.assertEqual(issue.line, 1)
-        self.assertListEqual(
-            list(issue.diffs.values_list("id", flat=True)), [self.diff.id]
-        )
-        self.assertTrue(issue.new_for_revision)
-
-        # The diff now counts an issue
-        response = self.client.get("/v1/diff/1234/")
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.json()["nb_issues"], 1)
 
     def test_create_issue_bulk_methods(self):
         self.client.force_authenticate(user=self.user)
