@@ -116,8 +116,6 @@ class Revision:
         # the phabricator repository payload for later identification
         self.phabricator_repository = phabricator_repository
 
-        # backend's returned URL to list or create issues on the revision's diff
-        self.diff_issues_url = None
         # backend's returned URL to list or create issues linked to the revision in bulk (diff is optional)
         self.issues_url = None
 

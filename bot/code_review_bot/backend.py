@@ -40,8 +40,7 @@ class BackendAPI:
     def publish_revision(self, revision):
         """
         Create a Revision on the backend.
-        In case revision.diff_id exists, also create revision's diff and set
-        revision.diff_issues_url to the URL for issues creation.
+        In case revision.diff_id exists, also create revision's diff.
         """
         if not self.enabled:
             logger.warn("Skipping revision publication on backend")
@@ -105,9 +104,6 @@ class BackendAPI:
         # If we are dealing with a None `backend_revision` bail out
         if backend_diff is None:
             return backend_revision
-
-        # Store the issues url on the revision
-        revision.diff_issues_url = backend_diff["issues_url"]
 
         return backend_revision
 
