@@ -68,43 +68,42 @@ def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_h
     assert published == len(mock_clang_tidy_issues) == 2
 
     # Check the issues in the backend
-    assert len(issues) == 1
-    assert 42 in issues
-    assert len(issues[42]) == 2
-    assert issues[42] == [
-        {
-            "analyzer": "mock-clang-tidy",
-            "check": "clanck.checker",
-            "column": 46,
-            "hash": "18ff7d47ce8c3a11ea19a4e2b055fd06",
-            "id": "9f6aa76a-623d-5096-82ed-876b01f9fbce",
-            "in_patch": False,
-            "level": "warning",
-            "line": 57,
-            "message": "Some Error Message",
-            "nb_lines": 1,
-            "path": "dom/animation/Animation.cpp",
-            "publishable": False,
-            "validates": True,
-            "fix": None,
-        },
-        {
-            "analyzer": "mock-clang-tidy",
-            "check": "clanck.checker",
-            "column": 46,
-            "hash": "ddf7ae1da14e80c488f99e4245e9ef79",
-            "id": "98d7e3b0-e903-57e3-9973-d11d3a9849f4",
-            "in_patch": False,
-            "level": "error",
-            "line": 57,
-            "message": "Some Error Message",
-            "nb_lines": 1,
-            "path": "dom/animation/Animation.cpp",
-            "publishable": True,
-            "validates": True,
-            "fix": None,
-        },
+    assert list(issues.keys()) == [
+        "f47467f5-89d0-5616-bb4e-11c6b91e85a3",
+        "c5360722-06f2-5b17-a4ea-8a4cc0cd0f73",
     ]
+    assert issues["f47467f5-89d0-5616-bb4e-11c6b91e85a3"] == {
+        "analyzer": "mock-clang-tidy",
+        "check": "clanck.checker",
+        "column": 46,
+        "hash": "18ff7d47ce8c3a11ea19a4e2b055fd06",
+        "id": "f47467f5-89d0-5616-bb4e-11c6b91e85a3",
+        "in_patch": False,
+        "level": "warning",
+        "line": 57,
+        "message": "Some Error Message",
+        "nb_lines": 1,
+        "path": "dom/animation/Animation.cpp",
+        "publishable": False,
+        "validates": True,
+        "fix": None,
+    }
+    assert issues["c5360722-06f2-5b17-a4ea-8a4cc0cd0f73"] == {
+        "analyzer": "mock-clang-tidy",
+        "check": "clanck.checker",
+        "column": 46,
+        "hash": "ddf7ae1da14e80c488f99e4245e9ef79",
+        "id": "c5360722-06f2-5b17-a4ea-8a4cc0cd0f73",
+        "in_patch": False,
+        "level": "error",
+        "line": 57,
+        "message": "Some Error Message",
+        "nb_lines": 1,
+        "path": "dom/animation/Animation.cpp",
+        "publishable": True,
+        "validates": True,
+        "fix": None,
+    }
 
 
 def test_missing_bugzilla_id(mock_revision, mock_backend, mock_hgmo):
@@ -215,38 +214,26 @@ def test_publication_failures(
     mock_clang_tidy_issues[-1].path = "../../../bad/path.cpp"
     assert mock_clang_tidy_issues[0].path == "dom/animation/Animation.cpp"
 
-    # Only one issue should be published as the bad one is ignored
-    mock_revision.diff_issues_url = "http://code-review-backend.test/v1/diff/42/issues/"
+    # Issues URL must be set when publishing issues on the backend
+    mock_revision.issues_url = "http://code-review-backend.test/v1/revision/51/issues/"
 
     published = r.publish_issues(mock_clang_tidy_issues, mock_revision)
     assert published == 1
 
     # Check the issues in the backend
     assert len(issues) == 1
-    assert 42 in issues
-    assert len(issues[42]) == 1
-    assert issues[42] == [
-        {
-            "analyzer": "mock-clang-tidy",
-            "check": "clanck.checker",
-            "column": 46,
-            "hash": "18ff7d47ce8c3a11ea19a4e2b055fd06",
-            "id": "9f6aa76a-623d-5096-82ed-876b01f9fbce",
-            "in_patch": False,
-            "level": "warning",
-            "line": 57,
-            "message": "Some Error Message",
-            "nb_lines": 1,
-            "path": "dom/animation/Animation.cpp",
-            "publishable": False,
-            "validates": True,
-            "fix": None,
-        }
-    ]
+    assert list(issues.keys()) == ["852c3473-77a8-51c5-bb78-4d2d53652b0a"]
+    assert (
+        issues["852c3473-77a8-51c5-bb78-4d2d53652b0a"]["analyzer"] == "mock-clang-tidy"
+    )
 
 
-def test_publish_issues_bulk(
-    mock_clang_tidy_issues, mock_revision, mock_backend, mock_hgmo
+def test_publish_issues(
+    mock_clang_tidy_issues,
+    mock_revision,
+    mock_backend,
+    mock_hgmo,
+    mock_config,
 ):
     """
     Test publication of issues in bulk for a revision
@@ -266,7 +253,7 @@ def test_publish_issues_bulk(
     r = BackendAPI()
     assert r.enabled is True
 
-    # Issue URL is set when publishing the issue on the backend
+    # Issues URL must be set when publishing the issue on the backend
     mock_revision.issues_url = "http://code-review-backend.test/v1/revision/51/issues/"
 
     # Two issues are publishable and a third one has an erroneous path
@@ -285,7 +272,7 @@ def test_publish_issues_bulk(
         *mock_clang_tidy_issues,
     ]
 
-    published = r.publish_issues(issues, mock_revision, bulk=10)
+    published = r.publish_issues(issues, mock_revision)
     assert published == 2
 
     # Check the issues in the backend
@@ -370,24 +357,24 @@ def test_publication_skips_rustfmt_dot_path(
         publish=True,
     )
 
-    mock_revision.diff_issues_url = "http://code-review-backend.test/v1/diff/42/issues/"
+    # Issue URL is set when publishing the issue on the backend
+    mock_revision.issues_url = "http://code-review-backend.test/v1/revision/51/issues/"
 
     published = r.publish_issues(
         [*mock_clang_tidy_issues, ignored_issue], mock_revision
     )
     assert published == 1
 
-    assert len(issues) == 1
-    assert 42 in issues
-    assert len(issues[42]) == 1
-    assert issues[42][0]["path"] != "."
+    assert list(issues.keys()) == ["b29184e6-4d35-5bbd-8a53-e00686e08407"]
+    assert issues["b29184e6-4d35-5bbd-8a53-e00686e08407"]["path"] != "."
 
     assert logger_mock.info.call_args_list == [
         call("Will use backend", url="http://code-review-backend.test", user="tester"),
+        call("Publishing issues in bulk of 10 items."),
         call(
             "Created item on backend",
-            url="http://code-review-backend.test/v1/diff/42/issues/",
-            id="9f6aa76a-623d-5096-82ed-876b01f9fbce",
+            url="http://code-review-backend.test/v1/revision/51/issues/",
+            id=None,
         ),
     ]
     # Only the issue with Clang tidy is reported

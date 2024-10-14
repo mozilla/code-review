@@ -57,6 +57,7 @@ def mock_config(mock_repositories):
         del os.environ["TASK_ID"]
     os.environ["TRY_TASK_ID"] = "remoteTryTask"
     os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
+    os.environ["BULK_ISSUE_CHUNKS"] = "10"
     settings.setup("test", ["dom/*", "tests/*.py", "test/*.c"], mock_repositories)
     return settings
 
