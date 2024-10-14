@@ -111,7 +111,7 @@ class BackendAPI:
 
         return backend_revision
 
-    def publish_issues(self, issues, revision, bulk=100):
+    def publish_issues(self, issues, revision):
         """
         Publish all issues on the backend in bulk.
         """
@@ -123,7 +123,12 @@ class BackendAPI:
         assert (
             revision.issues_url is not None
         ), "Missing issues_url on the revision to publish issues in bulk."
-        chunks = (issues[i : i + bulk] for i in range(0, len(issues), bulk))
+
+        logger.info(f"Publishing issues in bulk of {settings.bulk_issue_chunks} items.")
+        chunks = (
+            issues[i : i + settings.bulk_issue_chunks]
+            for i in range(0, len(issues), settings.bulk_issue_chunks)
+        )
         for issues_chunk in chunks:
             # Store valid data as couples of (<issue>, <json_data>)
             valid_data = []
