@@ -2,10 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from unittest.mock import call, patch
+
 import pytest
 
 from code_review_bot.backend import BackendAPI
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue
+from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 
 
 def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_hgmo):
@@ -321,3 +324,76 @@ def test_publish_issues_bulk(
             "validates": True,
         },
     }
+
+
+@patch("code_review_bot.backend.logger")
+def test_publication_skips_rustfmt_dot_path(
+    logger_mock,
+    mock_clang_tidy_issues,
+    mock_revision,
+    mock_backend,
+    mock_hgmo,
+    mock_task,
+):
+    """
+    Test rustfmt warnings with path "." are silently ignored.
+    """
+    # Nothing in backend at first
+    revisions, diffs, issues = mock_backend
+    assert not revisions and not diffs and not issues
+
+    # Hardcode revision & repo
+    mock_revision.head_repository = "http://hgmo/test-try"
+    mock_revision.base_repository = "https://hgmo/test"
+    mock_revision.head_changeset = "deadbeef1234"
+    mock_revision.base_changeset = "1234deadbeef"
+
+    assert mock_revision.bugzilla_id == 1234567
+
+    r = BackendAPI()
+    assert r.enabled is True
+
+    # Use a bad relative path in an existing issue
+    mock_clang_tidy_issues[0].path = "."
+
+    # Create the silently ignored Rustfmt error
+    ignored_issue = MozLintIssue(
+        analyzer=mock_task(MozLintTask, "mock-mozlint"),
+        revision=mock_revision,
+        path=".",
+        linter="rust",
+        lineno=1,
+        column=1,
+        level="warning",
+        check="rustfmt",
+        message="Some Error Message",
+        publish=True,
+    )
+
+    mock_revision.diff_issues_url = "http://code-review-backend.test/v1/diff/42/issues/"
+
+    published = r.publish_issues(
+        [*mock_clang_tidy_issues, ignored_issue], mock_revision
+    )
+    assert published == 1
+
+    assert len(issues) == 1
+    assert 42 in issues
+    assert len(issues[42]) == 1
+    assert issues[42][0]["path"] != "."
+
+    assert logger_mock.info.call_args_list == [
+        call("Will use backend", url="http://code-review-backend.test", user="tester"),
+        call(
+            "Created item on backend",
+            url="http://code-review-backend.test/v1/diff/42/issues/",
+            id="9f6aa76a-623d-5096-82ed-876b01f9fbce",
+        ),
+    ]
+    # Only the issue with Clang tidy is reported
+    assert logger_mock.warning.call_args_list == [
+        call(
+            "Missing issue hash, cannot publish on backend",
+            issue="mock-clang-tidy issue clanck.checker@warning . line 57",
+        ),
+    ]

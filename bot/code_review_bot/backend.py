@@ -9,6 +9,7 @@ import structlog
 
 from code_review_bot import taskcluster
 from code_review_bot.config import GetAppUserAgent, settings
+from code_review_bot.tasks.lint import MozLintIssue
 
 logger = structlog.get_logger(__name__)
 
@@ -131,6 +132,14 @@ class BackendAPI:
                 valid_data = []
                 # Build issues' payload for that given chunk
                 for issue in issues_chunk:
+                    if (
+                        isinstance(issue, MozLintIssue)
+                        and issue.linter == "rust"
+                        and issue.path == "."
+                    ):
+                        # Silently ignore issues with path "." from rustfmt, as they cannot be published
+                        # https://github.com/mozilla/code-review/issues/1577
+                        continue
                     if issue.hash is None:
                         logger.warning(
                             "Missing issue hash, cannot publish on backend",
@@ -170,6 +179,14 @@ class BackendAPI:
             )
 
             for issue in issues:
+                if (
+                    isinstance(issue, MozLintIssue)
+                    and issue.linter == "rust"
+                    and issue.path == "."
+                ):
+                    # Silently ignore issues with path "." from rustfmt, as they cannot be published
+                    # https://github.com/mozilla/code-review/issues/1577
+                    continue
                 try:
                     assert issue.hash is not None
                 except Exception:
