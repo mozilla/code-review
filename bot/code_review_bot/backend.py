@@ -111,74 +111,24 @@ class BackendAPI:
 
         return backend_revision
 
-    def publish_issues(self, issues, revision, bulk=0):
+    def publish_issues(self, issues, revision, bulk=100):
         """
-        Publish all issues on the backend.
-        If set to an integer, `bulk` parameter allow to use the bulk creation endpoint of the backend.
+        Publish all issues on the backend in bulk.
         """
         if not self.enabled:
             logger.warn("Skipping issues publication on backend")
             return
 
         published = 0
-        if bulk > 0:
-            assert revision.issues_url is not None, (
-                "Missing issues_url on the revision. "
-                "This attribute is required when publishing issues in bulk."
-            )
-            chunks = (issues[i : i + bulk] for i in range(0, len(issues), bulk))
-            for issues_chunk in chunks:
-                # Store valid data as couples of (<issue>, <json_data>)
-                valid_data = []
-                # Build issues' payload for that given chunk
-                for issue in issues_chunk:
-                    if (
-                        isinstance(issue, MozLintIssue)
-                        and issue.linter == "rust"
-                        and issue.path == "."
-                    ):
-                        # Silently ignore issues with path "." from rustfmt, as they cannot be published
-                        # https://github.com/mozilla/code-review/issues/1577
-                        continue
-                    if issue.hash is None:
-                        logger.warning(
-                            "Missing issue hash, cannot publish on backend",
-                            issue=str(issue),
-                        )
-                        continue
-                    valid_data.append((issue, issue.as_dict()))
-
-                if not valid_data:
-                    # May happen when a series of issues are missing a hash
-                    logger.warning(
-                        "No issue is valid over an entire chunk",
-                        head_repository=revision.head_repository,
-                        head_changeset=revision.head_changeset,
-                    )
-                    continue
-
-                response = self.create(
-                    revision.issues_url,
-                    {"issues": [json_data for _, json_data in valid_data]},
-                )
-                if response is None:
-                    # Backend rejected the payload, nothing more to do.
-                    continue
-                created = response.get("issues")
-
-                assert created and len(created) == len(valid_data)
-                for (issue, _), return_value in zip(valid_data, created):
-                    # Set the returned value on each issue
-                    issue.on_backend = return_value
-
-                published += len(valid_data)
-        else:
-            assert revision.diff_issues_url is not None, (
-                "Missing diff_issues_url on the revision. "
-                "This attribute is required when publishing a single issue on a revision's diff."
-            )
-
-            for issue in issues:
+        assert (
+            revision.issues_url is not None
+        ), "Missing issues_url on the revision to publish issues in bulk."
+        chunks = (issues[i : i + bulk] for i in range(0, len(issues), bulk))
+        for issues_chunk in chunks:
+            # Store valid data as couples of (<issue>, <json_data>)
+            valid_data = []
+            # Build issues' payload for that given chunk
+            for issue in issues_chunk:
                 if (
                     isinstance(issue, MozLintIssue)
                     and issue.linter == "rust"
@@ -187,21 +137,38 @@ class BackendAPI:
                     # Silently ignore issues with path "." from rustfmt, as they cannot be published
                     # https://github.com/mozilla/code-review/issues/1577
                     continue
-                try:
-                    assert issue.hash is not None
-                except Exception:
-                    # An exception may occur computing issues hash (e.g. network error)
+                if issue.hash is None:
                     logger.warning(
                         "Missing issue hash, cannot publish on backend",
                         issue=str(issue),
                     )
                     continue
-                payload = issue.as_dict()
-                issue.on_backend = self.create(revision.diff_issues_url, payload)
-                if issue.on_backend is not None:
-                    published += 1
-                else:
-                    logger.warn("Failed backend publication", issue=str(issue))
+                valid_data.append((issue, issue.as_dict()))
+
+            if not valid_data:
+                # May happen when a series of issues are missing a hash
+                logger.warning(
+                    "No issue is valid over an entire chunk",
+                    head_repository=revision.head_repository,
+                    head_changeset=revision.head_changeset,
+                )
+                continue
+
+            response = self.create(
+                revision.issues_url,
+                {"issues": [json_data for _, json_data in valid_data]},
+            )
+            if response is None:
+                # Backend rejected the payload, nothing more to do.
+                continue
+            created = response.get("issues")
+
+            assert created and len(created) == len(valid_data)
+            for (issue, _), return_value in zip(valid_data, created):
+                # Set the returned value on each issue
+                issue.on_backend = return_value
+
+            published += len(valid_data)
 
         total = len(issues)
         if published < total:
