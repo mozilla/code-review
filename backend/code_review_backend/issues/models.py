@@ -214,7 +214,7 @@ class Issue(models.Model):
     analyzer = models.CharField(max_length=50)
 
     # Calculated hash identifying issue
-    hash = models.CharField(max_length=32)
+    hash = models.CharField(max_length=32, unique=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
