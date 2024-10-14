@@ -156,6 +156,14 @@ class IssueLink(models.Model):
         blank=True,
     )
 
+    # Is this issue new for this revision ?
+    # Can be null (not set by API) when a revision is not linked to a diff
+    new_for_revision = models.BooleanField(null=True)
+
+    # Is this issue present in the patch ?
+    # Can be null (not set by API) when a revision is not linked to a diff
+    in_patch = models.BooleanField(null=True)
+
     class Meta:
         constraints = [
             # Two constraints are required as Null values are not compared for unicity
@@ -200,14 +208,6 @@ class Issue(models.Model):
 
     # Calculated hash identifying issue
     hash = models.CharField(max_length=32)
-
-    # Is this issue new for this revision ?
-    # Can be null (not set by API) when a revision is not linked to a diff
-    new_for_revision = models.BooleanField(null=True)
-
-    # Is this issue present in the patch ?
-    # Can be null (not set by API) when a revision is not linked to a diff
-    in_patch = models.BooleanField(null=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
