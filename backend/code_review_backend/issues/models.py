@@ -197,7 +197,7 @@ class Issue(models.Model):
     )
 
     # Raw issue data
-    path = models.CharField(max_length=250)
+    path = models.CharField(max_length=250, unique=True)
     line = models.PositiveIntegerField(null=True)
     nb_lines = models.PositiveIntegerField(null=True)
     char = models.PositiveIntegerField(null=True)
