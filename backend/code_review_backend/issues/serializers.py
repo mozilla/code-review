@@ -178,6 +178,11 @@ class IssueSerializer(serializers.ModelSerializer):
 
     publishable = serializers.BooleanField(read_only=True)
     check = serializers.CharField(source="analyzer_check", required=False)
+    publishable = serializers.BooleanField(read_only=True)
+    in_patch = serializers.BooleanField(source="issue__links__in_patch", read_only=True)
+    new_for_revision = serializers.BooleanField(
+        source="issue__links__new_for_revision", read_only=True
+    )
 
     class Meta:
         model = Issue
@@ -192,7 +197,10 @@ class IssueSerializer(serializers.ModelSerializer):
             "level",
             "check",
             "message",
+            # Attrs coming from IssueLink
             "publishable",
+            "in_patch",
+            "new_for_revision",
         )
         read_only_fields = ("new_for_revision",)
 
@@ -239,8 +247,8 @@ class IssueBulkSerializer(serializers.Serializer):
         diff = validated_data.get("diff_id", None)
         link_attrs = {
             [issue.path]: {
-                "new_for_revision": issue.pop("new_for_revision"),
-                "in_patch": issue.pop("in_patch"),
+                "new_for_revision": issue.get("new_for_revision"),
+                "in_patch": issue.get("in_patch"),
             }
             for issue in validated_data["issues"]
         }
