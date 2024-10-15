@@ -190,9 +190,25 @@ class IssueViewSet(
         if not self.kwargs.get("diff_id"):
             return Issue.objects.none()
         diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
-        # No multiple revision should be linked to a single diff
-        # but we use the distinct clause to match the DB state.
-        return Issue.objects.filter(diffs=diff).distinct()
+        return (
+            Issue.objects.filter(issue_links__diff=diff)
+            .annotate(publishable=Q(issue_links__in_patch=True) & Q(level="error"))
+            .values(
+                "id",
+                "hash",
+                "analyzer",
+                "path",
+                "line",
+                "nb_lines",
+                "char",
+                "level",
+                "check",
+                "message",
+                "publishable",
+                "issue_links__in_patch",
+                "issue_links__new_for_revision",
+            )
+        )
 
 
 class IssueBulkCreate(generics.CreateAPIView):
