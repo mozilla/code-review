@@ -5,6 +5,7 @@ RUN pip install setuptools==74.1.2 --disable-pip-version-check --no-cache-dir --
 ADD tools /src/tools
 ADD events /src/events
 
+COPY /src/events/mozdata.ini mozdata.ini
 RUN cd /src/tools && python setup.py install
 RUN cd /src/events && python setup.py install
 

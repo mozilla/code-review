@@ -6,6 +6,7 @@ ADD tools /src/tools
 RUN cd /src/tools && python setup.py install
 
 ADD bot /src/bot
+COPY /src/bot/mozdata.ini mozdata.ini
 RUN cd /src/bot && python setup.py install
 
 # Add mercurial & robustcheckout
