@@ -41,6 +41,7 @@ class CreationAPITestCase(APITestCase):
         """
         Check we can create a revision through the API
         """
+        last_rev_id = Revision.objects.latest("id").id
         self.revision.delete()
         data = {
             "phabricator_id": 123,
@@ -65,7 +66,7 @@ class CreationAPITestCase(APITestCase):
 
         # Check a revision has been created
         expected_response = {
-            "id": 2,
+            "id": last_rev_id + 1,
             "bugzilla_id": 123456,
             "diffs_url": "http://testserver/v1/revision/2/diffs/",
             "issues_bulk_url": "http://testserver/v1/revision/2/issues/",
@@ -212,13 +213,14 @@ class CreationAPITestCase(APITestCase):
         # Once authenticated, creation will work
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", data, format="json"
             )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         issues = list(Issue.objects.order_by("created"))
+        self.maxDiff = None
         self.assertEqual(len(issues), 2)
 
         # Do not check the content of issue created as it's a random UUID
@@ -239,7 +241,7 @@ class CreationAPITestCase(APITestCase):
                         "line": 1,
                         "message": None,
                         "nb_lines": None,
-                        "new_for_revision": None,
+                        "new_for_revision": False,
                         "path": "path/to/file.py",
                         "publishable": True,
                     },
@@ -265,12 +267,12 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(issues[0].path, "path/to/file.py")
         self.assertEqual(issues[0].line, 1)
         self.assertFalse(issues[0].diffs.exists())
-        self.assertFalse(issues[0].new_for_revision)
+        self.assertFalse(issues[0].issue_links.get().new_for_revision)
 
         self.assertEqual(issues[1].path, "path/to/file.py")
         self.assertEqual(issues[1].line, 2)
         self.assertFalse(issues[1].diffs.exists())
-        self.assertEqual(issues[1].new_for_revision, None)
+        self.assertEqual(issues[1].issue_links.get().new_for_revision, None)
 
     def test_create_issue_bulk_with_diff(self):
         """
@@ -291,7 +293,7 @@ class CreationAPITestCase(APITestCase):
             ],
         }
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(7):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", data, format="json"
             )
@@ -316,7 +318,7 @@ class CreationAPITestCase(APITestCase):
                         "line": 1,
                         "message": None,
                         "nb_lines": None,
-                        "new_for_revision": None,
+                        "new_for_revision": False,
                         "path": "path/to/file.py",
                         "publishable": True,
                     },
@@ -329,4 +331,4 @@ class CreationAPITestCase(APITestCase):
         self.assertListEqual(
             list(issue.diffs.values_list("id", flat=True)), [self.diff.id]
         )
-        self.assertFalse(issue.new_for_revision)
+        self.assertFalse(issue.issue_links.get().new_for_revision)
