@@ -179,6 +179,11 @@ class IssueLink(models.Model):
             ),
         ]
 
+    @property
+    def publishable(self):
+        """Is that issue publishable on Phabricator to developers"""
+        return self.in_patch is True or self.issue.level == LEVEL_ERROR
+
 
 class Issue(models.Model):
     """An issue detected on a Phabricator patch"""
@@ -215,8 +220,3 @@ class Issue(models.Model):
     class Meta:
         ordering = ("created",)
         indexes = (models.Index(fields=["path"]),)
-
-    @property
-    def publishable(self):
-        """Is that issue publishable on Phabricator to developers"""
-        return self.in_patch is True or self.level == LEVEL_ERROR
