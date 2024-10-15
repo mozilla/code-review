@@ -192,8 +192,6 @@ class IssueSerializer(serializers.ModelSerializer):
             "level",
             "check",
             "message",
-            "new_for_revision",
-            "in_patch",
             "publishable",
         )
         read_only_fields = ("new_for_revision",)
@@ -222,6 +220,13 @@ class IssueBulkSerializer(serializers.Serializer):
         allow_null=True,
     )
     issues = IssueSerializer(many=True)
+    issues.child.fields.update(
+        {
+            # Property set on the IssueLink M2M during creation
+            "new_for_revision": serializers.BooleanField(default=None, write_only=True),
+            "in_patch": serializers.BooleanField(default=None, write_only=True),
+        }
+    )
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -232,12 +237,34 @@ class IssueBulkSerializer(serializers.Serializer):
     @transaction.atomic
     def create(self, validated_data):
         diff = validated_data.get("diff_id", None)
+        link_attrs = {
+            [issue.path]: {
+                "new_for_revision": issue.pop("new_for_revision"),
+                "in_patch": issue.pop("in_patch"),
+            }
+            for issue in validated_data["issues"]
+        }
+        # Only create issues that do not exist yet
         issues = Issue.objects.bulk_create(
-            [Issue(**values) for values in validated_data["issues"]]
+            [Issue(**values) for values in validated_data["issues"]],
+            ignore_conflicts=True,
+        )
+        # List issues again to ensure ID are synced for creating links
+        issues = (
+            Issue.objects.filter(path__in=[issue.path for issue in issues])
+            # TODO Remove the distinct clause when issues are duplicated (unique path)
+            .distinct("path")
+            .only("id", "path")
         )
         IssueLink.objects.bulk_create(
             [
-                IssueLink(issue=issue, diff=diff, revision=self.context["revision"])
+                IssueLink(
+                    issue_id=issue.id,
+                    diff=diff,
+                    revision=self.context["revision"],
+                    new_for_revision=link_attrs[issue.path]["new_for_revision"],
+                    in_patch=link_attrs[issue.path]["in_patch"],
+                )
                 for issue in issues
             ]
         )
