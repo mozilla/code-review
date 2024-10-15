@@ -6,7 +6,6 @@ import hashlib
 import random
 
 from django.contrib.auth.models import User
-from rest_framework import status
 from rest_framework.test import APITestCase
 
 from code_review_backend.issues.compare import detect_new_for_revision
@@ -87,30 +86,3 @@ class CompareAPITestCase(APITestCase):
         # But adding an issue with a different hash on second diff will be set as new
         issue = self.build_issue(2, 12345)
         self.assertTrue(detect_new_for_revision(second_diff, issue.path, issue.hash))
-
-    def test_api_creation(self):
-        """
-        Check the detection is automatically applied through the API
-        """
-        # No issues on second diff at first
-        self.assertFalse(Issue.objects.filter(diffs=2).exists())
-
-        # Adding an issue with same hash on second diff will be set as existing
-        data = {
-            "line": 10,
-            "analyzer": "analyzer-x",
-            "check": "check-y",
-            "level": "error",
-            "path": "path/to/file",
-            "hash": self.build_hash(1),
-        }
-        self.client.force_authenticate(user=self.user)
-        response = self.client.post("/v1/diff/2/issues/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertFalse(response.json()["new_for_revision"])
-
-        # But adding an issue with a different hash on second diff will be set as new
-        data["hash"] = self.build_hash(456)
-        response = self.client.post("/v1/diff/2/issues/", data, format="json")
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertTrue(response.json()["new_for_revision"])

@@ -30,9 +30,6 @@ logger = structlog.get_logger(__name__)
 TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
 
-# Max number of issues published to the backend at a time during the ingestion of a revision
-BULK_ISSUE_CHUNKS = 100
-
 
 class Workflow:
     """
@@ -212,11 +209,7 @@ class Workflow:
         self.clone_repository(revision)
 
         # Publish issues in the backend
-        self.backend_api.publish_issues(
-            issues,
-            revision,
-            bulk=BULK_ISSUE_CHUNKS,
-        )
+        self.backend_api.publish_issues(issues, revision)
 
     def clone_repository(self, revision):
         """

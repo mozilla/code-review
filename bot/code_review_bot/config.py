@@ -50,6 +50,9 @@ class Settings:
         self.repositories = []
         self.decision_env_prefixes = []
 
+        # Max number of issues published to the backend at a time during the ingestion of a revision
+        self.bulk_issue_chunks = 100
+
         # Cache to store file-by-file from HGMO Rest API
         self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
 
@@ -86,6 +89,9 @@ class Settings:
             )
         if not os.path.isdir(self.taskcluster.results_dir):
             os.makedirs(self.taskcluster.results_dir)
+
+        if "BULK_ISSUE_CHUNKS" in os.environ:
+            self.bulk_issue_chunks = int(os.environ["BULK_ISSUE_CHUNKS"])
 
         # Save allowed paths
         assert isinstance(allowed_paths, list)

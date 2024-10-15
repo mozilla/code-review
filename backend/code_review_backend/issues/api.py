@@ -6,7 +6,6 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
-from django.db import transaction
 from django.db.models import Count, Prefetch, Q
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
@@ -17,12 +16,10 @@ from rest_framework import generics, mixins, routers, status, viewsets
 from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
 
-from code_review_backend.issues.compare import detect_new_for_revision
 from code_review_backend.issues.models import (
     LEVEL_ERROR,
     Diff,
     Issue,
-    IssueLink,
     Repository,
     Revision,
 )
@@ -174,7 +171,18 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
         return diffs
 
 
-class IssueViewSet(viewsets.ModelViewSet):
+class IssueViewSet(
+    mixins.RetrieveModelMixin,
+    mixins.UpdateModelMixin,
+    mixins.DestroyModelMixin,
+    mixins.ListModelMixin,
+    viewsets.GenericViewSet,
+):
+    """
+    Viewset for Issue management.
+    Creation can only be performed in bulk via the revision.
+    """
+
     serializer_class = IssueSerializer
 
     def get_queryset(self):
@@ -185,22 +193,6 @@ class IssueViewSet(viewsets.ModelViewSet):
         # No multiple revision should be linked to a single diff
         # but we use the distinct clause to match the DB state.
         return Issue.objects.filter(diffs=diff).distinct()
-
-    @transaction.atomic
-    def perform_create(self, serializer):
-        # Attach diff to issue created
-        # and detect if the issue is new for the revision
-        diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
-        issue = serializer.save(
-            new_for_revision=detect_new_for_revision(
-                diff,
-                path=serializer.validated_data["path"],
-                hash=serializer.validated_data["hash"],
-            ),
-        )
-        IssueLink.objects.create(
-            issue=issue, diff_id=diff.id, revision_id=diff.revision_id
-        )
 
 
 class IssueBulkCreate(generics.CreateAPIView):
