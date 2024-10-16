@@ -22,6 +22,7 @@ from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision
 from code_review_bot.workflow import Workflow
+from code_review_tools.libmozdata import setup as setup_libmozdata
 from code_review_tools.log import init_logger
 
 logger = structlog.get_logger(__name__)
@@ -96,6 +97,9 @@ def main():
         PAPERTRAIL_PORT=taskcluster.secrets.get("PAPERTRAIL_PORT"),
         SENTRY_DSN=taskcluster.secrets.get("SENTRY_DSN"),
     )
+
+    # Setup libmozdata configuration
+    setup_libmozdata("code-review-bot")
 
     # Setup settings before stats
     settings.setup(
