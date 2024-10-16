@@ -7,6 +7,7 @@ import yaml
 
 from code_review_events import community_taskcluster_config, taskcluster_config
 from code_review_events.workflow import Events
+from code_review_tools.libmozdata import setup as setup_libmozdata
 from code_review_tools.log import init_logger
 
 logger = structlog.get_logger(__name__)
@@ -72,6 +73,9 @@ def main():
         PAPERTRAIL_PORT=taskcluster_config.secrets.get("PAPERTRAIL_PORT"),
         SENTRY_DSN=taskcluster_config.secrets.get("SENTRY_DSN"),
     )
+
+    # Setup libmozdata configuration
+    setup_libmozdata("code-review-events")
 
     events = Events(args.cache_root)
     events.run()
