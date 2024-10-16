@@ -3,9 +3,11 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import serializers
 
 from code_review_backend.issues.models import (
+    LEVEL_ERROR,
     Diff,
     Issue,
     IssueLink,
@@ -178,6 +180,13 @@ class IssueSerializer(serializers.ModelSerializer):
 
     publishable = serializers.BooleanField(read_only=True)
     check = serializers.CharField(source="analyzer_check", required=False)
+    publishable = serializers.BooleanField(read_only=True)
+    in_patch = serializers.BooleanField(
+        source="issue_links__in_patch", allow_null=True, required=False
+    )
+    new_for_revision = serializers.BooleanField(
+        source="issue_links__new_for_revision", allow_null=True, required=False
+    )
 
     class Meta:
         model = Issue
@@ -192,11 +201,11 @@ class IssueSerializer(serializers.ModelSerializer):
             "level",
             "check",
             "message",
-            "new_for_revision",
-            "in_patch",
+            # Attrs coming from IssueLink
             "publishable",
+            "in_patch",
+            "new_for_revision",
         )
-        read_only_fields = ("new_for_revision",)
 
 
 class IssueHashSerializer(serializers.ModelSerializer):
@@ -232,15 +241,60 @@ class IssueBulkSerializer(serializers.Serializer):
     @transaction.atomic
     def create(self, validated_data):
         diff = validated_data.get("diff_id", None)
+        link_attrs = {
+            issue["hash"]: {
+                "new_for_revision": issue.pop("issue_links__new_for_revision", None),
+                "in_patch": issue.pop("issue_links__in_patch", None),
+            }
+            for issue in validated_data["issues"]
+        }
+        # Only create issues that do not exist yet
         issues = Issue.objects.bulk_create(
-            [Issue(**values) for values in validated_data["issues"]]
+            [Issue(**values) for values in validated_data["issues"]],
+            ignore_conflicts=True,
+        )
+        # List issues again to ensure ID are synced for creating links
+        issues = (
+            Issue.objects.values("issue_links")
+            .filter(hash__in=[issue.hash for issue in issues])
+            # Needed for re-serialization
+            .annotate(publishable=Q(issue_links__in_patch=True) & Q(level=LEVEL_ERROR))
+            .values(
+                "id",
+                "hash",
+                "analyzer",
+                "analyzer_check",
+                "path",
+                "line",
+                "nb_lines",
+                "char",
+                "level",
+                "message",
+                "publishable",
+            )
         )
         IssueLink.objects.bulk_create(
             [
-                IssueLink(issue=issue, diff=diff, revision=self.context["revision"])
+                IssueLink(
+                    issue_id=issue["id"],
+                    diff=diff,
+                    revision=self.context["revision"],
+                    new_for_revision=link_attrs[issue["hash"]]["new_for_revision"],
+                    in_patch=link_attrs[issue["hash"]]["in_patch"],
+                )
                 for issue in issues
             ]
         )
+        # Override attributes that would be fetched after links creation
+        for issue in issues:
+            issue["issue_links__new_for_revision"] = link_attrs[issue["hash"]].get(
+                "new_for_revision"
+            )
+            issue["issue_links__in_patch"] = link_attrs[issue["hash"]].get("in_patch")
+            issue["publishable"] = (
+                issue["issue_links__in_patch"] and issue["level"] == LEVEL_ERROR
+            )
+
         return {
             "diff_id": diff,
             "issues": issues,
@@ -266,11 +320,13 @@ class IssueCheckStatsSerializer(serializers.Serializer):
     """
 
     # The view aggregates issues depending on their reference to a repository (via IssueLink M2M)
-    repository = serializers.SlugField(source="revisions__head_repository__slug")
+    repository = serializers.SlugField(
+        source="issue_links__revision__head_repository__slug"
+    )
     analyzer = serializers.CharField()
     check = serializers.CharField(source="analyzer_check")
     total = serializers.IntegerField()
-    publishable = serializers.IntegerField(default=0)
+    publishable = serializers.IntegerField(read_only=True, default=0)
 
     class Meta:
         model = Issue

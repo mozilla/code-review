@@ -101,7 +101,6 @@ class StatsAPITestCase(APITestCase):
         """
         Check stats generation from the list of random issues
         """
-        self.maxDiff = None
         response = self.client.get("/v1/check/stats/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(
@@ -127,14 +126,14 @@ class StatsAPITestCase(APITestCase):
                     },
                     {
                         "analyzer": "analyzer-Y",
-                        "check": None,
+                        "check": "check-10",
                         "publishable": 0,
                         "repository": "myrepo-try",
                         "total": 34,
                     },
                     {
                         "analyzer": "analyzer-Y",
-                        "check": "check-10",
+                        "check": None,
                         "publishable": 0,
                         "repository": "myrepo-try",
                         "total": 34,
@@ -148,13 +147,6 @@ class StatsAPITestCase(APITestCase):
                     },
                     {
                         "analyzer": "analyzer-X",
-                        "check": None,
-                        "publishable": 0,
-                        "repository": "myrepo-try",
-                        "total": 33,
-                    },
-                    {
-                        "analyzer": "analyzer-X",
                         "check": "check-10",
                         "publishable": 0,
                         "repository": "myrepo-try",
@@ -163,6 +155,13 @@ class StatsAPITestCase(APITestCase):
                     {
                         "analyzer": "analyzer-X",
                         "check": "check-42",
+                        "publishable": 0,
+                        "repository": "myrepo-try",
+                        "total": 33,
+                    },
+                    {
+                        "analyzer": "analyzer-X",
+                        "check": None,
                         "publishable": 0,
                         "repository": "myrepo-try",
                         "total": 33,
@@ -190,13 +189,6 @@ class StatsAPITestCase(APITestCase):
                     },
                     {
                         "analyzer": "analyzer-Z",
-                        "check": None,
-                        "publishable": 0,
-                        "repository": "myrepo-try",
-                        "total": 33,
-                    },
-                    {
-                        "analyzer": "analyzer-Z",
                         "check": "check-1",
                         "publishable": 0,
                         "repository": "myrepo-try",
@@ -212,6 +204,13 @@ class StatsAPITestCase(APITestCase):
                     {
                         "analyzer": "analyzer-Z",
                         "check": "check-1000",
+                        "publishable": 0,
+                        "repository": "myrepo-try",
+                        "total": 33,
+                    },
+                    {
+                        "analyzer": "analyzer-Z",
+                        "check": None,
                         "publishable": 0,
                         "repository": "myrepo-try",
                         "total": 33,
@@ -224,10 +223,10 @@ class StatsAPITestCase(APITestCase):
         """
         Check API endpoint to list issues in a check
         """
-        self.maxDiff = None
         response = self.client.get(
             "/v1/check/myrepo-try/analyzer-X/check-1/?publishable=all"
         )
+        # Make the first link of all issues publishable
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         data = response.json()
         self.assertEqual(data["count"], 34)
@@ -242,7 +241,7 @@ class StatsAPITestCase(APITestCase):
             self.assertEqual(issue["level"], "warning")
             self.assertIsNone(issue["message"])
             self.assertIsNone(issue["in_patch"])
-            self.assertFalse(issue["publishable"])
+            self.assertEqual(issue["publishable"], 0)
             self.assertEqual(issue["path"], "path/to/file")
 
             # Diff

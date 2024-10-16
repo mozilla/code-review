@@ -45,8 +45,8 @@ class IssueTestCase(TestCase):
             path="some/other/file", line=12, level=LEVEL_WARNING
         )
 
-        self.revision.issue_links.create(issue=self.err_issue)
-        self.revision.issue_links.create(issue=self.warn_issue)
+        self.err_link = self.revision.issue_links.create(issue=self.err_issue)
+        self.warn_link = self.revision.issue_links.create(issue=self.warn_issue)
         self.old_revision.issue_links.create(issue=self.warn_issue)
 
     def serialize_issue(self, issue):
@@ -55,31 +55,28 @@ class IssueTestCase(TestCase):
             "level": issue.level,
             "line": issue.line,
             "path": issue.path,
-            "publishable": issue.publishable,
             "analyzer": issue.analyzer,
             # Use default values
             "char": None,
             "check": None,
             "hash": "",
-            "in_patch": None,
             "message": None,
             "nb_lines": None,
-            "new_for_revision": None,
         }
 
     def test_publishable(self):
         # A warning is not publishable
-        self.assertFalse(self.warn_issue.publishable)
+        self.assertFalse(self.warn_link.publishable)
         # An error is publishable
-        self.assertTrue(self.err_issue.publishable)
+        self.assertTrue(self.err_link.publishable)
 
         # A warning in a patch is publishable
-        self.warn_issue.in_patch = True
-        self.assertTrue(self.warn_issue.publishable)
+        self.warn_link.in_patch = True
+        self.assertTrue(self.warn_link.publishable)
 
         # An error in a patch is publishable
-        self.err_issue.in_patch = True
-        self.assertTrue(self.err_issue.publishable)
+        self.err_link.in_patch = True
+        self.assertTrue(self.err_link.publishable)
 
     def test_list_repository_issues_wrong_values(self):
         """

@@ -11,7 +11,7 @@ from django.core.management.base import BaseCommand
 from parsepatch.patch import Patch
 
 from code_review_backend.app.settings import BACKEND_USER_AGENT
-from code_review_backend.issues.models import Diff, Issue
+from code_review_backend.issues.models import Diff, IssueLink
 
 logging.basicConfig(level=logging.INFO)
 
@@ -47,23 +47,27 @@ def load_hgmo_patch(diff):
     return lines
 
 
-def detect_in_patch(issue, lines):
+def detect_in_patch(issue_link, lines):
     """From the code-review bot revisions.py contains() method"""
-    modified_lines = lines.get(issue.path)
+    modified_lines = lines.get(issue_link.issue.path)
 
     if modified_lines is None:
         # File not in patch
-        issue.in_patch = False
+        issue_link.in_patch = False
 
-    elif issue.line is None:
+    elif issue_link.issue.line is None:
         # Empty line means full file
-        issue.in_patch = True
+        issue_link.in_patch = True
 
     else:
         # Detect if this issue is in the patch
-        chunk_lines = set(range(issue.line, issue.line + issue.nb_lines))
-        issue.in_patch = not chunk_lines.isdisjoint(modified_lines)
-    return issue
+        chunk_lines = set(
+            range(
+                issue_link.issue.line, issue_link.issue.line + issue_link.issue.nb_lines
+            )
+        )
+        issue_link.in_patch = not chunk_lines.isdisjoint(modified_lines)
+    return issue_link
 
 
 def process_diff(diff: Diff):
@@ -71,11 +75,13 @@ def process_diff(diff: Diff):
     try:
         lines = load_hgmo_patch(diff)
 
-        issues = [detect_in_patch(issue, lines) for issue in diff.issues.all()]
+        issue_links = [
+            detect_in_patch(issue_link, lines) for issue_link in diff.issue_links.all()
+        ]
         logging.info(
-            f"Found {len([i for i in issues if i.in_patch])} issues in patch for {diff.id}"
+            f"Found {len([i for i in issue_links if i.in_patch])} issue link in patch for {diff.id}"
         )
-        Issue.objects.bulk_update(issues, ["in_patch"])
+        IssueLink.objects.bulk_update(issue_links, ["in_patch"])
     except Exception as e:
         logging.info(f"Failure on diff {diff.id}: {e}")
 
@@ -94,7 +100,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         # Only apply on diffs with issues that are not already processed
         diffs = (
-            Diff.objects.filter(issues__in_patch__isnull=True).order_by("id").distinct()
+            Diff.objects.filter(issue_links__in_patch__isnull=True)
+            .order_by("id")
+            .distinct()
         )
         logger.debug(f"Will process {diffs.count()} diffs")
 

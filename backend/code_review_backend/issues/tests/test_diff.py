@@ -13,26 +13,28 @@ from code_review_backend.issues.models import Diff, Repository
 
 
 class DiffAPITestCase(APITestCase):
-    def setUp(self):
+    @classmethod
+    def setUpTestData(cls):
         # Create a user
-        self.user = User.objects.create(username="crash_user")
+        cls.user = User.objects.create(username="crash_user")
 
         # Create a repo & its try counterpart
-        self.repo = Repository.objects.create(
+        cls.repo = Repository.objects.create(
             id=1, phid="PHID-REPO-xxx", slug="myrepo", url="http://repo.test/myrepo"
         )
-        self.repo_try = Repository.objects.create(
+        cls.repo_try = Repository.objects.create(
             id=2, slug="myrepo-try", url="http://repo.test/try"
         )
 
         # Create a stack with 2 revisions & 3 diffs
         for i in range(2):
-            self.repo_try.head_revisions.create(
+            cls.repo_try.head_revisions.create(
+                id=i + 1,
                 phabricator_id=i + 1,
                 phabricator_phid=f"PHID-DREV-{i+1}",
                 title=f"Revision {i+1}",
                 bugzilla_id=10000 + i,
-                base_repository=self.repo,
+                base_repository=cls.repo,
             )
         for i in range(3):
             Diff.objects.create(
@@ -41,14 +43,14 @@ class DiffAPITestCase(APITestCase):
                 revision_id=(i % 2) + 1,
                 review_task_id=f"task-{i}",
                 mercurial_hash=hashlib.sha1(f"hg {i}".encode()).hexdigest(),
-                repository=self.repo_try,
+                repository=cls.repo_try,
             )
 
         # Force created date update without using inner django trigger
         # so that all diffs in the test have the same date to be able
         # to compare the payload easily
-        self.now = datetime.utcnow().isoformat() + "Z"
-        Diff.objects.update(created=self.now)
+        cls.now = datetime.utcnow().isoformat() + "Z"
+        Diff.objects.update(created=cls.now)
 
     def test_list_diffs(self):
         """
@@ -56,7 +58,6 @@ class DiffAPITestCase(APITestCase):
         """
         response = self.client.get("/v1/diff/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.maxDiff = None
         self.assertDictEqual(
             response.json(),
             {
