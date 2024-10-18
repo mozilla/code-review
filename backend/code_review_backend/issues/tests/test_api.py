@@ -41,7 +41,6 @@ class CreationAPITestCase(APITestCase):
         """
         Check we can create a revision through the API
         """
-        last_rev_id = Revision.objects.latest("id").id
         self.revision.delete()
         data = {
             "phabricator_id": 123,
@@ -65,11 +64,12 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         # Check a revision has been created
+        revision_id = Revision.objects.latest("created").id
         expected_response = {
-            "id": last_rev_id + 1,
+            "id": revision_id,
             "bugzilla_id": 123456,
-            "diffs_url": "http://testserver/v1/revision/2/diffs/",
-            "issues_bulk_url": "http://testserver/v1/revision/2/issues/",
+            "diffs_url": f"http://testserver/v1/revision/{revision_id}/diffs/",
+            "issues_bulk_url": f"http://testserver/v1/revision/{revision_id}/issues/",
             "phabricator_url": "https://phabricator.services.mozilla.com/D123",
             "phabricator_id": 123,
             "phabricator_phid": "PHID-REV-xxx",
