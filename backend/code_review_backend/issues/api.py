@@ -6,7 +6,7 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
-from django.db.models import Count, Prefetch, Q
+from django.db.models import BooleanField, Count, ExpressionWrapper, Prefetch, Q
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
 from django.urls import path
@@ -310,6 +310,11 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
             # We want to count distinct issues because they can be referenced on multiple diffs
             .annotate(total=Count("id", distinct=True))
             .annotate(
+                has_check=ExpressionWrapper(
+                    Q(analyzer_check__isnull=True), output_field=BooleanField()
+                )
+            )
+            .annotate(
                 publishable=Count(
                     "id", filter=Q(issue_links__in_patch=True) | Q(level=LEVEL_ERROR)
                 )
@@ -338,6 +343,8 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
             "-total",
             "issue_links__revision__head_repository__slug",
             "analyzer",
+            # Use same order than PostgreSQL with SQLite
+            "has_check",
             "analyzer_check",
         ).values(
             "issue_links__revision__head_repository__slug",
