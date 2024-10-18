@@ -188,7 +188,7 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-            - taskId: { $eval: as_slugid("backend_check_tests_sqlite") }
+            - taskId: { $eval: as_slugid("backend_check_tests") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
               created: { $fromNow: "" }
@@ -204,36 +204,8 @@ tasks:
                     cd /src/backend && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
                     ./manage.py test"
               metadata:
-                name: "Code Review Backend checks: unit tests (SQLite)"
-                description: Check python code with Django tests (SQLite)
-                owner: bastien@mozilla.com
-                source: https://github.com/mozilla/code-review
-
-            - taskId: { $eval: as_slugid("backend_check_tests_postgres") }
-              provisionerId: "${provisionerId}"
-              workerType: "${workerType}"
-              created: { $fromNow: "" }
-              deadline: { $fromNow: "1 hour" }
-              payload:
-                maxRunTime: 3600
-                image: "postgres:16-alpine"
-                env:
-                  POSTGRES_USER: devuser
-                  POSTGRES_PASSWORD: devdata
-                  POSTGRES_DB: code_review_dev
-                command:
-                  - sh
-                  - -lxce
-                  - "apk add --no-cache python3~${python_version} py3-pip &&
-                    apk add --no-cache git &&
-                    apk add --no-cache rust cargo &&
-                    git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    cd /src/tools && ${pip_install} . &&
-                    cd /src/backend && ${pip_install} . && pip install --disable-pip-version-check --quiet -r requirements-dev.txt &&
-                    DATABASE_URL=psql://devuser:devdata@localhost/code_review_dev ./manage.py test"
-              metadata:
-                name: "Code Review Backend checks: unit tests (PostgreSQL)"
-                description: Check python code with Django tests (PostgreSQL)
+                name: "Code Review Backend checks: unit tests"
+                description: Check python code with Django tests
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
@@ -302,8 +274,7 @@ tasks:
               workerType: "${workerType}"
               dependencies:
                 - { $eval: as_slugid("check_lint") }
-                - { $eval: as_slugid("backend_check_tests_sqlite") }
-                - { $eval: as_slugid("backend_check_tests_postgres") }
+                - { $eval: as_slugid("backend_check_tests") }
               payload:
                 capabilities:
                   privileged: true
