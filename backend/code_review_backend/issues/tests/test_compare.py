@@ -49,9 +49,6 @@ class CompareAPITestCase(APITestCase):
     def build_issue(self, diff_id, hash_id):
         issue = Issue.objects.create(
             path="path/to/file",
-            line=random.randint(1, 100),
-            nb_lines=random.randint(1, 100),
-            char=None,
             level="warning",
             message=None,
             analyzer="analyzer-x",
@@ -59,7 +56,13 @@ class CompareAPITestCase(APITestCase):
             hash=self.build_hash(hash_id),
         )
         # Link the issue to the specific diff
-        issue.issue_links.create(diff_id=diff_id, revision=self.revision)
+        issue.issue_links.create(
+            diff_id=diff_id,
+            revision=self.revision,
+            line=random.randint(1, 100),
+            nb_lines=random.randint(1, 100),
+            char=None,
+        )
         return issue
 
     def build_hash(self, content):

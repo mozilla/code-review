@@ -220,7 +220,6 @@ class CreationAPITestCase(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
         issues = list(Issue.objects.order_by("created"))
-        self.maxDiff = None
         self.assertEqual(len(issues), 2)
 
         # Do not check the content of issue created as it's a random UUID
@@ -265,14 +264,16 @@ class CreationAPITestCase(APITestCase):
         )
 
         self.assertEqual(issues[0].path, "path/to/file.py")
-        self.assertEqual(issues[0].line, 1)
         self.assertFalse(issues[0].diffs.exists())
-        self.assertFalse(issues[0].issue_links.get().new_for_revision)
+        link = issues[0].issue_links.get()
+        self.assertFalse(link.new_for_revision)
+        self.assertEqual(link.line, 1)
 
         self.assertEqual(issues[1].path, "path/to/file.py")
-        self.assertEqual(issues[1].line, 2)
         self.assertFalse(issues[1].diffs.exists())
-        self.assertEqual(issues[1].issue_links.get().new_for_revision, None)
+        link = issues[1].issue_links.get()
+        self.assertEqual(link.new_for_revision, None)
+        self.assertEqual(link.line, 2)
 
     def test_create_issue_bulk_with_diff(self):
         """
@@ -327,8 +328,9 @@ class CreationAPITestCase(APITestCase):
         )
 
         self.assertEqual(issue.path, "path/to/file.py")
-        self.assertEqual(issue.line, 1)
         self.assertListEqual(
             list(issue.diffs.values_list("id", flat=True)), [self.diff.id]
         )
-        self.assertFalse(issue.issue_links.get().new_for_revision)
+        link = issue.issue_links.get()
+        self.assertFalse(link.new_for_revision)
+        self.assertEqual(link.line, 1)

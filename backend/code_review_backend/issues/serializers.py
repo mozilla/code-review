@@ -188,6 +188,16 @@ class IssueSerializer(serializers.ModelSerializer):
         source="issue_links__new_for_revision", allow_null=True, required=False
     )
 
+    line = serializers.IntegerField(
+        source="issue_links__line", allow_null=True, required=False
+    )
+    nb_lines = serializers.IntegerField(
+        source="issue_links__nb_lines", allow_null=True, required=False
+    )
+    char = serializers.IntegerField(
+        source="issue_links__char", allow_null=True, required=False
+    )
+
     class Meta:
         model = Issue
         fields = (
@@ -195,9 +205,6 @@ class IssueSerializer(serializers.ModelSerializer):
             "hash",
             "analyzer",
             "path",
-            "line",
-            "nb_lines",
-            "char",
             "level",
             "check",
             "message",
@@ -205,6 +212,9 @@ class IssueSerializer(serializers.ModelSerializer):
             "publishable",
             "in_patch",
             "new_for_revision",
+            "line",
+            "nb_lines",
+            "char",
         )
 
 
@@ -245,6 +255,9 @@ class IssueBulkSerializer(serializers.Serializer):
             issue["hash"]: {
                 "new_for_revision": issue.pop("issue_links__new_for_revision", None),
                 "in_patch": issue.pop("issue_links__in_patch", None),
+                "line": issue.pop("issue_links__line", None),
+                "nb_lines": issue.pop("issue_links__nb_lines", None),
+                "char": issue.pop("issue_links__path", None),
             }
             for issue in validated_data["issues"]
         }
@@ -265,9 +278,6 @@ class IssueBulkSerializer(serializers.Serializer):
                 "analyzer",
                 "analyzer_check",
                 "path",
-                "line",
-                "nb_lines",
-                "char",
                 "level",
                 "message",
                 "publishable",
@@ -281,6 +291,9 @@ class IssueBulkSerializer(serializers.Serializer):
                     revision=self.context["revision"],
                     new_for_revision=link_attrs[issue["hash"]]["new_for_revision"],
                     in_patch=link_attrs[issue["hash"]]["in_patch"],
+                    line=link_attrs[issue["hash"]]["line"],
+                    nb_lines=link_attrs[issue["hash"]]["nb_lines"],
+                    char=link_attrs[issue["hash"]]["char"],
                 )
                 for issue in issues
             ]
@@ -291,6 +304,9 @@ class IssueBulkSerializer(serializers.Serializer):
                 "new_for_revision"
             )
             issue["issue_links__in_patch"] = link_attrs[issue["hash"]].get("in_patch")
+            issue["issue_links__line"] = link_attrs[issue["hash"]].get("line")
+            issue["issue_links__nb_lines"] = link_attrs[issue["hash"]].get("nb_lines")
+            issue["issue_links__char"] = link_attrs[issue["hash"]].get("char")
             issue["publishable"] = (
                 issue["issue_links__in_patch"] and issue["level"] == LEVEL_ERROR
             )

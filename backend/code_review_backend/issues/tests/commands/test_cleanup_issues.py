@@ -26,7 +26,7 @@ def build_issue(path, revisions=[]):
         path=path,
         level=LEVEL_ERROR,
         analyzer="analyzer",
-        defaults={"hash": uuid.uuid4()},
+        defaults={"hash": uuid.uuid4().hex},
     )
     for rev in revisions:
         issue.issue_links.create(revision=rev)

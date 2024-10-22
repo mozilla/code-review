@@ -38,16 +38,16 @@ class IssueTestCase(TestCase):
                 head_repository=self.repo,
             )
 
-        self.err_issue = Issue.objects.create(
-            path="some/file", line=12, level=LEVEL_ERROR
-        )
+        self.err_issue = Issue.objects.create(path="some/file", level=LEVEL_ERROR)
         self.warn_issue = Issue.objects.create(
-            path="some/other/file", line=12, level=LEVEL_WARNING
+            path="some/other/file", level=LEVEL_WARNING
         )
 
-        self.err_link = self.revision.issue_links.create(issue=self.err_issue)
-        self.warn_link = self.revision.issue_links.create(issue=self.warn_issue)
-        self.old_revision.issue_links.create(issue=self.warn_issue)
+        self.err_link = self.revision.issue_links.create(issue=self.err_issue, line=12)
+        self.warn_link = self.revision.issue_links.create(
+            issue=self.warn_issue, line=12
+        )
+        self.old_revision.issue_links.create(issue=self.warn_issue, line=12)
 
     def serialize_issue(self, issue):
         return {
@@ -88,7 +88,6 @@ class IssueTestCase(TestCase):
                 + "?date=2000-01-01T00:00:00Z&path=.&revision_changeset=whatisthat"
             )
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.maxDiff = None
         self.assertEqual(
             response.json(),
             {

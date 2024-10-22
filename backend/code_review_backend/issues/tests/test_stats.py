@@ -54,9 +54,6 @@ class StatsAPITestCase(APITestCase):
             [
                 Issue(
                     path="path/to/file",
-                    line=random.randint(1, 100),
-                    nb_lines=random.randint(1, 100),
-                    char=None,
                     level="warning",
                     message=None,
                     analyzer=analyzers[i % len(analyzers)],
@@ -70,6 +67,9 @@ class StatsAPITestCase(APITestCase):
             [
                 IssueLink(
                     issue=issue,
+                    line=random.randint(1, 100),
+                    nb_lines=random.randint(1, 100),
+                    char=None,
                     revision=revision,
                     diff_id=random.randint(1, 10),
                 )
@@ -82,9 +82,6 @@ class StatsAPITestCase(APITestCase):
             [
                 Issue(
                     path="path/to/file",
-                    line=random.randint(1, 100),
-                    nb_lines=random.randint(1, 100),
-                    char=None,
                     level="warning",
                     message=None,
                     analyzer=analyzers[i % len(analyzers)],
