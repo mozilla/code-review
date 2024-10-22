@@ -35,7 +35,6 @@ class IssueAdmin(admin.ModelAdmin):
     list_display = (
         "id",
         "path",
-        "line",
         "level",
         "analyzer",
         "analyzer_check",

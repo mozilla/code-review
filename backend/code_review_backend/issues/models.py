@@ -164,16 +164,21 @@ class IssueLink(models.Model):
     # Can be null (not set by API) when a revision is not linked to a diff
     in_patch = models.BooleanField(null=True)
 
+    # Issue position on the file
+    line = models.PositiveIntegerField(null=True)
+    nb_lines = models.PositiveIntegerField(null=True)
+    char = models.PositiveIntegerField(null=True)
+
     class Meta:
         constraints = [
             # Two constraints are required as Null values are not compared for unicity
             models.UniqueConstraint(
-                fields=["issue", "revision"],
+                fields=["issue", "revision", "line", "nb_lines", "char"],
                 name="issue_link_unique_revision",
                 condition=Q(diff__isnull=True),
             ),
             models.UniqueConstraint(
-                fields=["issue", "revision", "diff"],
+                fields=["issue", "revision", "diff", "line", "nb_lines", "char"],
                 name="issue_link_unique_diff",
                 condition=Q(diff__isnull=False),
             ),
@@ -203,9 +208,6 @@ class Issue(models.Model):
 
     # Raw issue data
     path = models.CharField(max_length=250)
-    line = models.PositiveIntegerField(null=True)
-    nb_lines = models.PositiveIntegerField(null=True)
-    char = models.PositiveIntegerField(null=True)
     level = models.CharField(max_length=20, choices=ISSUE_LEVELS)
     analyzer_check = models.CharField(max_length=250, null=True)
     message = models.TextField(null=True)

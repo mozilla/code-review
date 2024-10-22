@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        # Move in-patch & new_for_revision to IssueLink, propagating their state
+        # Create new fields on IssueLink
         migrations.AddField(
             model_name="issuelink",
             name="in_patch",
@@ -39,7 +39,24 @@ class Migration(migrations.Migration):
             name="new_for_revision",
             field=models.BooleanField(null=True),
         ),
+        migrations.AddField(
+            model_name="issuelink",
+            name="char",
+            field=models.PositiveIntegerField(null=True),
+        ),
+        migrations.AddField(
+            model_name="issuelink",
+            name="line",
+            field=models.PositiveIntegerField(null=True),
+        ),
+        migrations.AddField(
+            model_name="issuelink",
+            name="nb_lines",
+            field=models.PositiveIntegerField(null=True),
+        ),
+        # Move all their values
         migrations.RunPython(move_attributes),
+        # Remove old fields from Issue
         migrations.RemoveField(
             model_name="issue",
             name="in_patch",
@@ -47,5 +64,42 @@ class Migration(migrations.Migration):
         migrations.RemoveField(
             model_name="issue",
             name="new_for_revision",
+        ),
+        migrations.RemoveField(
+            model_name="issue",
+            name="char",
+        ),
+        migrations.RemoveField(
+            model_name="issue",
+            name="line",
+        ),
+        migrations.RemoveField(
+            model_name="issue",
+            name="nb_lines",
+        ),
+        # Update constraints
+        migrations.RemoveConstraint(
+            model_name="issuelink",
+            name="issue_link_unique_revision",
+        ),
+        migrations.RemoveConstraint(
+            model_name="issuelink",
+            name="issue_link_unique_diff",
+        ),
+        migrations.AddConstraint(
+            model_name="issuelink",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("diff__isnull", True)),
+                fields=("issue", "revision", "line", "nb_lines", "char"),
+                name="issue_link_unique_revision",
+            ),
+        ),
+        migrations.AddConstraint(
+            model_name="issuelink",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("diff__isnull", False)),
+                fields=("issue", "revision", "diff", "line", "nb_lines", "char"),
+                name="issue_link_unique_diff",
+            ),
         ),
     ]
