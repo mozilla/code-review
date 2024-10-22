@@ -75,9 +75,6 @@ class Command(BaseCommand):
             [
                 Issue(
                     path=i["path"],
-                    line=i["line"],
-                    nb_lines=i.get("nb_lines", 1),
-                    char=i.get("char"),
                     level=i.get("level", "warning"),
                     analyzer_check=i.get("kind") or i.get("check"),
                     message=i.get("message"),
@@ -92,14 +89,17 @@ class Command(BaseCommand):
         IssueLink.objects.bulk_create(
             [
                 IssueLink(
-                    issue=i,
+                    issue=issue_db,
                     diff=diff,
                     revision_id=diff.revision_id,
                     new_for_revision=detect_new_for_revision(
-                        diff, path=i.path, hash=i.hash
+                        diff, path=issue_db.path, hash=issue_db.hash
                     ),
+                    line=issue_src["line"],
+                    nb_lines=issue_src.get("nb_lines", 1),
+                    char=issue_src.get("char"),
                 )
-                for i in created_issues
+                for issue_db, issue_src in zip(created_issues, issues)
             ],
             ignore_conflicts=True,
         )
