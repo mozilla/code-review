@@ -71,21 +71,21 @@ class Command(BaseCommand):
         diff.issues.all().delete()
 
         # Build all issues for that diff, in a single DB call
-        created_issues = Issue.objects.bulk_create(
-            [
-                Issue(
-                    path=i["path"],
-                    level=i.get("level", "warning"),
-                    analyzer_check=i.get("kind") or i.get("check"),
-                    message=i.get("message"),
-                    analyzer=i["analyzer"],
-                    hash=i["hash"],
-                )
-                for i in issues
-                if i["hash"]
-            ],
-            ignore_conflicts=True,
-        )
+        created_issues = [
+            Issue.objects.get_or_create(
+                hash=i["hash"],
+                defaults={
+                    "path": i["path"],
+                    "level": i.get("level", "warning"),
+                    "analyzer_check": i.get("kind") or i.get("check"),
+                    "message": i.get("message"),
+                    "analyzer": i["analyzer"],
+                },
+            )
+            for i in issues
+            if i["hash"]
+        ]
+
         IssueLink.objects.bulk_create(
             [
                 IssueLink(
@@ -99,7 +99,7 @@ class Command(BaseCommand):
                     nb_lines=issue_src.get("nb_lines", 1),
                     char=issue_src.get("char"),
                 )
-                for issue_db, issue_src in zip(created_issues, issues)
+                for (issue_db, _), issue_src in zip(created_issues, issues)
             ],
             ignore_conflicts=True,
         )
