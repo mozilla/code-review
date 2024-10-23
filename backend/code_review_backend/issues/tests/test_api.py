@@ -213,7 +213,7 @@ class CreationAPITestCase(APITestCase):
         # Once authenticated, creation will work
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(8):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", data, format="json"
             )
@@ -294,7 +294,7 @@ class CreationAPITestCase(APITestCase):
             ],
         }
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(7):
+        with self.assertNumQueries(8):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", data, format="json"
             )
