@@ -39,15 +39,17 @@ class IssueTestCase(TestCase):
             )
 
         self.err_issue = Issue.objects.create(
-            path="some/file", line=12, level=LEVEL_ERROR
+            path="some/file", level=LEVEL_ERROR, hash="issue_err"
         )
         self.warn_issue = Issue.objects.create(
-            path="some/other/file", line=12, level=LEVEL_WARNING
+            path="some/other/file", level=LEVEL_WARNING, hash="issue_warn"
         )
 
-        self.revision.issue_links.create(issue=self.err_issue)
-        self.revision.issue_links.create(issue=self.warn_issue)
-        self.old_revision.issue_links.create(issue=self.warn_issue)
+        self.err_link = self.revision.issue_links.create(issue=self.err_issue, line=12)
+        self.warn_link = self.revision.issue_links.create(
+            issue=self.warn_issue, line=12
+        )
+        self.old_revision.issue_links.create(issue=self.warn_issue, line=12)
 
     def serialize_issue(self, issue):
         return {
@@ -55,31 +57,28 @@ class IssueTestCase(TestCase):
             "level": issue.level,
             "line": issue.line,
             "path": issue.path,
-            "publishable": issue.publishable,
             "analyzer": issue.analyzer,
             # Use default values
             "char": None,
             "check": None,
             "hash": "",
-            "in_patch": None,
             "message": None,
             "nb_lines": None,
-            "new_for_revision": None,
         }
 
     def test_publishable(self):
         # A warning is not publishable
-        self.assertFalse(self.warn_issue.publishable)
+        self.assertFalse(self.warn_link.publishable)
         # An error is publishable
-        self.assertTrue(self.err_issue.publishable)
+        self.assertTrue(self.err_link.publishable)
 
         # A warning in a patch is publishable
-        self.warn_issue.in_patch = True
-        self.assertTrue(self.warn_issue.publishable)
+        self.warn_link.in_patch = True
+        self.assertTrue(self.warn_link.publishable)
 
         # An error in a patch is publishable
-        self.err_issue.in_patch = True
-        self.assertTrue(self.err_issue.publishable)
+        self.err_link.in_patch = True
+        self.assertTrue(self.err_link.publishable)
 
     def test_list_repository_issues_wrong_values(self):
         """
@@ -91,7 +90,6 @@ class IssueTestCase(TestCase):
                 + "?date=2000-01-01T00:00:00Z&path=.&revision_changeset=whatisthat"
             )
             self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.maxDiff = None
         self.assertEqual(
             response.json(),
             {
@@ -118,8 +116,8 @@ class IssueTestCase(TestCase):
                 "next": None,
                 "previous": None,
                 "results": [
-                    {"id": str(self.err_issue.id), "hash": ""},
-                    {"id": str(self.warn_issue.id), "hash": ""},
+                    {"id": str(self.err_issue.id), "hash": "issue_err"},
+                    {"id": str(self.warn_issue.id), "hash": "issue_warn"},
                 ],
             },
         )
@@ -140,7 +138,7 @@ class IssueTestCase(TestCase):
         self.assertEqual(
             data["results"],
             [
-                {"id": str(self.warn_issue.id), "hash": ""},
+                {"id": str(self.warn_issue.id), "hash": "issue_warn"},
             ],
         )
 
@@ -160,7 +158,7 @@ class IssueTestCase(TestCase):
         self.assertEqual(
             data["results"],
             [
-                {"id": str(self.warn_issue.id), "hash": ""},
+                {"id": str(self.warn_issue.id), "hash": "issue_warn"},
             ],
         )
 
@@ -178,8 +176,8 @@ class IssueTestCase(TestCase):
                 "next": None,
                 "previous": None,
                 "results": [
-                    {"id": str(self.err_issue.id), "hash": ""},
-                    {"id": str(self.warn_issue.id), "hash": ""},
+                    {"id": str(self.err_issue.id), "hash": "issue_err"},
+                    {"id": str(self.warn_issue.id), "hash": "issue_warn"},
                 ],
             },
         )

@@ -71,31 +71,37 @@ class Command(BaseCommand):
         diff.issues.all().delete()
 
         # Build all issues for that diff, in a single DB call
-        created_issues = Issue.objects.bulk_create(
-            Issue(
-                path=i["path"],
-                line=i["line"],
-                nb_lines=i.get("nb_lines", 1),
-                char=i.get("char"),
-                level=i.get("level", "warning"),
-                analyzer_check=i.get("kind") or i.get("check"),
-                message=i.get("message"),
-                analyzer=i["analyzer"],
+        created_issues = [
+            Issue.objects.get_or_create(
                 hash=i["hash"],
-                new_for_revision=detect_new_for_revision(
-                    diff, path=i["path"], hash=i["hash"]
-                ),
+                defaults={
+                    "path": i["path"],
+                    "level": i.get("level", "warning"),
+                    "analyzer_check": i.get("kind") or i.get("check"),
+                    "message": i.get("message"),
+                    "analyzer": i["analyzer"],
+                },
             )
             for i in issues
             if i["hash"]
-        )
+        ]
+
         IssueLink.objects.bulk_create(
-            IssueLink(
-                issue=i,
-                diff=diff,
-                revision_id=diff.revision_id,
-            )
-            for i in created_issues
+            [
+                IssueLink(
+                    issue=issue_db,
+                    diff=diff,
+                    revision_id=diff.revision_id,
+                    new_for_revision=detect_new_for_revision(
+                        diff, path=issue_db.path, hash=issue_db.hash
+                    ),
+                    line=issue_src["line"],
+                    nb_lines=issue_src.get("nb_lines", 1),
+                    char=issue_src.get("char"),
+                )
+                for (issue_db, _), issue_src in zip(created_issues, issues)
+            ],
+            ignore_conflicts=True,
         )
         return created_issues
 

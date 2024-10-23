@@ -156,20 +156,38 @@ class IssueLink(models.Model):
         blank=True,
     )
 
+    # Is this issue new for this revision ?
+    # Can be null (not set by API) when a revision is not linked to a diff
+    new_for_revision = models.BooleanField(null=True)
+
+    # Is this issue present in the patch ?
+    # Can be null (not set by API) when a revision is not linked to a diff
+    in_patch = models.BooleanField(null=True)
+
+    # Issue position on the file
+    line = models.PositiveIntegerField(null=True)
+    nb_lines = models.PositiveIntegerField(null=True)
+    char = models.PositiveIntegerField(null=True)
+
     class Meta:
         constraints = [
             # Two constraints are required as Null values are not compared for unicity
             models.UniqueConstraint(
-                fields=["issue", "revision"],
+                fields=["issue", "revision", "line", "nb_lines", "char"],
                 name="issue_link_unique_revision",
                 condition=Q(diff__isnull=True),
             ),
             models.UniqueConstraint(
-                fields=["issue", "revision", "diff"],
+                fields=["issue", "revision", "diff", "line", "nb_lines", "char"],
                 name="issue_link_unique_diff",
                 condition=Q(diff__isnull=False),
             ),
         ]
+
+    @property
+    def publishable(self):
+        """Is that issue publishable on Phabricator to developers"""
+        return self.in_patch is True or self.issue.level == LEVEL_ERROR
 
 
 class Issue(models.Model):
@@ -190,24 +208,13 @@ class Issue(models.Model):
 
     # Raw issue data
     path = models.CharField(max_length=250)
-    line = models.PositiveIntegerField(null=True)
-    nb_lines = models.PositiveIntegerField(null=True)
-    char = models.PositiveIntegerField(null=True)
     level = models.CharField(max_length=20, choices=ISSUE_LEVELS)
     analyzer_check = models.CharField(max_length=250, null=True)
     message = models.TextField(null=True)
     analyzer = models.CharField(max_length=50)
 
     # Calculated hash identifying issue
-    hash = models.CharField(max_length=32)
-
-    # Is this issue new for this revision ?
-    # Can be null (not set by API) when a revision is not linked to a diff
-    new_for_revision = models.BooleanField(null=True)
-
-    # Is this issue present in the patch ?
-    # Can be null (not set by API) when a revision is not linked to a diff
-    in_patch = models.BooleanField(null=True)
+    hash = models.CharField(max_length=32, unique=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -215,8 +222,3 @@ class Issue(models.Model):
     class Meta:
         ordering = ("created",)
         indexes = (models.Index(fields=["path"]),)
-
-    @property
-    def publishable(self):
-        """Is that issue publishable on Phabricator to developers"""
-        return self.in_patch is True or self.level == LEVEL_ERROR

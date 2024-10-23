@@ -20,6 +20,7 @@ from code_review_backend.issues.models import (
     LEVEL_ERROR,
     Diff,
     Issue,
+    IssueLink,
     Repository,
     Revision,
 )
@@ -121,19 +122,31 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
             # Because of the perf. hit filter issues that are not older than today - 3 months.
             .filter(created__gte=date.today() - timedelta(days=90))
             .prefetch_related(
-                "issues",
+                Prefetch(
+                    "issue_links",
+                    queryset=IssueLink.objects.select_related("issue"),
+                ),
                 "revision",
                 "revision__base_repository",
                 "revision__head_repository",
                 "repository",
             )
-            .annotate(nb_issues=Count("issues"))
-            .annotate(nb_errors=Count("issues", filter=Q(issues__level="error")))
-            .annotate(nb_warnings=Count("issues", filter=Q(issues__level="warning")))
+            .annotate(nb_issues=Count("issue_links"))
+            .annotate(
+                nb_errors=Count(
+                    "issue_links", filter=Q(issue_links__issue__level=LEVEL_ERROR)
+                )
+            )
+            .annotate(
+                nb_warnings=Count(
+                    "issue_links", filter=Q(issue_links__issue__level="warning")
+                )
+            )
             .annotate(
                 nb_issues_publishable=Count(
-                    "issues",
-                    filter=Q(issues__in_patch=True) | Q(issues__level=LEVEL_ERROR),
+                    "issue_links",
+                    filter=Q(issue_links__in_patch=True)
+                    | Q(issue_links__issue__level=LEVEL_ERROR),
                 )
             )
             .order_by("-id")
@@ -190,9 +203,25 @@ class IssueViewSet(
         if not self.kwargs.get("diff_id"):
             return Issue.objects.none()
         diff = get_object_or_404(Diff, id=self.kwargs["diff_id"])
-        # No multiple revision should be linked to a single diff
-        # but we use the distinct clause to match the DB state.
-        return Issue.objects.filter(diffs=diff).distinct()
+        return (
+            Issue.objects.filter(issue_links__diff=diff)
+            .annotate(publishable=Q(issue_links__in_patch=True) & Q(level=LEVEL_ERROR))
+            .values(
+                "id",
+                "hash",
+                "analyzer",
+                "analyzer_check",
+                "path",
+                "issue_links__line",
+                "issue_links__nb_lines",
+                "issue_links__char",
+                "level",
+                "message",
+                "publishable",
+                "issue_links__in_patch",
+                "issue_links__new_for_revision",
+            )
+        )
 
 
 class IssueBulkCreate(generics.CreateAPIView):
@@ -212,7 +241,7 @@ class IssueBulkCreate(generics.CreateAPIView):
         return context
 
 
-class IssueCheckDetails(CachedView, generics.ListAPIView):
+class IssueCheckDetails(generics.ListAPIView):
     """
     List all the issues found by a specific analyzer check in a repository
     """
@@ -223,24 +252,27 @@ class IssueCheckDetails(CachedView, generics.ListAPIView):
         repo = self.kwargs["repository"]
 
         queryset = (
-            Issue.objects.filter(revisions__head_repository__slug=repo)
+            Issue.objects.filter(issue_links__revision__head_repository__slug=repo)
             .filter(analyzer=self.kwargs["analyzer"])
             .filter(analyzer_check=self.kwargs["check"])
+            .annotate(publishable=Q(issue_links__in_patch=True) & Q(level=LEVEL_ERROR))
             .prefetch_related(
-                "diffs__repository",
+                "issue_links__diff__repository",
                 Prefetch(
-                    "diffs__revision",
+                    "issue_links__diff__revision",
                     queryset=Revision.objects.select_related(
                         "base_repository", "head_repository"
                     ),
                 ),
             )
+            # List of diffs for each link of this issue
+            .prefetch_related("diffs")
             .order_by("-created")
         )
 
         # Display only publishable issues by default
         publishable = self.request.query_params.get("publishable", "true").lower()
-        _filter = Q(in_patch=True) | Q(level=LEVEL_ERROR)
+        _filter = Q(issue_links__in_patch=True) | Q(level=LEVEL_ERROR)
         if publishable == "true":
             queryset = queryset.filter(_filter)
         elif publishable == "false":
@@ -271,14 +303,22 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
     def get_queryset(self):
         queryset = (
             Issue.objects.values(
-                "revisions__head_repository__slug", "analyzer", "analyzer_check"
+                "issue_links__revision__head_repository__slug",
+                "analyzer",
+                "analyzer_check",
             )
             # We want to count distinct issues because they can be referenced on multiple diffs
             .annotate(total=Count("id", distinct=True))
             .annotate(
-                publishable=Count("id", filter=Q(in_patch=True) | Q(level=LEVEL_ERROR))
+                publishable=Count(
+                    "id", filter=Q(issue_links__in_patch=True) | Q(level=LEVEL_ERROR)
+                )
             )
-            .distinct("revisions__head_repository__slug", "analyzer", "analyzer_check")
+            .distinct(
+                "issue_links__revision__head_repository__slug",
+                "analyzer",
+                "analyzer_check",
+            )
         )
 
         # Filter issues by date
@@ -292,10 +332,21 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
             # Because of the perf. hit filter, issues that are not older than today - 3 months.
             since = date.today() - timedelta(days=90)
 
-        queryset = queryset.filter(revisions__created__gte=since).distinct()
+        queryset = queryset.filter(issue_links__revision__created__gte=since).distinct()
 
         return queryset.order_by(
-            "-total", "revisions__head_repository__slug", "analyzer", "analyzer_check"
+            "-total",
+            "issue_links__revision__head_repository__slug",
+            "analyzer",
+            "analyzer_check",
+        ).values(
+            "issue_links__revision__head_repository__slug",
+            "analyzer",
+            "analyzer_check",
+            "total",
+            "publishable",
+            "issue_links__in_patch",
+            "issue_links__new_for_revision",
         )
 
 

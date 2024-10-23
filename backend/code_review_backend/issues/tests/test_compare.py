@@ -47,19 +47,24 @@ class CompareAPITestCase(APITestCase):
             self.build_issue(1, i)
 
     def build_issue(self, diff_id, hash_id):
-        issue = Issue.objects.create(
-            path="path/to/file",
+        issue, _ = Issue.objects.get_or_create(
+            hash=self.build_hash(hash_id),
+            defaults={
+                "path": "path/to/file",
+                "level": "warning",
+                "message": None,
+                "analyzer": "analyzer-x",
+                "analyzer_check": "check-y",
+            },
+        )
+        # Link the issue to the specific diff
+        issue.issue_links.create(
+            diff_id=diff_id,
+            revision=self.revision,
             line=random.randint(1, 100),
             nb_lines=random.randint(1, 100),
             char=None,
-            level="warning",
-            message=None,
-            analyzer="analyzer-x",
-            analyzer_check="check-y",
-            hash=self.build_hash(hash_id),
         )
-        # Link the issue to the specific diff
-        issue.issue_links.create(diff_id=diff_id, revision=self.revision)
         return issue
 
     def build_hash(self, content):
