@@ -54,9 +54,6 @@ class StatsAPITestCase(APITestCase):
             [
                 Issue(
                     path="path/to/file",
-                    line=random.randint(1, 100),
-                    nb_lines=random.randint(1, 100),
-                    char=None,
                     level="warning",
                     message=None,
                     analyzer=analyzers[i % len(analyzers)],
@@ -70,6 +67,9 @@ class StatsAPITestCase(APITestCase):
             [
                 IssueLink(
                     issue=issue,
+                    line=random.randint(1, 100),
+                    nb_lines=random.randint(1, 100),
+                    char=None,
                     revision=revision,
                     diff_id=random.randint(1, 10),
                 )
@@ -82,9 +82,6 @@ class StatsAPITestCase(APITestCase):
             [
                 Issue(
                     path="path/to/file",
-                    line=random.randint(1, 100),
-                    nb_lines=random.randint(1, 100),
-                    char=None,
                     level="warning",
                     message=None,
                     analyzer=analyzers[i % len(analyzers)],
@@ -101,7 +98,6 @@ class StatsAPITestCase(APITestCase):
         """
         Check stats generation from the list of random issues
         """
-        self.maxDiff = None
         response = self.client.get("/v1/check/stats/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(
@@ -224,7 +220,6 @@ class StatsAPITestCase(APITestCase):
         """
         Check API endpoint to list issues in a check
         """
-        self.maxDiff = None
         response = self.client.get(
             "/v1/check/myrepo-try/analyzer-X/check-1/?publishable=all"
         )
@@ -242,7 +237,7 @@ class StatsAPITestCase(APITestCase):
             self.assertEqual(issue["level"], "warning")
             self.assertIsNone(issue["message"])
             self.assertIsNone(issue["in_patch"])
-            self.assertFalse(issue["publishable"])
+            self.assertEqual(issue["publishable"], 0)
             self.assertEqual(issue["path"], "path/to/file")
 
             # Diff
