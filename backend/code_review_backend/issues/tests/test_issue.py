@@ -38,9 +38,11 @@ class IssueTestCase(TestCase):
                 head_repository=self.repo,
             )
 
-        self.err_issue = Issue.objects.create(path="some/file", level=LEVEL_ERROR)
+        self.err_issue = Issue.objects.create(
+            path="some/file", level=LEVEL_ERROR, hash="issue_err"
+        )
         self.warn_issue = Issue.objects.create(
-            path="some/other/file", level=LEVEL_WARNING
+            path="some/other/file", level=LEVEL_WARNING, hash="issue_warn"
         )
 
         self.err_link = self.revision.issue_links.create(issue=self.err_issue, line=12)
@@ -114,8 +116,8 @@ class IssueTestCase(TestCase):
                 "next": None,
                 "previous": None,
                 "results": [
-                    {"id": str(self.err_issue.id), "hash": ""},
-                    {"id": str(self.warn_issue.id), "hash": ""},
+                    {"id": str(self.err_issue.id), "hash": "issue_err"},
+                    {"id": str(self.warn_issue.id), "hash": "issue_warn"},
                 ],
             },
         )
@@ -136,7 +138,7 @@ class IssueTestCase(TestCase):
         self.assertEqual(
             data["results"],
             [
-                {"id": str(self.warn_issue.id), "hash": ""},
+                {"id": str(self.warn_issue.id), "hash": "issue_warn"},
             ],
         )
 
@@ -156,7 +158,7 @@ class IssueTestCase(TestCase):
         self.assertEqual(
             data["results"],
             [
-                {"id": str(self.warn_issue.id), "hash": ""},
+                {"id": str(self.warn_issue.id), "hash": "issue_warn"},
             ],
         )
 
@@ -174,8 +176,8 @@ class IssueTestCase(TestCase):
                 "next": None,
                 "previous": None,
                 "results": [
-                    {"id": str(self.err_issue.id), "hash": ""},
-                    {"id": str(self.warn_issue.id), "hash": ""},
+                    {"id": str(self.err_issue.id), "hash": "issue_err"},
+                    {"id": str(self.warn_issue.id), "hash": "issue_warn"},
                 ],
             },
         )
