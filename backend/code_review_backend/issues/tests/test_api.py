@@ -334,3 +334,127 @@ class CreationAPITestCase(APITestCase):
         link = issue.issue_links.get()
         self.assertFalse(link.new_for_revision)
         self.assertEqual(link.line, 1)
+
+    def test_create_issue_bulk_alread_exists(self):
+        """
+        You cannot try to create the same issue twice through the bulk endpoint
+        """
+        payload_1 = {
+            "issues": [
+                {
+                    "hash": "somemd5hash",
+                    "line": 1,
+                    "analyzer": "remote-flake8",
+                    "level": "error",
+                    "path": "path/to/file.py",
+                    "in_patch": True,
+                    "new_for_revision": False,
+                },
+                {
+                    "hash": "anothermd5hash",
+                    "line": 2,
+                    "analyzer": "test",
+                    "level": "warning",
+                    "path": "path/to/file.py",
+                    "in_patch": False,
+                },
+            ]
+        }
+
+        payload_2 = {
+            "issues": [
+                {
+                    "hash": "somemd5hash",
+                    "line": 1,
+                    "analyzer": "remote-flake8",
+                    "level": "error",
+                    "path": "path/to/file.py",
+                    "in_patch": True,
+                    "new_for_revision": False,
+                },
+            ]
+        }
+
+        self.assertEqual(Issue.objects.count(), 0)
+        self.client.force_authenticate(user=self.user)
+        with self.assertNumQueries(8):
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", payload_1, format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        issues = list(Issue.objects.order_by("created"))
+        self.assertEqual(len(issues), 2)
+
+        with self.assertNumQueries(2):
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", payload_2, format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+            self.assertDictEqual(
+                response.json(),
+                {"issues": [{"hash": ["issue with this hash already exists."]}]},
+            )
+
+    def test_create_issue_bulk_duplicate(self):
+        """
+        If the same issue is sent twice in the payload, it is deduplicated with no error
+        """
+        payload = {
+            "issues": [
+                {
+                    "hash": "somemd5hash",
+                    "line": 1,
+                    "analyzer": "remote-flake8",
+                    "level": "error",
+                    "path": "path/to/file.py",
+                    "in_patch": True,
+                    "new_for_revision": False,
+                },
+                {
+                    "hash": "somemd5hash",
+                    "line": 1,
+                    "analyzer": "remote-flake8",
+                    "level": "error",
+                    "path": "path/to/file.py",
+                    "in_patch": True,
+                    "new_for_revision": False,
+                },
+            ]
+        }
+
+        self.assertEqual(Issue.objects.count(), 0)
+        self.client.force_authenticate(user=self.user)
+        with self.assertNumQueries(8):
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", payload, format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        issues = list(Issue.objects.order_by("created"))
+        self.assertEqual(len(issues), 1)
+
+        issue_data = response.json()
+        self.assertDictEqual(
+            issue_data,
+            {
+                "diff_id": None,
+                "issues": [
+                    {
+                        "analyzer": "remote-flake8",
+                        "char": None,
+                        "check": None,
+                        "hash": "somemd5hash",
+                        "id": str(issues[0].id),
+                        "in_patch": True,
+                        "level": "error",
+                        "line": 1,
+                        "message": None,
+                        "nb_lines": None,
+                        "new_for_revision": False,
+                        "path": "path/to/file.py",
+                        "publishable": True,
+                    },
+                ],
+            },
+        )
