@@ -1,0 +1,19 @@
+---
+name: Build backend Docker image
+
+on:
+  push:
+    branches: ["master"]
+  pull_request:
+    branches: ["master"]
+
+jobs:
+  build_backend_docker:
+    name: Build backend Docker image
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: docker build . --file backend/Dockerfile
