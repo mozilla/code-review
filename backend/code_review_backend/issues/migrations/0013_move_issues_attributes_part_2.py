@@ -24,36 +24,10 @@ def move_attributes(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("issues", "0011_indexes_revision_issue_path"),
+        ("issues", "0012_move_issues_attributes_part_1"),
     ]
 
     operations = [
-        # Create new fields on IssueLink
-        migrations.AddField(
-            model_name="issuelink",
-            name="in_patch",
-            field=models.BooleanField(null=True),
-        ),
-        migrations.AddField(
-            model_name="issuelink",
-            name="new_for_revision",
-            field=models.BooleanField(null=True),
-        ),
-        migrations.AddField(
-            model_name="issuelink",
-            name="char",
-            field=models.PositiveIntegerField(null=True),
-        ),
-        migrations.AddField(
-            model_name="issuelink",
-            name="line",
-            field=models.PositiveIntegerField(null=True),
-        ),
-        migrations.AddField(
-            model_name="issuelink",
-            name="nb_lines",
-            field=models.PositiveIntegerField(null=True),
-        ),
         # Move all their values
         migrations.RunPython(move_attributes),
         # Remove old fields from Issue
