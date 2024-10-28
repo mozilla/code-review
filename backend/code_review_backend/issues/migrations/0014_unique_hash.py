@@ -53,7 +53,7 @@ class Migration(migrations.Migration):
     atomic = False
 
     dependencies = [
-        ("issues", "0012_move_issues_attributes"),
+        ("issues", "0013_move_issues_attributes_part_2"),
     ]
 
     operations = [
