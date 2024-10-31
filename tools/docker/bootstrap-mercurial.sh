@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 MERCURIAL_VERSION="6.8.2"
-VERSION_CONTROL_TOOLS_REV="a4093f94564cf1798f831ce1fed946c5a600bab1"
+VERSION_CONTROL_TOOLS_REV="5e36b6028416b2fbefcbee2bb9960c8cacb18caa"
 
 apt-get update
 apt-get install --no-install-recommends -y curl python-dev-is-python3 gcc openssh-client libjemalloc2
