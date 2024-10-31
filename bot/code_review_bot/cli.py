@@ -125,7 +125,9 @@ def main():
 
     # Load Phabricator API
     phabricator = taskcluster.secrets["PHABRICATOR"]
-    phabricator_reporting_enabled = "phabricator" in reporters
+    phabricator_reporting_enabled = "phabricator" in reporters and phabricator.get(
+        "publish", False
+    )
     phabricator_api = PhabricatorAPI(phabricator["api_key"], phabricator["url"])
     if phabricator_reporting_enabled:
         reporters["phabricator"].setup_api(phabricator_api)
@@ -218,9 +220,10 @@ def main():
             duration=0,
         )
 
-        w.phabricator.update_build_target(
-            revision.build_target_phid, BuildState.Fail, unit=[failure]
-        )
+        if phabricator_reporting_enabled:
+            w.phabricator.update_build_target(
+                revision.build_target_phid, BuildState.Fail, unit=[failure]
+            )
 
         # Also update lando
         if not hasattr(revision, "id") or not hasattr(revision, "diff"):
