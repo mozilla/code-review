@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from django.db import transaction
+from django.db.models import Q
 from rest_framework import serializers
 
 from code_review_backend.issues.models import (
@@ -265,39 +266,54 @@ class IssueBulkSerializer(serializers.Serializer):
             }
             for issue in validated_data["issues"]
         }
-        # Create issues that do not exist yet, one by one to reuse ones with a known hash
-        issues = []
-        for values in validated_data["issues"]:
-            issue, _ = Issue.objects.get_or_create(
-                hash=values.pop("hash"), defaults=values
+        # Only create issues that do not exist yet
+        issues = Issue.objects.bulk_create(
+            [Issue(**values) for values in validated_data["issues"]],
+            ignore_conflicts=True,
+        )
+        # List issues again to ensure ID are synced for creating links
+        issues = (
+            Issue.objects.values("issue_links")
+            .filter(hash__in=[issue.hash for issue in issues])
+            # Needed for re-serialization
+            .annotate(publishable=Q(issue_links__in_patch=True) & Q(level=LEVEL_ERROR))
+            .values(
+                "id",
+                "hash",
+                "analyzer",
+                "analyzer_check",
+                "path",
+                "level",
+                "message",
+                "publishable",
             )
-            issues.append(issue)
+        )
         IssueLink.objects.bulk_create(
             [
                 IssueLink(
-                    issue_id=issue.id,
+                    issue_id=issue["id"],
                     diff=diff,
                     revision=self.context["revision"],
-                    new_for_revision=link_attrs[issue.hash]["new_for_revision"],
-                    in_patch=link_attrs[issue.hash]["in_patch"],
-                    line=link_attrs[issue.hash]["line"],
-                    nb_lines=link_attrs[issue.hash]["nb_lines"],
-                    char=link_attrs[issue.hash]["char"],
+                    new_for_revision=link_attrs[issue["hash"]]["new_for_revision"],
+                    in_patch=link_attrs[issue["hash"]]["in_patch"],
+                    line=link_attrs[issue["hash"]]["line"],
+                    nb_lines=link_attrs[issue["hash"]]["nb_lines"],
+                    char=link_attrs[issue["hash"]]["char"],
                 )
                 for issue in issues
             ]
         )
         # Override attributes that would be fetched after links creation
         for issue in issues:
-            issue.issue_links__new_for_revision = link_attrs[issue.hash].get(
+            issue["issue_links__new_for_revision"] = link_attrs[issue["hash"]].get(
                 "new_for_revision"
             )
-            issue.issue_links__in_patch = link_attrs[issue.hash].get("in_patch")
-            issue.issue_links__line = link_attrs[issue.hash].get("line")
-            issue.issue_links__nb_lines = link_attrs[issue.hash].get("nb_lines")
-            issue.issue_links__char = link_attrs[issue.hash].get("char")
-            issue.publishable = (
-                issue.issue_links__in_patch and issue.level == LEVEL_ERROR
+            issue["issue_links__in_patch"] = link_attrs[issue["hash"]].get("in_patch")
+            issue["issue_links__line"] = link_attrs[issue["hash"]].get("line")
+            issue["issue_links__nb_lines"] = link_attrs[issue["hash"]].get("nb_lines")
+            issue["issue_links__char"] = link_attrs[issue["hash"]].get("char")
+            issue["publishable"] = (
+                issue["issue_links__in_patch"] and issue["level"] == LEVEL_ERROR
             )
 
         return {
