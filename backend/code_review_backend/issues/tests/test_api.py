@@ -372,12 +372,21 @@ class CreationAPITestCase(APITestCase):
                     "in_patch": True,
                     "new_for_revision": False,
                 },
+                {
+                    "hash": "athirdmd5hash",
+                    "line": 3,
+                    "analyzer": "remote-flake8",
+                    "level": "error",
+                    "path": "path/to/file.py",
+                    "in_patch": True,
+                    "new_for_revision": True,
+                },
             ]
         }
 
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload_1, format="json"
             )
@@ -386,15 +395,18 @@ class CreationAPITestCase(APITestCase):
         issues = list(Issue.objects.order_by("created"))
         self.assertEqual(len(issues), 2)
 
-        with self.assertNumQueries(2):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload_2, format="json"
             )
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-            self.assertDictEqual(
-                response.json(),
-                {"issues": [{"hash": ["issue with this hash already exists."]}]},
-            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertCountEqual(
+            [issue["hash"] for issue in response.json()["issues"]],
+            ["somemd5hash", "athirdmd5hash"],
+        )
+        new_issues = list(Issue.objects.order_by("created"))
+        self.assertEqual(len(new_issues), 3)
+        self.assertListEqual([i.id for i in issues], [i.id for i in new_issues[:2]])
 
     def test_create_issue_bulk_duplicate(self):
         """
