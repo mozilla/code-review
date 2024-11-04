@@ -231,6 +231,11 @@ class IssueHashSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "hash")
 
 
+class SingleIssueBulkSerializer(IssueSerializer):
+    # Make hash non unique to avoid validation checks
+    hash = serializers.CharField(max_length=32)
+
+
 class IssueBulkSerializer(serializers.Serializer):
     diff_id = serializers.PrimaryKeyRelatedField(
         # Initialized depending on the revision used for the creation
@@ -239,7 +244,7 @@ class IssueBulkSerializer(serializers.Serializer):
         required=False,
         allow_null=True,
     )
-    issues = IssueSerializer(many=True)
+    issues = SingleIssueBulkSerializer(many=True)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
