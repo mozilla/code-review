@@ -5,7 +5,7 @@ idna>=2.5,<3.11
 libmozdata==0.2.9
 multidict==6.1.0
 rs_parsepatch==0.4.4
-sentry-sdk==2.17.0
+sentry-sdk==2.18.0
 structlog==24.4.0
 taskcluster==74.0.0
 treeherder-client==5.0.0
