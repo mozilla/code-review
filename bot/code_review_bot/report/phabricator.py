@@ -124,6 +124,11 @@ class PhabricatorReporter(Reporter):
             )
             return [], []
 
+        # If this is the first diff, there's no need to compare issues with a
+        # previous diff since there is no previous diff.
+        if former_diff_id is None:
+            return [], []
+
         # Retrieve issues related to the previous diff
         try:
             previous_issues = self.backend_api.list_diff_issues(former_diff_id)
