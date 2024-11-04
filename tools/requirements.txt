@@ -1,5 +1,4 @@
 aiohttp==3.10.10
-async-timeout==4.0.3
 
 # Limit idna to avid conflicts
 idna>=2.5,<3.11
