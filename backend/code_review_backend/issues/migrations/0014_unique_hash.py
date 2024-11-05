@@ -61,6 +61,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name="issue",
             name="hash",
-            field=models.CharField(max_length=250, unique=True),
+            field=models.CharField(max_length=32, unique=True),
         ),
     ]

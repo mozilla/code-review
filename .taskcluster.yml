@@ -202,7 +202,7 @@ tasks:
                   - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
                     cd /src/tools && ${pip_install} . &&
                     cd /src/backend && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
-                    ./manage.py test"
+                    ./manage.py test && ./manage.py makemigrations --check --noinput --dry-run -v 3"
               metadata:
                 name: "Code Review Backend checks: unit tests"
                 description: Check python code with Django tests
