@@ -25,6 +25,8 @@ def move_attributes(apps, schema_editor):
         .order_by("id")
         .distinct("id")
     )
+    # Avoid overriding django line for the migration
+    print()
     for issue in tqdm(
         remaining_issues.iterator(),
         initial=total_count - remaining_issues.count(),
@@ -44,6 +46,8 @@ def restore_attributes(apps, schema_editor):
         .filter(issue__in_patch__isnull=True, issue__new_for_revision__isnull=True)
         .distinct("issue")
     )
+    # Avoid overriding django line for the migration
+    print()
     for issue_link in tqdm(
         qs.iterator(), initial=total_count - qs.count(), total=total_count
     ):

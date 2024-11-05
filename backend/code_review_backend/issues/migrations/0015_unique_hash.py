@@ -19,6 +19,8 @@ def deduplicate_issues_v1(apps, schema_editor):
         .order_by("-nb")
     )
 
+    # Avoid overriding django line for the migration
+    print()
     for hash, nb in tqdm.tqdm(issues.iterator(), total=issues.count()):
         # There is a unique constraint on IssueLink issue + revision + diff
         # so we need to keep only one link per group
