@@ -1,4 +1,4 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
+# this source code form is subject to the terms of the mozilla public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
@@ -6,7 +6,13 @@ from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from code_review_backend.issues.models import Diff, Issue, Repository, Revision
+from code_review_backend.issues.models import (
+    Diff,
+    Issue,
+    IssueLink,
+    Repository,
+    Revision,
+)
 
 
 class CreationAPITestCase(APITestCase):
@@ -413,7 +419,8 @@ class CreationAPITestCase(APITestCase):
         )
 
         # Calling again with the same payload should give the same result
-        with self.assertNumQueries(6):
+        # 1 less request is fired to the DB because no IssueLink is created
+        with self.assertNumQueries(5):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload_2, format="json"
             )
@@ -422,12 +429,28 @@ class CreationAPITestCase(APITestCase):
             [issue["hash"] for issue in response.json()["issues"]],
             ["somemd5hash", "athirdmd5hash"],
         )
+        self.assertListEqual(
+            list(
+                IssueLink.objects.order_by("issue__created").values_list(
+                    "issue__hash", flat=True
+                )
+            ),
+            ["somemd5hash", "anothermd5hash", "athirdmd5hash"],
+        )
 
         # And we still have the same issues in DB
         new_issues = list(
             Issue.objects.order_by("created").values_list("hash", flat=True)
         )
         self.assertEqual(new_issues, ["somemd5hash", "anothermd5hash", "athirdmd5hash"])
+        self.assertListEqual(
+            list(
+                IssueLink.objects.order_by("issue__created").values_list(
+                    "issue__hash", flat=True
+                )
+            ),
+            ["somemd5hash", "anothermd5hash", "athirdmd5hash"],
+        )
 
     def test_create_issue_bulk_duplicate(self):
         """
