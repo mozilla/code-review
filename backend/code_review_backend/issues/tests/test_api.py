@@ -412,6 +412,23 @@ class CreationAPITestCase(APITestCase):
             ["somemd5hash", "anothermd5hash", "athirdmd5hash"],
         )
 
+        # Calling again with the same payload should give the same result
+        with self.assertNumQueries(6):
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", payload_2, format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertCountEqual(
+            [issue["hash"] for issue in response.json()["issues"]],
+            ["somemd5hash", "athirdmd5hash"],
+        )
+
+        # And we still have the same issues in DB
+        new_issues = list(
+            Issue.objects.order_by("created").values_list("hash", flat=True)
+        )
+        self.assertEqual(new_issues, ["somemd5hash", "anothermd5hash", "athirdmd5hash"])
+
     def test_create_issue_bulk_duplicate(self):
         """
         If the same issue is sent twice in the payload, it is deduplicated with no error
