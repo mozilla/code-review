@@ -44,6 +44,7 @@ def restore_attributes(apps, schema_editor):
     qs = (
         IssueLink.objects.select_related("issue")
         .filter(issue__in_patch__isnull=True, issue__new_for_revision__isnull=True)
+        .exclude(in_patch__isnull=True, new_for_revision__isnull=True)
         .distinct("issue")
     )
     # Avoid overriding django line for the migration
