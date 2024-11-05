@@ -213,7 +213,7 @@ class CreationAPITestCase(APITestCase):
         # Once authenticated, creation will work
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", data, format="json"
             )
@@ -294,7 +294,7 @@ class CreationAPITestCase(APITestCase):
             ],
         }
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(7):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", data, format="json"
             )
@@ -407,6 +407,10 @@ class CreationAPITestCase(APITestCase):
         new_issues = list(Issue.objects.order_by("created"))
         self.assertEqual(len(new_issues), 3)
         self.assertListEqual([i.id for i in issues], [i.id for i in new_issues[:2]])
+        self.assertListEqual(
+            [i.hash for i in new_issues],
+            ["somemd5hash", "anothermd5hash", "athirdmd5hash"],
+        )
 
     def test_create_issue_bulk_duplicate(self):
         """
@@ -437,7 +441,7 @@ class CreationAPITestCase(APITestCase):
 
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload, format="json"
             )
