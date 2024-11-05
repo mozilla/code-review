@@ -57,7 +57,10 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RunPython(deduplicate_issues_v1),
+        migrations.RunPython(
+            deduplicate_issues_v1,
+            reverse_code=migrations.RunPython.noop,
+        ),
         migrations.AlterField(
             model_name="issue",
             name="hash",
