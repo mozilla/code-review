@@ -11,23 +11,27 @@ def move_attributes(apps, schema_editor):
     """
     Issue = apps.get_model("issues", "Issue")
 
-    issues = (
-        Issue.objects.prefetch_related("issue_links")
+    total_count = Issue.objects.count()
+    remaining_issues = (
+        Issue.objects.filter(
+            issue_links__in_patch__isnull=True,
+            issue_links__new_for_revision__isnull=True,
+        )
         # Skip what does not need to be updated
-        .exclude(in_patch__isnull=True, new_for_revision__isnull=True)
+        .exclude(
+            in_patch__isnull=True,
+            new_for_revision__isnull=True,
+        )
+        .order_by("id")
+        .distinct("id")
     )
     # Avoid overriding django line for the migration
     print()
     for issue in tqdm(
-        issues.iterator(chunk_size=100),
-        total=issues.count(),
+        remaining_issues.iterator(),
+        initial=total_count - remaining_issues.count(),
+        total=total_count,
     ):
-        if all(
-            i.in_patch == issue.in_patch
-            and i.new_for_revision == issue.new_for_revision
-            for i in issue.issue_links.all()
-        ):
-            continue
         issue.issue_links.update(
             in_patch=issue.in_patch, new_for_revision=issue.new_for_revision
         )
