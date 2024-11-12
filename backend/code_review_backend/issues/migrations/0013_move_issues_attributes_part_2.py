@@ -12,14 +12,11 @@ def move_attributes(apps, schema_editor):
     IssueLink = apps.get_model("issues", "IssueLink")
     Issue = apps.get_model("issues", "Issue")
 
-    IssueLink.objects.update(
-        in_patch=Subquery(
-            Issue.objects.filter(id=OuterRef("issue_id")).values("in_patch")[:1]
-        ),
-        new_for_revision=Subquery(
-            Issue.objects.filter(id=OuterRef("issue_id")).values("new_for_revision")[:1]
-        ),
-    )
+    fields = {
+        field: Subquery(Issue.objects.filter(id=OuterRef("issue_id")).values(field)[:1])
+        for field in ["in_patch", "new_for_revision", "char", "line", "nb_lines"]
+    }
+    IssueLink.objects.update(**fields)
 
 
 class Migration(migrations.Migration):
