@@ -1,4 +1,4 @@
-# This Source Code Form is subject to the terms of the Mozilla Public
+# this source code form is subject to the terms of the mozilla public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
@@ -6,7 +6,13 @@ from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from code_review_backend.issues.models import Diff, Issue, Repository, Revision
+from code_review_backend.issues.models import (
+    Diff,
+    Issue,
+    IssueLink,
+    Repository,
+    Revision,
+)
 
 
 class CreationAPITestCase(APITestCase):
@@ -213,7 +219,7 @@ class CreationAPITestCase(APITestCase):
         # Once authenticated, creation will work
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", data, format="json"
             )
@@ -294,7 +300,7 @@ class CreationAPITestCase(APITestCase):
             ],
         }
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(7):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", data, format="json"
             )
@@ -372,12 +378,21 @@ class CreationAPITestCase(APITestCase):
                     "in_patch": True,
                     "new_for_revision": False,
                 },
+                {
+                    "hash": "athirdmd5hash",
+                    "line": 3,
+                    "analyzer": "remote-flake8",
+                    "level": "error",
+                    "path": "path/to/file.py",
+                    "in_patch": True,
+                    "new_for_revision": True,
+                },
             ]
         }
 
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload_1, format="json"
             )
@@ -386,15 +401,56 @@ class CreationAPITestCase(APITestCase):
         issues = list(Issue.objects.order_by("created"))
         self.assertEqual(len(issues), 2)
 
-        with self.assertNumQueries(2):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload_2, format="json"
             )
-            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-            self.assertDictEqual(
-                response.json(),
-                {"issues": [{"hash": ["issue with this hash already exists."]}]},
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertCountEqual(
+            [issue["hash"] for issue in response.json()["issues"]],
+            ["somemd5hash", "athirdmd5hash"],
+        )
+        new_issues = list(Issue.objects.order_by("created"))
+        self.assertEqual(len(new_issues), 3)
+        self.assertListEqual([i.id for i in issues], [i.id for i in new_issues[:2]])
+        self.assertListEqual(
+            [i.hash for i in new_issues],
+            ["somemd5hash", "anothermd5hash", "athirdmd5hash"],
+        )
+
+        # Calling again with the same payload should give the same result
+        # 1 less request is fired to the DB because no IssueLink is created
+        with self.assertNumQueries(5):
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", payload_2, format="json"
             )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertCountEqual(
+            [issue["hash"] for issue in response.json()["issues"]],
+            ["somemd5hash", "athirdmd5hash"],
+        )
+        self.assertListEqual(
+            list(
+                IssueLink.objects.order_by("issue__created").values_list(
+                    "issue__hash", flat=True
+                )
+            ),
+            ["somemd5hash", "anothermd5hash", "athirdmd5hash"],
+        )
+
+        # And we still have the same issues in DB
+        new_issues = list(
+            Issue.objects.order_by("created").values_list("hash", flat=True)
+        )
+        self.assertEqual(new_issues, ["somemd5hash", "anothermd5hash", "athirdmd5hash"])
+        self.assertListEqual(
+            list(
+                IssueLink.objects.order_by("issue__created").values_list(
+                    "issue__hash", flat=True
+                )
+            ),
+            ["somemd5hash", "anothermd5hash", "athirdmd5hash"],
+        )
 
     def test_create_issue_bulk_duplicate(self):
         """
@@ -425,7 +481,7 @@ class CreationAPITestCase(APITestCase):
 
         self.assertEqual(Issue.objects.count(), 0)
         self.client.force_authenticate(user=self.user)
-        with self.assertNumQueries(8):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload, format="json"
             )
