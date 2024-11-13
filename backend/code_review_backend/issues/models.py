@@ -221,4 +221,7 @@ class Issue(models.Model):
 
     class Meta:
         ordering = ("created",)
-        indexes = (models.Index(fields=["path"]),)
+        indexes = (
+            models.Index(fields=["hash"], name="issue_hash_idx"),
+            models.Index(fields=["path"]),
+        )
