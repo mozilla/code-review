@@ -443,6 +443,7 @@ class Workflow:
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
+                    task_issues, task_patches = [], []
                     if isinstance(task, AnalysisTask):
                         task_issues = task.parse_issues(artifacts, revision)
                         logger.info(
