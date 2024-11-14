@@ -274,7 +274,7 @@ class IssueBulkSerializer(serializers.Serializer):
             ignore_conflicts=True,
         )
         # List issues again to ensure ID are synced for creating links
-        issues_with_links = (
+        issues_with_links = list(
             Issue.objects.values("issue_links")
             .filter(
                 hash__in=[issue.hash for issue in issues],
@@ -298,6 +298,7 @@ class IssueBulkSerializer(serializers.Serializer):
                 "issue_links__nb_lines",
                 "issue_links__char",
             )
+            .iterator()
         )
         # Group existing links by issue
         grouped_issues = [
