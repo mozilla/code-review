@@ -276,7 +276,11 @@ class IssueBulkSerializer(serializers.Serializer):
         # List issues again to ensure ID are synced for creating links
         issues_with_links = (
             Issue.objects.values("issue_links")
-            .filter(hash__in=[issue.hash for issue in issues])
+            .filter(
+                hash__in=[issue.hash for issue in issues],
+                issue_links__diff_id=(diff and diff.id),
+                issue_links__revision_id=self.context["revision"].id,
+            )
             # Needed for re-serialization
             .annotate(publishable=Q(issue_links__in_patch=True) & Q(level=LEVEL_ERROR))
             .values(
