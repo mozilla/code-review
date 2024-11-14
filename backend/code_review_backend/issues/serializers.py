@@ -277,9 +277,16 @@ class IssueBulkSerializer(serializers.Serializer):
         issues_with_links = list(
             Issue.objects.values("issue_links")
             .filter(
+                Q(
+                    # Issue is new for this diff/revision
+                    issue_links__isnull=True,
+                )
+                | Q(
+                    # Issue exists for this diff/revision
+                    issue_links__diff=diff,
+                    issue_links__revision=self.context["revision"],
+                ),
                 hash__in=[issue.hash for issue in issues],
-                issue_links__diff_id=(diff and diff.id),
-                issue_links__revision_id=self.context["revision"].id,
             )
             # Needed for re-serialization
             .annotate(publishable=Q(issue_links__in_patch=True) & Q(level=LEVEL_ERROR))
