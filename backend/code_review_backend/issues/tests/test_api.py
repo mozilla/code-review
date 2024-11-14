@@ -419,7 +419,6 @@ class CreationAPITestCase(APITestCase):
         )
 
         # Calling again with the same payload should give the same result
-        # 1 less request is fired to the DB because no IssueLink is created
         with self.assertNumQueries(5):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload_2, format="json"
