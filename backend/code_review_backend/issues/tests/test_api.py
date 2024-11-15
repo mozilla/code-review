@@ -397,6 +397,10 @@ class CreationAPITestCase(APITestCase):
                 f"/v1/revision/{self.revision.id}/issues/", payload_1, format="json"
             )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertCountEqual(
+            [issue["hash"] for issue in response.json()["issues"]],
+            ["somemd5hash", "anothermd5hash"],
+        )
 
         issues = list(Issue.objects.order_by("created"))
         self.assertEqual(len(issues), 2)
@@ -490,11 +494,14 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(len(issues), 1)
 
         issue_data = response.json()
+        self.maxDiff = None
         self.assertDictEqual(
             issue_data,
             {
                 "diff_id": None,
-                "issues": [
+                # The same issue link is returned twice in the resulting payload
+                "issues": 2
+                * [
                     {
                         "analyzer": "remote-flake8",
                         "char": None,
@@ -512,4 +519,73 @@ class CreationAPITestCase(APITestCase):
                     },
                 ],
             },
+        )
+
+    def test_create_issue_bulk_multiple_issue_reference(self):
+        """
+        The same issue can be referred multiple times (e.g. different line, new_for_revision, in_patch, char…)
+        """
+        base_issue = {
+            "hash": "somemd5hash",
+            "line": 1,
+            "nb_lines": 2,
+            "analyzer": "remote-flake8",
+            "level": "error",
+            "path": "path/to/file.py",
+            "in_patch": False,
+            "new_for_revision": False,
+        }
+        payload = {
+            "issues": [
+                base_issue,
+                {**base_issue, "line": 2},
+                {**base_issue, "nb_lines": 3},
+                {**base_issue, "in_patch": True},
+                {**base_issue, "new_for_revision": True},
+            ]
+        }
+
+        self.assertEqual(Issue.objects.count(), 0)
+        self.client.force_authenticate(user=self.user)
+        with self.assertNumQueries(6):
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", payload, format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        self.assertEqual(Issue.objects.count(), 1)
+        self.assertEqual(IssueLink.objects.count(), 5)
+        self.assertCountEqual(
+            list(
+                IssueLink.objects.values_list(
+                    "line", "nb_lines", "in_patch", "new_for_revision"
+                )
+            ),
+            [
+                (1, 2, False, False),
+                (2, 2, False, False),
+                (1, 3, False, False),
+                (1, 2, True, False),
+                (1, 2, False, True),
+            ],
+        )
+
+        self.assertListEqual(
+            [
+                (
+                    d["hash"],
+                    d["line"],
+                    d["nb_lines"],
+                    d["in_patch"],
+                    d["new_for_revision"],
+                )
+                for d in response.json()["issues"]
+            ],
+            [
+                ("somemd5hash", 1, 2, False, False),
+                ("somemd5hash", 2, 2, False, False),
+                ("somemd5hash", 1, 3, False, False),
+                ("somemd5hash", 1, 2, True, False),
+                ("somemd5hash", 1, 2, False, True),
+            ],
         )
