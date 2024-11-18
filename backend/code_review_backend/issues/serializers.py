@@ -24,7 +24,7 @@ class RepositorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Repository
-        fields = ("id", "phid", "slug", "url")
+        fields = ("id", "slug", "url")
 
 
 class RevisionSerializer(serializers.ModelSerializer):

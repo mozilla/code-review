@@ -19,7 +19,7 @@ class CompareAPITestCase(APITestCase):
 
         # Create a repo & its try counterpart
         self.repo = Repository.objects.create(
-            id=1, phid="PHID-REPO-xxx", slug="myrepo", url="http://repo.test/myrepo"
+            id=1, slug="myrepo", url="http://repo.test/myrepo"
         )
         self.repo_try = Repository.objects.create(
             id=2, slug="myrepo-try", url="http://repo.test/try"

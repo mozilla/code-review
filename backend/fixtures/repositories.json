@@ -5,7 +5,6 @@
         "fields": {
             "created": "2019-10-17T07:17:06.396Z",
             "updated": "2019-10-17T07:17:06.396Z",
-            "phid": "PHID-REPO-saax4qdxlbbhahhp2kg5",
             "slug": "mozilla-central",
             "url": "https://hg.mozilla.org/mozilla-central"
         }
@@ -16,7 +15,6 @@
         "fields": {
             "created": "2019-10-17T07:17:32.970Z",
             "updated": "2019-10-17T07:17:32.970Z",
-            "phid": "PHID-REPO-3lrloqw4qf6fluy2a5ni",
             "slug": "nss",
             "url": "https://hg.mozilla.org/projects/nss"
         }
@@ -27,7 +25,6 @@
         "fields": {
             "created": "2019-11-27T10:42:35.034Z",
             "updated": "2019-11-27T10:42:35.034Z",
-            "phid": null,
             "slug": "try",
             "url": "https://hg.mozilla.org/try"
         }
@@ -38,7 +35,6 @@
         "fields": {
             "created": "2019-11-27T10:42:35.035Z",
             "updated": "2019-11-27T10:42:35.035Z",
-            "phid": null,
             "slug": "nss-try",
             "url": "https://hg.mozilla.org/projects/nss-try"
         }
@@ -49,7 +45,6 @@
         "fields": {
             "created": "2019-12-02T16:01:23.231Z",
             "updated": "2019-12-02T16:01:23.231Z",
-            "phid": null,
             "slug": "autoland",
             "url": "https://hg.mozilla.org/integration/autoland"
         }
