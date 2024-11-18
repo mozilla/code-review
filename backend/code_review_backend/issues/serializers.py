@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
+from urllib.parse import urlparse
 
 from django.db import transaction
 from rest_framework import serializers
@@ -27,17 +28,42 @@ class RepositorySerializer(serializers.ModelSerializer):
         fields = ("id", "slug", "url")
 
 
+class RepositoryGetOrCreateField(serializers.SlugRelatedField):
+    help_text = "Get or create a repository. URL must match "
+    default_error_messages = {
+        **serializers.SlugRelatedField.default_error_messages,
+        "invalid_url": "Repository URL must match hg.mozilla.org.",
+    }
+    queryset = Repository.objects.all()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs, slug_field="url")
+
+    def to_internal_value(self, url):
+        parsed = urlparse(url)
+        if parsed.netloc != "hg.mozilla.org":
+            try:
+                return self.get_queryset().get(url=url)
+            except Repository.DoesNotExist:
+                self.fail("invalid_url")
+            except (TypeError, ValueError):
+                self.fail("invalid")
+        try:
+            repo, _ = self.get_queryset().get_or_create(
+                url=url, defaults={"slug": parsed.path}
+            )
+            return repo
+        except (TypeError, ValueError):
+            self.fail("invalid")
+
+
 class RevisionSerializer(serializers.ModelSerializer):
     """
     Serialize a Revision in a Repository
     """
 
-    base_repository = serializers.SlugRelatedField(
-        queryset=Repository.objects.all(), slug_field="url"
-    )
-    head_repository = serializers.SlugRelatedField(
-        queryset=Repository.objects.all(), slug_field="url"
-    )
+    base_repository = RepositoryGetOrCreateField()
+    head_repository = RepositoryGetOrCreateField()
     diffs_url = serializers.HyperlinkedIdentityField(
         view_name="revision-diffs-list", lookup_url_kwarg="revision_id"
     )
@@ -69,18 +95,19 @@ class RevisionSerializer(serializers.ModelSerializer):
             "phabricator_url",
         )
 
+    @transaction.atomic
+    def create(self, validated_data):
+        # Create BASE and HEAD repositories if needed
+        return super().create(validated_data)
+
 
 class RevisionLightSerializer(serializers.ModelSerializer):
     """
     Serialize a Revision in a Diff light serializer
     """
 
-    base_repository = serializers.SlugRelatedField(
-        queryset=Repository.objects.all(), slug_field="url"
-    )
-    head_repository = serializers.SlugRelatedField(
-        queryset=Repository.objects.all(), slug_field="url"
-    )
+    base_repository = RepositoryGetOrCreateField()
+    head_repository = RepositoryGetOrCreateField()
     phabricator_url = serializers.URLField(read_only=True)
 
     class Meta:
