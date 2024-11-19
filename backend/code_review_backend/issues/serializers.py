@@ -5,6 +5,7 @@
 from collections import defaultdict
 from urllib.parse import urlparse
 
+from django.conf import settings
 from django.db import transaction
 from rest_framework import serializers
 
@@ -29,7 +30,9 @@ class RepositorySerializer(serializers.ModelSerializer):
 
 
 class RepositoryGetOrCreateField(serializers.SlugRelatedField):
-    help_text = "Get or create a repository. URL must match "
+    help_text = (
+        "Get or create a repository. URL must match allowed hosts from settings."
+    )
     default_error_messages = {
         **serializers.SlugRelatedField.default_error_messages,
         "invalid_url": "Repository URL must match hg.mozilla.org.",
@@ -41,13 +44,14 @@ class RepositoryGetOrCreateField(serializers.SlugRelatedField):
 
     def to_internal_value(self, url):
         parsed = urlparse(url)
-        if parsed.netloc != "hg.mozilla.org":
+        if parsed.netloc not in settings.ALLOWED_REPOSITORY_HOSTS:
             try:
                 return self.get_queryset().get(url=url)
             except Repository.DoesNotExist:
                 self.fail("invalid_url")
             except (TypeError, ValueError):
                 self.fail("invalid")
+                return
         try:
             repo, _ = self.get_queryset().get_or_create(
                 url=url, defaults={"slug": parsed.path}
@@ -94,11 +98,6 @@ class RevisionSerializer(serializers.ModelSerializer):
             "issues_bulk_url",
             "phabricator_url",
         )
-
-    @transaction.atomic
-    def create(self, validated_data):
-        # Create BASE and HEAD repositories if needed
-        return super().create(validated_data)
 
 
 class RevisionLightSerializer(serializers.ModelSerializer):
