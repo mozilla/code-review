@@ -18,4 +18,8 @@ class Migration(migrations.Migration):
             name="id",
             field=models.AutoField(primary_key=True, serialize=False),
         ),
+        migrations.AlterModelOptions(
+            name="repository",
+            options={"ordering": ("id",), "verbose_name_plural": "repositories"},
+        ),
     ]
