@@ -6,11 +6,20 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 
 from django.conf import settings
-from django.db.models import BooleanField, Count, ExpressionWrapper, Prefetch, Q
+from django.db.models import (
+    BooleanField,
+    Count,
+    Exists,
+    ExpressionWrapper,
+    OuterRef,
+    Prefetch,
+    Q,
+)
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
 from django.urls import path
 from django.utils.decorators import method_decorator
+from django.utils.functional import cached_property
 from django.views.decorators.cache import cache_page
 from rest_framework import generics, mixins, routers, status, viewsets
 from rest_framework.exceptions import APIException, ValidationError
@@ -486,6 +495,90 @@ class IssueList(generics.ListAPIView):
         return qs.filter(**filters).order_by("created").distinct()
 
 
+class GenericIssueList(generics.ListAPIView):
+    serializer_class = IssueHashSerializer
+    allowed_modes = ["unresolved", "known", "closed"]
+
+    @cached_property
+    def diff(self):
+        return get_object_or_404(
+            Diff.objects.select_related("revision"), id=self.kwargs["diff_id"]
+        )
+
+    @cached_property
+    def mode(self):
+        if (mode := self.kwargs["mode"]) not in self.allowed_modes:
+            raise APIException(
+                detail="mode argument must be one of {self.allowed_modes}"
+            )
+        return mode
+
+    def get_queryset(self):
+        return getattr(self, f"get_{self.mode}")()
+
+    def distinct_issues(self, qs):
+        """
+        Convert a list of issue links to unique couples of (issue_id, issue_hash)
+        """
+        attributes = ("issue_id", "issue__hash")
+        return qs.order_by(*attributes).values_list(*attributes).distinct()
+
+    def get_unresolved(self):
+        """
+        Issues that were linked to a previous diff of the same
+        parent revision, and are still present on the current diff.
+        """
+        return self.distinct_issues(
+            self.diff.revision.issue_links.annotate(
+                unresolved=Exists(
+                    IssueLink.objects.exclude(diff=self.diff).filter(
+                        revision=self.diff.revision,
+                        issue=OuterRef("issue"),
+                    )
+                )
+            ).filter(unresolved=True)
+        )
+
+    def get_known(self):
+        """
+        Issues that have also being detected from mozilla-central.
+        """
+        return self.distinct_issues(
+            self.diff.issue_links.annotate(
+                known=Exists(
+                    IssueLink.objects.filter(
+                        revision__base_repository__slug="mozilla-central",
+                        issue=OuterRef("issue"),
+                    )
+                )
+            ).filter(known=True)
+        )
+
+    def get_closed(self):
+        """
+        Issues that were listed on the previous diff of the same
+        parent revision, but does not exist on the current diff.
+        """
+        # Retrieve the previous diff
+        previous_diff = (
+            self.diff.revision.diffs.filter(created__lt=self.diff.created)
+            .order_by("created")
+            .last()
+        )
+        if not previous_diff:
+            return []
+        return self.distinct_issues(
+            previous_diff.issue_links.annotate(
+                closed=Exists(
+                    IssueLink.objects.filter(
+                        diff=self.diff,
+                        issue=OuterRef("issue"),
+                    )
+                )
+            ).filter(closed=True)
+        )
+
+
 # Build exposed urls for the API
 router = routers.DefaultRouter()
 router.register(r"repository", RepositoryViewSet)
@@ -497,18 +590,32 @@ router.register(
 )
 router.register(r"diff", DiffViewSet, basename="diffs")
 router.register(r"diff/(?P<diff_id>\d+)/issues", IssueViewSet, basename="issues")
-urls = router.urls + [
-    path(
-        "revision/<int:revision_id>/issues/",
-        IssueBulkCreate.as_view(),
-        name="revision-issues-bulk",
-    ),
-    path("check/stats/", IssueCheckStats.as_view(), name="issue-checks-stats"),
-    path("check/history/", IssueCheckHistory.as_view(), name="issue-checks-history"),
-    path(
-        "check/<str:repository>/<str:analyzer>/<path:check>/",
-        IssueCheckDetails.as_view(),
-        name="issue-check-details",
-    ),
-    path("issues/<slug:repo_slug>/", IssueList.as_view(), name="repository-issues"),
-]
+
+urls = (
+    [
+        # Prevails on the generic issues endpoint
+        path(
+            "diff/<int:diff_id>/issues/<str:mode>/",
+            GenericIssueList.as_view(),
+            name="issue-list",
+        ),
+    ]
+    + router.urls
+    + [
+        path(
+            "revision/<int:revision_id>/issues/",
+            IssueBulkCreate.as_view(),
+            name="revision-issues-bulk",
+        ),
+        path("check/stats/", IssueCheckStats.as_view(), name="issue-checks-stats"),
+        path(
+            "check/history/", IssueCheckHistory.as_view(), name="issue-checks-history"
+        ),
+        path(
+            "check/<str:repository>/<str:analyzer>/<path:check>/",
+            IssueCheckDetails.as_view(),
+            name="issue-check-details",
+        ),
+        path("issues/<slug:repo_slug>/", IssueList.as_view(), name="repository-issues"),
+    ]
+)
