@@ -6,8 +6,10 @@ import json
 import logging
 import os
 import tempfile
+from urllib.parse import urlparse
 
 import taskcluster
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from requests.exceptions import HTTPError
@@ -179,22 +181,35 @@ class Command(BaseCommand):
             report = json.load(open(os.path.join(self.cache_dir, task_id)))
             yield task_id, report
 
+    def get_or_create_repository(self, url):
+        """Retrieve a repository or create it if its URL must match allowed hosts"""
+        parsed = urlparse(url)
+        if parsed.netloc not in settings.ALLOWED_REPOSITORY_HOSTS:
+            try:
+                return Repository.objects.get(url=url)
+            except Repository.DoesNotExist:
+                logger.warning(
+                    f"No repository exist with URL {url} "
+                    "(must be in ALLOWED_REPOSITORY_HOST for automatic creation), skipping."
+                )
+                raise ValueError(url)
+        repo, created = Repository.objects.get_or_create(
+            url=url, defaults={"slug": parsed.path.lstrip("/")}
+        )
+        if created:
+            logger.info(f"Created missing repository from URL {url}")
+        return repo
+
     def build_revision_and_diff(self, data, task_id):
         """Build or retrieve a revision and diff in current repo from report's data"""
         try:
-            head_repository = Repository.objects.get(url=data["repository"])
-        except Repository.DoesNotExist:
-            logger.warning(
-                f"No repository found with URL {data['repository']}, skipping."
-            )
+            head_repository = self.get_or_create_repository(data["repository"])
+        except ValueError:
             return None, None
 
         try:
-            base_repository = Repository.objects.get(url=data["target_repository"])
-        except Repository.DoesNotExist:
-            logger.warning(
-                f"No repository found with URL {data['target_repository']}, skipping."
-            )
+            base_repository = self.get_or_create_repository(data["target_repository"])
+        except ValueError:
             return None, None
 
         revision, _ = head_repository.head_revisions.get_or_create(
