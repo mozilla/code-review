@@ -54,7 +54,7 @@ class RepositoryGetOrCreateField(serializers.SlugRelatedField):
                 return
         try:
             repo, _ = self.get_queryset().get_or_create(
-                url=url, defaults={"slug": parsed.path}
+                url=url, defaults={"slug": parsed.path.lstrip("/")}
             )
             return repo
         except (TypeError, ValueError):

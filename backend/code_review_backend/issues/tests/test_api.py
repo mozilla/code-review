@@ -144,7 +144,7 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         new_repo = Repository.objects.get(url="http://hg.mozilla.org/a/new/repo")
         self.assertIsNotNone(new_repo)
-        self.assertEqual(new_repo.slug, "/a/new/repo")
+        self.assertEqual(new_repo.slug, "a/new/repo")
 
     def test_create_diff(self):
         """
