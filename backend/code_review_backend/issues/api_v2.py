@@ -2,7 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from django.db.models import Exists, OuterRef
+from django.conf import settings
+from django.db.models import Exists, OuterRef, Value
 from django.shortcuts import get_object_or_404
 from django.urls import path
 from django.utils.functional import cached_property
@@ -32,32 +33,19 @@ class IssueList(ListAPIView):
         return mode
 
     def get_queryset(self):
-        return getattr(self, f"get_{self.mode}")()
+        return getattr(self, f"{self.mode}_issues").filter(**{self.mode: True})
 
     def distinct_issues(self, qs):
         """
         Convert a list of issue links to unique couples of (issue_id, issue_hash)
         """
         attributes = ("issue_id", "issue__hash")
+        if "postgresql" in settings.DATABASES["default"]["ENGINE"]:
+            return qs.order_by(*attributes).values(*attributes).distinct(*attributes)
         return qs.order_by(*attributes).values(*attributes).distinct()
 
-    def get_unresolved(self):
-        """
-        Issues that were linked to a previous diff of the same
-        parent revision, and are still present on the current diff.
-        """
-        return self.distinct_issues(
-            self.diff.revision.issue_links.annotate(
-                unresolved=Exists(
-                    IssueLink.objects.exclude(diff=self.diff).filter(
-                        revision=self.diff.revision,
-                        issue=OuterRef("issue"),
-                    )
-                )
-            ).filter(unresolved=True)
-        )
-
-    def get_known(self):
+    @property
+    def known_issues(self):
         """
         Issues that have also being detected from mozilla-central.
         """
@@ -69,10 +57,36 @@ class IssueList(ListAPIView):
                         issue=OuterRef("issue"),
                     )
                 )
-            ).filter(known=True)
+            )
         )
 
-    def get_closed(self):
+    @property
+    def unresolved_issues(self):
+        """
+        Issues that were linked to the previous diff of the same
+        parent revision, and are still present on the current diff.
+        Filters out issues that are known by the backend.
+        """
+        previous_diff = (
+            self.diff.revision.diffs.filter(created__lt=self.diff.created)
+            .order_by("created")
+            .last()
+        )
+        if not previous_diff:
+            return IssueLink.objects.none().annotate(unresolved=Value("True"))
+        return self.distinct_issues(
+            self.known_issues.filter(known=False).annotate(
+                unresolved=Exists(
+                    IssueLink.objects.filter(
+                        diff=previous_diff,
+                        issue=OuterRef("issue"),
+                    )
+                )
+            )
+        )
+
+    @property
+    def closed_issues(self):
         """
         Issues that were listed on the previous diff of the same
         parent revision, but does not exist on the current diff.
@@ -84,16 +98,16 @@ class IssueList(ListAPIView):
             .last()
         )
         if not previous_diff:
-            return []
+            return IssueLink.objects.none().annotate(closed=Value("True"))
         return self.distinct_issues(
             previous_diff.issue_links.annotate(
-                closed=Exists(
+                closed=~Exists(
                     IssueLink.objects.filter(
                         diff=self.diff,
                         issue=OuterRef("issue"),
                     )
                 )
-            ).filter(closed=True)
+            )
         )
 
 
