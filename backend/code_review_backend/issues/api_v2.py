@@ -10,11 +10,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 
 from code_review_backend.issues.models import Diff, IssueLink
-from code_review_backend.issues.serializers import IssueHashSerializer
+from code_review_backend.issues.serializers_v2 import IssueLinkHashSerializer
 
 
 class IssueList(ListAPIView):
-    serializer_class = IssueHashSerializer
+    serializer_class = IssueLinkHashSerializer
     allowed_modes = ["unresolved", "known", "closed"]
 
     @cached_property
@@ -39,7 +39,7 @@ class IssueList(ListAPIView):
         Convert a list of issue links to unique couples of (issue_id, issue_hash)
         """
         attributes = ("issue_id", "issue__hash")
-        return qs.order_by(*attributes).values_list(*attributes).distinct()
+        return qs.order_by(*attributes).values(*attributes).distinct()
 
     def get_unresolved(self):
         """
