@@ -25,7 +25,9 @@ class Migration(migrations.Migration):
         ),
     ]
     if "postgresql" in settings.DATABASES["default"]["ENGINE"]:
-        print("Initializing the sequence with PostgreSQL backend")
+        print(
+            "Adding sequence initialization for Repository PK to issues.0015 with PostgreSQL backend"
+        )
         operations.append(
             migrations.RunSQL(
                 """

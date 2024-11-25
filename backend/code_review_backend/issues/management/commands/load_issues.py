@@ -189,7 +189,7 @@ class Command(BaseCommand):
                 return Repository.objects.get(url=url)
             except Repository.DoesNotExist:
                 logger.warning(
-                    f"No repository exist with URL {url} "
+                    f"No repository exists with URL {url} "
                     "(must be in ALLOWED_REPOSITORY_HOST for automatic creation), skipping."
                 )
                 raise ValueError(url)
