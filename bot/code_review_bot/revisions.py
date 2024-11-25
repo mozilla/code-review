@@ -155,7 +155,15 @@ class Revision:
         random.seed(os.urandom(128))
 
     def __repr__(self):
-        return self.diff_phid
+        if self.diff_phid:
+            # Most revisions have a Diff from Phabricator
+            return self.diff_phid or "Unidentified revision"
+        elif self.head_changeset:
+            # Autoland revisions have no diff
+            return f"{self.head_changeset}@{self.head_repository}"
+        else:
+            # Fallback
+            return "Unknown revision"
 
     def __str__(self):
         return f"Phabricator #{self.diff_id} - {self.diff_phid}"

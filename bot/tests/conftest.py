@@ -319,6 +319,17 @@ def mock_revision(mock_phabricator, mock_try_task, mock_decision_task, mock_conf
         return Revision.from_try_task(mock_try_task, mock_decision_task, api)
 
 
+@pytest.fixture
+def mock_revision_autoland(mock_phabricator, mock_autoland_task):
+    """
+    Mock a mercurial revision from autoland repo
+    """
+    from code_review_bot.revisions import Revision
+
+    with mock_phabricator as api:
+        return Revision.from_decision_task(mock_autoland_task, api)
+
+
 class Response:
     "A simple response encoded as JSON"
 
