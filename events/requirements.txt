@@ -2,7 +2,7 @@ aioamqp==0.15.0
 -e ../tools #egg=code-review-tools
 json-e==4.8.0
 jsonschema==4.23.0
-libmozevent==1.1.29
+libmozevent==1.1.28
 python-hglib==2.6.2
 pytoml==0.1.21
 pyyaml==6.0.2
