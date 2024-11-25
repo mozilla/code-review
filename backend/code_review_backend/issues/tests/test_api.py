@@ -589,3 +589,40 @@ class CreationAPITestCase(APITestCase):
                 ("somemd5hash", 1, 2, False, True),
             ],
         )
+
+    def test_create_issue_already_referenced(self):
+        """
+        A detected issue may already be linked via a previous IssueLink to a previous diff.
+        """
+        payload = {
+            "issues": [
+                {
+                    "analyzer": "source-test-mozlint-android-lints",
+                    "check": "AnnotateVersionCheck",
+                    "hash": "a" * 32,
+                    "level": "warning",
+                    "line": 487,
+                    "nb_lines": 1,
+                    "path": "some_path",
+                    "publishable": False,
+                }
+            ]
+        }
+
+        self.client.force_authenticate(user=self.user)
+        another_diff = self.revision.diffs.create(
+            id=56748,
+            phid="PHID-DIFF-yyy",
+            review_task_id="deadbeef456",
+            mercurial_hash="coffee67890",
+            repository=self.repo_try,
+        )
+        self.revision.issue_links.create(
+            diff=another_diff,
+            issue=Issue.objects.create(hash="a" * 32),
+        )
+        with self.assertNumQueries(6):
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", payload, format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
