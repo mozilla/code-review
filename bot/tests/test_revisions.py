@@ -69,6 +69,30 @@ def test_phabricator(mock_config, mock_revision):
     ]
 
 
+def test_autoland(mock_config, mock_revision_autoland):
+    """
+    Test a revision coming from a decision task (meaning autoland)
+    """
+    assert mock_revision_autoland.diff_id is None
+    assert mock_revision_autoland.diff_phid is None
+    assert mock_revision_autoland.url is None
+    assert (
+        mock_revision_autoland.head_repository
+        == "https://hg.mozilla.org/integration/autoland"
+    )
+    assert mock_revision_autoland.head_changeset == "deadbeef123"
+    assert (
+        mock_revision_autoland.base_repository
+        == "https://hg.mozilla.org/mozilla-unified"
+    )
+    assert mock_revision_autoland.base_changeset == "123deadbeef"
+
+    assert (
+        repr(mock_revision_autoland)
+        == "deadbeef123@https://hg.mozilla.org/integration/autoland"
+    )
+
+
 def test_clang_files(mock_revision):
     """
     Test clang files detection
