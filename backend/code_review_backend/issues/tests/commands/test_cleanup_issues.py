@@ -6,6 +6,7 @@ import uuid
 from datetime import timedelta
 
 from django.core.management import call_command
+from django.db.models import Count
 from django.test import TestCase
 from django.utils import timezone
 
@@ -90,8 +91,11 @@ class CleanupIssuesCommandTestCase(TestCase):
         build_issue("path6", [rev_1, rev_3])
 
     def test_cleanup_issues_no_issue(self):
+        Repository.objects.exclude(
+            id__in=(self.moz_central.id, self.autoland.id, self.test_repo.id)
+        ).delete()
         with self.assertLogs() as mock_log:
-            with self.assertNumQueries(1):
+            with self.assertNumQueries(2):
                 call_command("cleanup_issues", "--nb-days", "40")
 
         self.assertEqual(
@@ -102,12 +106,13 @@ class CleanupIssuesCommandTestCase(TestCase):
         )
 
     def test_cleanup_issues_default_nb_days(self):
+        Repository.objects.exclude(
+            id__in=(self.moz_central.id, self.autoland.id, self.test_repo.id)
+        ).delete()
         self.assertEqual(Issue.objects.count(), 6)
         with self.assertLogs() as mock_log:
-            with self.assertNumQueries(6):
-                call_command(
-                    "cleanup_issues",
-                )
+            with self.assertNumQueries(7):
+                call_command("cleanup_issues")
 
         self.assertEqual(Issue.objects.count(), 4)
         self.assertListEqual(
@@ -129,9 +134,12 @@ class CleanupIssuesCommandTestCase(TestCase):
         )
 
     def test_cleanup_issues_custom_nb_days(self):
+        Repository.objects.exclude(
+            id__in=(self.moz_central.id, self.autoland.id, self.test_repo.id)
+        ).delete()
         self.assertEqual(Issue.objects.count(), 6)
         with self.assertLogs() as mock_log:
-            with self.assertNumQueries(6):
+            with self.assertNumQueries(7):
                 call_command("cleanup_issues", "--nb-days", "4")
 
         self.assertEqual(Issue.objects.count(), 2)
@@ -146,5 +154,47 @@ class CleanupIssuesCommandTestCase(TestCase):
                 f"{LOG_PREFIX}Retrieved 2 old revisions to be deleted.",
                 f"{LOG_PREFIX}Page 1/1.",
                 f"{LOG_PREFIX}Deleted 6 IssueLink, 1 Diff, 4 Issue, 2 Revision.",
+            ],
+        )
+
+    def test_cleanup_issues_removes_unused_repositories(self):
+        self.assertListEqual(
+            list(
+                Repository.objects.annotate(rev_count=Count("base_revisions"))
+                .order_by("slug")
+                .values_list("slug", "rev_count")
+            ),
+            [
+                ("autoland", 1),
+                ("mozilla-central", 1),
+                ("nss-try", 0),
+                ("test", 1),
+                ("try", 0),
+            ],
+        )
+
+        self.assertEqual(Issue.objects.count(), 6)
+        with self.assertLogs() as mock_log:
+            with self.assertNumQueries(7):
+                call_command("cleanup_issues", "--nb-days", "4")
+        self.assertEqual(Issue.objects.count(), 2)
+        self.assertEqual(
+            mock_log.output,
+            [
+                f"{LOG_PREFIX}Retrieved 2 old revisions to be deleted.",
+                f"{LOG_PREFIX}Page 1/1.",
+                f"{LOG_PREFIX}Deleted 2 Repository, 6 IssueLink, 1 Diff, 4 Issue, 2 Revision.",
+            ],
+        )
+        self.assertListEqual(
+            list(
+                Repository.objects.annotate(rev_count=Count("base_revisions"))
+                .order_by("slug")
+                .values_list("slug", "rev_count")
+            ),
+            [
+                ("autoland", 0),
+                ("mozilla-central", 0),
+                ("test", 1),
             ],
         )
