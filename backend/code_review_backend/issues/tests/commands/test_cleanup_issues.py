@@ -181,9 +181,10 @@ class CleanupIssuesCommandTestCase(TestCase):
         self.assertEqual(
             mock_log.output,
             [
+                f"{LOG_PREFIX}Deleted 2 unused Repository.",
                 f"{LOG_PREFIX}Retrieved 2 old revisions to be deleted.",
                 f"{LOG_PREFIX}Page 1/1.",
-                f"{LOG_PREFIX}Deleted 2 Repository, 6 IssueLink, 1 Diff, 4 Issue, 2 Revision.",
+                f"{LOG_PREFIX}Deleted 6 IssueLink, 1 Diff, 4 Issue, 2 Revision.",
             ],
         )
         self.assertListEqual(

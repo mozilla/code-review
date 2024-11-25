@@ -40,13 +40,12 @@ class Command(BaseCommand):
             head_revisions__isnull=True,
             diffs__isnull=True,
         )
-        return unused_repositories._raw_delete(unused_repositories.db)
+        delete_count = unused_repositories._raw_delete(unused_repositories.db)
+        if delete_count:
+            logger.info(f"Deleted {delete_count} unused Repository.")
 
     def handle(self, *args, **options):
-        stats = defaultdict(int)
-        repo_count = self.cleanup_repositories()
-        if repo_count:
-            stats["Repository"] = repo_count
+        self.cleanup_repositories()
 
         clean_until = timezone.now() - timedelta(days=options["nb_days"])
 
@@ -60,6 +59,8 @@ class Command(BaseCommand):
             return
 
         logger.info(f"Retrieved {total_rev_count} old revisions to be deleted.")
+
+        stats = defaultdict(int)
 
         iterations = math.ceil(total_rev_count / DEL_CHUNK_SIZE)
         for i, start in enumerate(range(0, total_rev_count, DEL_CHUNK_SIZE), start=1):
