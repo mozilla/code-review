@@ -3,10 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from collections import defaultdict
-from itertools import groupby
 
 from django.db import transaction
-from django.db.models import Q
 from rest_framework import serializers
 
 from code_review_backend.issues.models import (
@@ -274,97 +272,47 @@ class IssueBulkSerializer(serializers.Serializer):
                 }
             )
         # Only create issues that do not exist yet
-        issues = Issue.objects.bulk_create(
+        Issue.objects.bulk_create(
             [Issue(**values) for values in validated_data["issues"]],
             ignore_conflicts=True,
         )
-        # List issues again to ensure ID are synced for creating links
-        issues_with_links = list(
-            Issue.objects.values("issue_links")
-            .filter(
-                Q(
-                    # Issue is new for this diff/revision
-                    issue_links__isnull=True,
+
+        # Retrieve issues to get existing IDs
+        hashes = set(link_attrs.keys())
+        known_issues = {i.hash: i for i in Issue.objects.filter(hash__in=hashes)}
+
+        assert set(known_issues.keys()) == hashes, "Failed to create all issues"
+
+        # Create all links, using DB conflicts
+        links = IssueLink.objects.bulk_create(
+            [
+                IssueLink(
+                    issue_id=known_issues[issue_hash].id,
+                    diff=diff,
+                    revision=self.context["revision"],
+                    **link,
                 )
-                | Q(
-                    # Issue exists for this diff/revision
-                    issue_links__diff=diff,
-                    issue_links__revision=self.context["revision"],
-                ),
-                hash__in=[issue.hash for issue in issues],
-            )
-            # Needed for re-serialization
-            .values(
-                "id",
-                "hash",
-                "analyzer",
-                "analyzer_check",
-                "path",
-                "level",
-                "message",
-                "issue_links__id",
-                "issue_links__new_for_revision",
-                "issue_links__in_patch",
-                "issue_links__line",
-                "issue_links__nb_lines",
-                "issue_links__char",
-            )
-            .iterator()
+                for issue_hash, links in link_attrs.items()
+                for link in links
+            ],
+            ignore_conflicts=True,
         )
-        # Group existing links by issue, separating attributes from Issue and from IssueLink
-        grouped_issues = {
-            issue_attributes["hash"]: (
-                issue_attributes,
-                [
-                    {
-                        "new_for_revision": i["issue_links__new_for_revision"],
-                        "in_patch": i["issue_links__in_patch"],
-                        "line": i["issue_links__line"],
-                        "nb_lines": i["issue_links__nb_lines"],
-                        "char": i["issue_links__char"],
-                    }
-                    for i in items
-                    # Left empty for issues without any fetched link
-                    if i["issue_links__id"]
-                ],
-            )
-            for issue_attributes, items in groupby(
-                issues_with_links,
-                key=lambda issue: {
-                    k: v for k, v in issue.items() if not k.startswith("issue_links__")
-                },
-            )
-        }
-        # Iterate over the link attributes to identify the entries to create
+
+        # Endpoint expects Issue with specific attributes for re-serialization of links
+        # TODO in treeherder: only expose hash & publishable in output
         output = []
-        issue_links_to_create = []
         for issue_hash, links in link_attrs.items():
-            existing_issue, existing_links = grouped_issues[issue_hash]
             for link in links:
-                # If the link does not exists, create it
-                if not any(
-                    link.items() <= existing_link.items()
-                    for existing_link in existing_links
-                ):
-                    issue_links_to_create.append(
-                        {
-                            "issue_id": existing_issue["id"],
-                            "diff": diff,
-                            "revision": self.context["revision"],
-                            **link,
-                        }
-                    )
+                existing_issue = known_issues[issue_hash]
+
                 # Set attributes for re-serialization
                 output_link = {f"issue_links__{k}": v for k, v in link.items()}
-                output_link.update(existing_issue)
+                output_link.update(vars(existing_issue))
                 output_link["publishable"] = (
-                    link["in_patch"] and existing_issue["level"] == LEVEL_ERROR
+                    link["in_patch"] and existing_issue.level == LEVEL_ERROR
                 )
+
                 output.append(output_link)
-        # Create missing links in bulk
-        IssueLink.objects.bulk_create(
-            [IssueLink(**attrs) for attrs in issue_links_to_create]
-        )
 
         return {
             "diff_id": diff,

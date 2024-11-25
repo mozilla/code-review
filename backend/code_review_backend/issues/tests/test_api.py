@@ -423,7 +423,7 @@ class CreationAPITestCase(APITestCase):
         )
 
         # Calling again with the same payload should give the same result
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload_2, format="json"
             )
