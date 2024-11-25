@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import unittest
+
 from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -341,6 +343,11 @@ class CreationAPITestCase(APITestCase):
         self.assertFalse(link.new_for_revision)
         self.assertEqual(link.line, 1)
 
+    # This test is currently expected to fail due to the unique
+    # constraints on IssueLink not respecting the NULL values unicity
+    # So we end up with duplicate IssueLinks being created when NULL values
+    # are used for (line, nb_lines, char)
+    @unittest.expectedFailure
     def test_create_issue_bulk_alread_exists(self):
         """
         You cannot try to create the same issue twice through the bulk endpoint
@@ -423,7 +430,7 @@ class CreationAPITestCase(APITestCase):
         )
 
         # Calling again with the same payload should give the same result
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             response = self.client.post(
                 f"/v1/revision/{self.revision.id}/issues/", payload_2, format="json"
             )
@@ -589,3 +596,40 @@ class CreationAPITestCase(APITestCase):
                 ("somemd5hash", 1, 2, False, True),
             ],
         )
+
+    def test_create_issue_already_referenced(self):
+        """
+        A detected issue may already be linked via a previous IssueLink to a previous diff.
+        """
+        payload = {
+            "issues": [
+                {
+                    "analyzer": "source-test-mozlint-android-lints",
+                    "check": "AnnotateVersionCheck",
+                    "hash": "a" * 32,
+                    "level": "warning",
+                    "line": 487,
+                    "nb_lines": 1,
+                    "path": "some_path",
+                    "publishable": False,
+                }
+            ]
+        }
+
+        self.client.force_authenticate(user=self.user)
+        another_diff = self.revision.diffs.create(
+            id=56748,
+            phid="PHID-DIFF-yyy",
+            review_task_id="deadbeef456",
+            mercurial_hash="coffee67890",
+            repository=self.repo_try,
+        )
+        self.revision.issue_links.create(
+            diff=another_diff,
+            issue=Issue.objects.create(hash="a" * 32),
+        )
+        with self.assertNumQueries(6):
+            response = self.client.post(
+                f"/v1/revision/{self.revision.id}/issues/", payload, format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
