@@ -49,6 +49,7 @@ LANDO_FAILURE_MESSAGE = (
 LANDO_FAILURE_HG_MESSAGE = (
     "Static analysis and linting did not run due to failure in applying the patch."
 )
+LANDO_FAILURE_EXPIRED = "Static analysis and linting did not run due to expired patch."
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VERSION_PATH = os.environ.get("VERSION_PATH", os.path.join(BASE_DIR, "version.json"))
@@ -195,6 +196,10 @@ class CodeReview(PhabricatorActions):
             # Requeue when nothing changed for now
             await self.bus.send(QUEUE_WEB_BUILDS, build)
 
+        elif build.state == PhabricatorBuildState.Expired:
+            # Report expired bug as not processed
+            await self.bus.send(QUEUE_PHABRICATOR_RESULTS, ("fail:expired", build, {}))
+
     def is_blacklisted(self, revision: dict):
         """Check if the revision author is in blacklisted"""
         author = self.user_blacklist.get(revision["fields"]["authorPHID"])
@@ -268,6 +273,14 @@ class CodeReview(PhabricatorActions):
                     extra_content, extras["message"]
                 ),
                 lando_message=LANDO_FAILURE_HG_MESSAGE,
+            )
+
+        elif mode == "fail:expired":
+            _send_failure(
+                error_code="expired",
+                phabricator_state=UnitResultState.Fail,
+                phabricator_message="WARNING: The code review bot did not process your patch as it was published more than a day ago",
+                lando_message=LANDO_FAILURE_EXPIRED,
             )
 
         elif mode == "test_result":
