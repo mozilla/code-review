@@ -24,10 +24,10 @@ class CreationAPITestCase(APITestCase):
 
         # Create a repo & its try counterpart
         self.repo = Repository.objects.create(
-            id=1, phid="PHID-REPO-xxx", slug="myrepo", url="http://repo.test/myrepo"
+            slug="myrepo", url="http://repo.test/myrepo"
         )
         self.repo_try = Repository.objects.create(
-            id=2, slug="myrepo-try", url="http://repo.test/try"
+            slug="myrepo-try", url="http://repo.test/try"
         )
         # Create revision and diff
         self.revision = self.repo_try.head_revisions.create(
@@ -99,6 +99,52 @@ class CreationAPITestCase(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertDictEqual(response.json(), expected_response)
         self.assertEqual(Revision.objects.count(), 1)
+
+    def test_create_revision_wrong_new_repo(self):
+        self.revision.delete()
+        data = {
+            "phabricator_id": 123,
+            "phabricator_phid": "PHID-REV-xxx",
+            "title": "Bug XXX - Some bug",
+            "bugzilla_id": 123456,
+            "base_repository": "http://notamozrepo.test/myrepo",
+            "head_repository": "http://notamozrepo.test/myrepo",
+            "base_changeset": "123456789ABCDEF",
+            "head_changeset": "FEDCBA987654321",
+        }
+
+        self.assertEqual(Revision.objects.count(), 0)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post("/v1/revision/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertDictEqual(
+            response.json(),
+            {
+                "base_repository": ["Repository URL must match hg.mozilla.org."],
+                "head_repository": ["Repository URL must match hg.mozilla.org."],
+            },
+        )
+
+    def test_create_revision_creates_new_repo(self):
+        self.revision.delete()
+        data = {
+            "phabricator_id": 123,
+            "phabricator_phid": "PHID-REV-xxx",
+            "title": "Bug XXX - Some bug",
+            "bugzilla_id": 123456,
+            "base_repository": "http://repo.test/myrepo",
+            "head_repository": "http://hg.mozilla.org/a/new/repo",
+            "base_changeset": "123456789ABCDEF",
+            "head_changeset": "FEDCBA987654321",
+        }
+
+        self.assertEqual(Revision.objects.count(), 0)
+        self.client.force_authenticate(user=self.user)
+        response = self.client.post("/v1/revision/", data, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        new_repo = Repository.objects.get(url="http://hg.mozilla.org/a/new/repo")
+        self.assertIsNotNone(new_repo)
+        self.assertEqual(new_repo.slug, "a/new/repo")
 
     def test_create_diff(self):
         """

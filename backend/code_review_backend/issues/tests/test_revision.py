@@ -12,7 +12,6 @@ class RevisionAPITestCase(APITestCase):
     def setUp(self):
         self.repo = Repository.objects.create(
             id=1,
-            phid="PHID-REPO-xxx",
             slug="myrepo",
             url="http://repo.test/myrepo",
         )

@@ -10,7 +10,13 @@ from datetime import timedelta
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
-from code_review_backend.issues.models import Diff, Issue, IssueLink, Revision
+from code_review_backend.issues.models import (
+    Diff,
+    Issue,
+    IssueLink,
+    Repository,
+    Revision,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -28,7 +34,19 @@ class Command(BaseCommand):
             default=30,
         )
 
+    def cleanup_repositories(self):
+        unused_repositories = Repository.objects.filter(
+            base_revisions__isnull=True,
+            head_revisions__isnull=True,
+            diffs__isnull=True,
+        )
+        delete_count = unused_repositories._raw_delete(unused_repositories.db)
+        if delete_count:
+            logger.info(f"Deleted {delete_count} unused Repository.")
+
     def handle(self, *args, **options):
+        self.cleanup_repositories()
+
         clean_until = timezone.now() - timedelta(days=options["nb_days"])
 
         rev_to_delete = Revision.objects.filter(

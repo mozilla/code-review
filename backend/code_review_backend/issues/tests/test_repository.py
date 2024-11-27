@@ -27,31 +27,26 @@ class RepositoryAPITestCase(APITestCase):
                 "results": [
                     {
                         "id": 102,
-                        "phid": None,
                         "slug": "autoland",
                         "url": "https://hg.mozilla.org/integration/autoland",
                     },
                     {
                         "id": 1,
-                        "phid": "PHID-REPO-saax4qdxlbbhahhp2kg5",
                         "slug": "mozilla-central",
                         "url": "https://hg.mozilla.org/mozilla-central",
                     },
                     {
                         "id": 8,
-                        "phid": "PHID-REPO-3lrloqw4qf6fluy2a5ni",
                         "slug": "nss",
                         "url": "https://hg.mozilla.org/projects/nss",
                     },
                     {
                         "id": 101,
-                        "phid": None,
                         "slug": "nss-try",
                         "url": "https://hg.mozilla.org/projects/nss-try",
                     },
                     {
                         "id": 100,
-                        "phid": None,
                         "slug": "try",
                         "url": "https://hg.mozilla.org/try",
                     },

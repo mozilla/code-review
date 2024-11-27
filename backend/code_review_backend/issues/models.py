@@ -14,27 +14,18 @@ LEVEL_ERROR = "error"
 ISSUE_LEVELS = ((LEVEL_WARNING, "Warning"), (LEVEL_ERROR, "Error"))
 
 
-class PhabricatorModel(models.Model):
-    id = models.PositiveIntegerField(primary_key=True)
-    phid = models.CharField(max_length=40, unique=True)
+class Repository(models.Model):
+    id = models.AutoField(primary_key=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        abstract = True
-        ordering = ("id",)
-
-
-class Repository(PhabricatorModel):
-    # Not all repositories are available on Phabricator (Try ones)
-    phid = models.CharField(max_length=40, unique=False, null=True, blank=True)
 
     slug = models.SlugField(unique=True)
     url = models.URLField(unique=True)
 
     class Meta:
         verbose_name_plural = "repositories"
+        ordering = ("id",)
 
     def __str__(self):
         return self.slug
@@ -110,10 +101,16 @@ class Revision(models.Model):
         return f"{parser.scheme}://{parser.netloc}/D{self.phabricator_id}"
 
 
-class Diff(PhabricatorModel):
+class Diff(models.Model):
     """Reference of a specific code patch (diff) in Phabricator.
     A revision can be linked to multiple successive diffs, or none in case of a repository push.
     """
+
+    # Phabricator's attributes
+    id = models.PositiveIntegerField(primary_key=True)
+    phid = models.CharField(max_length=40, unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
 
     revision = models.ForeignKey(
         Revision, related_name="diffs", on_delete=models.CASCADE
@@ -130,6 +127,9 @@ class Diff(PhabricatorModel):
 
     def __str__(self):
         return f"Diff {self.id}"
+
+    class Meta:
+        ordering = ("id",)
 
 
 class IssueLink(models.Model):
