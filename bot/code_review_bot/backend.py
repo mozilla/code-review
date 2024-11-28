@@ -187,6 +187,13 @@ class BackendAPI:
         """
         return list(self.paginate(f"/v1/diff/{diff_id}/issues/"))
 
+    def list_diff_issues_v2(self, diff_id, mode):
+        """
+        List issues for a given dif
+        """
+        assert mode in ("known", "unresolved", "closed")
+        return list(self.paginate(f"/v2/diff/{diff_id}/issues/{mode}"))
+
     def paginate(self, url_path):
         """
         Yield results from a paginated API one by one
