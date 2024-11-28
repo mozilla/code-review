@@ -122,6 +122,10 @@ class Workflow:
                 f"Found {new_issues_count} new issues (over {len(issues)} total detected issues)",
                 task=settings.try_group_id,
             )
+        else:
+            # Clone local repo when required
+            # as publication need the hashes
+            self.clone_repository(revision)
 
         if (
             all(issue.new_issue is False for issue in issues)
