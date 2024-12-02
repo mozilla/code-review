@@ -267,12 +267,12 @@ class Workflow:
         )
 
         # Publish final HarborMaster state
-        self.update_status(
-            revision,
-            BuildState.Fail
-            if nb_publishable_errors > 0 or task_failures
-            else BuildState.Pass,
-        )
+        #self.update_status(
+        #    revision,
+        #    BuildState.Fail
+        #    if nb_publishable_errors > 0 or task_failures
+        #    else BuildState.Pass,
+        #)
 
     def index(self, revision, **kwargs):
         """
@@ -513,5 +513,5 @@ class Workflow:
             )
             return
 
-        self.phabricator.update_build_target(revision.build_target_phid, state)
-        logger.info("Updated HarborMaster status", state=state, revision=revision)
+        #self.phabricator.update_build_target(revision.build_target_phid, state)
+        #logger.info("Updated HarborMaster status", state=state, revision=revision)

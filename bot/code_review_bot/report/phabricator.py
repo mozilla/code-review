@@ -154,9 +154,9 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if publishable_issues:
-            # Publish detected patch's issues on Harbormaster, all at once, as lint issues
-            self.publish_harbormaster(revision, publishable_issues)
+        #if publishable_issues:
+        #    # Publish detected patch's issues on Harbormaster, all at once, as lint issues
+        #    self.publish_harbormaster(revision, publishable_issues)
 
         # Retrieve all diffs for the current revision
         rev_diffs = self.api.search_diffs(revision_phid=revision.phabricator_phid)
@@ -216,19 +216,19 @@ class PhabricatorReporter(Reporter):
         Publish issues through HarborMaster
         either as lint results or unit tests results
         """
-        assert lint_issues or unit_issues, "No issues to publish"
+        #assert lint_issues or unit_issues, "No issues to publish"
 
-        self.api.update_build_target(
-            revision.build_target_phid,
-            state=BuildState.Work,
-            lint=[issue.as_phabricator_lint() for issue in lint_issues],
-            unit=[issue.as_phabricator_unitresult() for issue in unit_issues],
-        )
-        logger.info(
-            "Updated Harbormaster build state with issues",
-            nb_lint=len(lint_issues),
-            nb_unit=len(unit_issues),
-        )
+        #self.api.update_build_target(
+        #    revision.build_target_phid,
+        #    state=BuildState.Work,
+        #    lint=[issue.as_phabricator_lint() for issue in lint_issues],
+        #    unit=[issue.as_phabricator_unitresult() for issue in unit_issues],
+        #)
+        #logger.info(
+        #    "Updated Harbormaster build state with issues",
+        #    nb_lint=len(lint_issues),
+        #    nb_unit=len(unit_issues),
+        #)
 
     def publish_summary(
         self,
@@ -243,20 +243,30 @@ class PhabricatorReporter(Reporter):
         """
         Summarize publishable issues through Phabricator comment
         """
-        self.api.comment(
-            revision.phabricator_id,
-            self.build_comment(
-                revision=revision,
-                issues=issues,
-                patches=patches,
-                bug_report_url=BUG_REPORT_URL,
-                task_failures=task_failures,
-                notices=notices,
-                unresolved=unresolved_count,
-                closed=closed_count,
-            ),
-        )
-        logger.info("Published phabricator summary")
+        raise Exception(self.build_comment(
+            revision=revision,
+            issues=issues,
+            patches=patches,
+            bug_report_url=BUG_REPORT_URL,
+            task_failures=task_failures,
+            notices=notices,
+            unresolved=unresolved_count,
+            closed=closed_count,
+        ))
+        #self.api.comment(
+        #    revision.phabricator_id,
+        #    self.build_comment(
+        #        revision=revision,
+        #        issues=issues,
+        #        patches=patches,
+        #        bug_report_url=BUG_REPORT_URL,
+        #        task_failures=task_failures,
+        #        notices=notices,
+        #        unresolved=unresolved_count,
+        #        closed=closed_count,
+        #    ),
+        #)
+        #logger.info("Published phabricator summary")
 
     def build_comment(
         self,
