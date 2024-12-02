@@ -6,6 +6,7 @@ import urllib.parse
 
 import requests
 import structlog
+from requests.exceptions import HTTPError
 
 from code_review_bot import taskcluster
 from code_review_bot.config import GetAppUserAgent, settings
@@ -192,7 +193,16 @@ class BackendAPI:
         List issues for a given dif
         """
         assert mode in ("known", "unresolved", "closed")
-        return list(self.paginate(f"/v2/diff/{diff_id}/issues/{mode}"))
+        try:
+            return list(self.paginate(f"/v2/diff/{diff_id}/issues/{mode}"))
+        except HTTPError as e:
+            if e.response.status_code != 404:
+                logger.warning(
+                    f"Cound not list {mode} issues from the bot: {e}. Skipping"
+                )
+            else:
+                logger.info(f"Diff not found in code review backend: {diff_id}")
+            return []
 
     def paginate(self, url_path):
         """

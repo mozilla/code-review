@@ -337,10 +337,8 @@ class Workflow:
             self.backend_api.enabled
         ), "Backend storage is disabled, comparing issues is not possible"
 
-        known_hashes = [
-            issue["hash"]
-            for issue in self.backend_api.list_diff_issues_v2(diff_id, "known")
-        ]
+        known_issues = self.backend_api.list_diff_issues_v2(diff_id, "known")
+        known_hashes = [issue["hash"] for issue in known_issues]
         for issue in issues:
             issue.new_issue = bool(issue.hash and issue.hash not in known_hashes)
 
