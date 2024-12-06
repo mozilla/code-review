@@ -80,7 +80,7 @@ class IssueList(ListAPIView):
             self.diff.issue_links.annotate(
                 known=Exists(
                     IssueLink.objects.filter(
-                        revision__base_repository_id=self.diff.revision.base_repository_id,
+                        revision__head_repository_id=self.diff.revision.base_repository_id,
                         issue=OuterRef("issue"),
                     )
                 )
