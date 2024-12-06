@@ -32,6 +32,7 @@ class ListIssuesTestCase(APITestCase):
             phabricator_phid="PHID-REV-XXX",
             title="Main revision",
             base_repository=self.repo_main,
+            head_repository=self.repo_main,
         )
         self.revision_main.issue_links.create(issue=self.issues[0])
         self.revision_main.issue_links.create(issue=self.issues[1])
@@ -41,7 +42,8 @@ class ListIssuesTestCase(APITestCase):
             phabricator_id=1337,
             phabricator_phid="PHID-REV-YYY",
             title="Bug XXX - Yet another bug",
-            base_repository=self.repo_try,
+            base_repository=self.repo_main,
+            head_repository=self.repo_try,
         )
         self.diff1 = self.revision_last.diffs.create(
             id=1,
@@ -79,46 +81,58 @@ class ListIssuesTestCase(APITestCase):
             self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_list_issues_known(self):
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(2):
             response = self.client.get(f"/v2/diff/{self.diff2.id}/issues/known/")
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertCountEqual(
-            response.json()["results"],
-            [{"id": str(self.issues[0].id), "hash": self.issues[0].hash}],
+        self.maxDiff = None
+        self.assertDictEqual(
+            response.json(),
+            {
+                "previous_diff_id": None,
+                "issues": [
+                    {"id": str(self.issues[0].id), "hash": self.issues[0].hash},
+                ],
+            },
         )
 
     def test_list_issues_unresolved_first_diff(self):
         """No issue can be marked as unresolved on a new diff"""
         with self.assertNumQueries(2):
-            response = self.client.get(f"/v2/diff/{self.diff1.id}/issues/unresolved/")
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertCountEqual(
-            response.json()["results"],
-            [],
-        )
+            response = self.client.get(
+                f"/v2/diff/{self.diff1.id}/issues/unresolved/", format="json"
+            )
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_list_issues_unresolved(self):
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(3):
             response = self.client.get(f"/v2/diff/{self.diff2.id}/issues/unresolved/")
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertCountEqual(
-            response.json()["results"],
-            [{"id": str(self.issues[2].id), "hash": self.issues[2].hash}],
+        self.assertDictEqual(
+            response.json(),
+            {
+                "previous_diff_id": "1",
+                "issues": [
+                    {"id": str(self.issues[2].id), "hash": self.issues[2].hash},
+                ],
+            },
         )
 
     def test_list_issues_closed_first_diff(self):
+        """No issue can be marked as closed on a new diff"""
         with self.assertNumQueries(2):
             response = self.client.get(f"/v2/diff/{self.diff1.id}/issues/closed/")
-            self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertCountEqual(response.json()["results"], [])
+            self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_list_issues_closed(self):
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(3):
             response = self.client.get(f"/v2/diff/{self.diff2.id}/issues/closed/")
             self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertListEqual(
-            response.json()["results"],
-            [{"id": str(self.issues[3].id), "hash": self.issues[3].hash}],
+        self.assertDictEqual(
+            response.json(),
+            {
+                "previous_diff_id": "1",
+                "issues": [{"id": str(self.issues[3].id), "hash": self.issues[3].hash}],
+            },
         )
 
     def test_list_issues_new_diff_reopen(self):
@@ -135,17 +149,27 @@ class ListIssuesTestCase(APITestCase):
         new_issue = Issue.objects.create(hash="4" * 32)
         diff.issue_links.create(revision=self.revision_last, issue=new_issue)
         diff.issue_links.create(revision=self.revision_last, issue=self.issues[3])
-        self.assertCountEqual(
-            self.client.get(f"/v2/diff/{diff.id}/issues/unresolved/").json()["results"],
-            [],
+        self.assertDictEqual(
+            self.client.get(f"/v2/diff/{diff.id}/issues/unresolved/").json(),
+            {
+                "previous_diff_id": "2",
+                "issues": [],
+            },
         )
-        self.assertCountEqual(
-            self.client.get(f"/v2/diff/{diff.id}/issues/known/").json()["results"], []
+        self.assertDictEqual(
+            self.client.get(f"/v2/diff/{diff.id}/issues/known/").json(),
+            {
+                "previous_diff_id": None,
+                "issues": [],
+            },
         )
-        self.assertCountEqual(
-            self.client.get(f"/v2/diff/{diff.id}/issues/closed/").json()["results"],
-            [
-                {"id": str(self.issues[0].id), "hash": self.issues[0].hash},
-                {"id": str(self.issues[2].id), "hash": self.issues[2].hash},
-            ],
+        self.assertDictEqual(
+            self.client.get(f"/v2/diff/{diff.id}/issues/closed/").json(),
+            {
+                "previous_diff_id": "2",
+                "issues": [
+                    {"id": str(self.issues[0].id), "hash": self.issues[0].hash},
+                    {"id": str(self.issues[2].id), "hash": self.issues[2].hash},
+                ],
+            },
         )
