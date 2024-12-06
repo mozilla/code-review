@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from django.conf import settings
-from django.db.models import Exists, OuterRef, Value
+from django.core.exceptions import BadRequest
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404
 from django.urls import path
 from django.utils.functional import cached_property
@@ -25,6 +25,16 @@ class IssueList(ListAPIView):
         )
 
     @cached_property
+    def previous_diff(self):
+        previous_diff = (
+            self.diff.revision.diffs.filter(created__lt=self.diff.created)
+            .order_by("created")
+            .last()
+        )
+        if not previous_diff:
+            raise BadRequest("No previous diff was found to compare issues")
+
+    @cached_property
     def mode(self):
         if (mode := self.kwargs["mode"]) not in self.allowed_modes:
             raise ValidationError(
@@ -40,20 +50,18 @@ class IssueList(ListAPIView):
         Convert a list of issue links to unique couples of (issue_id, issue_hash)
         """
         attributes = ("issue_id", "issue__hash")
-        if "postgresql" in settings.DATABASES["default"]["ENGINE"]:
-            return qs.order_by(*attributes).values(*attributes).distinct(*attributes)
-        return qs.order_by(*attributes).values(*attributes).distinct()
+        return qs.order_by(*attributes).values(*attributes).distinct(*attributes)
 
     @property
     def known_issues(self):
         """
-        Issues that have also being detected from mozilla-central.
+        Issues that have also being detected from the base repository (e.g. mozilla-central).
         """
         return self.distinct_issues(
             self.diff.issue_links.annotate(
                 known=Exists(
                     IssueLink.objects.filter(
-                        revision__base_repository__slug="mozilla-central",
+                        revision__base_repository_id=self.diff.revision.base_repository_id,
                         issue=OuterRef("issue"),
                     )
                 )
@@ -67,18 +75,11 @@ class IssueList(ListAPIView):
         parent revision, and are still present on the current diff.
         Filters out issues that are known by the backend.
         """
-        previous_diff = (
-            self.diff.revision.diffs.filter(created__lt=self.diff.created)
-            .order_by("created")
-            .last()
-        )
-        if not previous_diff:
-            return IssueLink.objects.none().annotate(unresolved=Value("True"))
         return self.distinct_issues(
             self.known_issues.filter(known=False).annotate(
                 unresolved=Exists(
                     IssueLink.objects.filter(
-                        diff=previous_diff,
+                        diff=self.previous_diff,
                         issue=OuterRef("issue"),
                     )
                 )
@@ -91,16 +92,8 @@ class IssueList(ListAPIView):
         Issues that were listed on the previous diff of the same
         parent revision, but does not exist on the current diff.
         """
-        # Retrieve the previous diff
-        previous_diff = (
-            self.diff.revision.diffs.filter(created__lt=self.diff.created)
-            .order_by("created")
-            .last()
-        )
-        if not previous_diff:
-            return IssueLink.objects.none().annotate(closed=Value("True"))
         return self.distinct_issues(
-            previous_diff.issue_links.annotate(
+            self.previous_diff.issue_links.annotate(
                 closed=~Exists(
                     IssueLink.objects.filter(
                         diff=self.diff,
@@ -112,7 +105,6 @@ class IssueList(ListAPIView):
 
 
 urls = [
-    # Prevails on the generic issues endpoint
     path(
         "diff/<int:diff_id>/issues/<str:mode>/",
         IssueList.as_view(),
