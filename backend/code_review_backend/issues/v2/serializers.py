@@ -12,3 +12,8 @@ class IssueLinkHashSerializer(serializers.ModelSerializer):
     class Meta:
         model = IssueLink
         fields = ("id", "hash")
+
+
+class DiffIssuesSerializer(serializers.Serializer):
+    previous_diff_id = serializers.UUIDField(allow_null=True, read_only=True)
+    issues = IssueLinkHashSerializer(many=True)
