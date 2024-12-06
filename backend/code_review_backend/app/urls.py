@@ -10,7 +10,8 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
-from code_review_backend.issues import api, api_v2
+from code_review_backend.issues import api
+from code_review_backend.issues.v2 import api as api_v2
 
 # Build Swagger schema view
 schema_view = get_schema_view(

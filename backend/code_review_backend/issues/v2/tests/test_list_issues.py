@@ -4,7 +4,7 @@ from rest_framework.test import APITestCase
 from code_review_backend.issues.models import Issue, Repository
 
 
-class CreationAPIv2TestCase(APITestCase):
+class ListIssuesTestCase(APITestCase):
     def setUp(self):
         # Create the main repository
         self.repo_main = Repository.objects.create(

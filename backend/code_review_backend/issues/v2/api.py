@@ -11,7 +11,7 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.generics import ListAPIView
 
 from code_review_backend.issues.models import Diff, IssueLink
-from code_review_backend.issues.serializers_v2 import IssueLinkHashSerializer
+from code_review_backend.issues.v2.serializers import IssueLinkHashSerializer
 
 
 class IssueList(ListAPIView):
