@@ -190,19 +190,29 @@ class BackendAPI:
 
     def list_diff_issues_v2(self, diff_id, mode):
         """
-        List issues for a given dif
+        List issues for a given diff, applying specific filters.
+        Returns:
+          * The ID of the previous diff if it exists (always null for `known` mode).
+          * A list of issues (dict serializing ID and hash) corresponding to the filter.
         """
         assert mode in ("known", "unresolved", "closed")
         try:
-            return list(self.paginate(f"/v2/diff/{diff_id}/issues/{mode}"))
+            data = self.get(f"/v2/diff/{diff_id}/issues/{mode}")
         except HTTPError as e:
             if e.response.status_code != 404:
                 logger.warning(
-                    f"Cound not list {mode} issues from the bot: {e}. Skipping"
+                    f"Could not list {mode} issues from the bot: {e}. Skipping"
                 )
             else:
                 logger.info(f"Diff not found in code review backend: {diff_id}")
-            return []
+            return None, []
+        return data["previous_diff_id"], data["issues"]
+
+    def get(self, url):
+        auth = (self.username, self.password)
+        resp = requests.get(url, auth=auth, headers=GetAppUserAgent())
+        resp.raise_for_status()
+        return resp.json()
 
     def paginate(self, url_path):
         """
