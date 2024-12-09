@@ -1,4 +1,4 @@
-FROM python:3.13.0-slim
+FROM python:3.13.1-slim
 
 ADD tools /src/tools
 ADD backend /src/backend
