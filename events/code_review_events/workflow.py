@@ -49,6 +49,7 @@ LANDO_FAILURE_MESSAGE = (
 LANDO_FAILURE_HG_MESSAGE = (
     "Static analysis and linting did not run due to failure in applying the patch."
 )
+LANDO_FAILURE_EXPIRED = "Static analysis and linting did not run due to expired patch."
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 VERSION_PATH = os.environ.get("VERSION_PATH", os.path.join(BASE_DIR, "version.json"))
@@ -195,6 +196,10 @@ class CodeReview(PhabricatorActions):
             # Requeue when nothing changed for now
             await self.bus.send(QUEUE_WEB_BUILDS, build)
 
+        elif build.state == PhabricatorBuildState.Expired:
+            # Report expired bug as not processed
+            await self.bus.send(QUEUE_PHABRICATOR_RESULTS, ("fail:expired", build, {}))
+
     def is_blacklisted(self, revision: dict):
         """Check if the revision author is in blacklisted"""
         author = self.user_blacklist.get(revision["fields"]["authorPHID"])
@@ -214,14 +219,15 @@ class CodeReview(PhabricatorActions):
         mode, build, extras = payload
         logger.debug("Publishing a Phabricator build update", mode=mode, build=build)
 
-        if mode == "fail:general":
+        def _send_failure(
+            error_code, phabricator_state, phabricator_message, lando_message
+        ):
+            """Send error message on both phabricator & Lando"""
             failure = UnitResult(
                 namespace="code-review",
-                name="general",
-                result=UnitResultState.Broken,
-                details="WARNING: An error occurred in the code review bot.\n\n```{}```".format(
-                    extras["message"]
-                ),
+                name=error_code,
+                result=phabricator_state,
+                details=phabricator_message,
                 format="remarkup",
                 duration=extras.get("duration", 0),
             )
@@ -230,12 +236,13 @@ class CodeReview(PhabricatorActions):
                 if self.publish_lando:
                     logger.info(
                         "Publishing code review failure.",
+                        code=error_code,
                         revision=build.revision["id"],
                         diff=build.diff_id,
                     )
                     try:
                         self.lando_warnings.add_warning(
-                            LANDO_FAILURE_MESSAGE, build.revision["id"], build.diff_id
+                            lando_message, build.revision["id"], build.diff_id
                         )
                     except Exception as ex:
                         logger.error(str(ex), exc_info=True)
@@ -244,36 +251,36 @@ class CodeReview(PhabricatorActions):
                 build.target_phid, BuildState.Fail, unit=[failure]
             )
 
+        if mode == "fail:general":
+            _send_failure(
+                error_code="general",
+                phabricator_state=UnitResultState.Broken,
+                phabricator_message="WARNING: An error occurred in the code review bot.\n\n```{}```".format(
+                    extras["message"]
+                ),
+                lando_message=LANDO_FAILURE_MESSAGE,
+            )
+
         elif mode == "fail:mercurial":
             extra_content = ""
             if build.missing_base_revision:
                 extra_content = f" because the parent revision ({build.base_revision}) does not exist on mozilla-unified. If possible, you should publish that revision"
 
-            failure = UnitResult(
-                namespace="code-review",
-                name="mercurial",
-                result=UnitResultState.Fail,
-                details="WARNING: The code review bot failed to apply your patch{}.\n\n```{}```".format(
+            _send_failure(
+                error_code="mercurial",
+                phabricator_state=UnitResultState.Fail,
+                phabricator_message="WARNING: The code review bot failed to apply your patch{}.\n\n```{}```".format(
                     extra_content, extras["message"]
                 ),
-                format="remarkup",
-                duration=extras.get("duration", 0),
+                lando_message=LANDO_FAILURE_HG_MESSAGE,
             )
-            # Send mercurial message to Lando
-            if self.publish_lando:
-                logger.info(
-                    "Publishing code review hg failure.",
-                    revision=build.revision["id"],
-                    diff=build.diff_id,
-                )
-                try:
-                    self.lando_warnings.add_warning(
-                        LANDO_FAILURE_HG_MESSAGE, build.revision["id"], build.diff_id
-                    )
-                except Exception as ex:
-                    logger.error(str(ex), exc_info=True)
-            self.api.update_build_target(
-                build.target_phid, BuildState.Fail, unit=[failure]
+
+        elif mode == "fail:expired":
+            _send_failure(
+                error_code="expired",
+                phabricator_state=UnitResultState.Fail,
+                phabricator_message="WARNING: The code review bot did not process your patch as it was published more than a day ago",
+                lando_message=LANDO_FAILURE_EXPIRED,
             )
 
         elif mode == "test_result":
