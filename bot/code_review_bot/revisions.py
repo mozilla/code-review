@@ -7,6 +7,7 @@ import random
 import urllib.parse
 from datetime import timedelta
 from pathlib import Path
+from typing import List
 
 import requests
 import rs_parsepatch
@@ -306,6 +307,55 @@ class Revision:
             base_changeset=base_changeset,
             head_repository=head_repository,
             base_repository=base_repository,
+        )
+
+    @staticmethod
+    def from_phabricator_trigger(
+        revision_phid: str, transactions: List[str], phabricator: PhabricatorAPI
+    ):
+        # Load revision details from Phabricator
+        revision = phabricator.load_revision(revision_phid)
+        logger.info("Found revision", id=revision["id"], phid=revision["phid"])
+
+        # Lookup transactions to find Diff
+        response = phabricator.request(
+            "transaction.search", constraints={"phids": transactions}, objectType="DREV"
+        )
+        diff_phid = None
+        for transaction in response["data"]:
+            fields = transaction["fields"]
+            if not fields:
+                continue
+            new = fields.get("new", "")
+            if new.startswith("PHID-DIFF-"):
+                diff_phid = new
+                break
+
+        # Check a diff is found
+        if diff_phid is None:
+            from pprint import pprint
+
+            pprint(response)  # Debug
+            raise Exception("No DIFF found in transactions")
+
+        # Load diff details to get the diff revision
+        # We also load the commits list in order to get the email of the author of the
+        # patch for sending email if builds are failing.
+        diffs = phabricator.search_diffs(
+            diff_phid=diff_phid, attachments={"commits": True}
+        )
+        assert len(diffs) == 1, f"No diff available for {diff_phid}"
+        diff = diffs[0]
+        logger.info("Found diff", id=diff["id"], phid=diff["phid"])
+
+        return Revision(
+            phabricator_id=revision["id"],
+            phabricator_phid=revision_phid,
+            diff_id=diff["id"],
+            diff_phid=diff_phid,
+            diff=diff,
+            url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
+            revision=revision,
         )
 
     def analyze_patch(self):
