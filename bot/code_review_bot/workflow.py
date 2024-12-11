@@ -215,6 +215,18 @@ class Workflow:
         # Publish issues in the backend
         self.backend_api.publish_issues(issues, revision)
 
+    def start_analysis(self, revision):
+        """
+        Apply a patch on a local clone and push to try to trigger a new Code review analysis
+        """
+        logger.info("Patch should be applied here...")
+
+        # TODO: clone upstream at tip
+
+        # TODO: apply stack of patches
+
+        # TODO: push to try
+
     def clone_repository(self, revision):
         """
         Clone the repo locally when configured
