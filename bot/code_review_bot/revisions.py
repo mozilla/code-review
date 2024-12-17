@@ -477,6 +477,19 @@ class Revision:
 
         return any(_is_idl(f) for f in self.files)
 
+    @property
+    def is_blacklisted(self):
+        """Check if the revision author is in the black-list"""
+        # TODO: finalize port
+        return False
+
+        author = self.user_blacklist.get(self.fields["authorPHID"])
+        if author is None:
+            return False
+
+        logger.info("Revision from a blacklisted user", revision=self, author=author)
+        return True
+
     def add_improvement_patch(self, analyzer, content):
         """
         Save an improvement patch, and make it available

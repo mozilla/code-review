@@ -2,14 +2,22 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import time
 from datetime import datetime, timedelta
 from itertools import groupby
 
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
+from libmozevent.mercurial import MercurialWorker, Repository
+from libmozevent.phabricator import PhabricatorActions, PhabricatorBuildState
 from taskcluster.utils import stringDate
 
 from code_review_bot import Level, stats
+from code_review_bot.analysis import (
+    LANDO_WARNING_MESSAGE,
+    convert_revision_to_build,
+    publish_results,
+)
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND, REPO_MOZILLA_CENTRAL, settings
 from code_review_bot.mercurial import robust_checkout
@@ -219,13 +227,92 @@ class Workflow:
         """
         Apply a patch on a local clone and push to try to trigger a new Code review analysis
         """
-        logger.info("Patch should be applied here...")
+        logger.info("Starting revision analysis", revivion=revision)
 
-        # TODO: clone upstream at tip
+        # Do not process revisions from black-listed users
+        if revision.is_blacklisted:
+            logger.warning("Blacklister author, stopping there.")
+            return
 
-        # TODO: apply stack of patches
+        # Set the Phabricator build as running
+        self.update_status(revision, state=BuildState.Work)
 
-        # TODO: push to try
+        # Initialize Phabricator build using revision
+        build = convert_revision_to_build(revision)
+
+        # Copy internal Phabricator credentials to setup libmozevent
+        phabricator = PhabricatorActions(
+            url=self.phabricator.url,
+            api_key=self.phabricator.api_key,
+        )
+
+        # Initialize mercurial repository
+        repository = Repository(
+            config={
+                "name": "...",
+                # "url": ...,
+                # "try_url": ;..,
+                ## Force usage of robustcheckout
+                # "checkout": "robust",
+            },
+            cache_root=settings.mercurial_cache,
+        )
+
+        worker = MercurialWorker(
+            # We are not using the mercurial workflow
+            # so we can initialize with empty data here
+            queue_name=None,
+            queue_phabricator=None,
+            repositories=None,
+        )
+
+        while build.retries > 0:
+            # Update the internal build state using Phabricator infos
+            phabricator.update_state(build)
+
+            # Continue with workflow once the build is public
+            if build.state == PhabricatorBuildState.Public:
+                break
+
+            # Retry later if the build is not yet seen as public
+            logger.warning(
+                "Build is not public, retrying in 30s",
+                build=build,
+                retries_left=build.retries,
+            )
+            time.sleep(30)
+
+        # When the build is public, load needed details
+        try:
+            phabricator.load_patches_stack(build)
+            logger.info("Loaded stack of patches", build=str(build))
+        except Exception as e:
+            logger.warning(
+                "Failed to load build details", build=str(build), error=str(e)
+            )
+
+        # We'll clone the required repository
+        repository.clone()
+
+        # Apply the stack of patches
+        output = worker.handle_build(repository, build)
+
+        # Update final state using worker output
+        publish_results(output)
+
+        # Send Build in progress to Lando
+        if self.publish_lando:
+            logger.info(
+                "Begin publishing init warning message to lando.",
+                revision=build.revision["id"],
+                diff=build.diff_id,
+            )
+            try:
+                self.lando_warnings.add_warning(
+                    LANDO_WARNING_MESSAGE, build.revision["id"], build.diff_id
+                )
+            except Exception as ex:
+                logger.error(str(ex), exc_info=True)
 
     def clone_repository(self, revision):
         """
