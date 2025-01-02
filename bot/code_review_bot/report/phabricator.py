@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-from collections import defaultdict
 from typing import List
 from urllib.parse import urljoin
 
@@ -30,7 +29,7 @@ COMMENT_ERRORS = """
 IMPORTANT: Found {nb_errors} (error level) that must be fixed before landing.
 """
 
-COMMENT_DIFF_FOLLOWUP = """compared to the previous diff [{diff_id}]({phabricator_diff_url}).
+COMMENT_DIFF_FOLLOWUP = """compared to the previous diff.
 """
 
 COMMENT_RUN_ANALYZERS = """
@@ -110,53 +109,6 @@ class PhabricatorReporter(Reporter):
         assert isinstance(nb, int)
         return "{} {}".format(nb, nb == 1 and word or word + "s")
 
-    def compare_issues(self, former_diff_id, issues):
-        """
-        Compare new issues depending on their evolution from the
-        previous diff on the same revision.
-        Returns a tuple containing lists of:
-          * Unresolved issues, that are present on both diffs
-          * Closed issues, that were present in the previous diff and are now gone
-        """
-        if not self.backend_api.enabled:
-            logger.warning(
-                "Backend API must be enabled to compare issues with previous diff {former_diff_id}."
-            )
-            return [], []
-
-        # If this is the first diff, there's no need to compare issues with a
-        # previous diff since there is no previous diff.
-        if former_diff_id is None:
-            return [], []
-
-        # Retrieve issues related to the previous diff
-        try:
-            previous_issues = self.backend_api.list_diff_issues(former_diff_id)
-        except Exception as e:
-            logger.warning(
-                f"An error occurred listing issues on previous diff {former_diff_id}: {e}. "
-                "Each issue will be considered as a new case."
-            )
-            previous_issues = []
-
-        # Multiple issues may share a similar hash in case they were
-        # produced by the same linter on the same lines
-        indexed_issues = defaultdict(list)
-        for issue in previous_issues:
-            indexed_issues[issue["hash"]].append(issue)
-
-        # Compare current issues with the previous ones based on the hash
-        unresolved = [
-            issue.on_backend["hash"]
-            for issue in issues
-            if issue.on_backend and issue.on_backend["hash"] in indexed_issues
-        ]
-
-        # All previous issues that are not unresolved are closed
-        closed = [issue for issue in previous_issues if issue["hash"] not in unresolved]
-
-        return unresolved, closed
-
     def publish(self, issues, revision, task_failures, notices, reviewers):
         """
         Publish issues on Phabricator:
@@ -202,9 +154,9 @@ class PhabricatorReporter(Reporter):
             if patch.analyzer.name not in self.analyzers_skipped
         ]
 
-        if publishable_issues:
-            # Publish detected patch's issues on Harbormaster, all at once, as lint issues
-            self.publish_harbormaster(revision, publishable_issues)
+        #if publishable_issues:
+        #    # Publish detected patch's issues on Harbormaster, all at once, as lint issues
+        #    self.publish_harbormaster(revision, publishable_issues)
 
         # Retrieve all diffs for the current revision
         rev_diffs = self.api.search_diffs(revision_phid=revision.phabricator_phid)
@@ -215,18 +167,20 @@ class PhabricatorReporter(Reporter):
             )
             return publishable_issues, patches
 
-        # Compare issues that are not known on the repository to a previous diff
-        older_diff_ids = [
-            diff["id"] for diff in rev_diffs if diff["id"] < revision.diff_id
-        ]
-        former_diff_id = sorted(older_diff_ids)[-1] if older_diff_ids else None
-        unresolved_issues, closed_issues = self.compare_issues(
-            former_diff_id, publishable_issues
-        )
+        if not self.backend_api.enabled:
+            logger.warning(
+                "Backend API must be enabled to compare issues with the previous diff."
+            )
+            unresolved, closed = [], []
+        else:
+            unresolved = self.backend_api.list_diff_issues_v2(
+                revision.diff_id, "unresolved"
+            )
+            closed = self.backend_api.list_diff_issues_v2(revision.diff_id, "closed")
 
         if (
-            len(unresolved_issues) == len(publishable_issues)
-            and not closed_issues
+            len(unresolved) == len(publishable_issues)
+            and not closed
             and not task_failures
             and not notices
         ):
@@ -234,7 +188,7 @@ class PhabricatorReporter(Reporter):
             logger.info(
                 "No new issues nor failures/notices were detected. "
                 "Skipping comment publication (some issues are unresolved)",
-                unresolved_count=len(unresolved_issues),
+                unresolved_count=len(unresolved),
             )
             return publishable_issues, patches
 
@@ -245,9 +199,8 @@ class PhabricatorReporter(Reporter):
             patches,
             task_failures,
             notices,
-            former_diff_id=former_diff_id,
-            unresolved_count=len(unresolved_issues),
-            closed_count=len(closed_issues),
+            unresolved_count=len(unresolved),
+            closed_count=len(closed),
         )
 
         # Publish statistics
@@ -263,19 +216,19 @@ class PhabricatorReporter(Reporter):
         Publish issues through HarborMaster
         either as lint results or unit tests results
         """
-        assert lint_issues or unit_issues, "No issues to publish"
+        #assert lint_issues or unit_issues, "No issues to publish"
 
-        self.api.update_build_target(
-            revision.build_target_phid,
-            state=BuildState.Work,
-            lint=[issue.as_phabricator_lint() for issue in lint_issues],
-            unit=[issue.as_phabricator_unitresult() for issue in unit_issues],
-        )
-        logger.info(
-            "Updated Harbormaster build state with issues",
-            nb_lint=len(lint_issues),
-            nb_unit=len(unit_issues),
-        )
+        #self.api.update_build_target(
+        #    revision.build_target_phid,
+        #    state=BuildState.Work,
+        #    lint=[issue.as_phabricator_lint() for issue in lint_issues],
+        #    unit=[issue.as_phabricator_unitresult() for issue in unit_issues],
+        #)
+        #logger.info(
+        #    "Updated Harbormaster build state with issues",
+        #    nb_lint=len(lint_issues),
+        #    nb_unit=len(unit_issues),
+        #)
 
     def publish_summary(
         self,
@@ -284,28 +237,36 @@ class PhabricatorReporter(Reporter):
         patches,
         task_failures,
         notices,
-        former_diff_id,
         unresolved_count,
         closed_count,
     ):
         """
         Summarize publishable issues through Phabricator comment
         """
-        self.api.comment(
-            revision.phabricator_id,
-            self.build_comment(
-                revision=revision,
-                issues=issues,
-                patches=patches,
-                bug_report_url=BUG_REPORT_URL,
-                task_failures=task_failures,
-                notices=notices,
-                former_diff_id=former_diff_id,
-                unresolved=unresolved_count,
-                closed=closed_count,
-            ),
-        )
-        logger.info("Published phabricator summary")
+        raise Exception(self.build_comment(
+            revision=revision,
+            issues=issues,
+            patches=patches,
+            bug_report_url=BUG_REPORT_URL,
+            task_failures=task_failures,
+            notices=notices,
+            unresolved=unresolved_count,
+            closed=closed_count,
+        ))
+        #self.api.comment(
+        #    revision.phabricator_id,
+        #    self.build_comment(
+        #        revision=revision,
+        #        issues=issues,
+        #        patches=patches,
+        #        bug_report_url=BUG_REPORT_URL,
+        #        task_failures=task_failures,
+        #        notices=notices,
+        #        unresolved=unresolved_count,
+        #        closed=closed_count,
+        #    ),
+        #)
+        #logger.info("Published phabricator summary")
 
     def build_comment(
         self,
@@ -315,7 +276,6 @@ class PhabricatorReporter(Reporter):
         notices,
         patches=[],
         task_failures=[],
-        former_diff_id=None,
         unresolved=0,
         closed=0,
     ):
@@ -367,13 +327,7 @@ class PhabricatorReporter(Reporter):
                     followup_comment += "and "
             if closed:
                 followup_comment += self.pluralize("defect", closed) + " closed "
-            followup_comment += COMMENT_DIFF_FOLLOWUP.format(
-                phabricator_diff_url=self.phabricator_diff_url.format(
-                    diff_id=former_diff_id
-                ),
-                diff_id=former_diff_id,
-            )
-            comment += followup_comment
+            comment += COMMENT_DIFF_FOLLOWUP
 
         # Add colored warning section
         total_warnings = sum(1 for i in issues if i.level == Level.Warning)
