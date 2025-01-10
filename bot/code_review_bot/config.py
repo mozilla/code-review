@@ -25,7 +25,7 @@ TaskCluster = collections.namedtuple(
 )
 RepositoryConf = collections.namedtuple(
     "RepositoryConf",
-    "name, try_name, url, decision_env_prefix",
+    "name, try_name, url, try_url, decision_env_prefix, ssh_user",
 )
 
 
@@ -62,12 +62,22 @@ class Settings:
         # Cache to store whole repositories
         self.mercurial_cache = None
 
+        # SSH Key used to push on try
+        self.ssh_key = None
+
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
         # caching the versions of the app
         self.version = pkg_resources.require("code-review-bot")[0].version
 
-    def setup(self, app_channel, allowed_paths, repositories, mercurial_cache=None):
+    def setup(
+        self,
+        app_channel,
+        allowed_paths,
+        repositories,
+        ssh_key=None,
+        mercurial_cache=None,
+    ):
         # Detect source from env
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
             self.try_task_id = os.environ["TRY_TASK_ID"]
@@ -145,6 +155,9 @@ class Settings:
                 self.mercurial_cache.exists()
             ), f"Mercurial cache does not exist {self.mercurial_cache}"
             logger.info("Using mercurial cache", path=self.mercurial_cache)
+
+            # Save ssh key when mercurial cache is enabled
+            self.ssh_key = ssh_key
 
     def __getattr__(self, key):
         if key not in self.config:

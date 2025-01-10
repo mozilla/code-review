@@ -89,6 +89,7 @@ class Revision:
         head_repository=None,
         repository_try_name=None,
         base_repository=None,
+        base_repository_conf=None,
         phabricator_repository=None,
         url=None,
         patch=None,
@@ -113,6 +114,9 @@ class Revision:
 
         # the target repo where the patch may land
         self.base_repository = base_repository
+
+        # the target repo configuration where the patch may land
+        self.base_repository_conf = base_repository_conf
 
         # the phabricator repository payload for later identification
         self.phabricator_repository = phabricator_repository
@@ -317,6 +321,24 @@ class Revision:
         revision = phabricator.load_revision(revision_phid)
         logger.info("Found revision", id=revision["id"], phid=revision["phid"])
 
+        # Lookup repository details and match with a known repo from configuration
+        repo_phid = revision["fields"]["repositoryPHID"]
+        repos = phabricator.request(
+            "diffusion.repository.search", constraints={"phids": [repo_phid]}
+        )
+        assert (
+            len(repos["data"]) == 1
+        ), f"No repository found on Phabrictor for {repo_phid}"
+        phab_repo = repos["data"][0]
+        repo_name = phab_repo["fields"]["name"]
+        known_repos = {r.name: r for r in settings.repositories}
+        repository = known_repos.get(repo_name)
+        if repository is None:
+            raise Exception(
+                f"No repository found in configuration for {repo_name} - {repo_phid}"
+            )
+        logger.info("Found repository", name=repo_name, phid=repo_phid)
+
         # Lookup transactions to find Diff
         response = phabricator.request(
             "transaction.search", constraints={"phids": transactions}, objectType="DREV"
@@ -333,9 +355,6 @@ class Revision:
 
         # Check a diff is found
         if diff_phid is None:
-            from pprint import pprint
-
-            pprint(response)  # Debug
             raise Exception("No DIFF found in transactions")
 
         # Load diff details to get the diff revision
@@ -356,6 +375,10 @@ class Revision:
             diff=diff,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
             revision=revision,
+            base_changeset="tip",
+            base_repository=repository.url,
+            base_repository_conf=repository,
+            repository_try_name=repository.try_name,
         )
 
     def analyze_patch(self):

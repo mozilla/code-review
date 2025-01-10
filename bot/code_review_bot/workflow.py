@@ -231,8 +231,16 @@ class Workflow:
 
         # Do not process revisions from black-listed users
         if revision.is_blacklisted:
-            logger.warning("Blacklister author, stopping there.")
+            logger.warning("Blacklisted author, stopping there.")
             return
+
+        # Cannot run without mercurial cache configured
+        if not settings.mercurial_cache:
+            raise Exception("Mercurial cache must be configured to start analysis")
+
+        # Cannot run without ssh key
+        if not settings.ssh_key:
+            raise Exception("SSH Key must be configured to start analysis")
 
         # Set the Phabricator build as running
         self.update_status(revision, state=BuildState.Work)
@@ -249,11 +257,15 @@ class Workflow:
         # Initialize mercurial repository
         repository = Repository(
             config={
-                "name": "...",
-                # "url": ...,
-                # "try_url": ;..,
-                ## Force usage of robustcheckout
-                # "checkout": "robust",
+                "name": revision.base_repository_conf.name,
+                "try_name": revision.base_repository_conf.try_name,
+                "url": revision.base_repository_conf.url,
+                "try_url": revision.base_repository_conf.try_url,
+                # Setup ssh identity
+                "ssh_user": revision.base_repository_conf.ssh_user,
+                "ssh_key": settings.ssh_key,
+                # Force usage of robustcheckout
+                "checkout": "robust",
             },
             cache_root=settings.mercurial_cache,
         )

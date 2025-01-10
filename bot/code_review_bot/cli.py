@@ -70,7 +70,7 @@ def main():
 
     taskcluster.load_secrets(
         args.taskcluster_secret,
-        prefixes=["common", "code-review-bot", "bot"],
+        prefixes=["common", "events", "code-review-bot", "bot"],
         required=(
             "APP_CHANNEL",
             "REPORTERS",
@@ -84,6 +84,7 @@ def main():
             "ZERO_COVERAGE_ENABLED": True,
             "ALLOWED_PATHS": ["*"],
             "task_failures_ignored": [],
+            "ssh_key": None,
         },
         local_secrets=yaml.safe_load(args.configuration)
         if args.configuration
@@ -106,6 +107,7 @@ def main():
         taskcluster.secrets["APP_CHANNEL"],
         taskcluster.secrets["ALLOWED_PATHS"],
         taskcluster.secrets["repositories"],
+        taskcluster.secrets["ssh_key"],
         args.mercurial_repository,
     )
 
