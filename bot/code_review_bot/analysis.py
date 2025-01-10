@@ -1,8 +1,6 @@
 import structlog
 from libmozdata.phabricator import BuildState, UnitResult, UnitResultState
-from libmozevent.phabricator import (
-    PhabricatorBuild,
-)
+from libmozevent.phabricator import PhabricatorBuild, PhabricatorBuildState
 
 from code_review_bot.revisions import Revision
 
@@ -19,8 +17,20 @@ LANDO_FAILURE_HG_MESSAGE = (
 
 
 class RevisionBuild(PhabricatorBuild):
-    def __init__(self):
-        pass
+    def __init__(self, revision):
+        # State should be updated to Public
+        self.state = PhabricatorBuildState.Queued
+
+        # Incremented on an unexpected failure during build's push to try
+        self.retries = 0
+
+        # Needed to load stack of patches
+        self.diff = revision.diff
+        self.diff_id = revision.diff_id
+        self.stack = None
+
+    def __str__(self):
+        return f"Phabricator Diff {self.diff_id}"
 
 
 def convert_revision_to_build(revision: Revision) -> RevisionBuild:
@@ -28,7 +38,7 @@ def convert_revision_to_build(revision: Revision) -> RevisionBuild:
     Convert the bot revision into a libmozevent compatible build
     """
 
-    return RevisionBuild()
+    return RevisionBuild(revision)
 
 
 def publish_results(self, payload):

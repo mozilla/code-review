@@ -275,7 +275,7 @@ class Workflow:
             # so we can initialize with empty data here
             queue_name=None,
             queue_phabricator=None,
-            repositories=None,
+            repositories={},
         )
 
         while build.retries > 0:
