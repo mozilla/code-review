@@ -312,14 +312,15 @@ class Workflow:
         output = asyncio.run(worker.handle_build(repository, build))
 
         # Update final state using worker output
-        if self.publish:
+        if self.update_build:
             publish_analysis_phabricator(output, self.phabricator)
         else:
             logger.debug("Skipping Phabricator publication")
 
         # Send Build in progress or errors to Lando
-        if self.publish_lando:
-            publish_analysis_lando(output, self.lando_warnings)
+        lando_reporter = self.reporters.get("lando")
+        if lando_reporter is not None:
+            publish_analysis_lando(output, lando_reporter.lando_api)
         else:
             logger.debug("Skipping Lando publication")
 
