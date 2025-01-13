@@ -15,9 +15,9 @@ from taskcluster.utils import stringDate
 
 from code_review_bot import Level, stats
 from code_review_bot.analysis import (
-    LANDO_WARNING_MESSAGE,
     RevisionBuild,
-    publish_results,
+    publish_analysis_lando,
+    publish_analysis_phabricator,
 )
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND, REPO_MOZILLA_CENTRAL, settings
@@ -312,21 +312,16 @@ class Workflow:
         output = asyncio.run(worker.handle_build(repository, build))
 
         # Update final state using worker output
-        publish_results(output)
+        if self.publish:
+            publish_analysis_phabricator(output, self.phabricator)
+        else:
+            logger.debug("Skipping Phabricator publication")
 
-        # Send Build in progress to Lando
+        # Send Build in progress or errors to Lando
         if self.publish_lando:
-            logger.info(
-                "Begin publishing init warning message to lando.",
-                revision=revision.phabricator_id,
-                diff=revision.diff_id,
-            )
-            try:
-                self.lando_warnings.add_warning(
-                    LANDO_WARNING_MESSAGE, revision.phabricator_id, revision.diff_id
-                )
-            except Exception as ex:
-                logger.error(str(ex), exc_info=True)
+            publish_analysis_lando(output, self.lando_warnings)
+        else:
+            logger.debug("Skipping Lando publication")
 
     def clone_repository(self, revision):
         """

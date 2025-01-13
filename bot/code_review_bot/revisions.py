@@ -367,12 +367,41 @@ class Revision:
         diff = diffs[0]
         logger.info("Found diff", id=diff["id"], phid=diff["phid"])
 
+        # Lookup harbormaster target passing through Buildable, then Build, finally Build Target
+        out = phabricator.request(
+            "harbormaster.buildable.search",
+            constraints={"containerPHIDs": [revision_phid], "objectPHIDs": [diff_phid]},
+        )
+        assert len(out["data"]) == 1
+        buildable_phid = out["data"][0]["phid"]
+        logger.info("Found Harbormaster buildable", phid=buildable_phid)
+
+        out = phabricator.request(
+            "harbormaster.build.search", constraints={"buildables": [buildable_phid]}
+        )
+        assert len(out["data"]) == 1
+        build_phid = out["data"][0]["phid"]
+        logger.info("Found Harbormaster build", phid=build_phid)
+
+        out = phabricator.request(
+            "harbormaster.target.search", constraints={"buildPHIDs": [build_phid]}
+        )
+        if len(out["data"]) == 1:
+            build_target_phid = out["data"][0]["phid"]
+            logger.info("Found Harbormaster build target", phid=build_target_phid)
+        else:
+            build_target_phid = None
+            logger.warning(
+                "No build target found on Phabricator, no updates will be published"
+            )
+
         return Revision(
             phabricator_id=revision["id"],
             phabricator_phid=revision_phid,
             diff_id=diff["id"],
             diff_phid=diff_phid,
             diff=diff,
+            build_target_phid=build_target_phid,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
             revision=revision,
             base_changeset="tip",
