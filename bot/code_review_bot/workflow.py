@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import asyncio
 import time
 from datetime import datetime, timedelta
 from itertools import groupby
@@ -15,7 +16,7 @@ from taskcluster.utils import stringDate
 from code_review_bot import Level, stats
 from code_review_bot.analysis import (
     LANDO_WARNING_MESSAGE,
-    convert_revision_to_build,
+    RevisionBuild,
     publish_results,
 )
 from code_review_bot.backend import BackendAPI
@@ -246,7 +247,7 @@ class Workflow:
         self.update_status(revision, state=BuildState.Work)
 
         # Initialize Phabricator build using revision
-        build = convert_revision_to_build(revision)
+        build = RevisionBuild(revision)
 
         # Copy internal Phabricator credentials to setup libmozevent
         phabricator = PhabricatorActions(
@@ -306,8 +307,9 @@ class Workflow:
         # We'll clone the required repository
         repository.clone()
 
-        # Apply the stack of patches
-        output = worker.handle_build(repository, build)
+        # Apply the stack of patches using asynchronous method
+        # that runs directly in that process
+        output = asyncio.run(worker.handle_build(repository, build))
 
         # Update final state using worker output
         publish_results(output)
@@ -316,12 +318,12 @@ class Workflow:
         if self.publish_lando:
             logger.info(
                 "Begin publishing init warning message to lando.",
-                revision=build.revision["id"],
-                diff=build.diff_id,
+                revision=revision.phabricator_id,
+                diff=revision.diff_id,
             )
             try:
                 self.lando_warnings.add_warning(
-                    LANDO_WARNING_MESSAGE, build.revision["id"], build.diff_id
+                    LANDO_WARNING_MESSAGE, revision.phabricator_id, revision.diff_id
                 )
             except Exception as ex:
                 logger.error(str(ex), exc_info=True)
