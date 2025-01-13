@@ -315,14 +315,14 @@ class Workflow:
         if self.update_build:
             publish_analysis_phabricator(output, self.phabricator)
         else:
-            logger.debug("Skipping Phabricator publication")
+            logger.info("Skipping Phabricator publication")
 
         # Send Build in progress or errors to Lando
         lando_reporter = self.reporters.get("lando")
         if lando_reporter is not None:
             publish_analysis_lando(output, lando_reporter.lando_api)
         else:
-            logger.debug("Skipping Lando publication")
+            logger.info("Skipping Lando publication")
 
     def clone_repository(self, revision):
         """
