@@ -532,10 +532,7 @@ class Revision:
     @property
     def is_blacklisted(self):
         """Check if the revision author is in the black-list"""
-        # TODO: finalize port
-        return False
-
-        author = self.user_blacklist.get(self.fields["authorPHID"])
+        author = settings.user_blacklist.get(self.revision["fields"]["authorPHID"])
         if author is None:
             return False
 

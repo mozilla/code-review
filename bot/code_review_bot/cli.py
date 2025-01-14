@@ -85,6 +85,7 @@ def main():
             "ALLOWED_PATHS": ["*"],
             "task_failures_ignored": [],
             "ssh_key": None,
+            "user_blacklist": [],
         },
         local_secrets=yaml.safe_load(args.configuration)
         if args.configuration
@@ -148,6 +149,9 @@ def main():
                 "publish_failure"
             ]
             reporters["lando"].setup_api(lando_api)
+
+    # We need Phabricator API to list black-listed users
+    settings.load_user_blacklist(taskcluster.secrets["user_blacklist"], phabricator_api)
 
     # Load unique revision
     try:

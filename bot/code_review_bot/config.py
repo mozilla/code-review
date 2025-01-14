@@ -65,6 +65,10 @@ class Settings:
         # SSH Key used to push on try
         self.ssh_key = None
 
+        # List of users that should trigger a new analysis
+        # Indexed by their Phabricator ID
+        self.user_blacklist = {}
+
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
         # caching the versions of the app
@@ -158,6 +162,18 @@ class Settings:
 
             # Save ssh key when mercurial cache is enabled
             self.ssh_key = ssh_key
+
+    def load_user_blacklist(self, usernames, phabricator_api):
+        """
+        Load all black listed users from Phabricator API
+        """
+        self.user_blacklist = {
+            user["phid"]: user["fields"]["username"]
+            for user in phabricator_api.search_users(
+                constraints={"usernames": usernames}
+            )
+        }
+        logger.info("Blacklisted users", names=self.user_blacklist.values())
 
     def __getattr__(self, key):
         if key not in self.config:
