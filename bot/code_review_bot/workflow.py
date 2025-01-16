@@ -228,7 +228,7 @@ class Workflow:
         """
         Apply a patch on a local clone and push to try to trigger a new Code review analysis
         """
-        logger.info("Starting revision analysis", revivion=revision)
+        logger.info("Starting revision analysis", revision=revision)
 
         # Do not process revisions from black-listed users
         if revision.is_blacklisted:
