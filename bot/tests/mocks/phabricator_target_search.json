@@ -4,7 +4,8 @@
             {
               "fields": {
                 "buildPHID": "PHID-HMBB-xxx"
-              }
+              },
+              "phid": "PHID-HMBT-test"
             }
         ],
         "maps": {},

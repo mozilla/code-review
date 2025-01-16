@@ -14,6 +14,7 @@ from collections import defaultdict, namedtuple
 from configparser import ConfigParser
 from contextlib import contextmanager
 
+import hglib
 import pytest
 import responses
 from libmozdata.phabricator import PhabricatorAPI
@@ -58,7 +59,12 @@ def mock_config(mock_repositories):
     os.environ["TRY_TASK_ID"] = "remoteTryTask"
     os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
     os.environ["BULK_ISSUE_CHUNKS"] = "10"
-    settings.setup("test", ["dom/*", "tests/*.py", "test/*.c"], mock_repositories)
+    settings.setup(
+        "test",
+        ["dom/*", "tests/*.py", "test/*.c"],
+        mock_repositories,
+    )
+
     return settings
 
 
@@ -245,6 +251,13 @@ def mock_phabricator(mock_config):
         responses.POST,
         "http://phabricator.test/api/diffusion.repository.search",
         body=_response("repository_search"),
+        content_type="application/json",
+    )
+
+    responses.add(
+        responses.POST,
+        "http://phabricator.test/api/project.search",
+        body=_response("project_search"),
         content_type="application/json",
     )
 
@@ -519,8 +532,8 @@ def mock_backend_secret(mock_taskcluster_config):
     }
 
 
-@pytest.fixture
-def mock_workflow(mock_config, mock_phabricator, mock_taskcluster_config):
+@pytest.fixture(scope="function")
+def mock_workflow(mock_config, mock_taskcluster_config):
     """
     Mock the workflow along with Taskcluster mocks
     No phabricator output here
@@ -537,7 +550,7 @@ def mock_workflow(mock_config, mock_phabricator, mock_taskcluster_config):
         def __init__(self):
             self.reporters = {}
             self.lando_api = None
-            self.phabricator_api = None
+            self.phabricator = None
             self.index_service = mock_taskcluster_config.get_service("index")
             self.queue_service = mock_taskcluster_config.get_service("queue")
             self.zero_coverage_enabled = True
@@ -906,3 +919,61 @@ def sentry_event_without_colors():
     path = os.path.join(FIXTURES_DIR, "sentry_event_after.json")
     with open(path) as f:
         return json.load(f)
+
+
+@pytest.fixture
+def mock_mercurial_repo(monkeypatch):
+    """Capture hglib repository calls"""
+
+    Commit = collections.namedtuple("Commit", "node")
+
+    class MockRepo:
+        def __init__(self):
+            self.server = None
+            self._calls = []
+
+        def setcbout(self, cb):
+            self._calls.append("cbout")
+
+        def setcberr(self, cb):
+            self._calls.append("cberr")
+
+        def revert(self, path, **kwargs):
+            self._calls.append(("revert", path, kwargs))
+
+        def rawcommand(self, cmd):
+            self._calls.append(("rawcommand", cmd))
+
+        def pull(self):
+            self._calls.append("pull")
+
+        def identify(self, rev):
+            self._calls.append(("identify", rev))
+
+        def update(self, **kwargs):
+            self._calls.append(("update", kwargs))
+
+        def status(self, **kwargs):
+            self._calls.append(("status", kwargs))
+            return b""
+
+        def import_(self, patches=None, **kwargs):
+            self._calls.append(("import", patches.read(), kwargs))
+
+        def add(self, path):
+            self._calls.append(("add", path))
+
+        def commit(self, **kwargs):
+            self._calls.append(("commit", kwargs))
+
+        def tip(self):
+            self._calls.append("tip")
+            return Commit(b"test_tip")
+
+        def push(self, **kwargs):
+            self._calls.append(("push", kwargs))
+
+    # Provide a controlled instance on hglib.open
+    mock_repo = MockRepo()
+    monkeypatch.setattr(hglib, "open", lambda path: mock_repo)
+    return mock_repo

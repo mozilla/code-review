@@ -7,6 +7,7 @@ import random
 import urllib.parse
 from datetime import timedelta
 from pathlib import Path
+from typing import List
 
 import requests
 import rs_parsepatch
@@ -88,6 +89,7 @@ class Revision:
         head_repository=None,
         repository_try_name=None,
         base_repository=None,
+        base_repository_conf=None,
         phabricator_repository=None,
         url=None,
         patch=None,
@@ -112,6 +114,9 @@ class Revision:
 
         # the target repo where the patch may land
         self.base_repository = base_repository
+
+        # the target repo configuration where the patch may land
+        self.base_repository_conf = base_repository_conf
 
         # the phabricator repository payload for later identification
         self.phabricator_repository = phabricator_repository
@@ -308,6 +313,103 @@ class Revision:
             base_repository=base_repository,
         )
 
+    @staticmethod
+    def from_phabricator_trigger(
+        revision_phid: str, transactions: List[str], phabricator: PhabricatorAPI
+    ):
+        # Load revision details from Phabricator
+        revision = phabricator.load_revision(revision_phid)
+        logger.info("Found revision", id=revision["id"], phid=revision["phid"])
+
+        # Lookup repository details and match with a known repo from configuration
+        repo_phid = revision["fields"]["repositoryPHID"]
+        repos = phabricator.request(
+            "diffusion.repository.search", constraints={"phids": [repo_phid]}
+        )
+        assert (
+            len(repos["data"]) == 1
+        ), f"No repository found on Phabrictor for {repo_phid}"
+        phab_repo = repos["data"][0]
+        repo_name = phab_repo["fields"]["name"]
+        known_repos = {r.name: r for r in settings.repositories}
+        repository = known_repos.get(repo_name)
+        if repository is None:
+            raise Exception(
+                f"No repository found in configuration for {repo_name} - {repo_phid}"
+            )
+        logger.info("Found repository", name=repo_name, phid=repo_phid)
+
+        # Lookup transactions to find Diff
+        response = phabricator.request(
+            "transaction.search", constraints={"phids": transactions}, objectType="DREV"
+        )
+        diff_phid = None
+        for transaction in response["data"]:
+            fields = transaction["fields"]
+            if not fields:
+                continue
+            new = fields.get("new", "")
+            if new.startswith("PHID-DIFF-"):
+                diff_phid = new
+                break
+
+        # Check a diff is found
+        if diff_phid is None:
+            raise Exception("No DIFF found in transactions")
+
+        # Load diff details to get the diff revision
+        # We also load the commits list in order to get the email of the author of the
+        # patch for sending email if builds are failing.
+        diffs = phabricator.search_diffs(
+            diff_phid=diff_phid, attachments={"commits": True}
+        )
+        assert len(diffs) == 1, f"No diff available for {diff_phid}"
+        diff = diffs[0]
+        logger.info("Found diff", id=diff["id"], phid=diff["phid"])
+
+        # Lookup harbormaster target passing through Buildable, then Build, finally Build Target
+        out = phabricator.request(
+            "harbormaster.buildable.search",
+            constraints={"containerPHIDs": [revision_phid], "objectPHIDs": [diff_phid]},
+        )
+        assert len(out["data"]) == 1
+        buildable_phid = out["data"][0]["phid"]
+        logger.info("Found Harbormaster buildable", phid=buildable_phid)
+
+        out = phabricator.request(
+            "harbormaster.build.search", constraints={"buildables": [buildable_phid]}
+        )
+        assert len(out["data"]) == 1
+        build_phid = out["data"][0]["phid"]
+        logger.info("Found Harbormaster build", phid=build_phid)
+
+        out = phabricator.request(
+            "harbormaster.target.search", constraints={"buildPHIDs": [build_phid]}
+        )
+        if len(out["data"]) == 1:
+            build_target_phid = out["data"][0]["phid"]
+            logger.info("Found Harbormaster build target", phid=build_target_phid)
+        else:
+            build_target_phid = None
+            logger.warning(
+                "No build target found on Phabricator, no updates will be published"
+            )
+
+        return Revision(
+            phabricator_id=revision["id"],
+            phabricator_phid=revision_phid,
+            diff_id=diff["id"],
+            diff_phid=diff_phid,
+            diff=diff,
+            build_target_phid=build_target_phid,
+            url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
+            revision=revision,
+            base_changeset="tip",
+            base_repository=repository.url,
+            base_repository_conf=repository,
+            repository_try_name=repository.try_name,
+        )
+
     def analyze_patch(self):
         """
         Analyze loaded patch to extract modified lines
@@ -426,6 +528,16 @@ class Revision:
             return ext.lower() in settings.idl_extensions
 
         return any(_is_idl(f) for f in self.files)
+
+    @property
+    def is_blacklisted(self):
+        """Check if the revision author is in the black-list"""
+        author = settings.user_blacklist.get(self.revision["fields"]["authorPHID"])
+        if author is None:
+            return False
+
+        logger.info("Revision from a blacklisted user", revision=self, author=author)
+        return True
 
     def add_improvement_patch(self, analyzer, content):
         """

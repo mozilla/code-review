@@ -2,14 +2,23 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import asyncio
+import time
 from datetime import datetime, timedelta
 from itertools import groupby
 
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
+from libmozevent.mercurial import MercurialWorker, Repository
+from libmozevent.phabricator import PhabricatorActions, PhabricatorBuildState
 from taskcluster.utils import stringDate
 
 from code_review_bot import Level, stats
+from code_review_bot.analysis import (
+    RevisionBuild,
+    publish_analysis_lando,
+    publish_analysis_phabricator,
+)
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import REPO_AUTOLAND, REPO_MOZILLA_CENTRAL, settings
 from code_review_bot.mercurial import robust_checkout
@@ -214,6 +223,110 @@ class Workflow:
 
         # Publish issues in the backend
         self.backend_api.publish_issues(issues, revision)
+
+    def start_analysis(self, revision):
+        """
+        Apply a patch on a local clone and push to try to trigger a new Code review analysis
+        """
+        logger.info("Starting revision analysis", revision=revision)
+
+        # Do not process revisions from black-listed users
+        if revision.is_blacklisted:
+            logger.warning("Blacklisted author, stopping there.")
+            return
+
+        # Cannot run without mercurial cache configured
+        if not settings.mercurial_cache:
+            raise Exception("Mercurial cache must be configured to start analysis")
+
+        # Cannot run without ssh key
+        if not settings.ssh_key:
+            raise Exception("SSH Key must be configured to start analysis")
+
+        # Set the Phabricator build as running
+        self.update_status(revision, state=BuildState.Work)
+
+        # Initialize Phabricator build using revision
+        build = RevisionBuild(revision)
+
+        # Copy internal Phabricator credentials to setup libmozevent
+        phabricator = PhabricatorActions(
+            url=self.phabricator.url,
+            api_key=self.phabricator.api_key,
+        )
+
+        # Initialize mercurial repository
+        repository = Repository(
+            config={
+                "name": revision.base_repository_conf.name,
+                "try_name": revision.base_repository_conf.try_name,
+                "url": revision.base_repository_conf.url,
+                "try_url": revision.base_repository_conf.try_url,
+                # Setup ssh identity
+                "ssh_user": revision.base_repository_conf.ssh_user,
+                "ssh_key": settings.ssh_key,
+                # Force usage of robustcheckout
+                "checkout": "robust",
+            },
+            cache_root=settings.mercurial_cache,
+        )
+
+        worker = MercurialWorker(
+            # We are not using the mercurial workflow
+            # so we can initialize with empty data here
+            queue_name=None,
+            queue_phabricator=None,
+            repositories={},
+        )
+
+        while build.retries > 0:
+            # Update the internal build state using Phabricator infos
+            phabricator.update_state(build)
+
+            # Continue with workflow once the build is public
+            if build.state == PhabricatorBuildState.Public:
+                break
+
+            # Retry later if the build is not yet seen as public
+            logger.warning(
+                "Build is not public, retrying in 30s",
+                build=build,
+                retries_left=build.retries,
+            )
+            time.sleep(30)
+
+        # When the build is public, load needed details
+        try:
+            phabricator.load_patches_stack(build)
+            logger.info("Loaded stack of patches", build=str(build))
+        except Exception as e:
+            logger.warning(
+                "Failed to load build details", build=str(build), error=str(e)
+            )
+            raise
+
+        if not build.stack:
+            raise Exception("No stack of patches to apply.")
+
+        # We'll clone the required repository
+        repository.clone()
+
+        # Apply the stack of patches using asynchronous method
+        # that runs directly in that process
+        output = asyncio.run(worker.handle_build(repository, build))
+
+        # Update final state using worker output
+        if self.update_build:
+            publish_analysis_phabricator(output, self.phabricator)
+        else:
+            logger.info("Skipping Phabricator publication")
+
+        # Send Build in progress or errors to Lando
+        lando_reporter = self.reporters.get("lando")
+        if lando_reporter is not None:
+            publish_analysis_lando(output, lando_reporter.lando_api)
+        else:
+            logger.info("Skipping Lando publication")
 
     def clone_repository(self, revision):
         """

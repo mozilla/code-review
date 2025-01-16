@@ -1,0 +1,63 @@
+{
+    "result": {
+        "data": [
+            {
+                "id": 456,
+                "type": "DIFF",
+                "phid": "PHID-DIFF-testABcd12",
+                "fields": {
+                    "revisionPHID": "PHID-DREV-zzzzz",
+                    "authorPHID": "PHID-USER-xxxxx",
+                    "repositoryPHID": "PHID-REPO-autoland",
+                    "refs": [
+                        {
+                            "type": "branch",
+                            "name": "default"
+                        },
+                        {
+                            "type": "base",
+                            "identifier": "deadbeef123"
+                        }
+                    ],
+                    "dateCreated": 1510251135,
+                    "dateModified": 1510251138,
+                    "policy": {
+                        "view": "public"
+                    }
+                },
+                "attachments": {
+                    "commits": {
+                        "commits": [
+                            {
+                                "identifier": "deadbeef123",
+                                "tree": null,
+                                "parents": [
+                                    "someNode"
+                                ],
+                                "author": {
+                                    "name": "test",
+                                    "email": "test@mozilla.com",
+                                    "raw": "\"test\" <test>",
+                                    "epoch": 0
+                                },
+                                "message": "Random commit message"
+                            }
+                        ]
+                    }
+                }
+            }
+        ],
+        "maps": {},
+        "query": {
+            "queryKey": null
+        },
+        "cursor": {
+            "limit": 100,
+            "after": null,
+            "before": null,
+            "order": null
+        }
+    },
+    "error_code": null,
+    "error_info": null
+}

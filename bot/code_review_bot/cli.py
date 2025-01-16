@@ -70,7 +70,7 @@ def main():
 
     taskcluster.load_secrets(
         args.taskcluster_secret,
-        prefixes=["common", "code-review-bot", "bot"],
+        prefixes=["common", "events", "code-review-bot", "bot"],
         required=(
             "APP_CHANNEL",
             "REPORTERS",
@@ -84,6 +84,8 @@ def main():
             "ZERO_COVERAGE_ENABLED": True,
             "ALLOWED_PATHS": ["*"],
             "task_failures_ignored": [],
+            "ssh_key": None,
+            "user_blacklist": [],
         },
         local_secrets=yaml.safe_load(args.configuration)
         if args.configuration
@@ -106,6 +108,7 @@ def main():
         taskcluster.secrets["APP_CHANNEL"],
         taskcluster.secrets["ALLOWED_PATHS"],
         taskcluster.secrets["repositories"],
+        taskcluster.secrets["ssh_key"],
         args.mercurial_repository,
     )
 
@@ -147,6 +150,9 @@ def main():
             ]
             reporters["lando"].setup_api(lando_api)
 
+    # We need Phabricator API to list black-listed users
+    settings.load_user_blacklist(taskcluster.secrets["user_blacklist"], phabricator_api)
+
     # Load unique revision
     try:
         if settings.autoland_group_id:
@@ -156,6 +162,12 @@ def main():
         elif settings.mozilla_central_group_id:
             revision = Revision.from_decision_task(
                 queue_service.task(settings.mozilla_central_group_id), phabricator_api
+            )
+        elif settings.phabricator_revision_phid:
+            revision = Revision.from_phabricator_trigger(
+                settings.phabricator_revision_phid,
+                settings.phabricator_transactions,
+                phabricator_api,
             )
         else:
             revision = Revision.from_try_task(
@@ -195,6 +207,8 @@ def main():
             w.ingest_revision(revision, settings.autoland_group_id)
         elif settings.mozilla_central_group_id:
             w.ingest_revision(revision, settings.mozilla_central_group_id)
+        elif settings.phabricator_revision_phid:
+            w.start_analysis(revision)
         else:
             w.run(revision)
     except Exception as e:

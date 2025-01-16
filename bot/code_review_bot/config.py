@@ -6,6 +6,7 @@
 import atexit
 import collections
 import fnmatch
+import json
 import os
 import shutil
 import tempfile
@@ -24,7 +25,7 @@ TaskCluster = collections.namedtuple(
 )
 RepositoryConf = collections.namedtuple(
     "RepositoryConf",
-    "name, try_name, url, decision_env_prefix",
+    "name, try_name, url, try_url, decision_env_prefix, ssh_user",
 )
 
 
@@ -47,6 +48,8 @@ class Settings:
         self.try_group_id = None
         self.autoland_group_id = None
         self.mozilla_central_group_id = None
+        self.phabricator_revision_phid = None
+        self.phabricator_transactions = None
         self.repositories = []
         self.decision_env_prefixes = []
 
@@ -59,12 +62,26 @@ class Settings:
         # Cache to store whole repositories
         self.mercurial_cache = None
 
+        # SSH Key used to push on try
+        self.ssh_key = None
+
+        # List of users that should trigger a new analysis
+        # Indexed by their Phabricator ID
+        self.user_blacklist = {}
+
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
         # caching the versions of the app
         self.version = pkg_resources.require("code-review-bot")[0].version
 
-    def setup(self, app_channel, allowed_paths, repositories, mercurial_cache=None):
+    def setup(
+        self,
+        app_channel,
+        allowed_paths,
+        repositories,
+        ssh_key=None,
+        mercurial_cache=None,
+    ):
         # Detect source from env
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
             self.try_task_id = os.environ["TRY_TASK_ID"]
@@ -73,6 +90,22 @@ class Settings:
             self.autoland_group_id = os.environ["AUTOLAND_TASK_GROUP_ID"]
         elif "MOZILLA_CENTRAL_TASK_GROUP_ID" in os.environ:
             self.mozilla_central_group_id = os.environ["MOZILLA_CENTRAL_TASK_GROUP_ID"]
+        elif (
+            "PHABRICATOR_OBJECT_PHID" in os.environ
+            and "PHABRICATOR_TRANSACTIONS" in os.environ
+        ):
+            # Setup trigger mode using Phabricator information
+            self.phabricator_revision_phid = os.environ["PHABRICATOR_OBJECT_PHID"]
+            assert self.phabricator_revision_phid.startswith(
+                "PHID-DREV"
+            ), f"Not a phabrication revision PHID: {self.phabricator_revision_phid}"
+            try:
+                self.phabricator_transactions = json.loads(
+                    os.environ["PHABRICATOR_TRANSACTIONS"]
+                )
+            except Exception as e:
+                logger.error("Failed to parse phabricator transactions", err=str(e))
+                raise
         else:
             raise Exception("Only TRY mode is supported")
 
@@ -126,6 +159,21 @@ class Settings:
                 self.mercurial_cache.exists()
             ), f"Mercurial cache does not exist {self.mercurial_cache}"
             logger.info("Using mercurial cache", path=self.mercurial_cache)
+
+            # Save ssh key when mercurial cache is enabled
+            self.ssh_key = ssh_key
+
+    def load_user_blacklist(self, usernames, phabricator_api):
+        """
+        Load all black listed users from Phabricator API
+        """
+        self.user_blacklist = {
+            user["phid"]: user["fields"]["username"]
+            for user in phabricator_api.search_users(
+                constraints={"usernames": usernames}
+            )
+        }
+        logger.info("Blacklisted users", names=self.user_blacklist.values())
 
     def __getattr__(self, key):
         if key not in self.config:

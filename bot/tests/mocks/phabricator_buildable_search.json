@@ -4,7 +4,8 @@
             {
               "fields": {
                 "objectPHID": "PHID-DIFF-test"
-              }
+              },
+              "phid": "PHID-HMBB-test"
             }
         ],
         "maps": {},
