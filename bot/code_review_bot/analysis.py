@@ -113,7 +113,7 @@ def publish_analysis_phabricator(payload, phabricator_api):
                 namespace="code-review",
                 name="mercurial",
                 result=UnitResultState.Unsound,
-                details=f"WARNING: The base revision of your patch is not available in the current repository.\nYour patch has been rebased on central (revision {build.actual_base_revision}): issues may be positioned on the wrong lines.",
+                details=f"WARNING: The base revision of your patch is not available in the current repository.\nYour patch has been rebased on central (revision {build.actual_base_revision}): issues may be positioned at the wrong lines.",
             )
             phabricator_api.update_build_target(
                 build.target_phid, BuildState.Work, unit=[warning]
