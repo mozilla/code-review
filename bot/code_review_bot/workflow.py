@@ -303,6 +303,10 @@ class Workflow:
             logger.warning(
                 "Failed to load build details", build=str(build), error=str(e)
             )
+            raise
+
+        if not build.stack:
+            raise Exception("No stack of patches to apply.")
 
         # We'll clone the required repository
         repository.clone()
