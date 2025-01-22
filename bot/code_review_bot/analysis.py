@@ -28,6 +28,7 @@ class RevisionBuild(PhabricatorBuild):
 
         # Revision used by Phabricator updates
         # Direct output of Phabricator API (not the object passed here)
+        self.revision_id = revision.phabricator_id
         self.revision_url = None
         self.revision = None
 
@@ -45,7 +46,10 @@ class RevisionBuild(PhabricatorBuild):
         self.missing_base_revision = False
 
     def __str__(self):
-        return f"Phabricator Diff {self.diff_id}"
+        return f"Phabricator Revision {self.revision_id} - Diff {self.diff_id}"
+
+    def __repr__(self):
+        return str(self)
 
 
 def publish_analysis_phabricator(payload, phabricator_api):
@@ -138,8 +142,12 @@ def publish_analysis_phabricator(payload, phabricator_api):
 
 
 def publish_analysis_lando(payload, lando_warnings):
+    """
+    Publish result of patch application and push to try on Lando
+    """
     mode, build, extras = payload
-    logger.debug("Publishing a Lando build update", mode=mode, build=build)
+    assert isinstance(build, RevisionBuild), "Not a RevisionBuild"
+    logger.debug("Publishing a Lando build update", mode=mode, build=str(build))
 
     if mode == "fail:general":
         # Send general failure message to Lando

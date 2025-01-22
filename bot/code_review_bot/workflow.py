@@ -279,7 +279,8 @@ class Workflow:
             repositories={},
         )
 
-        while build.retries > 0:
+        # Try to update the state 5 consecutive time
+        for i in range(5):
             # Update the internal build state using Phabricator infos
             phabricator.update_state(build)
 
