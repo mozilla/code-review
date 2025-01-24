@@ -353,19 +353,31 @@ class Revision:
                 diff_phid = new
                 break
 
-        # Check a diff is found
+        # Check a diff is found in transactions or use last diff available
         if diff_phid is None:
-            raise Exception("No DIFF found in transactions")
+            diffs = phabricator.search_diffs(
+                revision_phid=revision_phid,
+                attachments={"commits": True},
+                order="newest",
+            )
+            if not diffs:
+                raise Exception(f"No diff found on revision {revision_phid}")
+            diff = diffs[0]
+            diff_phid = diff["phid"]
+            logger.info(
+                "Using most recent diff on revision", id=diff["id"], phid=diff["phid"]
+            )
 
-        # Load diff details to get the diff revision
-        # We also load the commits list in order to get the email of the author of the
-        # patch for sending email if builds are failing.
-        diffs = phabricator.search_diffs(
-            diff_phid=diff_phid, attachments={"commits": True}
-        )
-        assert len(diffs) == 1, f"No diff available for {diff_phid}"
-        diff = diffs[0]
-        logger.info("Found diff", id=diff["id"], phid=diff["phid"])
+        else:
+            # Load diff details to get the diff revision
+            # We also load the commits list in order to get the email of the author of the
+            # patch for sending email if builds are failing.
+            diffs = phabricator.search_diffs(
+                diff_phid=diff_phid, attachments={"commits": True}
+            )
+            assert len(diffs) == 1, f"No diff available for {diff_phid}"
+            diff = diffs[0]
+            logger.info("Found diff from transaction", id=diff["id"], phid=diff["phid"])
 
         # Lookup harbormaster target passing through Buildable, then Build, finally Build Target
         out = phabricator.request(
