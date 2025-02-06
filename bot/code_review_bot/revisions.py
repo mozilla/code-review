@@ -7,7 +7,6 @@ import random
 import urllib.parse
 from datetime import timedelta
 from pathlib import Path
-from typing import List
 
 import requests
 import rs_parsepatch
@@ -314,9 +313,7 @@ class Revision:
         )
 
     @staticmethod
-    def from_phabricator_trigger(
-        build_target_phid: str, transactions: List[str], phabricator: PhabricatorAPI
-    ):
+    def from_phabricator_trigger(build_target_phid: str, phabricator: PhabricatorAPI):
         assert build_target_phid.startswith("PHID-HMBT-")
         buildable = phabricator.find_target_buildable(build_target_phid)
         diff_phid = buildable["fields"]["objectPHID"]

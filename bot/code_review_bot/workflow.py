@@ -285,7 +285,7 @@ class Workflow:
             phabricator.update_state(build)
 
             # Continue with workflow once the build is public
-            if build.state == PhabricatorBuildState.Public:
+            if build.state is PhabricatorBuildState.Public:
                 break
 
             # Retry later if the build is not yet seen as public
@@ -295,6 +295,10 @@ class Workflow:
                 retries_left=build.retries,
             )
             time.sleep(30)
+
+        # Make sure the build is now public
+        if build.state is not PhabricatorBuildState.Public:
+            raise Exception("Cannot process private builds")
 
         # When the build is public, load needed details
         try:
