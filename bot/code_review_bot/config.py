@@ -6,7 +6,6 @@
 import atexit
 import collections
 import fnmatch
-import json
 import os
 import shutil
 import tempfile
@@ -48,8 +47,7 @@ class Settings:
         self.try_group_id = None
         self.autoland_group_id = None
         self.mozilla_central_group_id = None
-        self.phabricator_revision_phid = None
-        self.phabricator_transactions = None
+        self.phabricator_build_target = None
         self.repositories = []
         self.decision_env_prefixes = []
 
@@ -90,22 +88,12 @@ class Settings:
             self.autoland_group_id = os.environ["AUTOLAND_TASK_GROUP_ID"]
         elif "MOZILLA_CENTRAL_TASK_GROUP_ID" in os.environ:
             self.mozilla_central_group_id = os.environ["MOZILLA_CENTRAL_TASK_GROUP_ID"]
-        elif (
-            "PHABRICATOR_OBJECT_PHID" in os.environ
-            and "PHABRICATOR_TRANSACTIONS" in os.environ
-        ):
+        elif "PHABRICATOR_BUILD_TARGET" in os.environ:
             # Setup trigger mode using Phabricator information
-            self.phabricator_revision_phid = os.environ["PHABRICATOR_OBJECT_PHID"]
-            assert self.phabricator_revision_phid.startswith(
-                "PHID-DREV"
-            ), f"Not a phabrication revision PHID: {self.phabricator_revision_phid}"
-            try:
-                self.phabricator_transactions = json.loads(
-                    os.environ["PHABRICATOR_TRANSACTIONS"]
-                )
-            except Exception as e:
-                logger.error("Failed to parse phabricator transactions", err=str(e))
-                raise
+            self.phabricator_build_target = os.environ["PHABRICATOR_BUILD_TARGET"]
+            assert self.phabricator_build_target.startswith(
+                "PHID-HMBT"
+            ), f"Not a phabrication build target PHID: {self.phabricator_build_target}"
         else:
             raise Exception("Only TRY mode is supported")
 

@@ -6,6 +6,7 @@ import json
 import tempfile
 
 from libmozevent import utils
+from libmozevent.phabricator import PhabricatorActions
 
 from code_review_bot.config import RepositoryConf
 from code_review_bot.revisions import Revision
@@ -19,10 +20,7 @@ def test_revision(mock_phabricator):
 
     with mock_phabricator as api:
         revision = Revision.from_phabricator_trigger(
-            revision_phid="PHID-DREV-1234",
-            transactions=[
-                "PHID-XACT-aaaa",
-            ],
+            build_target_phid="PHID-HMBT-test",
             phabricator=api,
         )
 
@@ -31,20 +29,20 @@ def test_revision(mock_phabricator):
         "base_repository": "https://hg.mozilla.org/mozilla-central",
         "bugzilla_id": 1234567,
         "diff_id": 42,
-        "diff_phid": "PHID-DIFF-test",
+        "diff_phid": "PHID-DIFF-testABcd12",
         "has_clang_files": False,
         "head_changeset": None,
         "head_repository": None,
         "id": 51,
         "mercurial_revision": None,
-        "phid": "PHID-DREV-1234",
+        "phid": "PHID-DREV-zzzzz",
         "repository": None,
         "target_repository": "https://hg.mozilla.org/mozilla-central",
         "title": "Static Analysis tests",
         "url": "https://phabricator.test/D51",
     }
     assert revision.build_target_phid == "PHID-HMBT-test"
-    assert revision.phabricator_phid == "PHID-DREV-1234"
+    assert revision.phabricator_phid == "PHID-DREV-zzzzz"
     assert revision.base_repository_conf == RepositoryConf(
         name="mozilla-central",
         try_name="try",
@@ -81,6 +79,9 @@ def test_workflow(
 
     monkeypatch.setattr(utils, "hg_run", mock_hgrun)
 
+    # Build never expires otherwise the analysis stops early
+    monkeypatch.setattr(PhabricatorActions, "is_expired_build", lambda _, build: False)
+
     # Control ssh key destination
     ssh_key_path = tmpdir / "ssh.key"
     monkeypatch.setattr(tempfile, "mkstemp", lambda suffix: (None, ssh_key_path))
@@ -94,10 +95,7 @@ def test_workflow(
         mock_workflow.phabricator = api
 
         revision = Revision.from_phabricator_trigger(
-            revision_phid="PHID-DREV-1234",
-            transactions=[
-                "PHID-XACT-aaaa",
-            ],
+            build_target_phid="PHID-HMBT-test",
             phabricator=api,
         )
 
@@ -197,7 +195,7 @@ def test_workflow(
         (
             "commit",
             {
-                "message": "try_task_config for code-review\n"
+                "message": "try_task_config for https://phabricator.test/D51\n"
                 "Differential Diff: PHID-DIFF-testABcd12",
                 "user": "libmozevent <release-mgmt-analysis@mozilla.com>",
             },

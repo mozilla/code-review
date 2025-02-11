@@ -25,7 +25,13 @@
                     },
                     "bugzilla.bug-id": "1234567"
                 },
-                "attachments": {}
+                "attachments": {
+                    "projects": {
+                        "projectPHIDs": [
+                            "PHID-PROJ-A"
+                        ]
+                    }
+                }
             }
         ],
         "maps": {},

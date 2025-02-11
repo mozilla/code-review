@@ -163,10 +163,9 @@ def main():
             revision = Revision.from_decision_task(
                 queue_service.task(settings.mozilla_central_group_id), phabricator_api
             )
-        elif settings.phabricator_revision_phid:
+        elif settings.phabricator_build_target:
             revision = Revision.from_phabricator_trigger(
-                settings.phabricator_revision_phid,
-                settings.phabricator_transactions,
+                settings.phabricator_build_target,
                 phabricator_api,
             )
         else:
@@ -207,7 +206,7 @@ def main():
             w.ingest_revision(revision, settings.autoland_group_id)
         elif settings.mozilla_central_group_id:
             w.ingest_revision(revision, settings.mozilla_central_group_id)
-        elif settings.phabricator_revision_phid:
+        elif settings.phabricator_build_target:
             w.start_analysis(revision)
         else:
             w.run(revision)

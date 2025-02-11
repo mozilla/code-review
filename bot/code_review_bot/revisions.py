@@ -7,7 +7,6 @@ import random
 import urllib.parse
 from datetime import timedelta
 from pathlib import Path
-from typing import List
 
 import requests
 import rs_parsepatch
@@ -314,9 +313,23 @@ class Revision:
         )
 
     @staticmethod
-    def from_phabricator_trigger(
-        revision_phid: str, transactions: List[str], phabricator: PhabricatorAPI
-    ):
+    def from_phabricator_trigger(build_target_phid: str, phabricator: PhabricatorAPI):
+        assert build_target_phid.startswith("PHID-HMBT-")
+        buildable = phabricator.find_target_buildable(build_target_phid)
+        diff_phid = buildable["fields"]["objectPHID"]
+        assert diff_phid.startswith("PHID-DIFF-")
+
+        # Load diff details to get the diff revision
+        # We also load the commits list in order to get the email of the author of the
+        # patch for sending email if builds are failing.
+        diffs = phabricator.search_diffs(
+            diff_phid=diff_phid, attachments={"commits": True}
+        )
+        assert len(diffs) == 1, f"No diff available for {diff_phid}"
+        diff = diffs[0]
+        logger.info("Found diff", id=diff["id"], phid=diff["phid"])
+        revision_phid = diff["revisionPHID"]
+
         # Load revision details from Phabricator
         revision = phabricator.load_revision(revision_phid)
         logger.info("Found revision", id=revision["id"], phid=revision["phid"])
@@ -339,79 +352,11 @@ class Revision:
             )
         logger.info("Found repository", name=repo_name, phid=repo_phid)
 
-        # Lookup transactions to find Diff
-        response = phabricator.request(
-            "transaction.search", constraints={"phids": transactions}, objectType="DREV"
-        )
-        diff_phid = None
-        for transaction in response["data"]:
-            fields = transaction["fields"]
-            if not fields:
-                continue
-            new = fields.get("new", "")
-            if new.startswith("PHID-DIFF-"):
-                diff_phid = new
-                break
-
-        # Check a diff is found in transactions or use last diff available
-        if diff_phid is None:
-            diffs = phabricator.search_diffs(
-                revision_phid=revision_phid,
-                attachments={"commits": True},
-                order="newest",
-            )
-            if not diffs:
-                raise Exception(f"No diff found on revision {revision_phid}")
-            diff = diffs[0]
-            diff_phid = diff["phid"]
-            logger.info(
-                "Using most recent diff on revision", id=diff["id"], phid=diff["phid"]
-            )
-
-        else:
-            # Load diff details to get the diff revision
-            # We also load the commits list in order to get the email of the author of the
-            # patch for sending email if builds are failing.
-            diffs = phabricator.search_diffs(
-                diff_phid=diff_phid, attachments={"commits": True}
-            )
-            assert len(diffs) == 1, f"No diff available for {diff_phid}"
-            diff = diffs[0]
-            logger.info("Found diff from transaction", id=diff["id"], phid=diff["phid"])
-
-        # Lookup harbormaster target passing through Buildable, then Build, finally Build Target
-        out = phabricator.request(
-            "harbormaster.buildable.search",
-            constraints={"containerPHIDs": [revision_phid], "objectPHIDs": [diff_phid]},
-        )
-        assert len(out["data"]) == 1
-        buildable_phid = out["data"][0]["phid"]
-        logger.info("Found Harbormaster buildable", phid=buildable_phid)
-
-        out = phabricator.request(
-            "harbormaster.build.search", constraints={"buildables": [buildable_phid]}
-        )
-        assert len(out["data"]) == 1
-        build_phid = out["data"][0]["phid"]
-        logger.info("Found Harbormaster build", phid=build_phid)
-
-        out = phabricator.request(
-            "harbormaster.target.search", constraints={"buildPHIDs": [build_phid]}
-        )
-        if len(out["data"]) == 1:
-            build_target_phid = out["data"][0]["phid"]
-            logger.info("Found Harbormaster build target", phid=build_target_phid)
-        else:
-            build_target_phid = None
-            logger.warning(
-                "No build target found on Phabricator, no updates will be published"
-            )
-
         return Revision(
             phabricator_id=revision["id"],
             phabricator_phid=revision_phid,
             diff_id=diff["id"],
-            diff_phid=diff_phid,
+            diff_phid=diff["phid"],
             diff=diff,
             build_target_phid=build_target_phid,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
