@@ -11,4 +11,4 @@ psycopg2-binary==2.9.10
 setuptools==75.8.0
 sqlparse==0.5.3
 tqdm==4.67.1
-whitenoise==6.8.2
+whitenoise==6.9.0
