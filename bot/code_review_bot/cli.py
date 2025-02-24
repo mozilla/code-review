@@ -21,9 +21,9 @@ from code_review_bot import AnalysisException, stats, taskcluster
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision
+from code_review_bot.tools.libmozdata import setup as setup_libmozdata
+from code_review_bot.tools.log import init_logger
 from code_review_bot.workflow import Workflow
-from code_review_tools.libmozdata import setup as setup_libmozdata
-from code_review_tools.log import init_logger
 
 logger = structlog.get_logger(__name__)
 

@@ -5,7 +5,7 @@
 import pytest
 from taskcluster.helper import TaskclusterConfig
 
-from code_review_tools.log import remove_color_codes
+from code_review_bot.tools.log import remove_color_codes
 
 
 def test_taskcluster_service():
