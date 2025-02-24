@@ -14,7 +14,7 @@ from code_review_bot.backend import BackendAPI
 from code_review_bot.report.base import Reporter
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
 from code_review_bot.tasks.coverage import CoverageIssue
-from code_review_tools import treeherder
+from code_review_bot.tools import treeherder
 
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
 
