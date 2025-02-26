@@ -107,7 +107,6 @@ tasks:
                   - -lxce
                   - "apt-get update -q && apt-get install -q -y --no-install-recommends git &&
                     git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    cd /src/tools && ${pip_install} . &&
                     cd /src/bot && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
                     pytest -v"
               metadata:
@@ -200,7 +199,6 @@ tasks:
                   - sh
                   - -lxce
                   - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    cd /src/tools && ${pip_install} . &&
                     cd /src/backend && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
                     ./ci/setup_postgres.sh &&
                     ./manage.py test && ./manage.py makemigrations --check --noinput --dry-run -v 3"
@@ -313,7 +311,6 @@ tasks:
                   - sh
                   - -lxce
                   - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    cd /src/tools && ${pip_install} . &&
                     cd /src/integration && ${pip_install} -r requirements.txt -r requirements-dev.txt &&
                     pytest -v"
               metadata:
