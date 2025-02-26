@@ -434,6 +434,7 @@ class IssueList(generics.ListAPIView):
         try:
             repo = Repository.objects.get(slug=repo_slug)
         except Repository.DoesNotExist:
+            repo = None
             errors["repo_slug"].append(
                 "invalid repo_slug path argument - No repository match this slug"
             )
