@@ -162,31 +162,7 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-          # Run only on community Taskcluster
-          'taskcluster_root_url == "https://community-tc.services.mozilla.com"':
-            - taskId: { $eval: as_slugid("events_check_tests") }
-              provisionerId: "${provisionerId}"
-              workerType: "${workerType}"
-              created: { $fromNow: "" }
-              deadline: { $fromNow: "1 hour" }
-              payload:
-                maxRunTime: 3600
-                image: "python:${python_version}"
-                command:
-                  - sh
-                  - -lxce
-                  - "apt-get -qq update && apt-get -qq install -y redis-server &&
-                    git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    cd /src/tools && ${pip_install} . &&
-                    cd /src/events && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
-                    export REDIS_URL='redis://localhost:6379/' && redis-server --daemonize yes &&
-                    pytest -v"
-              metadata:
-                name: "Code Review Events checks: unit tests"
-                description: Check python code with pytest
-                owner: bastien@mozilla.com
-                source: https://github.com/mozilla/code-review
-
+            # Run only on community Taskcluster
             - taskId: { $eval: as_slugid("backend_check_tests") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
@@ -234,37 +210,6 @@ tasks:
               metadata:
                 name: Code Review Frontend build
                 description: Build web single page application
-                owner: bastien@mozilla.com
-                source: https://github.com/mozilla/code-review
-
-            - taskId: { $eval: as_slugid("events_build") }
-              created: { $fromNow: "" }
-              deadline: { $fromNow: "1 hour" }
-              provisionerId: "${provisionerId}"
-              workerType: "${workerType}"
-              dependencies:
-                - { $eval: as_slugid("check_lint") }
-                - { $eval: as_slugid("events_check_tests") }
-              payload:
-                capabilities:
-                  privileged: true
-                maxRunTime: 3600
-                image: "${taskboot_image}"
-                command:
-                  - /bin/sh
-                  - -lxce
-                  - "git clone --quiet ${repository} /code-review && cd /code-review && git checkout ${head_rev} -b build
-                    && events/build.sh ${head_rev} ${head_branch} ${repository} ${channel}"
-                artifacts:
-                  public/code-review-events.tar.zst:
-                    expires: { $fromNow: "2 weeks" }
-                    path: /events.tar.zst
-                    type: file
-              scopes:
-                - docker-worker:capability:privileged
-              metadata:
-                name: Code Review Events docker build
-                description: Build docker image of code review events
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
@@ -394,37 +339,6 @@ tasks:
 
             - $if: 'channel in ["testing", "production"]'
               then:
-                taskId: { $eval: as_slugid("events_deploy") }
-                created: { $fromNow: "" }
-                deadline: { $fromNow: "1 hour" }
-                provisionerId: "${provisionerId}"
-                workerType: "${workerType}"
-                dependencies:
-                  - { $eval: as_slugid("events_build") }
-                payload:
-                  features:
-                    taskclusterProxy: true
-                  maxRunTime: 3600
-                  image: "${taskboot_image}"
-                  command:
-                    - taskboot
-                    - deploy-heroku
-                    - --heroku-app
-                    - "code-review-events-${channel}"
-                    - web:public/code-review-events.tar.zst
-                    - worker:public/code-review-events.tar.zst
-                  env:
-                    TASKCLUSTER_SECRET: "project/relman/code-review/deploy-${channel}"
-                scopes:
-                  - "secrets:get:project/relman/code-review/deploy-${channel}"
-                metadata:
-                  name: "Code Review Events deployment (${channel})"
-                  description: Deploy docker image on Heroku
-                  owner: bastien@mozilla.com
-                  source: https://github.com/mozilla/code-review
-
-            - $if: 'channel in ["testing", "production"]'
-              then:
                 taskId: { $eval: as_slugid("backend_deploy") }
                 created: { $fromNow: "" }
                 deadline: { $fromNow: "1 hour" }
@@ -521,7 +435,6 @@ tasks:
                   taskId: { $eval: as_slugid("release") }
                   dependencies:
                     - { $eval: as_slugid("backend_build") }
-                    - { $eval: as_slugid("events_build") }
                     - { $eval: as_slugid("frontend_build") }
                     - { $eval: as_slugid("integration_build") }
                   created: { $fromNow: "" }
