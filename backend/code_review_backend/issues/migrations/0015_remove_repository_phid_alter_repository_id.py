@@ -33,7 +33,7 @@ class Migration(migrations.Migration):
                 """
                 SELECT setval(
                     pg_get_serial_sequence('issues_repository', 'id'),
-                    coalesce(max(id)+1, 0),
+                    coalesce(max(id)+1, 1),
                     false
                 ) FROM issues_repository;
                 """,
