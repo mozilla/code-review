@@ -7,7 +7,7 @@ ADD bot /src/bot
 RUN cd /src/bot && python setup.py install
 
 # Add mercurial & robustcheckout
-COPY tools/docker/bootstrap-mercurial.sh /src/bot/docker
+ADD tools/docker /src/bot/docker
 RUN /src/bot/docker/bootstrap-mercurial.sh
 
 CMD ["code-review-bot"]
