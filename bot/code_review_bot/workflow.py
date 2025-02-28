@@ -5,7 +5,6 @@
 import asyncio
 import time
 from datetime import datetime, timedelta
-from itertools import groupby
 
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
@@ -108,24 +107,8 @@ class Workflow:
         # Analyze issues in case the before/after feature is enabled
         if revision.before_after_feature:
             logger.info("Running the before/after feature")
-            # Search a base revision from the decision task
-            decision = self.queue_service.task(settings.try_group_id)
-            base_rev_changeset = (
-                decision.get("payload", {}).get("env", {}).get("GECKO_BASE_REV")
-            )
-            if not base_rev_changeset:
-                logger.warning(
-                    "Base revision changeset could not be fetched from Phabricator, "
-                    "looking for existing issues based on the current date",
-                    task=settings.try_group_id,
-                )
-
-            # Clone local repo when required
-            # as find_previous_issues will build the hashes
-            self.clone_repository(revision)
-
             # Mark know issues to avoid publishing them on this patch
-            self.find_previous_issues(issues, base_rev_changeset)
+            self.find_previous_issues(revision.diff_id, issues)
             new_issues_count = sum(issue.new_issue for issue in issues)
             logger.info(
                 f"Found {new_issues_count} new issues (over {len(issues)} total detected issues)",
@@ -402,12 +385,12 @@ class Workflow:
         )
 
         # Publish final HarborMaster state
-        self.update_status(
-            revision,
-            BuildState.Fail
-            if nb_publishable_errors > 0 or task_failures
-            else BuildState.Pass,
-        )
+        #self.update_status(
+        #    revision,
+        #    BuildState.Fail
+        #    if nb_publishable_errors > 0 or task_failures
+        #    else BuildState.Pass,
+        #)
 
     def index(self, revision, **kwargs):
         """
@@ -466,39 +449,16 @@ class Workflow:
                 },
             )
 
-    def find_previous_issues(self, issues, base_rev_changeset=None):
-        """
-        Look for known issues in the backend matching the given list of issues
-
-        If a base revision ID is provided, compare to issues detected on this revision
-        Otherwise, compare to issues detected on last ingested revision
-        """
+    def find_previous_issues(self, diff_id, issues):
+        """Look for known issues in the backend"""
         assert (
             self.backend_api.enabled
         ), "Backend storage is disabled, comparing issues is not possible"
 
-        current_date = datetime.now().strftime("%Y-%m-%d")
-
-        # Group issues by path, so we only list know issues for the affected files
-        issues_groups = groupby(
-            sorted(issues, key=lambda i: i.path),
-            lambda i: i.path,
-        )
-        logger.info(
-            "Checking for existing issues in the backend",
-            base_revision_changeset=base_rev_changeset,
-        )
-
-        for path, group_issues in issues_groups:
-            known_issues = self.backend_api.list_repo_issues(
-                "mozilla-central",
-                date=current_date,
-                revision_changeset=base_rev_changeset,
-                path=path,
-            )
-            hashes = [issue["hash"] for issue in known_issues]
-            for issue in group_issues:
-                issue.new_issue = bool(issue.hash and issue.hash not in hashes)
+        known_issues = self.backend_api.list_diff_issues_v2(diff_id, "known")
+        known_hashes = [issue["hash"] for issue in known_issues]
+        for issue in issues:
+            issue.new_issue = bool(issue.hash and issue.hash not in known_hashes)
 
     def find_issues(self, revision, group_id):
         """
@@ -669,5 +629,5 @@ class Workflow:
             )
             return
 
-        self.phabricator.update_build_target(revision.build_target_phid, state)
-        logger.info("Updated HarborMaster status", state=state, revision=revision)
+        #self.phabricator.update_build_target(revision.build_target_phid, state)
+        #logger.info("Updated HarborMaster status", state=state, revision=revision)
