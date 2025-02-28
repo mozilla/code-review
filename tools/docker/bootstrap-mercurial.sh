@@ -2,6 +2,13 @@
 MERCURIAL_VERSION="6.8.2"
 VERSION_CONTROL_TOOLS_REV="5e36b6028416b2fbefcbee2bb9960c8cacb18caa"
 
+# Check source hgrc is available
+HGRC=/src/tools/docker/hgrc
+if [[ ! -f $HGRC ]]; then
+	echo "Missing hgrc in $HGRC"
+	exit 1
+fi
+
 apt-get update
 apt-get install --no-install-recommends -y curl python-dev-is-python3 gcc openssh-client libjemalloc2
 
@@ -10,7 +17,7 @@ pip install --disable-pip-version-check --quiet --no-cache-dir mercurial==$MERCU
 # Setup mercurial with needed extensions
 hg clone -r $VERSION_CONTROL_TOOLS_REV https://hg.mozilla.org/hgcustom/version-control-tools /src/version-control-tools/
 mkdir -p /etc/mercurial/hgrc.d
-ln -s /src/tools/docker/hgrc /etc/mercurial/hgrc.d/code-review.rc
+ln -s $HGRC /etc/mercurial/hgrc.d/code-review.rc
 
 # Cleanup
 apt-get purge -y gcc curl python-dev-is-python3
