@@ -202,6 +202,16 @@ class Settings:
     def cleanup(self):
         shutil.rmtree(self.hgmo_cache)
 
+    @property
+    def taskcluster_url(self):
+        """
+        Build the current taskcluster task url
+        """
+        if self.taskcluster is None or self.taskcluster.local:
+            return
+
+        return f"https://firefox-ci-tc.services.mozilla.com/tasks/{self.taskcluster.task_id}"
+
 
 # Shared instance
 settings = Settings()
