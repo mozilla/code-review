@@ -1,4 +1,4 @@
 MozPhab==1.8.1
 pyyaml==6.0.2
 structlog==25.1.0
-taskcluster==81.0.2
+taskcluster==83.0.1
