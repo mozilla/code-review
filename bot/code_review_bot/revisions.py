@@ -4,6 +4,7 @@
 
 import os
 import random
+import time
 import urllib.parse
 from datetime import timedelta
 from pathlib import Path
@@ -315,7 +316,23 @@ class Revision:
     @staticmethod
     def from_phabricator_trigger(build_target_phid: str, phabricator: PhabricatorAPI):
         assert build_target_phid.startswith("PHID-HMBT-")
-        buildable = phabricator.find_target_buildable(build_target_phid)
+
+        # This is the very first call on Phabricator API for that build, so we need to retry
+        # a few times as the revision may not be immediately public
+        buildable = None
+        for i in range(5):
+            try:
+                buildable = phabricator.find_target_buildable(build_target_phid)
+                break
+            except Exception as e:
+                logger.info(
+                    "Failed to load Harbormaster build on try {i+1}/5, will retry in 30 seconds",
+                    error=str(e),
+                )
+                time.sleep(30)
+        if buildable is None:
+            raise Exception("Failed to load Habormaster build, no more tries left")
+
         diff_phid = buildable["fields"]["objectPHID"]
         assert diff_phid.startswith("PHID-DIFF-")
 
