@@ -5,5 +5,5 @@ libmozevent==1.1.30
 python-hglib==2.6.2
 pyyaml==6.0.2
 sentry-sdk==2.22.0
-setuptools==75.8.0
+setuptools==75.8.2
 structlog==25.1.0
