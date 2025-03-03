@@ -688,7 +688,7 @@ class Workflow:
 
     def publish_link(self, revision: Revision, slug: str, name: str, url: str):
         """
-        Publish a link as an Harbormaster artifact
+        Publish a link as a HarborMaster artifact
         """
         if not revision.build_target_phid:
             logger.info(
@@ -700,7 +700,7 @@ class Workflow:
 
         if not self.update_build:
             logger.info(
-                "Update build disabled, skipping HarborMaster link creation ",
+                "Update build disabled, skipping HarborMaster link creation",
                 slug=slug,
                 url=url,
             )
