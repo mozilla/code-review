@@ -137,6 +137,7 @@ def test_on_production(mock_config, mock_repositories):
     assert mock_config.app_channel == "test"
     assert mock_config.taskcluster.local is True
     assert mock_config.on_production is False
+    assert mock_config.taskcluster_url is None
 
     # Taskcluster env + testing is not production
     os.environ["TASK_ID"] = "testingTask"
@@ -146,6 +147,10 @@ def test_on_production(mock_config, mock_repositories):
     assert testing.app_channel == "testing"
     assert testing.taskcluster.local is False
     assert testing.on_production is False
+    assert (
+        testing.taskcluster_url
+        == "https://firefox-ci-tc.services.mozilla.com/tasks/testingTask"
+    )
 
     # Taskcluster env + production is production
     os.environ["TASK_ID"] = "prodTask"
@@ -155,6 +160,10 @@ def test_on_production(mock_config, mock_repositories):
     assert testing.app_channel == "production"
     assert testing.taskcluster.local is False
     assert testing.on_production is True
+    assert (
+        testing.taskcluster_url
+        == "https://firefox-ci-tc.services.mozilla.com/tasks/prodTask"
+    )
 
 
 def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_revision):

@@ -96,6 +96,13 @@ class Workflow:
 
         # Set the Phabricator build as running
         self.update_status(revision, state=BuildState.Work)
+        if settings.taskcluster_url:
+            self.publish_link(
+                revision,
+                slug="publication",
+                name="Publication task",
+                url=settings.taskcluster_url,
+            )
 
         # Analyze revision patch to get files/lines data
         revision.analyze_patch()
@@ -245,6 +252,13 @@ class Workflow:
 
         # Set the Phabricator build as running
         self.update_status(revision, state=BuildState.Work)
+        if settings.taskcluster_url:
+            self.publish_link(
+                revision,
+                slug="analysis",
+                name="Analysis task",
+                url=settings.taskcluster_url,
+            )
 
         # Initialize Phabricator build using revision
         build = RevisionBuild(revision)
@@ -671,3 +685,27 @@ class Workflow:
 
         self.phabricator.update_build_target(revision.build_target_phid, state)
         logger.info("Updated HarborMaster status", state=state, revision=revision)
+
+    def publish_link(self, revision: Revision, slug: str, name: str, url: str):
+        """
+        Publish a link as a HarborMaster artifact
+        """
+        if not revision.build_target_phid:
+            logger.info(
+                "No build target found, skipping HarborMaster link creation",
+                slug=slug,
+                url=url,
+            )
+            return
+
+        if not self.update_build:
+            logger.info(
+                "Update build disabled, skipping HarborMaster link creation",
+                slug=slug,
+                url=url,
+            )
+            return
+
+        self.phabricator.create_harbormaster_uri(
+            revision.build_target_phid, slug, name, url
+        )
