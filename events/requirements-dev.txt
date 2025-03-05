@@ -1,4 +1,0 @@
-pytest
-pytest-aiohttp
-pytest-asyncio
-responses
