@@ -5,6 +5,7 @@
 from datetime import datetime
 from unittest.mock import patch
 
+from django.db.utils import IntegrityError
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
@@ -211,3 +212,63 @@ class IssueTestCase(TestCase):
         data = response.json()
         self.assertEqual(data["count"], 0)
         self.assertEqual(data["results"], [])
+
+    def test_issue_link_unicity_all_values(self):
+        """
+        Check that the unique constraints are respected when all positioning values are set
+        """
+        self.revision.issue_links.create(
+            issue=self.err_issue, line=20, nb_lines=2, char=1
+        )
+        with self.assertRaises(IntegrityError):
+            self.revision.issue_links.create(
+                issue=self.err_issue, line=20, nb_lines=2, char=1
+            )
+
+    def test_issue_link_unicity_no_line(self):
+        """
+        Check that the unique constraints are respected when line is not set
+        """
+        self.revision.issue_links.create(
+            issue=self.err_issue, line=None, nb_lines=2, char=1
+        )
+        with self.assertRaises(IntegrityError):
+            self.revision.issue_links.create(
+                issue=self.err_issue, line=None, nb_lines=2, char=1
+            )
+
+    def test_issue_link_unicity_no_nb_lines(self):
+        """
+        Check that the unique constraints are respected when nb_lines is not set
+        """
+        self.revision.issue_links.create(
+            issue=self.err_issue, line=100, nb_lines=None, char=1
+        )
+        with self.assertRaises(IntegrityError):
+            self.revision.issue_links.create(
+                issue=self.err_issue, line=100, nb_lines=None, char=1
+            )
+
+    def test_issue_link_unicity_no_char(self):
+        """
+        Check that the unique constraints are respected when char is not set
+        """
+        self.revision.issue_links.create(
+            issue=self.err_issue, line=100, nb_lines=42, char=None
+        )
+        with self.assertRaises(IntegrityError):
+            self.revision.issue_links.create(
+                issue=self.err_issue, line=100, nb_lines=42, char=None
+            )
+
+    def test_issue_link_unicity_no_position(self):
+        """
+        Check that the unique constraints are respected when no positioning args are set
+        """
+        self.revision.issue_links.create(
+            issue=self.err_issue, line=None, nb_lines=None, char=None
+        )
+        with self.assertRaises(IntegrityError):
+            self.revision.issue_links.create(
+                issue=self.err_issue, line=None, nb_lines=None, char=None
+            )
