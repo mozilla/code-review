@@ -162,7 +162,8 @@ tasks:
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
-            # Run only on community Taskcluster
+          # Run only on community Taskcluster
+          'taskcluster_root_url == "https://community-tc.services.mozilla.com"':
             - taskId: { $eval: as_slugid("backend_check_tests") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
