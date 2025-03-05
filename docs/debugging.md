@@ -6,7 +6,7 @@ As a maintainer on the code review bot, you will face errors or bad behaviours. 
 
 ### Live logs with papertrail
 
-The 3 _back-end_ projects (bot, backend & events) all use [papertrail](https://my.papertrailapp.com) to log every Python `logging` call.
+The 2 _back-end_ projects (bot & backend) all use [papertrail](https://my.papertrailapp.com) to log every Python `logging` call.
 
 The events are organized with a hierarchy so that you can filter:
 
@@ -67,10 +67,8 @@ They will tell you if something goes wrong, as the code review bot adds a link t
 Here is a list of troubleshooting steps when you _know_ that something does not work, but don't know yet which part is buggy:
 
 - Check the frontend. As mentioned above, that's the easiest and fastest way to see what's going on in real time
-- Check the logs. Start by looking for the events logs, as that's the first piece that could fail in the workflow.
-- Check events on Heroku: are the dynos running (both web & worker) ?
-- Is the redis database full ?
-- If events is behaving normally, applying revisions, pick a try job from the logs, and follow it
+- Check the logs. Start by looking for the Taskcluster hook logs, as that's the first piece that could fail in the workflow.
+- If taskcluster analysis tasks are behaving normally, applying revisions, pick a try job from the logs, and follow it
 - Check the decision task is creating analyzers and the code-review ending task
 - Check the analyzers create some json artifacts, and look for incoherent data in the output. Are the tasks in a coherent status?
 - Check the code review hook on firefox-ci: Is it triggered ? Are there bot jobs in papertrail ? Can you find the bot task for the try task you were looking before in the logs ?

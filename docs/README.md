@@ -12,7 +12,6 @@ Here is the overall summary of available documentation:
 - Projects details:
   - [backend](projects/backend.md)
   - [bot](projects/bot.md)
-  - [events](projects/events.md)
   - [frontend](projects/bot.md)
 - How to add a new analyzer:
   - [How to trigger your task on new diffs](trigger.md)
