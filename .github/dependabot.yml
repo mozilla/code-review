@@ -21,20 +21,8 @@ updates:
     open-pull-requests-limit: 99
     labels:
       - bot
-  - package-ecosystem: pip
-    directory: "/events"
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 99
-    labels:
-      - events
   - package-ecosystem: docker
     directory: "/integration/docker"
-    schedule:
-      interval: weekly
-    open-pull-requests-limit: 99
-  - package-ecosystem: docker
-    directory: "/events/docker"
     schedule:
       interval: weekly
     open-pull-requests-limit: 99
