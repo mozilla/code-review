@@ -171,16 +171,10 @@ class IssueLink(models.Model):
 
     class Meta:
         constraints = [
-            # Two constraints are required as Null values are not compared for unicity
-            models.UniqueConstraint(
-                fields=["issue", "revision", "line", "nb_lines", "char"],
-                name="issue_link_unique_revision",
-                condition=Q(diff__isnull=True),
-            ),
             models.UniqueConstraint(
                 fields=["issue", "revision", "diff", "line", "nb_lines", "char"],
-                name="issue_link_unique_diff",
-                condition=Q(diff__isnull=False),
+                name="issue_link_unique",
+                nulls_distinct=False,
             ),
         ]
 
