@@ -1,4 +1,4 @@
-FROM python:3.13.2-slim
+FROM python:3.13.3-slim
 
 # TODO: remove by switching to modern pyproject.toml
 RUN pip install setuptools==74.1.2 --disable-pip-version-check --no-cache-dir --quiet
