@@ -1,4 +1,4 @@
-aiohttp==3.11.16
+aiohttp==3.11.18
 
 # Limit idna to avid conflicts
 idna>=2.5,<3.11
