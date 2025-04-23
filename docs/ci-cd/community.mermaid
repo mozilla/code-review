@@ -2,23 +2,18 @@ graph TD
 
 push --> check_lint
 push --> backend_check_tests
-push --> events_check_tests
 push --> frontend_build
 push --> integration_check_tests
-check_lint --> events_build
-events_check_tests --> events_build
 check_lint --> backend_build
 backend_check_tests --> backend_build
 check_lint --> integration_build
 integration_check_tests --> integration_build
 
 frontend_build --> frontend_deploy
-events_build --> events_deploy
 backend_build --> backend_deploy
 integration_build --> integration_deploy
 
 subgraph deployment
-  events_deploy
   frontend_deploy
   backend_deploy
   integration_deploy
@@ -27,7 +22,6 @@ end
 
 
 backend_build --> github_release
-events_build --> github_release
 frontend_build --> github_release
 integration_build --> github_release
 

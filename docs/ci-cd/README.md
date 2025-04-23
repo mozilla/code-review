@@ -67,10 +67,8 @@ On every Github push (branch, pull request, tag), we run the following tasks:
 
 - `check_lint` checks the formatting of all files
 - `backend_check_tests` runs the backend unit tests
-- `events_check_tests` runs the events unit tests
 - `integration_check_tests` runs the integration unit tests
 - `backend_build` builds the backend's Docker image using img and a privileged worker, and stores it as a public artifact
-- `events_build` builds the events's Docker image using img and a privileged worker, and stores it as a public artifact
 - `integration_build` builds the integration's Docker image using img and a privileged worker, and stores it as a public artifact
 - `frontend_build` builds the frontend static files and stores them as Taskcluster artifacts
 
@@ -81,6 +79,5 @@ On a tag push, we trigger another task:
 On a deployment (push on `testing` or `production`), we trigger those deployment tasks:
 
 - `backend_deploy` deploys the backend docker image on Heroku web dyno
-- `events_deploy` deploys the events docker image on Heroku web & worker dynos
 - `integration_deploy` pushes the integration docker image on a docker registry
 - `integration_hook` updates the integration Taskcluster hook to use the new docker image

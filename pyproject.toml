@@ -11,4 +11,4 @@ ignore = [
 ]
 
 [tool.ruff.lint.isort]
-known-first-party = ["code_review_backend", "code_review_bot", "code_review_tools", "code_review_events"]
+known-first-party = ["code_review_backend", "code_review_bot", "code_review_tools"]

@@ -9,38 +9,20 @@ The code review bot is not a single piece, but a distributed system using severa
 ## Workflow
 
 1. For every new diff on the [Mozilla Phabricator instance](https://phabricator.services.mozilla.com/), an Harbormaster build is created (more details on the [Phabricator page](phabricator.md)
-2. The build triggers an HTTP request towards the Events system hosted on Heroku.
-3. The Heroku web instance parses the Phabricator payload and stores the relevant information in a Redis database
-4. A pool of Heroku workers polls the Redis database, one of them retrieves the stored build,
-5. That worker then fetches the stack of patches, and tries to apply them locally,
-6. If the stack fails to apply, an error is reported directly on the Phabricator revision,
-7. If the stack applies cleanly, it's pushed on the Try server, exactly like a developer would do,
-8. The Try server creates a decision task on Taskcluster,
-9. The Decision tasks creates followup tasks, with code analyzers, and a custom code-review task.
-10. The code analyzers run on the stack we produced, and list potential issues in a JSON file, that is stored and shared as a Taskcluster artifact,
-11. The final code-review task is triggered once all analyzers complete and just sends a Pulse message.
-12. The pulse messages triggers our own task hosted in a Taskcluster hook (see [bot](projects/bot.md) for more information)
-13. That task retrieves all the analyzers artifacts with issues, filters them, and updates the Phabricator build, reporting potential issues.
-14. That same task also publishes the issues on our backend hosted on Heroku (see [backend](projects/backend.md) for more information).
+2. The build triggers an HTTP request towards a Taskcluster Hook
+3. The Taskcluster hook triggers a new bot task in analysis mode
+4. That task then fetches the stack of patches, and tries to apply them locally,
+5. If the stack fails to apply, an error is reported directly on the Phabricator revision,
+6. If the stack applies cleanly, it's pushed on the Try server, exactly like a developer would do,
+7. The Try server creates a decision task on Taskcluster,
+8. The Decision tasks creates followup tasks, with code analyzers, and a custom code-review task.
+9. The code analyzers run on the stack we produced, and list potential issues in a JSON file, that is stored and shared as a Taskcluster artifact,
+10. The final code-review task is triggered once all analyzers complete and just sends a Pulse message.
+11. The pulse messages triggers our own task hosted in a Taskcluster hook (see [bot](projects/bot.md) for more information)
+12. That task retrieves all the analyzers artifacts with issues, filters them, and updates the Phabricator build, reporting potential issues.
+13. That same task also publishes the issues on our backend hosted on Heroku (see [backend](projects/backend.md) for more information).
 
 The whole workflow takes about 12 to 15 minutes on average for a given revision.
-
-## Events
-
-The events system uses both Dyno types available on Heroku:
-
-- a unique **web** Dyno, exposed as https://events.code-review.moz.tools
-- at least one **worker** Dyno, not reachable publicly
-
-The **web** Dyno only stores HTTP requests from Phabricator into the shared Redis Database (also provided by Heroku as an addon).
-
-Each **worker** clones a list of Mozilla repositories at startup (including the huge [mozilla-central](https://hg.mozilla.org/mozilla-central/)), polls the Redis database for new builds to run.
-
-For each build retrieved, the stack of patches is retrieved from the Phabricator API (and not HGMO), then applied locally on the target repository. Once the stack is cleanly applied, a mercurial push to the corresponding try server is done.
-
-Finally, the Phabricator build is updated with the treeherder link, so that developers can view the progress of their review build while it's running (also useful for debugging !).
-
-The list of repositories, try servers and options to run the Events system on Heroku is stored in [the shared configuration on Taskcluster](configuration.md).
 
 ## Analyzers
 
