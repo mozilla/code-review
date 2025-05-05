@@ -1,6 +1,6 @@
 aiohttp<4
 influxdb==5.3.2
-libmozdata==0.2.9
+libmozdata==0.2.10
 libmozevent==1.1.30
 python-hglib==2.6.2
 pyyaml==6.0.2
