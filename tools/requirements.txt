@@ -2,7 +2,7 @@ aiohttp==3.11.18
 
 # Limit idna to avid conflicts
 idna>=2.5,<3.11
-libmozdata==0.2.9
+libmozdata==0.2.10
 multidict==6.4.3
 rs_parsepatch==0.4.4
 sentry-sdk==2.26.1
