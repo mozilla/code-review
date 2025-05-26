@@ -20,7 +20,7 @@ from code_review_bot.analysis import (
     publish_analysis_phabricator,
 )
 from code_review_bot.backend import BackendAPI
-from code_review_bot.config import REPO_AUTOLAND, REPO_MOZILLA_CENTRAL, settings
+from code_review_bot.config import settings
 from code_review_bot.mercurial import robust_checkout
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
@@ -159,9 +159,8 @@ class Workflow:
         """
         Simpler workflow to ingest a revision
         """
-        assert revision.head_repository in (
-            REPO_AUTOLAND,
-            REPO_MOZILLA_CENTRAL,
+        assert (
+            revision.from_autoland or revision.from_mozilla_central
         ), "Need a revision from autoland or mozilla-central"
         logger.info(
             "Starting revision ingestion",
@@ -188,6 +187,15 @@ class Workflow:
                         )
                         continue
                     task = self.build_task(task_status)
+
+                    # Log cleanly on autoland unknown tasks
+                    if (
+                        task is None
+                        and revision.from_autoland
+                        and task_name.startswith("source-test-")
+                    ):
+                        logger.info("Skipping unknown task", name=task_name)
+
                 except Exception as e:
                     logger.warning(f"Could not proceed task {task_name}: {e}")
                     continue
@@ -658,13 +666,6 @@ class Workflow:
             return ExternalTidyTask(task_id, task_status)
         elif name == "source-test-taskgraph-diff":
             return TaskGraphDiffTask(task_id, task_status)
-        elif settings.autoland_group_id is not None and not name.startswith(
-            "source-test-"
-        ):
-            # Log cleanly on autoland unknown tasks
-            logger.info("Skipping unknown task", id=task_id, name=name)
-        else:
-            return None
 
     def update_status(self, revision, state):
         """

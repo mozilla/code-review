@@ -142,6 +142,14 @@ class Revision:
         ]
 
     @property
+    def from_autoland(self):
+        return self.head_repository == REPO_AUTOLAND
+
+    @property
+    def from_mozilla_central(self):
+        return self.head_repository == REPO_MOZILLA_CENTRAL
+
+    @property
     def before_after_feature(self):
         """
         Randomly run the before/after feature depending on a configured ratio.
