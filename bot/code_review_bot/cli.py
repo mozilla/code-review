@@ -155,13 +155,9 @@ def main():
 
     # Load unique revision
     try:
-        if settings.autoland_group_id:
+        if settings.generic_group_id:
             revision = Revision.from_decision_task(
-                queue_service.task(settings.autoland_group_id), phabricator_api
-            )
-        elif settings.mozilla_central_group_id:
-            revision = Revision.from_decision_task(
-                queue_service.task(settings.mozilla_central_group_id), phabricator_api
+                queue_service.task(settings.generic_group_id), phabricator_api
             )
         elif settings.phabricator_build_target:
             revision = Revision.from_phabricator_trigger(
@@ -202,10 +198,8 @@ def main():
         task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
     )
     try:
-        if settings.autoland_group_id:
-            w.ingest_revision(revision, settings.autoland_group_id)
-        elif settings.mozilla_central_group_id:
-            w.ingest_revision(revision, settings.mozilla_central_group_id)
+        if settings.generic_group_id:
+            w.ingest_revision(revision, settings.generic_group_id)
         elif settings.phabricator_build_target:
             w.start_analysis(revision)
         else:

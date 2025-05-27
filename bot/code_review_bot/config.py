@@ -45,8 +45,7 @@ class Settings:
         self.taskcluster = None
         self.try_task_id = None
         self.try_group_id = None
-        self.autoland_group_id = None
-        self.mozilla_central_group_id = None
+        self.generic_group_id = None
         self.phabricator_build_target = None
         self.repositories = []
         self.decision_env_prefixes = []
@@ -84,10 +83,8 @@ class Settings:
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
             self.try_task_id = os.environ["TRY_TASK_ID"]
             self.try_group_id = os.environ["TRY_TASK_GROUP_ID"]
-        elif "AUTOLAND_TASK_GROUP_ID" in os.environ:
-            self.autoland_group_id = os.environ["AUTOLAND_TASK_GROUP_ID"]
-        elif "MOZILLA_CENTRAL_TASK_GROUP_ID" in os.environ:
-            self.mozilla_central_group_id = os.environ["MOZILLA_CENTRAL_TASK_GROUP_ID"]
+        elif "GENERIC_TASK_GROUP_ID" in os.environ:
+            self.generic_group_id = os.environ["GENERIC_TASK_GROUP_ID"]
         elif "PHABRICATOR_BUILD_TARGET" in os.environ:
             # Setup trigger mode using Phabricator information
             self.phabricator_build_target = os.environ["PHABRICATOR_BUILD_TARGET"]
