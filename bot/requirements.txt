@@ -6,4 +6,4 @@ python-hglib==2.6.2
 pyyaml==6.0.2
 sentry-sdk==2.29.1
 setuptools==80.8.0
-structlog==25.3.0
+structlog==25.4.0
