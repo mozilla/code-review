@@ -25,7 +25,7 @@ def test_revision(mock_phabricator):
         )
 
     assert revision.as_dict() == {
-        "base_changeset": "tip",
+        "base_changeset": "default",
         "base_repository": "https://hg.mozilla.org/mozilla-central",
         "bugzilla_id": 1234567,
         "diff_id": 42,
