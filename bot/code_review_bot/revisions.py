@@ -14,7 +14,7 @@ import rs_parsepatch
 import structlog
 from libmozdata.phabricator import PhabricatorAPI
 
-from code_review_bot import Issue, stats, taskcluster
+from code_review_bot import InvalidTrigger, Issue, stats, taskcluster
 from code_review_bot.config import (
     REPO_AUTOLAND,
     REPO_MOZILLA_CENTRAL,
@@ -302,8 +302,14 @@ class Revision:
         No Phabricator reference nor diff is saved.
         """
         # Load repositories
-        head_repository = task["payload"]["env"]["GECKO_HEAD_REPOSITORY"]
-        base_repository = task["payload"]["env"]["GECKO_BASE_REPOSITORY"]
+        try:
+            head_repository = task["payload"]["env"]["GECKO_HEAD_REPOSITORY"]
+            base_repository = task["payload"]["env"]["GECKO_BASE_REPOSITORY"]
+        except KeyError:
+            name = task.get("metadata", {}).get("name")
+            raise InvalidTrigger(
+                f"Missing repository in task payload, task '{name}' probably not a build group"
+            )
 
         assert head_repository in (
             REPO_AUTOLAND,

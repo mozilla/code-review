@@ -17,7 +17,7 @@ from libmozdata.phabricator import (
     UnitResultState,
 )
 
-from code_review_bot import AnalysisException, stats, taskcluster
+from code_review_bot import AnalysisException, InvalidTrigger, stats, taskcluster
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision
@@ -170,6 +170,11 @@ def main():
                 queue_service.task(settings.try_group_id),
                 phabricator_api,
             )
+    except InvalidTrigger as e:
+        logger.info("Early stop analysis due to invalid trigger", error=str(e))
+
+        # Stop cleanly as we just want to ignore that case
+        return 0
     except Exception as e:
         # Report revision loading failure on production only
         # On testing or dev instances, we can use different Phabricator
