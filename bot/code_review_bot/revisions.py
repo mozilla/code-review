@@ -14,7 +14,7 @@ import rs_parsepatch
 import structlog
 from libmozdata.phabricator import PhabricatorAPI
 
-from code_review_bot import InvalidTrigger, Issue, stats, taskcluster
+from code_review_bot import InvalidRepository, InvalidTrigger, Issue, stats, taskcluster
 from code_review_bot.config import (
     REPO_AUTOLAND,
     REPO_MOZILLA_CENTRAL,
@@ -259,21 +259,14 @@ class Revision:
             break
 
         # Check mercurial information were properly retrieved
-        assert all(
-            attr is not None
-            for attr in [
-                head_repository,
-                base_repository,
-                head_changeset,
-                base_changeset,
-            ]
-        ), "Unsupported parent decision task, missing mercurial information in its environment"
-        logger.info(
-            "Using mercurial changeset",
-            head_changeset=head_changeset,
-            head_repository=head_repository,
-            base_repository=base_repository,
-        )
+        for attr in [
+            head_repository,
+            base_repository,
+            head_changeset,
+            base_changeset,
+        ]:
+            if attr is None:
+                raise InvalidRepository("Missing mercurial information")
 
         # Build a revision without repositories as they are retrieved later
         # when analyzing the full task group
@@ -311,10 +304,12 @@ class Revision:
                 f"Missing repository in task payload, task '{name}' probably not a build group"
             )
 
-        assert head_repository in (
+        # Check we support this repository
+        if head_repository not in (
             REPO_AUTOLAND,
             REPO_MOZILLA_CENTRAL,
-        ), "Decision task must be on autoland or mozilla-central"
+        ):
+            raise InvalidRepository(f"Unsupported head repository {head_repository}")
 
         # Load mercurial changesets
         head_changeset = task["payload"]["env"]["GECKO_HEAD_REV"]

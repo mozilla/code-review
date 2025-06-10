@@ -48,6 +48,13 @@ class InvalidTrigger(Exception):
     """
 
 
+class InvalidRepository(Exception):
+    """
+    Raised when the bot has been started on a build task from
+    an unsupported repository
+    """
+
+
 class Level(enum.Enum):
     # A critical issue breaks CI and must always be reported
     Error = "error"

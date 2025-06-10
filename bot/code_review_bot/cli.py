@@ -17,7 +17,13 @@ from libmozdata.phabricator import (
     UnitResultState,
 )
 
-from code_review_bot import AnalysisException, InvalidTrigger, stats, taskcluster
+from code_review_bot import (
+    AnalysisException,
+    InvalidRepository,
+    InvalidTrigger,
+    stats,
+    taskcluster,
+)
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision
@@ -174,6 +180,11 @@ def main():
         logger.info("Early stop analysis due to invalid trigger", error=str(e))
 
         # Stop cleanly as we just want to ignore that case
+        return 0
+    except InvalidRepository as e:
+        logger.warning("Early stop analysis due to invalid repository", error=str(e))
+
+        # Stop cleanly as we just want to ignore that case, but report on sentry through warning
         return 0
     except Exception as e:
         # Report revision loading failure on production only
