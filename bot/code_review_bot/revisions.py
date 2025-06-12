@@ -14,7 +14,7 @@ import rs_parsepatch
 import structlog
 from libmozdata.phabricator import PhabricatorAPI
 
-from code_review_bot import Issue, stats, taskcluster
+from code_review_bot import InvalidRepository, InvalidTrigger, Issue, stats, taskcluster
 from code_review_bot.config import (
     REPO_AUTOLAND,
     REPO_MOZILLA_CENTRAL,
@@ -142,6 +142,14 @@ class Revision:
         ]
 
     @property
+    def from_autoland(self):
+        return self.head_repository == REPO_AUTOLAND
+
+    @property
+    def from_mozilla_central(self):
+        return self.head_repository == REPO_MOZILLA_CENTRAL
+
+    @property
     def before_after_feature(self):
         """
         Randomly run the before/after feature depending on a configured ratio.
@@ -251,21 +259,14 @@ class Revision:
             break
 
         # Check mercurial information were properly retrieved
-        assert all(
-            attr is not None
-            for attr in [
-                head_repository,
-                base_repository,
-                head_changeset,
-                base_changeset,
-            ]
-        ), "Unsupported parent decision task, missing mercurial information in its environment"
-        logger.info(
-            "Using mercurial changeset",
-            head_changeset=head_changeset,
-            head_repository=head_repository,
-            base_repository=base_repository,
-        )
+        for attr in [
+            head_repository,
+            base_repository,
+            head_changeset,
+            base_changeset,
+        ]:
+            if attr is None:
+                raise InvalidRepository("Missing mercurial information")
 
         # Build a revision without repositories as they are retrieved later
         # when analyzing the full task group
@@ -294,13 +295,21 @@ class Revision:
         No Phabricator reference nor diff is saved.
         """
         # Load repositories
-        head_repository = task["payload"]["env"]["GECKO_HEAD_REPOSITORY"]
-        base_repository = task["payload"]["env"]["GECKO_BASE_REPOSITORY"]
+        try:
+            head_repository = task["payload"]["env"]["GECKO_HEAD_REPOSITORY"]
+            base_repository = task["payload"]["env"]["GECKO_BASE_REPOSITORY"]
+        except KeyError:
+            name = task.get("metadata", {}).get("name")
+            raise InvalidTrigger(
+                f"Missing repository in task payload, task '{name}' probably not a build group"
+            )
 
-        assert head_repository in (
+        # Check we support this repository
+        if head_repository not in (
             REPO_AUTOLAND,
             REPO_MOZILLA_CENTRAL,
-        ), "Decision task must be on autoland or mozilla-central"
+        ):
+            raise InvalidRepository(f"Unsupported head repository {head_repository}")
 
         # Load mercurial changesets
         head_changeset = task["payload"]["env"]["GECKO_HEAD_REV"]

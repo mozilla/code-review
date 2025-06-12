@@ -17,7 +17,13 @@ from libmozdata.phabricator import (
     UnitResultState,
 )
 
-from code_review_bot import AnalysisException, stats, taskcluster
+from code_review_bot import (
+    AnalysisException,
+    InvalidRepository,
+    InvalidTrigger,
+    stats,
+    taskcluster,
+)
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import Revision
@@ -155,13 +161,9 @@ def main():
 
     # Load unique revision
     try:
-        if settings.autoland_group_id:
+        if settings.generic_group_id:
             revision = Revision.from_decision_task(
-                queue_service.task(settings.autoland_group_id), phabricator_api
-            )
-        elif settings.mozilla_central_group_id:
-            revision = Revision.from_decision_task(
-                queue_service.task(settings.mozilla_central_group_id), phabricator_api
+                queue_service.task(settings.generic_group_id), phabricator_api
             )
         elif settings.phabricator_build_target:
             revision = Revision.from_phabricator_trigger(
@@ -174,6 +176,16 @@ def main():
                 queue_service.task(settings.try_group_id),
                 phabricator_api,
             )
+    except InvalidTrigger as e:
+        logger.info("Early stop analysis due to invalid trigger", error=str(e))
+
+        # Stop cleanly as we just want to ignore that case
+        return 0
+    except InvalidRepository as e:
+        logger.warning("Early stop analysis due to invalid repository", error=str(e))
+
+        # Stop cleanly as we just want to ignore that case, but report on sentry through warning
+        return 0
     except Exception as e:
         # Report revision loading failure on production only
         # On testing or dev instances, we can use different Phabricator
@@ -202,10 +214,8 @@ def main():
         task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
     )
     try:
-        if settings.autoland_group_id:
-            w.ingest_revision(revision, settings.autoland_group_id)
-        elif settings.mozilla_central_group_id:
-            w.ingest_revision(revision, settings.mozilla_central_group_id)
+        if settings.generic_group_id:
+            w.ingest_revision(revision, settings.generic_group_id)
         elif settings.phabricator_build_target:
             w.start_analysis(revision)
         else:

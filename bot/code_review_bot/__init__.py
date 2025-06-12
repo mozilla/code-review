@@ -41,6 +41,20 @@ class AnalysisException(Exception):
         super().__init__(message)
 
 
+class InvalidTrigger(Exception):
+    """
+    Raised when the bot has been started with an invalid trigger
+    Main reason is a gecko-level-3 task not being a build (cron, ...)
+    """
+
+
+class InvalidRepository(Exception):
+    """
+    Raised when the bot has been started on a build task from
+    an unsupported repository
+    """
+
+
 class Level(enum.Enum):
     # A critical issue breaks CI and must always be reported
     Error = "error"
