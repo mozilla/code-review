@@ -9,7 +9,6 @@ from itertools import groupby
 
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
-from libmozevent.mercurial import MercurialWorker, Repository
 from libmozevent.phabricator import PhabricatorActions, PhabricatorBuildState
 from taskcluster.utils import stringDate
 
@@ -21,7 +20,7 @@ from code_review_bot.analysis import (
 )
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
-from code_review_bot.mercurial import robust_checkout
+from code_review_bot.mercurial import MercurialWorker, Repository, robust_checkout
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask, BaseTask, NoticeTask

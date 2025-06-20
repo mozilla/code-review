@@ -5,9 +5,9 @@
 import json
 import tempfile
 
-from libmozevent import utils
 from libmozevent.phabricator import PhabricatorActions
 
+from code_review_bot import mercurial
 from code_review_bot.config import RepositoryConf
 from code_review_bot.revisions import Revision
 
@@ -77,7 +77,7 @@ def test_workflow(
     def mock_hgrun(cmd):
         hgrun_calls.append(cmd)
 
-    monkeypatch.setattr(utils, "hg_run", mock_hgrun)
+    monkeypatch.setattr(mercurial, "hg_run", mock_hgrun)
 
     # Build never expires otherwise the analysis stops early
     monkeypatch.setattr(PhabricatorActions, "is_expired_build", lambda _, build: False)
@@ -107,7 +107,7 @@ def test_workflow(
             "robustcheckout",
             b"--purge",
             f"--sharebase={tmpdir}/mozilla-central-shared".encode(),
-            b"--branch=tip",
+            b"--revision=tip",
             b"--",
             "https://hg.mozilla.org/mozilla-central",
             repo_path,
