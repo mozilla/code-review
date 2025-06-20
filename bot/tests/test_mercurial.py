@@ -725,7 +725,7 @@ async def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     bus = MessageBus()
     bus.add_queue("phabricator")
 
-    from libmozevent import mercurial
+    from code_review_bot import mercurial
 
     mercurial.MAX_PUSH_RETRIES = 1
     mercurial.TRY_STATUS_URL = "http://test.status/try"
@@ -804,7 +804,7 @@ async def test_push_failure_max_retries(PhabricatorMock, mock_mc):
     bus = MessageBus()
     bus.add_queue("phabricator")
 
-    from libmozevent import mercurial
+    from code_review_bot import mercurial
 
     mercurial.MAX_PUSH_RETRIES = 2
     mercurial.TRY_STATUS_URL = "http://test.status/try"
@@ -884,7 +884,7 @@ async def test_push_closed_try(PhabricatorMock, mock_mc):
     bus = MessageBus()
     bus.add_queue("phabricator")
 
-    from libmozevent import mercurial
+    from code_review_bot import mercurial
 
     mercurial.MAX_PUSH_RETRIES = 2
     mercurial.TRY_STATUS_URL = "http://test.status/try"

@@ -112,6 +112,7 @@ class Repository:
         self.name = config["name"]
         self.url = config["url"]
         self.dir = os.path.join(cache_root, config["name"])
+        self.share_base_dir = os.path.join(cache_root, f"{config['name']}-shared")
         self.checkout_mode = config.get("checkout", "batch")
         self.batch_size = config.get("batch_size", 10000)
         self.try_url = config["try_url"]
@@ -157,7 +158,7 @@ class Repository:
         if self.checkout_mode == "batch":
             batch_checkout(self.url, self.dir, b"tip", self.batch_size)
         elif self.checkout_mode == "robust":
-            robust_checkout(self.url, self.dir, b"tip")
+            robust_checkout(self.url, self.dir, self.share_base_dir, b"tip")
         else:
             hglib.clone(self.url, self.dir)
         logger.info("Full checkout finished")
