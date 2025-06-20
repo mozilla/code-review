@@ -18,6 +18,10 @@ import hglib
 import pytest
 import responses
 from libmozdata.phabricator import PhabricatorAPI
+from libmozevent.phabricator import (
+    PhabricatorBuild,
+    PhabricatorBuildState,
+)
 
 from code_review_bot import Level, stats
 from code_review_bot.backend import BackendAPI
@@ -557,6 +561,7 @@ def mock_workflow(mock_config, mock_taskcluster_config):
             self.backend_api = BackendAPI()
             self.update_build = False
             self.task_failures_ignored = []
+            self.clone_available = True
 
         def setup_mock_tasks(self, tasks):
             """
@@ -977,3 +982,27 @@ def mock_mercurial_repo(monkeypatch):
     mock_repo = MockRepo()
     monkeypatch.setattr(hglib, "open", lambda path: mock_repo)
     return mock_repo
+
+
+class MockBuild(PhabricatorBuild):
+    def __init__(self, diff_id, repo_phid, revision_id, target_phid, diff):
+        config_file = tempfile.NamedTemporaryFile()
+        with open(config_file.name, "w") as f:
+            custom_conf = ConfigParser()
+            custom_conf.add_section("User-Agent")
+            custom_conf.set("User-Agent", "name", "libmozdata")
+            custom_conf.write(f)
+            f.seek(0)
+        from libmozdata import config
+
+        config.set_config(config.ConfigIni(config_file.name))
+
+        self.diff_id = diff_id
+        self.repo_phid = repo_phid
+        self.revision_id = revision_id
+        self.target_phid = target_phid
+        self.diff = diff
+        self.stack = []
+        self.state = PhabricatorBuildState.Public
+        self.revision_url = None
+        self.retries = 0
