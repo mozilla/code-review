@@ -291,8 +291,6 @@ class Workflow:
             cache_root=settings.mercurial_cache,
         )
 
-        worker = MercurialWorker()
-
         # Try to update the state 5 consecutive time
         for i in range(5):
             # Update the internal build state using Phabricator infos
@@ -331,7 +329,8 @@ class Workflow:
         repository.clone()
 
         # Apply the stack of patches and push to try
-        output = worker.handle_build(repository, build)
+        worker = MercurialWorker()
+        output = worker.run(repository, build)
 
         # Update final state using worker output
         if self.update_build:

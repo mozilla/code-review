@@ -37,6 +37,12 @@ PUSH_RETRY_EXPONENTIAL_DELAY = 6
 logger = structlog.get_logger(__name__)
 
 
+class RetryNeeded(Exception):
+    """
+    Raised when retrying a mercurial build is needed
+    """
+
+
 def hg_run(cmd):
     """
     Run a mercurial command without an hglib instance
@@ -404,6 +410,44 @@ class MercurialWorker:
     ):
         self.skippable_files = skippable_files
 
+    def run(self, repository, build):
+        """
+        Apply the stack of patches from the build, handling retries
+        in case of try server errors
+        """
+        while build.retries <= MAX_PUSH_RETRIES:
+            start = datetime.utcnow()
+            if build.retries:
+                logger.warning(
+                    "Trying to apply build's diff after a remote push error "
+                    f"[{build.retries}/{MAX_PUSH_RETRIES}]"
+                )
+
+            try:
+                return self.handle_build(repository, build)
+            except RetryNeeded:
+                build.retries += 1
+
+                if build.retries > MAX_PUSH_RETRIES:
+                    error_log = "Max number of retries has been reached pushing the build to try repository"
+                    logger.warn("Mercurial error on diff", error=error_log, build=build)
+                    return (
+                        "fail:mercurial",
+                        build,
+                        {"message": error_log, "duration": time.time() - start},
+                    )
+
+                # Ensure try is opened
+                self.wait_try_available()
+
+                # Wait an exponential time before retrying the build
+                delay = PUSH_RETRY_EXPONENTIAL_DELAY**build.retries
+                logger.info(
+                    f"An error occurred pushing the build to try, retrying after {delay}s"
+                )
+                time.sleep(delay)
+                return
+
     def is_commit_skippable(self, build):
         def get_files_touched_in_diff(rawdiff):
             patched = []
@@ -472,21 +516,6 @@ class MercurialWorker:
         assert isinstance(repository, Repository)
         start = time.time()
 
-        if build.retries > MAX_PUSH_RETRIES:
-            error_log = "Max number of retries has been reached pushing the build to try repository"
-            logger.warn("Mercurial error on diff", error=error_log, build=build)
-            return (
-                "fail:mercurial",
-                build,
-                {"message": error_log, "duration": time.time() - start},
-            )
-
-        if build.retries:
-            logger.warning(
-                "Trying to apply build's diff after a remote push error "
-                f"[{build.retries}/{MAX_PUSH_RETRIES}]"
-            )
-
         try:
             # Start by cleaning the repo
             repository.clean()
@@ -522,17 +551,7 @@ class MercurialWorker:
                 error_log = error_log.decode("utf-8")
 
             if self.is_eligible_for_retry(error_log):
-                build.retries += 1
-                # Ensure try is opened
-                self.wait_try_available()
-
-                # Wait an exponential time before retrying the build
-                delay = PUSH_RETRY_EXPONENTIAL_DELAY**build.retries
-                logger.info(
-                    f"An error occurred pushing the build to try, retrying after {delay}s"
-                )
-                time.sleep(delay)
-                return
+                raise RetryNeeded
 
             logger.warn(
                 "Mercurial error on diff", error=error_log, args=e.args, build=build

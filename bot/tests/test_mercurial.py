@@ -1,17 +1,14 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-import asyncio
 import json
 import os.path
 from unittest.mock import MagicMock
 
 import hglib
-import pytest
 import responses
 from conftest import MockBuild
 from libmozdata.phabricator import PhabricatorPatch
-from libmozevent.bus import MessageBus
 
 from code_review_bot import mercurial
 
@@ -109,7 +106,7 @@ def test_push_to_try(PhabricatorMock, mock_mc):
     assert not os.path.exists(config)
 
     worker = mercurial.MercurialWorker()
-    result = worker.handle_build(mock_mc, build)
+    result = worker.run(mock_mc, build)
 
     # Check the treeherder link was generated
     tip = mock_mc.repo.tip()
@@ -170,15 +167,12 @@ def test_push_to_try(PhabricatorMock, mock_mc):
     )
 
 
-@pytest.mark.asyncio
-async def test_push_to_try_existing_rev(PhabricatorMock, mock_mc):
+def test_push_to_try_existing_rev(PhabricatorMock, mock_mc):
     """
     Run mercurial worker on a single diff
     with a push to try server
     but applying on an existing revision
     """
-    bus = MessageBus()
-    bus.add_queue("phabricator")
     repo_dir = mock_mc.repo.root().decode("utf-8")
 
     def _readme(content):
@@ -212,18 +206,10 @@ async def test_push_to_try_existing_rev(PhabricatorMock, mock_mc):
     assert not os.path.exists(target)
     assert not os.path.exists(config)
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-mc": mock_mc}
-    )
-    worker.register(bus)
-    assert len(worker.repositories) == 1
-
-    await bus.send("mercurial", build)
-    assert bus.queues["mercurial"].qsize() == 1
-    task = asyncio.create_task(worker.run())
+    worker = mercurial.MercurialWorker()
+    mode, out_build, details = worker.run(mock_mc, build)
 
     # Check the treeherder link was queued
-    mode, out_build, details = await bus.receive("phabricator")
     tip = mock_mc.repo.tip()
     assert mode == "success"
     assert out_build == build
@@ -233,7 +219,6 @@ async def test_push_to_try_existing_rev(PhabricatorMock, mock_mc):
         tip.node.decode("utf-8")
     )
     assert details["revision"] == tip.node.decode("utf-8")
-    task.cancel()
 
     # The target should have content now
     assert os.path.exists(target)
@@ -292,14 +277,11 @@ Differential Diff: PHID-DIFF-solo"""
     # assert "EXTRA" not in open(os.path.join(repo_dir, "README.md")).read()
 
 
-@pytest.mark.asyncio
-async def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
+def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
     """
     Run mercurial worker on a single diff
     that skips the push to try server
     """
-    bus = MessageBus()
-    bus.add_queue("phabricator")
 
     # Preload the build
     diff = {
@@ -324,20 +306,11 @@ async def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
     assert not os.path.exists(config)
 
     worker = mercurial.MercurialWorker(
-        "mercurial",
-        "phabricator",
-        repositories={"PHID-REPO-mc": mock_mc},
         skippable_files=["test.txt"],
     )
-    worker.register(bus)
-    assert len(worker.repositories) == 1
-
-    await bus.send("mercurial", build)
-    assert bus.queues["mercurial"].qsize() == 1
-    task = asyncio.create_task(worker.run())
+    mode, out_build, details = worker.run(mock_mc, build)
 
     # Check the treeherder link was queued
-    mode, out_build, details = await bus.receive("phabricator")
     tip = mock_mc.repo.tip()
     assert mode == "fail:ineligible"
     assert out_build == build
@@ -345,7 +318,6 @@ async def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
         details["message"]
         == "Modified files match skippable internal configuration files"
     )
-    task.cancel()
 
     # The target should have content now
     assert os.path.exists(target)
@@ -373,8 +345,7 @@ async def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
     mock_mc.repo.push.assert_not_called()
 
 
-@pytest.mark.asyncio
-async def test_treeherder_link(PhabricatorMock, mock_mc):
+def test_treeherder_link(PhabricatorMock, mock_mc):
     """
     Run mercurial worker on a single diff
     and check the treeherder link publication as an artifact
@@ -390,9 +361,6 @@ async def test_treeherder_link(PhabricatorMock, mock_mc):
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
 
-    bus = MessageBus()
-    bus.add_queue("phabricator")
-
     # Get initial tip commit in repo
     initial = mock_mc.repo.tip()
 
@@ -403,18 +371,10 @@ async def test_treeherder_link(PhabricatorMock, mock_mc):
     assert not os.path.exists(target)
     assert not os.path.exists(config)
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-mc": mock_mc}
-    )
-    worker.register(bus)
-    assert len(worker.repositories) == 1
-
-    await bus.send("mercurial", build)
-    assert bus.queues["mercurial"].qsize() == 1
-    task = asyncio.create_task(worker.run())
+    worker = mercurial.MercurialWorker()
+    mode, out_build, details = worker.run(mock_mc, build)
 
     # Check the treeherder link was queued
-    mode, out_build, details = await bus.receive("phabricator")
     tip = mock_mc.repo.tip()
     assert mode == "success"
     assert out_build == build
@@ -424,14 +384,12 @@ async def test_treeherder_link(PhabricatorMock, mock_mc):
         tip.node.decode("utf-8")
     )
     assert details["revision"] == tip.node.decode("utf-8")
-    task.cancel()
 
     # Tip should be updated
     assert tip.node != initial.node
 
 
-@pytest.mark.asyncio
-async def test_failure_general(PhabricatorMock, mock_mc):
+def test_failure_general(PhabricatorMock, mock_mc):
     """
     Run mercurial worker on a single diff
     and check the treeherder link publication as an artifact
@@ -446,9 +404,6 @@ async def test_failure_general(PhabricatorMock, mock_mc):
     build = MockBuild(1234, "PHID-REPO-mc", 5678, "PHID-somehash", diff)
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
-
-    bus = MessageBus()
-    bus.add_queue("phabricator")
 
     # Get initial tip commit in repo
     initial = mock_mc.repo.tip()
@@ -466,31 +421,22 @@ async def test_failure_general(PhabricatorMock, mock_mc):
 
     mock_mc.apply_build = boom
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-mc": mock_mc}
-    )
-    worker.register(bus)
-    assert len(worker.repositories) == 1
-
-    await bus.send("mercurial", build)
-    assert bus.queues["mercurial"].qsize() == 1
-    task = asyncio.create_task(worker.run())
+    worker = mercurial.MercurialWorker()
+    mode, out_build, details = worker.run(mock_mc, build)
 
     # Check the unit result was published
-    mode, out_build, details = await bus.receive("phabricator")
+
     assert mode == "fail:general"
     assert out_build == build
     assert details["duration"] > 0
     assert details["message"] == "Boom"
-    task.cancel()
 
     # Clone should not be modified
     tip = mock_mc.repo.tip()
     assert tip.node == initial.node
 
 
-@pytest.mark.asyncio
-async def test_failure_mercurial(PhabricatorMock, mock_mc):
+def test_failure_mercurial(PhabricatorMock, mock_mc):
     """
     Run mercurial worker on a single diff
     and check the treeherder link publication as an artifact
@@ -506,9 +452,6 @@ async def test_failure_mercurial(PhabricatorMock, mock_mc):
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
 
-    bus = MessageBus()
-    bus.add_queue("phabricator")
-
     # Get initial tip commit in repo
     initial = mock_mc.repo.tip()
 
@@ -519,31 +462,21 @@ async def test_failure_mercurial(PhabricatorMock, mock_mc):
     assert not os.path.exists(target)
     assert not os.path.exists(config)
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-mc": mock_mc}
-    )
-    worker.register(bus)
-    assert len(worker.repositories) == 1
-
-    await bus.send("mercurial", build)
-    assert bus.queues["mercurial"].qsize() == 1
-    task = asyncio.create_task(worker.run())
+    worker = mercurial.MercurialWorker()
+    mode, out_build, details = worker.run(mock_mc, build)
 
     # Check the treeherder link was queued
-    mode, out_build, details = await bus.receive("phabricator")
     assert mode == "fail:mercurial"
     assert out_build == build
     assert details["duration"] > 0
     assert details["message"] == MERCURIAL_FAILURE
-    task.cancel()
 
     # Clone should not be modified
     tip = mock_mc.repo.tip()
     assert tip.node == initial.node
 
 
-@pytest.mark.asyncio
-async def test_push_to_try_nss(PhabricatorMock, mock_nss):
+def test_push_to_try_nss(PhabricatorMock, mock_nss):
     """
     Run mercurial worker on a single diff
     with a push to try server, but with NSS support (try syntax)
@@ -559,9 +492,6 @@ async def test_push_to_try_nss(PhabricatorMock, mock_nss):
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
 
-    bus = MessageBus()
-    bus.add_queue("phabricator")
-
     # Get initial tip commit in repo
     initial = mock_nss.repo.tip()
 
@@ -572,18 +502,10 @@ async def test_push_to_try_nss(PhabricatorMock, mock_nss):
     assert not os.path.exists(target)
     assert not os.path.exists(config)
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-nss": mock_nss}
-    )
-    worker.register(bus)
-    assert len(worker.repositories) == 1
-
-    await bus.send("mercurial", build)
-    assert bus.queues["mercurial"].qsize() == 1
-    task = asyncio.create_task(worker.run())
+    worker = mercurial.MercurialWorker()
+    mode, out_build, details = worker.run(mock_nss, build)
 
     # Check the treeherder link was queued
-    mode, out_build, details = await bus.receive("phabricator")
     tip = mock_nss.repo.tip()
     assert mode == "success"
     assert out_build == build
@@ -593,7 +515,6 @@ async def test_push_to_try_nss(PhabricatorMock, mock_nss):
         tip.node.decode("utf-8")
     )
     assert details["revision"] == tip.node.decode("utf-8")
-    task.cancel()
 
     # The target should have content now
     assert os.path.exists(target)
@@ -628,8 +549,7 @@ async def test_push_to_try_nss(PhabricatorMock, mock_nss):
     )
 
 
-@pytest.mark.asyncio
-async def test_crash_utf8_author(PhabricatorMock, mock_mc):
+def test_crash_utf8_author(PhabricatorMock, mock_mc):
     """
     Run mercurial worker on a single diff
     but the patch author has utf-8 chars in its name
@@ -644,9 +564,6 @@ async def test_crash_utf8_author(PhabricatorMock, mock_mc):
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
 
-    bus = MessageBus()
-    bus.add_queue("phabricator")
-
     # The patched and config files should not exist at first
     repo_dir = mock_mc.repo.root().decode("utf-8")
     config = os.path.join(repo_dir, "try_task_config.json")
@@ -654,19 +571,9 @@ async def test_crash_utf8_author(PhabricatorMock, mock_mc):
     assert not os.path.exists(target)
     assert not os.path.exists(config)
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-mc": mock_mc}
-    )
-    worker.register(bus)
-    assert len(worker.repositories) == 1
-
-    await bus.send("mercurial", build)
-    assert bus.queues["mercurial"].qsize() == 1
-
     # Run the mercurial worker on that patch only
-    task = asyncio.create_task(worker.run())
-    mode, out_build, details = await bus.receive("phabricator")
-    task.cancel()
+    worker = mercurial.MercurialWorker()
+    mode, out_build, details = worker.run(mock_mc, build)
 
     # Check we have the patch with utf-8 author properly applied
     assert [(c.author, c.desc) for c in mock_mc.repo.log()] == [
@@ -695,8 +602,7 @@ async def test_crash_utf8_author(PhabricatorMock, mock_mc):
 
 
 @responses.activate
-@pytest.mark.asyncio
-async def test_unexpected_push_failure(PhabricatorMock, mock_mc):
+def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     """
     When a fail occurs while pushing the file configuring try
     A new task for the build is added to the bus
@@ -710,9 +616,6 @@ async def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     build = MockBuild(4444, "PHID-REPO-mc", 5555, "PHID-build-badutf8", diff)
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
-
-    bus = MessageBus()
-    bus.add_queue("phabricator")
 
     from code_review_bot import mercurial
 
@@ -739,23 +642,13 @@ async def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     repository_mock.try_name = "try"
     repository_mock.retries = 0
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-mc": repository_mock}
-    )
-    worker.register(bus)
-
-    assert bus.queues["mercurial"].qsize() == 0
-
-    resp = await worker.handle_build(repository_mock, build)
+    worker = mercurial.MercurialWorker()
+    resp = worker.run(repository_mock, build)
     assert resp is None
     assert repository_mock.push_to_try.call_count == 1
 
-    assert bus.queues["mercurial"].qsize() == 1
-    assert bus.queues["phabricator"].qsize() == 0
-
     # Try a 2nd in a new task
-    build = await bus.receive("mercurial")
-    resp = await worker.handle_build(repository_mock, build)
+    resp = worker.run(repository_mock, build)
     assert resp is not None
     mode, out_build, details = resp
 
@@ -774,8 +667,7 @@ async def test_unexpected_push_failure(PhabricatorMock, mock_mc):
 
 
 @responses.activate
-@pytest.mark.asyncio
-async def test_push_failure_max_retries(PhabricatorMock, mock_mc):
+def test_push_failure_max_retries(PhabricatorMock, mock_mc):
     """
     When a fail occurs while pushing the file configuring try
     A new task for the build is added to the bus
@@ -790,9 +682,6 @@ async def test_push_failure_max_retries(PhabricatorMock, mock_mc):
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
 
-    bus = MessageBus()
-    bus.add_queue("phabricator")
-
     from code_review_bot import mercurial
 
     mercurial.MAX_PUSH_RETRIES = 2
@@ -802,13 +691,6 @@ async def test_push_failure_max_retries(PhabricatorMock, mock_mc):
     mercurial.TRY_STATUS_MAX_WAIT = 0
 
     sleep_history = []
-
-    class AsyncioMock:
-        async def sleep(self, value):
-            nonlocal sleep_history
-            sleep_history.append(value)
-
-    mercurial.asyncio = AsyncioMock()
 
     responses.get(
         "http://test.status/try", status=200, json={"result": {"status": "open"}}
@@ -822,19 +704,10 @@ async def test_push_failure_max_retries(PhabricatorMock, mock_mc):
         out="",
     )
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-mc": repository_mock}
-    )
-    worker.register(bus)
-
-    await bus.send("mercurial", build)
-    assert bus.queues["mercurial"].qsize() == 1
-    task = asyncio.create_task(worker.run())
+    worker = mercurial.MercurialWorker()
+    mode, out_build, details = worker.run(repository_mock, build)
 
     # Check the treeherder link was queued
-    mode, out_build, details = await bus.receive("phabricator")
-    task.cancel()
-
     assert build.retries == 3
 
     assert mode == "fail:mercurial"
@@ -854,8 +727,7 @@ async def test_push_failure_max_retries(PhabricatorMock, mock_mc):
 
 
 @responses.activate
-@pytest.mark.asyncio
-async def test_push_closed_try(PhabricatorMock, mock_mc):
+def test_push_closed_try(PhabricatorMock, mock_mc):
     """
     Detect when try tree is in a closed state and wait before it is opened to retry
     """
@@ -870,9 +742,6 @@ async def test_push_closed_try(PhabricatorMock, mock_mc):
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
 
-    bus = MessageBus()
-    bus.add_queue("phabricator")
-
     from code_review_bot import mercurial
 
     mercurial.MAX_PUSH_RETRIES = 2
@@ -882,13 +751,6 @@ async def test_push_closed_try(PhabricatorMock, mock_mc):
     mercurial.TRY_STATUS_MAX_WAIT = 1
 
     sleep_history = []
-
-    class AsyncioMock:
-        async def sleep(self, value):
-            nonlocal sleep_history
-            sleep_history.append(value)
-
-    mercurial.asyncio = AsyncioMock()
 
     responses.get(
         "http://test.status/try", status=200, json={"result": {"status": "closed"}}
@@ -911,22 +773,13 @@ async def test_push_closed_try(PhabricatorMock, mock_mc):
     repository_mock.try_name = "try"
     repository_mock.retries = 0
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-mc": repository_mock}
-    )
-    worker.register(bus)
+    worker = mercurial.MercurialWorker()
 
-    assert bus.queues["mercurial"].qsize() == 0
-
-    resp = await worker.handle_build(repository_mock, build)
+    resp = worker.run(mock_mc, build)
     assert resp is None
     assert repository_mock.push_to_try.call_count == 1
 
-    assert bus.queues["mercurial"].qsize() == 1
-    assert bus.queues["phabricator"].qsize() == 0
-
-    build = await bus.receive("mercurial")
-    resp = await worker.handle_build(repository_mock, build)
+    resp = worker.run(repository_mock, build)
     assert resp is not None
     mode, out_build, details = resp
 
