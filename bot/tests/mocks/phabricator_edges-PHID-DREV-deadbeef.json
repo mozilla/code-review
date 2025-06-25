@@ -1,0 +1,18 @@
+{
+  "result": {
+    "data": [
+      {
+        "sourcePHID": "PHID-DREV-deadbeef",
+        "edgeType": "revision.parent",
+        "destinationPHID": "PHID-DREV-deadbeefParent"
+      }
+    ],
+    "cursor": {
+      "limit": 100,
+      "after": null,
+      "before": null
+    }
+  },
+  "error_code": null,
+  "error_info": null
+}

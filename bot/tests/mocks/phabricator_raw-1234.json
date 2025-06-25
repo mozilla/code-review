@@ -1,0 +1,5 @@
+{
+  "result": "diff -r b675fb77aad5 test.txt\n--- a/test.txt  Tue Feb 05 17:24:38 2019 +0100\n+++ b/test.txt  Tue Feb 05 17:24:50 2019 +0100\n@@ -1,1 +1,2 @@\n First Line\n+Second Line\n",
+  "error_code": null,
+  "error_info": null
+}

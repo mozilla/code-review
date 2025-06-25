@@ -1,0 +1,53 @@
+{
+    "result": {
+        "data": [
+            {
+                "id": 456,
+                "type": "DIFF",
+                "phid": "PHID-DIFF-solo",
+                "fields": {
+                    "revisionPHID": "PHID-DREV-zzzzz",
+                    "authorPHID": "PHID-USER-xxxxx",
+                    "repositoryPHID": "PHID-REPO-aaaaaa",
+                    "refs": [
+                        {
+                            "type": "branch",
+                            "name": "default"
+                        },
+                        {
+                            "type": "base",
+                            "identifier": "coffeedeadbeef123456789"
+                        }
+                    ],
+                    "dateCreated": 1510251135,
+                    "dateModified": 1510251138,
+                    "policy": {
+                        "view": "public"
+                    }
+                },
+                "attachments": {
+                  "commits": {
+                    "commits": [
+                      {
+                        "message": "A nice human readable commit message"
+                      }
+                    ]
+                  }
+                }
+            }
+        ],
+        "maps": {},
+        "query": {
+            "queryKey": null
+        },
+        "cursor": {
+            "limit": 100,
+            "after": null,
+            "before": null,
+            "order": null
+        }
+    },
+    "error_code": null,
+    "error_info": null
+}
+

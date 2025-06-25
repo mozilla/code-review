@@ -1,0 +1,59 @@
+{
+    "result": {
+        "data": [
+            {
+                "id": 555,
+                "type": "DIFF",
+                "phid": "PHID-DIFF-badutf8",
+                "fields": {
+                    "revisionPHID": "PHID-DREV-badutf8",
+                    "authorPHID": "PHID-USER-badutf8",
+                    "repositoryPHID": "PHID-REPO-badutf8",
+                    "refs": [
+                        {
+                            "type": "branch",
+                            "name": "default"
+                        },
+                        {
+                            "type": "base",
+                            "identifier": "missing"
+                        }
+                    ],
+                    "dateCreated": 0,
+                    "dateModified": 1,
+                    "policy": {
+                        "view": "public"
+                    }
+                },
+                "attachments": {
+                  "commits": {
+                    "commits": [
+                      {
+                        "message": "This patch has an author with utf8 chars",
+                        "author": {
+                          "name": "Andr\u00e9 XXXX",
+                          "email": "andre.xxxx@allizom.org",
+                          "raw": "\"Andr\u00e9 XXXX\" <andre.xxxx@allizom.org>",
+                          "epoch": 1566386156
+                        }
+                      }
+                    ]
+                  }
+                }
+            }
+        ],
+        "maps": {},
+        "query": {
+            "queryKey": null
+        },
+        "cursor": {
+            "limit": 100,
+            "after": null,
+            "before": null,
+            "order": null
+        }
+    },
+    "error_code": null,
+    "error_info": null
+}
+

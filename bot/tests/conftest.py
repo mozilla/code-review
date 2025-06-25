@@ -1088,7 +1088,7 @@ def PhabricatorMock():
     json_headers = {"Content-Type": "application/json"}
 
     def _response(name):
-        path = os.path.join(MOCK_DIR, "phabricator", f"{name}.json")
+        path = os.path.join(MOCK_DIR, f"phabricator_{name}.json")
         assert os.path.exists(path), f"Missing mock {path}"
         return open(path).read()
 

@@ -1,0 +1,5 @@
+{
+  "result": "--- a/crash.txt Thu Jan 01 00:00:00 2019 +0000\n+++ b/crash.txt  Fri Feb 08 10:54:26 2019 +0000\n@@ -12,0 +12,1 @@\n+This cannot apply !\n\n",
+  "error_code": null,
+  "error_info": null
+}

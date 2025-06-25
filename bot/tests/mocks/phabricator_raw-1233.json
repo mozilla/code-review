@@ -1,0 +1,5 @@
+{
+  "result": "diff -r 000000000000 test.txt\n--- /dev/null Thu Jan 01 00:00:00 1970 +0000\n+++ b/test.txt  Tue Feb 05 17:23:40 2019 +0100\n@@ -0,0 +1,1 @@\n+First Line\n",
+  "error_code": null,
+  "error_info": null
+}
