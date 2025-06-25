@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import json
 import os.path
+import time
 from unittest.mock import MagicMock
 
 import hglib
@@ -643,14 +644,7 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     repository_mock.retries = 0
 
     worker = mercurial.MercurialWorker()
-    resp = worker.run(repository_mock, build)
-    assert resp is None
-    assert repository_mock.push_to_try.call_count == 1
-
-    # Try a 2nd in a new task
-    resp = worker.run(repository_mock, build)
-    assert resp is not None
-    mode, out_build, details = resp
+    mode, out_build, details = worker.run(repository_mock, build)
 
     assert mode == "success"
     assert out_build == build
@@ -667,11 +661,16 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
 
 
 @responses.activate
-def test_push_failure_max_retries(PhabricatorMock, mock_mc):
+def test_push_failure_max_retries(PhabricatorMock, mock_mc, monkeypatch):
     """
     When a fail occurs while pushing the file configuring try
     A new task for the build is added to the bus
     """
+
+    # Do not really sleep between retries
+    sleep_history = []
+    monkeypatch.setattr(time, "sleep", lambda x: sleep_history.append(x))
+
     diff = {
         "revisionPHID": "PHID-DREV-badutf8",
         "baseRevision": "missing",
@@ -689,8 +688,6 @@ def test_push_failure_max_retries(PhabricatorMock, mock_mc):
     mercurial.PUSH_RETRY_EXPONENTIAL_DELAY = 2
     mercurial.TRY_STATUS_DELAY = 0
     mercurial.TRY_STATUS_MAX_WAIT = 0
-
-    sleep_history = []
 
     responses.get(
         "http://test.status/try", status=200, json={"result": {"status": "open"}}
@@ -721,13 +718,12 @@ def test_push_failure_max_retries(PhabricatorMock, mock_mc):
     assert [(call.request.method, call.request.url) for call in responses.calls] == [
         ("GET", "http://test.status/try"),
         ("GET", "http://test.status/try"),
-        ("GET", "http://test.status/try"),
     ]
-    assert sleep_history == [2, 4, 8]
+    assert sleep_history == [2, 4]
 
 
 @responses.activate
-def test_push_closed_try(PhabricatorMock, mock_mc):
+def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
     """
     Detect when try tree is in a closed state and wait before it is opened to retry
     """
@@ -750,7 +746,9 @@ def test_push_closed_try(PhabricatorMock, mock_mc):
     mercurial.TRY_STATUS_DELAY = 42
     mercurial.TRY_STATUS_MAX_WAIT = 1
 
+    # Do not really sleep between retries
     sleep_history = []
+    monkeypatch.setattr(time, "sleep", lambda x: sleep_history.append(x))
 
     responses.get(
         "http://test.status/try", status=200, json={"result": {"status": "closed"}}
@@ -775,13 +773,8 @@ def test_push_closed_try(PhabricatorMock, mock_mc):
 
     worker = mercurial.MercurialWorker()
 
-    resp = worker.run(mock_mc, build)
-    assert resp is None
-    assert repository_mock.push_to_try.call_count == 1
-
-    resp = worker.run(repository_mock, build)
-    assert resp is not None
-    mode, out_build, details = resp
+    mode, out_build, details = worker.run(repository_mock, build)
+    assert repository_mock.push_to_try.call_count == 2
 
     assert mode == "success"
     assert out_build == build

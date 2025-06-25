@@ -416,7 +416,8 @@ class MercurialWorker:
         in case of try server errors
         """
         while build.retries <= MAX_PUSH_RETRIES:
-            start = datetime.utcnow()
+            start = time.time()
+
             if build.retries:
                 logger.warning(
                     "Trying to apply build's diff after a remote push error "
@@ -446,7 +447,6 @@ class MercurialWorker:
                     f"An error occurred pushing the build to try, retrying after {delay}s"
                 )
                 time.sleep(delay)
-                return
 
     def is_commit_skippable(self, build):
         def get_files_touched_in_diff(rawdiff):
