@@ -81,15 +81,11 @@ def test_robustcheckout(monkeypatch):
     ]
 
 
-@pytest.mark.asyncio
-async def test_push_to_try(PhabricatorMock, mock_mc):
+def test_push_to_try(PhabricatorMock, mock_mc):
     """
     Run mercurial worker on a single diff
     with a push to try server
     """
-    bus = MessageBus()
-    bus.add_queue("phabricator")
-
     # Preload the build
     diff = {
         "phid": "PHID-DIFF-test123",
@@ -112,28 +108,21 @@ async def test_push_to_try(PhabricatorMock, mock_mc):
     assert not os.path.exists(target)
     assert not os.path.exists(config)
 
-    worker = mercurial.MercurialWorker(
-        "mercurial", "phabricator", repositories={"PHID-REPO-mc": mock_mc}
-    )
-    worker.register(bus)
-    assert len(worker.repositories) == 1
+    worker = mercurial.MercurialWorker()
+    result = worker.handle_build(mock_mc, build)
 
-    await bus.send("mercurial", build)
-    assert bus.queues["mercurial"].qsize() == 1
-    task = asyncio.create_task(worker.run())
-
-    # Check the treeherder link was queued
-    mode, out_build, details = await bus.receive("phabricator")
+    # Check the treeherder link was generated
     tip = mock_mc.repo.tip()
-    assert mode == "success"
-    assert out_build == build
-    assert details[
-        "treeherder_url"
-    ] == "https://treeherder.mozilla.org/#/jobs?repo=try&revision={}".format(
-        tip.node.decode("utf-8")
+    assert result == (
+        "success",
+        build,
+        {
+            "revision": tip.node.decode("utf-8"),
+            "treeherder_url": "https://treeherder.mozilla.org/#/jobs?repo=try&revision={}".format(
+                tip.node.decode("utf-8")
+            ),
+        },
     )
-    assert details["revision"] == tip.node.decode("utf-8")
-    task.cancel()
 
     # The target should have content now
     assert os.path.exists(target)

@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import asyncio
 import time
 from datetime import datetime, timedelta
 from itertools import groupby
@@ -292,13 +291,7 @@ class Workflow:
             cache_root=settings.mercurial_cache,
         )
 
-        worker = MercurialWorker(
-            # We are not using the mercurial workflow
-            # so we can initialize with empty data here
-            queue_name=None,
-            queue_phabricator=None,
-            repositories={},
-        )
+        worker = MercurialWorker()
 
         # Try to update the state 5 consecutive time
         for i in range(5):
@@ -337,9 +330,8 @@ class Workflow:
         # We'll clone the required repository
         repository.clone()
 
-        # Apply the stack of patches using asynchronous method
-        # that runs directly in that process
-        output = asyncio.run(worker.handle_build(repository, build))
+        # Apply the stack of patches and push to try
+        output = worker.handle_build(repository, build)
 
         # Update final state using worker output
         if self.update_build:

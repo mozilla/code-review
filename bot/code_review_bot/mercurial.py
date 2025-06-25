@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import asyncio
 import atexit
 import enum
 import fcntl
@@ -401,46 +400,9 @@ class MercurialWorker:
 
     def __init__(
         self,
-        queue_name,
-        queue_phabricator,
-        repositories,
         skippable_files=[],
     ):
-        assert all(map(lambda r: isinstance(r, Repository), repositories.values()))
-        self.queue_name = queue_name
-        self.queue_phabricator = queue_phabricator
-        self.repositories = repositories
         self.skippable_files = skippable_files
-
-    def register(self, bus):
-        self.bus = bus
-        self.bus.add_queue(self.queue_name)
-
-    async def run(self):
-        # First clone all repositories
-        for repo in self.repositories.values():
-            logger.info(f"Cloning repo {repo}")
-            repo.clone()
-
-        # Wait for phabricator diffs to apply
-        while True:
-            build = await self.bus.receive(self.queue_name)
-            assert isinstance(build, PhabricatorBuild)
-
-            # Find the repository from the diff and trigger the build on it
-            repository = self.repositories.get(build.repo_phid)
-            if repository is not None:
-                result = await self.handle_build(repository, build)
-                if result:
-                    await self.bus.send(self.queue_phabricator, result)
-
-            else:
-                logger.error(
-                    "Unsupported repository",
-                    repo=build.repo_phid,
-                    build=build,
-                    exc_info=True,
-                )
 
     def is_commit_skippable(self, build):
         def get_files_touched_in_diff(rawdiff):
@@ -459,7 +421,7 @@ class MercurialWorker:
             for patched_file in get_files_touched_in_diff(rev.patch)
         )
 
-    async def wait_try_available(self):
+    def wait_try_available(self):
         """
         Wait until try status is "open"
         On each failure, wait TRY_STATUS_DELAY before retrying up to TRY_STATUS_MAX_WAIT
@@ -486,7 +448,7 @@ class MercurialWorker:
             logger.warning(
                 f"Try tree is not actually open (status: {status}), waiting {TRY_STATUS_DELAY} seconds before retrying"
             )
-            await asyncio.sleep(TRY_STATUS_DELAY)
+            time.sleep(TRY_STATUS_DELAY)
 
     def is_eligible_for_retry(self, error):
         """
@@ -498,7 +460,7 @@ class MercurialWorker:
             eligible_message in error for eligible_message in self.ELIGIBLE_RETRY_ERRORS
         )
 
-    async def handle_build(self, repository, build):
+    def handle_build(self, repository, build):
         """
         Try to load and apply a diff on local clone
         If successful, push to try and send a treeherder link
@@ -562,15 +524,14 @@ class MercurialWorker:
             if self.is_eligible_for_retry(error_log):
                 build.retries += 1
                 # Ensure try is opened
-                await self.wait_try_available()
+                self.wait_try_available()
+
                 # Wait an exponential time before retrying the build
                 delay = PUSH_RETRY_EXPONENTIAL_DELAY**build.retries
                 logger.info(
                     f"An error occurred pushing the build to try, retrying after {delay}s"
                 )
-                await asyncio.sleep(delay)
-                # Put the build task back in the queue
-                await self.bus.send(self.queue_name, build)
+                time.sleep(delay)
                 return
 
             logger.warn(
