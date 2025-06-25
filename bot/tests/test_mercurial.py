@@ -602,7 +602,6 @@ def test_crash_utf8_author(PhabricatorMock, mock_mc):
     assert details["revision"] == mock_mc.repo.tip().node.decode("utf-8")
 
 
-@responses.activate
 def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     """
     When a fail occurs while pushing the file configuring try
@@ -660,7 +659,6 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     ]
 
 
-@responses.activate
 def test_push_failure_max_retries(PhabricatorMock, mock_mc, monkeypatch):
     """
     When a fail occurs while pushing the file configuring try
@@ -722,7 +720,6 @@ def test_push_failure_max_retries(PhabricatorMock, mock_mc, monkeypatch):
     assert sleep_history == [2, 4]
 
 
-@responses.activate
 def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
     """
     Detect when try tree is in a closed state and wait before it is opened to retry
