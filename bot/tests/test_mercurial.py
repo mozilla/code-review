@@ -526,7 +526,9 @@ def test_push_to_try_nss(PhabricatorMock, mock_nss):
     assert json.load(open(config)) == {
         "version": 2,
         "parameters": {
-            "code-review": {"phabricator-build-target": "PHID-HMBT-deadbeef"}
+            "optimize_target_tasks": True,
+            "phabricator_diff": "PHID-HMBT-deadbeef",
+            "target_tasks_method": "codereview",
         },
     }
 
@@ -536,7 +538,7 @@ def test_push_to_try_nss(PhabricatorMock, mock_nss):
 
     # Check all commits messages
     assert [c.desc for c in mock_nss.repo.log()] == [
-        b"try: -a -b XXX -c YYY",
+        b"try_task_config for code-review\nDifferential Diff: PHID-DIFF-test123",
         b"Bug XXX - A second commit message\nDifferential Diff: PHID-DIFF-test123",
         b"Bug XXX - A first commit message\nDifferential Diff: PHID-DIFF-xxxx",
         b"Readme",

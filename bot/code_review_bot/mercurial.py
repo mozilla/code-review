@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import atexit
-import enum
 import fcntl
 import io
 import json
@@ -111,11 +110,6 @@ def robust_checkout(
     hg_run(cmd)
 
 
-class TryMode(enum.Enum):
-    json = "json"
-    syntax = "syntax"
-
-
 class Repository:
     """
     A Mercurial repository with its try server credentials
@@ -130,16 +124,16 @@ class Repository:
         self.checkout_mode = config.get("checkout", "batch")
         self.batch_size = config.get("batch_size", 10000)
         self.try_url = config["try_url"]
-        self.try_mode = TryMode(config.get("try_mode", "json"))
-        self.try_syntax = config.get("try_syntax")
         self.try_name = config.get("try_name", "try")
         self.default_revision = config.get("default_revision", "tip")
 
         # Apply patches to the latest revision when `True`.
         self.use_latest_revision = config.get("use_latest_revision", False)
 
-        if self.try_mode == TryMode.syntax:
-            assert self.try_syntax, "Missing try syntax"
+        # Crash when configuration requests try syntax
+        if config.get("try_mode") == "syntax":
+            raise Exception("Try syntax mode is deprecated")
+
         self._repo = None
 
         # Write ssh key from secret
@@ -322,41 +316,24 @@ class Repository:
     def add_try_commit(self, build):
         """
         Build and commit the file configuring try
-        * always try_task_config.json
-        * MC payload in json mode
-        * custom simpler payload on syntax mode
+        with try_task_config.json and the code-review workflow parameters in JSON
         """
         path = os.path.join(self.dir, "try_task_config.json")
-        if self.try_mode == TryMode.json:
-            config = {
-                "version": 2,
-                "parameters": {
-                    "target_tasks_method": "codereview",
-                    "optimize_target_tasks": True,
-                    "phabricator_diff": build.target_phid,
-                },
-            }
-            diff_phid = build.stack[-1].phid
+        config = {
+            "version": 2,
+            "parameters": {
+                "target_tasks_method": "codereview",
+                "optimize_target_tasks": True,
+                "phabricator_diff": build.target_phid,
+            },
+        }
+        diff_phid = build.stack[-1].phid
 
-            if build.revision_url:
-                message = f"try_task_config for {build.revision_url}"
-            else:
-                message = "try_task_config for code-review"
-            message += f"\nDifferential Diff: {diff_phid}"
-
-        elif self.try_mode == TryMode.syntax:
-            config = {
-                "version": 2,
-                "parameters": {
-                    "code-review": {"phabricator-build-target": build.target_phid}
-                },
-            }
-            message = f"try: {self.try_syntax}"
-            if build.revision_url is not None:
-                message += f"\nPhabricator Revision: {build.revision_url}"
-
+        if build.revision_url:
+            message = f"try_task_config for {build.revision_url}"
         else:
-            raise Exception("Unsupported try mode")
+            message = "try_task_config for code-review"
+        message += f"\nDifferential Diff: {diff_phid}"
 
         # Write content as json and commit it
         with open(path, "w") as f:
