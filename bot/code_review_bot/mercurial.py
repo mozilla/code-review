@@ -88,8 +88,16 @@ def hg_run(cmd):
 
 
 def robust_checkout(
-    repo_url, checkout_dir, sharebase_dir, revision, repo_upstream_url=None
+    repo_url,
+    checkout_dir,
+    sharebase_dir,
+    revision=None,
+    branch=None,
+    repo_upstream_url=None,
 ):
+    if not ((revision is not None) ^ (branch is not None)):
+        raise Exception("Set revision XOR branch")
+
     cmd = hglib.util.cmdbuilder(
         "robustcheckout",
         repo_url,
@@ -97,6 +105,7 @@ def robust_checkout(
         purge=True,
         sharebase=sharebase_dir,
         revision=revision,
+        branch=branch,
         upstream=repo_upstream_url,
     )
     hg_run(cmd)
@@ -163,7 +172,7 @@ class Repository:
         if self.checkout_mode == "batch":
             batch_checkout(self.url, self.dir, b"tip", self.batch_size)
         elif self.checkout_mode == "robust":
-            robust_checkout(self.url, self.dir, self.share_base_dir, b"tip")
+            robust_checkout(self.url, self.dir, self.share_base_dir, branch=b"tip")
         else:
             hglib.clone(self.url, self.dir)
         logger.info("Full checkout finished")
