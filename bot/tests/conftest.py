@@ -46,7 +46,6 @@ def mock_repositories():
             "decision_env_prefix": "GECKO",
             "checkout": "robust",
             "try_url": "ssh://hg.mozilla.org/try",
-            "try_mode": "json",
             "try_name": "try",
             "name": "mozilla-central",
             "ssh_user": "reviewbot@mozilla.com",
@@ -1069,8 +1068,6 @@ def mock_nss(tmpdir):
         "ssh_key": "privateSSHkey",
         "url": "http://nss",
         "try_url": "http://nss/try",
-        "try_mode": "syntax",
-        "try_syntax": "-a -b XXX -c YYY",
         "batch_size": 100,
     }
     repo = Repository(config, tmpdir.realpath())
