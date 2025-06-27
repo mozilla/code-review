@@ -151,7 +151,7 @@ def test_push_to_try(PhabricatorMock, mock_mc):
 
     # Check all commits authors
     assert [c.author for c in mock_mc.repo.log()] == [
-        b"libmozevent <release-mgmt-analysis@mozilla.com>",
+        b"code review bot <release-mgmt-analysis@mozilla.com>",
         b"John Doe <john@allizom.org>",
         b"randomUsername <random>",
         b"test",
@@ -579,7 +579,7 @@ def test_crash_utf8_author(PhabricatorMock, mock_mc):
     # Check we have the patch with utf-8 author properly applied
     assert [(c.author, c.desc) for c in mock_mc.repo.log()] == [
         (
-            b"libmozevent <release-mgmt-analysis@mozilla.com>",
+            b"code review bot <release-mgmt-analysis@mozilla.com>",
             b"try_task_config for code-review\n"
             b"Differential Diff: PHID-DIFF-badutf8",
         ),

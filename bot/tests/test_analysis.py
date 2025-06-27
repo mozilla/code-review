@@ -107,7 +107,7 @@ def test_workflow(
             "robustcheckout",
             b"--purge",
             f"--sharebase={tmpdir}/mozilla-central-shared".encode(),
-            b"--revision=tip",
+            b"--branch=tip",
             b"--",
             "https://hg.mozilla.org/mozilla-central",
             repo_path,
@@ -198,7 +198,7 @@ def test_workflow(
             {
                 "message": "try_task_config for https://phabricator.test/D51\n"
                 "Differential Diff: PHID-DIFF-testABcd12",
-                "user": "libmozevent <release-mgmt-analysis@mozilla.com>",
+                "user": "code review bot <release-mgmt-analysis@mozilla.com>",
             },
         ),
         # Push to try
