@@ -1,0 +1,53 @@
+{
+    "result": {
+        "data": [
+            {
+                "id": 666,
+                "type": "DIFF",
+                "phid": "PHID-DIFF-666",
+                "fields": {
+                    "revisionPHID": "PHID-DREV-666",
+                    "authorPHID": "PHID-USER-666",
+                    "repositoryPHID": "PHID-REPO-666",
+                    "refs": [
+                        {
+                            "type": "branch",
+                            "name": "default"
+                        },
+                        {
+                            "type": "base",
+                            "identifier": "missing"
+                        }
+                    ],
+                    "dateCreated": 1510251135,
+                    "dateModified": 1510251138,
+                    "policy": {
+                        "view": "public"
+                    }
+                },
+                "attachments": {
+                  "commits": {
+                    "commits": [
+                      {
+                        "message": "This patch has no real base and will crash libmozevent"
+                      }
+                    ]
+                  }
+                }
+            }
+        ],
+        "maps": {},
+        "query": {
+            "queryKey": null
+        },
+        "cursor": {
+            "limit": 100,
+            "after": null,
+            "before": null,
+            "order": null
+        }
+    },
+    "error_code": null,
+    "error_info": null
+}
+

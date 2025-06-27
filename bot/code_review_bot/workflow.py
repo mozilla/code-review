@@ -2,14 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import asyncio
 import time
 from datetime import datetime, timedelta
 from itertools import groupby
 
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
-from libmozevent.mercurial import MercurialWorker, Repository
 from libmozevent.phabricator import PhabricatorActions, PhabricatorBuildState
 from taskcluster.utils import stringDate
 
@@ -21,7 +19,7 @@ from code_review_bot.analysis import (
 )
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
-from code_review_bot.mercurial import robust_checkout
+from code_review_bot.mercurial import MercurialWorker, Repository, robust_checkout
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import Revision
 from code_review_bot.tasks.base import AnalysisTask, BaseTask, NoticeTask
@@ -293,14 +291,6 @@ class Workflow:
             cache_root=settings.mercurial_cache,
         )
 
-        worker = MercurialWorker(
-            # We are not using the mercurial workflow
-            # so we can initialize with empty data here
-            queue_name=None,
-            queue_phabricator=None,
-            repositories={},
-        )
-
         # Try to update the state 5 consecutive time
         for i in range(5):
             # Update the internal build state using Phabricator infos
@@ -338,9 +328,9 @@ class Workflow:
         # We'll clone the required repository
         repository.clone()
 
-        # Apply the stack of patches using asynchronous method
-        # that runs directly in that process
-        output = asyncio.run(worker.handle_build(repository, build))
+        # Apply the stack of patches and push to try
+        worker = MercurialWorker()
+        output = worker.run(repository, build)
 
         # Update final state using worker output
         if self.update_build:
