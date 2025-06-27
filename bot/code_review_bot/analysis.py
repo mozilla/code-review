@@ -51,6 +51,13 @@ class RevisionBuild(PhabricatorBuild):
     def __repr__(self):
         return str(self)
 
+    def load_patches_stack(self, phabricator_api):
+        """
+        Load the stack of patches from Phabricator API
+        """
+        self.stack = phabricator_api.load_patches_stack(self.diff_id, self.diff)
+        return self.stack
+
 
 def publish_analysis_phabricator(payload, phabricator_api):
     mode, build, extras = payload
