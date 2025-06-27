@@ -312,9 +312,9 @@ class Workflow:
         if build.state is not PhabricatorBuildState.Public:
             raise Exception("Cannot process private builds")
 
-        # When the build is public, load needed details
+        # When the build is public, load patches from Phabricator
         try:
-            phabricator.load_patches_stack(build)
+            build.load_patches_stack(self.phabricator)
             logger.info("Loaded stack of patches", build=str(build))
         except Exception as e:
             logger.warning(
