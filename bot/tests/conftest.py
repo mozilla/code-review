@@ -272,7 +272,7 @@ def mock_phabricator(mock_config):
     with open(config_file.name, "w") as f:
         custom_conf = ConfigParser()
         custom_conf.add_section("User-Agent")
-        custom_conf.set("User-Agent", "name", "libmozdata")
+        custom_conf.set("User-Agent", "name", "code-review-bot/1.0")
         custom_conf.write(f)
         f.seek(0)
 
@@ -993,7 +993,7 @@ class MockBuild(PhabricatorBuild):
         with open(config_file.name, "w") as f:
             custom_conf = ConfigParser()
             custom_conf.add_section("User-Agent")
-            custom_conf.set("User-Agent", "name", "libmozdata")
+            custom_conf.set("User-Agent", "name", "code-review-bot/1.0")
             custom_conf.write(f)
             f.seek(0)
         from libmozdata import config

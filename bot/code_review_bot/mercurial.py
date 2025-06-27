@@ -23,9 +23,9 @@ from libmozevent.utils import batch_checkout
 logger = structlog.get_logger(__name__)
 
 TREEHERDER_URL = "https://treeherder.mozilla.org/#/jobs?repo={}&revision={}"
-DEFAULT_AUTHOR = "libmozevent <release-mgmt-analysis@mozilla.com>"
+DEFAULT_AUTHOR = "code review bot <release-mgmt-analysis@mozilla.com>"
 # On build failure, check try status until available every 5 minutes and up to 24h
-TRY_STATUS_URL = "https://treestatus.mozilla-releng.net/trees/try"
+TRY_STATUS_URL = "https://treestatus.prod.lando.prod.cloudops.mozgcp.net/trees/try"
 TRY_STATUS_DELAY = 5 * 60
 TRY_STATUS_MAX_WAIT = 24 * 60 * 60
 # Number of allowed retries on an unexpected push fail
