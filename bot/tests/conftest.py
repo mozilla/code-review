@@ -1153,13 +1153,15 @@ def PhabricatorMock():
     def _revision_search(request):
         params = _phab_params(request)
         assert "constraints" in params
-        assert "ids" in params["constraints"]
-        assert "attachments" in params
-        assert "projects" in params["attachments"]
-        assert "reviewers" in params["attachments"]
-        assert params["attachments"]["projects"]
-        assert params["attachments"]["reviewers"]
-        mock_name = "revision-search-{}".format(params["constraints"]["ids"][0])
+        constraints = params["constraints"]
+        ids = constraints.get("ids") or constraints.get("phids")
+        assert ids is not None, f"No ids/phids in constraints {constraints}"
+        if "attachments" in params:
+            assert "projects" in params["attachments"]
+            assert "reviewers" in params["attachments"]
+            assert params["attachments"]["projects"]
+            assert params["attachments"]["reviewers"]
+        mock_name = f"revision-search-{ids[0]}"
         return (200, json_headers, _response(mock_name))
 
     def _user_search(request):
