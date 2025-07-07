@@ -32,6 +32,10 @@ MAX_PUSH_RETRIES = 4
 # Wait successive exponential delays: 6sec, 36sec, 3.6min, 21.6min
 PUSH_RETRY_EXPONENTIAL_DELAY = 6
 
+# External services to manage hash reference related to Git repositories
+GIT_TO_HG = "https://lando.moz.tools/api/git2hg/firefox/{}"
+# https://github.com/mozilla-firefox/firefox/
+FIREFOX_GITHUB_COMMIT_URL = "https://api.github.com/repositories/835510315/commits/{}"
 
 logger = structlog.get_logger(__name__)
 
@@ -186,17 +190,52 @@ class Repository:
 
         return self._repo
 
+    def has_revision_from_git(self, revision):
+        """A revision may reference to a Git commit hash instead of Mercurial one.
+        The revision may be a 12 chars shortcut to the commit. It is by example the
+        case for the base revision of the stack. Github's API helps to retrieve the
+        full revision in case it is known.
+        Then a Lando API enables to "convert" the Git hash to a Mercurial hash that
+        can be found in the local repository.
+        """
+        if len(revision) < 40:
+            logger.info(
+                f"Revision is {len(revision)} characters length. "
+                "Trying to retrieve complete hash from github.com/repos/mozilla-firefox."
+            )
+            response = requests.get(FIREFOX_GITHUB_COMMIT_URL.format(revision))
+            if not response.ok:
+                logger.warning(f"Could not retrieve the complete hash: {response=}")
+                return False
+            complete_hash = response.json()["sha"]
+
+        response = requests.get(GIT_TO_HG.format(complete_hash))
+        if not response.ok or not (hg_hash := response.json().get("hg_hash")):
+            logger.warning(
+                f"Could not convert Git hash to Mercurial hash from Lando: {response=}"
+            )
+            return False
+        try:
+            self.repo.identify(hg_hash)
+            return True
+        except hglib.error.CommandError:
+            return False
+
     def has_revision(self, revision):
         """
-        Check if a revision is available on this Mercurial repo
+        Check if a revision is directly available on this Mercurial repo
         """
         if not revision:
             return False
         try:
             self.repo.identify(revision)
             return True
-        except hglib.error.CommandError:
-            return False
+        except hglib.error.CommandError as e:
+            logger.warning(
+                f"Could not directly check revision {revision} from the local repository: {e}. "
+                "Trying to retrieve Mercurial revision from Git."
+            )
+            return self.has_revision_from_git(revision)
 
     def get_base_identifier(self, needed_stack: list[PhabricatorPatch]) -> str:
         """Return the base identifier to apply patches against."""
@@ -241,8 +280,7 @@ class Repository:
 
         # When base revision is missing, update to default revision
         build.base_revision = hg_base
-        # TODO: Re-enable base revision identification after https://github.com/mozilla/libmozevent/issues/110.
-        build.missing_base_revision = False  # not self.has_revision(hg_base)
+        build.missing_base_revision = not self.has_revision(hg_base)
         if build.missing_base_revision:
             logger.warning(
                 "Missing base revision from Phabricator",
@@ -250,7 +288,6 @@ class Repository:
                 fallback=self.default_revision,
             )
             hg_base = self.default_revision
-        hg_base = self.default_revision
 
         # Store the actual base revision we used
         build.actual_base_revision = hg_base
