@@ -190,7 +190,7 @@ class Repository:
 
         return self._repo
 
-    def has_revision_from_git(self, revision):
+    def get_mercurial_base_hash(self, revision):
         """A revision may reference to a Git commit hash instead of Mercurial one.
         The revision may be a 12 chars shortcut to the commit. It is by example the
         case for the base revision of the stack. Github's API helps to retrieve the
@@ -200,26 +200,26 @@ class Repository:
         """
         if len(revision) < 40:
             logger.info(
-                f"Revision is {len(revision)} characters length. "
+                f"Base revision is {len(revision)} characters length. "
                 "Trying to retrieve complete hash from github.com/repos/mozilla-firefox."
             )
             response = requests.get(FIREFOX_GITHUB_COMMIT_URL.format(revision))
             if not response.ok:
-                logger.warning(f"Could not retrieve the complete hash: {response=}")
-                return False
+                logger.warning(
+                    f"Could not retrieve the complete hash: {response=}. "
+                    "The default revision will be used instead."
+                )
+                return self.default_revision
             complete_hash = response.json()["sha"]
 
         response = requests.get(GIT_TO_HG.format(complete_hash))
         if not response.ok or not (hg_hash := response.json().get("hg_hash")):
             logger.warning(
-                f"Could not convert Git hash to Mercurial hash from Lando: {response=}"
+                f"Could not convert Git hash to Mercurial hash from Lando: {response=}. "
+                "The default revision will be used instead."
             )
-            return False
-        try:
-            self.repo.identify(hg_hash)
-            return True
-        except hglib.error.CommandError:
-            return False
+            return self.default_revision
+        return hg_hash
 
     def has_revision(self, revision):
         """
@@ -230,12 +230,8 @@ class Repository:
         try:
             self.repo.identify(revision)
             return True
-        except hglib.error.CommandError as e:
-            logger.warning(
-                f"Could not directly check revision {revision} from the local repository: {e}. "
-                "Trying to retrieve Mercurial revision from Git."
-            )
-            return self.has_revision_from_git(revision)
+        except hglib.error.CommandError:
+            return False
 
     def get_base_identifier(self, needed_stack: list[PhabricatorPatch]) -> str:
         """Return the base identifier to apply patches against."""
@@ -244,7 +240,7 @@ class Repository:
             return "tip"
 
         # Otherwise use the base/parent revision of first revision in the stack.
-        return needed_stack[0].base_revision
+        return self.get_mercurial_base_hash(needed_stack[0].base_revision)
 
     def apply_build(self, build):
         """
