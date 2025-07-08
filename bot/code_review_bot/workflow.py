@@ -267,7 +267,7 @@ class Workflow:
             )
 
         # Initialize Phabricator build using revision
-        build = RevisionBuild(revision)
+        build = RevisionBuild(revision, self.phabricator)
 
         # Copy internal Phabricator credentials to setup libmozevent
         phabricator = PhabricatorActions(
@@ -313,15 +313,6 @@ class Workflow:
             raise Exception("Cannot process private builds")
 
         # When the build is public, load patches from Phabricator
-        try:
-            build.load_patches_stack(self.phabricator)
-            logger.info("Loaded stack of patches", build=str(build))
-        except Exception as e:
-            logger.warning(
-                "Failed to load build details", build=str(build), error=str(e)
-            )
-            raise
-
         if not build.stack:
             raise Exception("No stack of patches to apply.")
 
