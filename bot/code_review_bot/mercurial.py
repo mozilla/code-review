@@ -221,6 +221,13 @@ class Repository:
         for patch in reversed(build.stack):
             needed_stack.insert(0, patch)
 
+            # Skip already merged patches
+            if patch.merged:
+                logger.info(
+                    f"Skip applying patch {patch.id} as it's already been merged upstream"
+                )
+                continue
+
             # Stop as soon as a base revision is available
             if self.has_revision(patch.base_revision):
                 logger.info(f"Stopping at revision {patch.base_revision}")

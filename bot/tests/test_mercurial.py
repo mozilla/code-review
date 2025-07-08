@@ -794,9 +794,9 @@ def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
 
 def test_get_base_identifier(mock_mc):
     stack = [
-        PhabricatorPatch(1, "PHID-abc", "", "abc", None),
-        PhabricatorPatch(2, "PHID-def", "", "def", None),
-        PhabricatorPatch(3, "PHID-ghi", "", "ghi", None),
+        PhabricatorPatch(1, "PHID-abc", "", "abc", None, False),
+        PhabricatorPatch(2, "PHID-def", "", "def", None, False),
+        PhabricatorPatch(3, "PHID-ghi", "", "ghi", None, False),
     ]
 
     assert (

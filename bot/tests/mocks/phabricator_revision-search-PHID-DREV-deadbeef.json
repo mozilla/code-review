@@ -1,0 +1,50 @@
+{
+    "result": {
+        "data": [
+            {
+                "id": 12,
+                "type": "DREV",
+                "phid": "PHID-DREV-deadbeef",
+                "fields": {
+                    "title": "Static Analysis tests",
+                    "authorPHID": "PHID-USER-crasher",
+                    "status": {
+                        "value": "needs-review",
+                        "name": "Needs Review",
+                        "closed": false,
+                        "color.ansi": "magenta"
+                    },
+                    "repositoryPHID": "PHID-REPO-coffeee",
+                    "diffPHID": "PHID-DIFF-test",
+                    "summary": "Nice summary",
+                    "dateCreated": 1512389294,
+                    "dateModified": 1512401613,
+                    "policy": {
+                        "view": "public",
+                        "edit": "users"
+                    },
+                    "bugzilla.bug-id": "1234567"
+                },
+                "attachments": {
+                    "projects": {
+                        "projectPHIDs": [
+                            "PHID-PROJ-A"
+                        ]
+                    }
+                }
+            }
+        ],
+        "maps": {},
+        "query": {
+            "queryKey": null
+        },
+        "cursor": {
+            "limit": 100,
+            "after": null,
+            "before": null,
+            "order": null
+        }
+    },
+    "error_code": null,
+    "error_info": null
+}

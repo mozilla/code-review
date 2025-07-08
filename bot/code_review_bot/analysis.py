@@ -1,3 +1,5 @@
+from functools import cached_property
+
 import structlog
 from libmozdata.phabricator import BuildState, UnitResult, UnitResultState
 from libmozevent.phabricator import PhabricatorBuild, PhabricatorBuildState
@@ -19,9 +21,12 @@ class RevisionBuild(PhabricatorBuild):
     Convert the bot revision into a libmozevent compatible build
     """
 
-    def __init__(self, revision):
+    def __init__(self, revision, phabricator_api):
         # State should be updated to Public
         self.state = PhabricatorBuildState.Queued
+
+        # Access to Phabricator API provided by workflow
+        self.phabricator_api = phabricator_api
 
         # Incremented on an unexpected failure during build's push to try
         self.retries = 0
@@ -38,7 +43,6 @@ class RevisionBuild(PhabricatorBuild):
         # Needed to load stack of patches
         self.diff = revision.diff
         self.diff_id = revision.diff_id
-        self.stack = None
 
         # Needed to apply patch and communicate on Phabricator
         self.base_revision = None
@@ -50,6 +54,21 @@ class RevisionBuild(PhabricatorBuild):
 
     def __repr__(self):
         return str(self)
+
+    @cached_property
+    def stack(self):
+        """
+        Load the stack of patches from Phabricator API
+        """
+        try:
+            stack = self.phabricator_api.load_patches_stack(self.diff_id, self.diff)
+            logger.info("Loaded stack of patches", build=str(self))
+            return stack
+        except Exception as e:
+            logger.warning(
+                "Failed to load build details", build=str(self), error=str(e)
+            )
+            raise
 
 
 def publish_analysis_phabricator(payload, phabricator_api):
