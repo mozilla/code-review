@@ -192,13 +192,15 @@ class Repository:
 
     def get_mercurial_base_hash(self, revision):
         """A revision may reference to a Git commit hash instead of Mercurial one.
-        The revision may be a 12 chars shortcut to the commit. It is by example the
-        case for the base revision of the stack. Github's API helps to retrieve the
-        full revision in case it is known.
-        Then a Lando API enables to "convert" the Git hash to a Mercurial hash that
-        can be found in the local repository.
+        The revision can either be a 40 characters full hash or its first 12 characters (short hash).
+        It is the case for the base revision of the stack. Github's API helps to retrieve the full
+        revision in case it is known.
+        A Lando API enables to "convert" the Git hash to a Mercurial hash that can
+        be found in the local repository.
         """
-        if len(revision) < 40:
+        if len(revision) == 40:
+            complete_hash = revision
+        elif len(revision) == 12:
             logger.info(
                 f"Base revision is {len(revision)} characters length. "
                 "Trying to retrieve complete hash from github.com/repos/mozilla-firefox."
@@ -211,6 +213,11 @@ class Repository:
                 )
                 return self.default_revision
             complete_hash = response.json()["sha"]
+        else:
+            logger.error(
+                f"Revision must be a complete hash (40 chars) or short hash (12 chars) (got '{revision}')"
+            )
+            raise ValueError(revision)
 
         response = requests.get(GIT_TO_HG.format(complete_hash))
         if not response.ok or not (hg_hash := response.json().get("hg_hash")):
@@ -240,7 +247,12 @@ class Repository:
             return "tip"
 
         # Otherwise use the base/parent revision of first revision in the stack.
-        return self.get_mercurial_base_hash(needed_stack[0].base_revision)
+        base_rev_hash = needed_stack[0].base_revision
+        if self.has_revision(base_rev_hash):
+            return base_rev_hash
+        else:
+            # Base revision may reference a Git hash on new repositories
+            return self.get_mercurial_base_hash(base_rev_hash)
 
     def apply_build(self, build):
         """
