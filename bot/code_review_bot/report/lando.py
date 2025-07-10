@@ -10,6 +10,7 @@ from code_review_bot.report.base import Reporter
 logger = structlog.get_logger(__name__)
 
 LANDO_MESSAGE = "The code review bot found {errors} {errors_noun} which should be fixed to avoid backout and {warnings} {warnings_noun}."
+LANDO_MESSAGE_WARNINGS_ONLY = "The code review bot found {warnings} {warnings_noun}."
 
 
 class LandoReporter(Reporter):
@@ -57,17 +58,32 @@ class LandoReporter(Reporter):
             )
 
             if nb_publishable > 0:
-                self.lando_api.add_warning(
-                    LANDO_MESSAGE.format(
-                        errors=nb_publishable_errors,
-                        errors_noun="error" if nb_publishable_errors == 1 else "errors",
-                        warnings=nb_publishable_warnings,
-                        warnings_noun="warning"
-                        if nb_publishable_warnings == 1
-                        else "warnings",
-                    ),
-                    revision.phabricator_id,
-                    revision.diff["id"],
-                )
+                if nb_publishable_errors >= 1:
+                    self.lando_api.add_warning(
+                        LANDO_MESSAGE.format(
+                            errors=nb_publishable_errors,
+                            errors_noun="error"
+                            if nb_publishable_errors == 1
+                            else "errors",
+                            warnings=nb_publishable_warnings,
+                            warnings_noun="warning"
+                            if nb_publishable_warnings == 1
+                            else "warnings",
+                        ),
+                        revision.phabricator_id,
+                        revision.diff["id"],
+                    )
+                else:
+                    # Use a less scary message when no error is found, as it cannot cause a backout
+                    self.lando_api.add_warning(
+                        LANDO_MESSAGE_WARNINGS_ONLY.format(
+                            warnings=nb_publishable_warnings,
+                            warnings_noun="warning"
+                            if nb_publishable_warnings == 1
+                            else "warnings",
+                        ),
+                        revision.phabricator_id,
+                        revision.diff["id"],
+                    )
         except Exception as ex:
             logger.error(str(ex), exc_info=True)
