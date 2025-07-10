@@ -79,7 +79,7 @@ def test_robustcheckout(monkeypatch):
     ]
 
 
-def test_push_to_try(PhabricatorMock, mock_mc):
+def test_push_to_try(PhabricatorMock, mock_mc, responses):
     """
     Run mercurial worker on a single diff
     with a push to try server
@@ -89,8 +89,8 @@ def test_push_to_try(PhabricatorMock, mock_mc):
         "phid": "PHID-DIFF-test123",
         "revisionPHID": "PHID-DREV-deadbeef",
         "id": 1234,
-        # Revision does not exist, will apply on tip
-        "baseRevision": "abcdef12345",
+        # Revision does not exist (neither from Git or Mercurial), will apply on tip
+        "baseRevision": "abcdef123456",
     }
     build = MockBuild(1234, "PHID-REPO-mc", 5678, "PHID-HMBT-deadbeef", diff)
     with PhabricatorMock as phab:
@@ -105,6 +105,13 @@ def test_push_to_try(PhabricatorMock, mock_mc):
     target = os.path.join(repo_dir, "test.txt")
     assert not os.path.exists(target)
     assert not os.path.exists(config)
+
+    # Consider the base revision as a Mercurial complete hash (thus not known as Git revision)
+    responses.add(
+        responses.GET,
+        "https://lando.moz.tools/api/git2hg/firefox/coffeedeadbeef12345678912345678912345678",
+        status=404,
+    )
 
     worker = mercurial.MercurialWorker()
     result = worker.run(mock_mc, build)
@@ -149,7 +156,7 @@ def test_push_to_try(PhabricatorMock, mock_mc):
         b"Readme",
     ]
 
-    # Check all commits authors
+    # Check all commitefguthors
     assert [c.author for c in mock_mc.repo.log()] == [
         b"code review bot <release-mgmt-analysis@mozilla.com>",
         b"John Doe <john@allizom.org>",
@@ -267,15 +274,13 @@ Differential Diff: PHID-DIFF-solo"""
     # Check the grand parent is the base, not extra
     great_parents = mock_mc.repo.parents(parent.node)
     assert len(great_parents) == 1
-    # TODO: Re-enable base revision identification after https://github.com/mozilla/libmozevent/issues/110.
-    # great_parent = great_parents[0]
-    # assert great_parent.node == base
+    great_parent = great_parents[0]
+    assert great_parent.node == base
 
     # Extra commit should not appear
     assert parent.node != extra
-    # TODO: Re-enable base revision identification after https://github.com/mozilla/libmozevent/issues/110.
-    # assert great_parent.node != extra
-    # assert "EXTRA" not in open(os.path.join(repo_dir, "README.md")).read()
+    assert great_parent.node != extra
+    assert "EXTRA" not in open(os.path.join(repo_dir, "README.md")).read()
 
 
 def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
@@ -295,6 +300,13 @@ def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
     build = MockBuild(1234, "PHID-REPO-mc", 5678, "PHID-HMBT-deadbeef", diff)
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
+
+    # Return a mercurial base revision from the Git base revision
+    responses.add(
+        responses.GET,
+        "https://lando.moz.tools/api/git2hg/firefox/coffeedeadbeef12345678912345678912345678",
+        json={"mercurial_hash": "a" * 40},
+    )
 
     # Get initial tip commit in repo
     initial = mock_mc.repo.tip()
@@ -372,6 +384,13 @@ def test_treeherder_link(PhabricatorMock, mock_mc):
     assert not os.path.exists(target)
     assert not os.path.exists(config)
 
+    # Consider the base revision as a Mercurial complete hash (thus not known as Git revision)
+    responses.add(
+        responses.GET,
+        "https://lando.moz.tools/api/git2hg/firefox/coffeedeadbeef12345678912345678912345678",
+        status=404,
+    )
+
     worker = mercurial.MercurialWorker()
     mode, out_build, details = worker.run(mock_mc, build)
 
@@ -445,7 +464,7 @@ def test_failure_mercurial(PhabricatorMock, mock_mc):
     """
     diff = {
         "revisionPHID": "PHID-DREV-666",
-        "baseRevision": "missing",
+        "baseRevision": "missing_rev_",
         "phid": "PHID-DIFF-666",
         "id": 666,
     }
@@ -462,6 +481,14 @@ def test_failure_mercurial(PhabricatorMock, mock_mc):
     target = os.path.join(repo_dir, "test.txt")
     assert not os.path.exists(target)
     assert not os.path.exists(config)
+
+    # Fail to convert the 12 chars hash to a full Git hash because it is a Mercurial reference
+    responses.add(
+        responses.GET,
+        "https://api.github.com/repositories/835510315/commits/missing_rev_",
+        status=400,
+        body=b"Not a Git hash",
+    )
 
     worker = mercurial.MercurialWorker()
     mode, out_build, details = worker.run(mock_mc, build)
@@ -502,6 +529,13 @@ def test_push_to_try_nss(PhabricatorMock, mock_nss):
     target = os.path.join(repo_dir, "test.txt")
     assert not os.path.exists(target)
     assert not os.path.exists(config)
+
+    # Consider the base revision as a Mercurial complete hash (thus not known as Git revision)
+    responses.add(
+        responses.GET,
+        "https://lando.moz.tools/api/git2hg/firefox/coffeedeadbeef12345678912345678912345678",
+        status=404,
+    )
 
     worker = mercurial.MercurialWorker()
     mode, out_build, details = worker.run(mock_nss, build)
@@ -559,7 +593,7 @@ def test_crash_utf8_author(PhabricatorMock, mock_mc):
     """
     diff = {
         "revisionPHID": "PHID-DREV-badutf8",
-        "baseRevision": "missing",
+        "baseRevision": "missing_rev_",
         "phid": "PHID-DIFF-badutf8",
         "id": 555,
     }
@@ -573,6 +607,14 @@ def test_crash_utf8_author(PhabricatorMock, mock_mc):
     target = os.path.join(repo_dir, "test.txt")
     assert not os.path.exists(target)
     assert not os.path.exists(config)
+
+    # Fail to convert the 12 chars hash to a full Git hash because it is a Mercurial reference
+    responses.add(
+        responses.GET,
+        "https://api.github.com/repositories/835510315/commits/missing_rev_",
+        status=400,
+        body=b"Not a Git hash",
+    )
 
     # Run the mercurial worker on that patch only
     worker = mercurial.MercurialWorker()
@@ -611,7 +653,7 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     """
     diff = {
         "revisionPHID": "PHID-DREV-badutf8",
-        "baseRevision": "missing",
+        "baseRevision": "missing_rev_",
         "phid": "PHID-DIFF-badutf8",
         "id": 555,
     }
@@ -673,7 +715,7 @@ def test_push_failure_max_retries(PhabricatorMock, mock_mc, monkeypatch):
 
     diff = {
         "revisionPHID": "PHID-DREV-badutf8",
-        "baseRevision": "missing",
+        "baseRevision": "missing_rev_",
         "phid": "PHID-DIFF-badutf8",
         "id": 555,
     }
@@ -729,7 +771,7 @@ def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
 
     diff = {
         "revisionPHID": "PHID-DREV-badutf8",
-        "baseRevision": "missing",
+        "baseRevision": "missing_rev_",
         "phid": "PHID-DIFF-badutf8",
         "id": 555,
     }
@@ -794,13 +836,44 @@ def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
 
 def test_get_base_identifier(mock_mc):
     stack = [
-        PhabricatorPatch(1, "PHID-abc", "", "abc", None, False),
+        PhabricatorPatch(1, "PHID-abc", "", "a" * 40, None, False),
         PhabricatorPatch(2, "PHID-def", "", "def", None, False),
         PhabricatorPatch(3, "PHID-ghi", "", "ghi", None, False),
     ]
+    mock_mc.has_revision = lambda x: x == "a" * 40
 
     assert (
-        mock_mc.get_base_identifier(stack) == "abc"
+        mock_mc.get_base_identifier(stack) == "a" * 40
+    ), "The base commit of the stack should be returned."
+
+    mock_mc.use_latest_revision = True
+
+    assert (
+        mock_mc.get_base_identifier(stack) == "tip"
+    ), "`tip` commit should be used when `use_latest_revision` is `True`."
+
+
+def test_get_base_identifier_from_git(mock_mc):
+    stack = [
+        PhabricatorPatch(1, "PHID-abc", "", "a" * 40, None),
+        PhabricatorPatch(2, "PHID-def", "", "def", None),
+        PhabricatorPatch(3, "PHID-ghi", "", "ghi", None),
+    ]
+
+    # mock_mc.has_revision = lambda x: x == "a" * 40
+    responses.add(
+        responses.GET,
+        "https://api.github.com/repositories/835510315/commits/aaaaaaaaaaaa",
+        json={"sha": "a" * 40},
+    )
+    responses.add(
+        responses.GET,
+        "https://lando.moz.tools/api/git2hg/firefox/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        json={"hg_hash": "b" * 40},
+    )
+
+    assert (
+        mock_mc.get_base_identifier(stack) == "b" * 40
     ), "The base commit of the stack should be returned."
 
     mock_mc.use_latest_revision = True
