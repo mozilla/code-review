@@ -855,9 +855,9 @@ def test_get_base_identifier(mock_mc):
 
 def test_get_base_identifier_from_git(mock_mc):
     stack = [
-        PhabricatorPatch(1, "PHID-abc", "", "a" * 40, None),
-        PhabricatorPatch(2, "PHID-def", "", "def", None),
-        PhabricatorPatch(3, "PHID-ghi", "", "ghi", None),
+        PhabricatorPatch(1, "PHID-abc", "", "a" * 40, None, False),
+        PhabricatorPatch(2, "PHID-def", "", "def", None, False),
+        PhabricatorPatch(3, "PHID-ghi", "", "ghi", None, False),
     ]
 
     # mock_mc.has_revision = lambda x: x == "a" * 40
