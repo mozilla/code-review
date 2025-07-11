@@ -33,9 +33,11 @@ MAX_PUSH_RETRIES = 4
 PUSH_RETRY_EXPONENTIAL_DELAY = 6
 
 # External services to manage hash reference related to Git repositories
+GITHUB_API_TOKEN = os.environ.get("GITHUB_API_TOKEN")
 GIT_TO_HG = "https://lando.moz.tools/api/git2hg/firefox/{}"
-# https://github.com/mozilla-firefox/firefox/
-FIREFOX_GITHUB_COMMIT_URL = "https://api.github.com/repositories/835510315/commits/{}"
+FIREFOX_GITHUB_COMMIT_URL = (
+    "https://api.github.com/repos/mozilla-firefox/firefox/commits/{}"
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -203,9 +205,20 @@ class Repository:
         elif len(revision) == 12:
             logger.info(
                 f"Base revision is {len(revision)} characters length. "
-                "Trying to retrieve complete hash from github.com/repos/mozilla-firefox."
+                "Trying to retrieve complete hash from https://github.com/mozilla-firefox/firefox."
             )
-            response = requests.get(FIREFOX_GITHUB_COMMIT_URL.format(revision))
+            headers = {}
+            if not GITHUB_API_TOKEN:
+                logger.warning(
+                    "Performing Github API request has rate limitation when not authenticated. "
+                    "Hint: Set the GITHUB_API_TOKEN environment variable."
+                )
+            else:
+                headers["Authorization"] = f"Bearer {GITHUB_API_TOKEN}"
+            response = requests.get(
+                FIREFOX_GITHUB_COMMIT_URL.format(revision),
+                headers=headers,
+            )
             if not response.ok:
                 logger.warning(
                     f"Could not retrieve the complete hash: {response=}. "

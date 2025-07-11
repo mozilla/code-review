@@ -156,7 +156,7 @@ def test_push_to_try(PhabricatorMock, mock_mc, responses):
         b"Readme",
     ]
 
-    # Check all commitefguthors
+    # Check all commits authors
     assert [c.author for c in mock_mc.repo.log()] == [
         b"code review bot <release-mgmt-analysis@mozilla.com>",
         b"John Doe <john@allizom.org>",
@@ -485,7 +485,7 @@ def test_failure_mercurial(PhabricatorMock, mock_mc):
     # Fail to convert the 12 chars hash to a full Git hash because it is a Mercurial reference
     responses.add(
         responses.GET,
-        "https://api.github.com/repositories/835510315/commits/missing_rev_",
+        "https://api.github.com/repos/mozilla-firefox/firefox/commits/missing_rev_",
         status=400,
         body=b"Not a Git hash",
     )
@@ -611,7 +611,7 @@ def test_crash_utf8_author(PhabricatorMock, mock_mc):
     # Fail to convert the 12 chars hash to a full Git hash because it is a Mercurial reference
     responses.add(
         responses.GET,
-        "https://api.github.com/repositories/835510315/commits/missing_rev_",
+        "https://api.github.com/repos/mozilla-firefox/firefox/commits/missing_rev_",
         status=400,
         body=b"Not a Git hash",
     )
@@ -863,7 +863,7 @@ def test_get_base_identifier_from_git(mock_mc):
     # mock_mc.has_revision = lambda x: x == "a" * 40
     responses.add(
         responses.GET,
-        "https://api.github.com/repositories/835510315/commits/aaaaaaaaaaaa",
+        "https://api.github.com/repos/mozilla-firefox/firefox/commits/aaaaaaaaaaaa",
         json={"sha": "a" * 40},
     )
     responses.add(
