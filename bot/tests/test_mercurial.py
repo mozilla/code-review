@@ -156,7 +156,7 @@ def test_push_to_try(PhabricatorMock, mock_mc, responses):
         b"Readme",
     ]
 
-    # Check all commitefguthors
+    # Check all commits authors
     assert [c.author for c in mock_mc.repo.log()] == [
         b"code review bot <release-mgmt-analysis@mozilla.com>",
         b"John Doe <john@allizom.org>",
