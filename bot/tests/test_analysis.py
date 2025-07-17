@@ -152,17 +152,20 @@ def test_workflow(
             "identify",
             "coffeedeadbeef123456789",
         ),
-        # TODO: Re-enable base revision identification after https://github.com/mozilla/libmozevent/issues/110.
-        # (
-        #     "identify",
-        #     "coffeedeadbeef123456789",
-        # ),
+        (
+            "identify",
+            "coffeedeadbeef123456789",
+        ),
+        (
+            "identify",
+            "coffeedeadbeef123456789",
+        ),
         # Checkout revision
         (
             "update",
             {
                 "clean": True,
-                "rev": "tip",
+                "rev": "coffeedeadbeef123456789",
             },
         ),
         (

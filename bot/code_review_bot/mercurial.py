@@ -32,6 +32,12 @@ MAX_PUSH_RETRIES = 4
 # Wait successive exponential delays: 6sec, 36sec, 3.6min, 21.6min
 PUSH_RETRY_EXPONENTIAL_DELAY = 6
 
+# External services to manage hash reference related to Git repositories
+GITHUB_API_TOKEN = os.environ.get("GITHUB_API_TOKEN")
+GIT_TO_HG = "https://lando.moz.tools/api/git2hg/firefox/{}"
+FIREFOX_GITHUB_COMMIT_URL = (
+    "https://api.github.com/repos/mozilla-firefox/firefox/commits/{}"
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -186,9 +192,58 @@ class Repository:
 
         return self._repo
 
+    def get_mercurial_base_hash(self, revision):
+        """A revision may reference to a Git commit hash instead of Mercurial one.
+        The revision can either be a 40 characters full hash or its first 12 characters (short hash).
+        It is the case for the base revision of the stack. Github's API helps to retrieve the full
+        revision in case it is known.
+        A Lando API enables to "convert" the Git hash to a Mercurial hash that can
+        be found in the local repository.
+        """
+        if len(revision) == 40:
+            complete_hash = revision
+        elif len(revision) == 12:
+            logger.info(
+                f"Base revision is {len(revision)} characters length. "
+                "Trying to retrieve complete hash from https://github.com/mozilla-firefox/firefox."
+            )
+            headers = {}
+            if not GITHUB_API_TOKEN:
+                logger.warning(
+                    "Performing Github API request has rate limitation when not authenticated. "
+                    "Hint: Set the GITHUB_API_TOKEN environment variable."
+                )
+            else:
+                headers["Authorization"] = f"Bearer {GITHUB_API_TOKEN}"
+            response = requests.get(
+                FIREFOX_GITHUB_COMMIT_URL.format(revision),
+                headers=headers,
+            )
+            if not response.ok:
+                logger.warning(
+                    f"Could not retrieve the complete hash: {response=}. "
+                    "The default revision will be used instead."
+                )
+                return self.default_revision
+            complete_hash = response.json()["sha"]
+        else:
+            logger.error(
+                f"Revision must be a complete hash (40 chars) or short hash (12 chars) (got '{revision}')"
+            )
+            raise ValueError(revision)
+
+        response = requests.get(GIT_TO_HG.format(complete_hash))
+        if not response.ok or not (hg_hash := response.json().get("hg_hash")):
+            logger.warning(
+                f"Could not convert Git hash to Mercurial hash from Lando: {response=}. "
+                "The default revision will be used instead."
+            )
+            return self.default_revision
+        return hg_hash
+
     def has_revision(self, revision):
         """
-        Check if a revision is available on this Mercurial repo
+        Check if a revision is directly available on this Mercurial repo
         """
         if not revision:
             return False
@@ -205,7 +260,12 @@ class Repository:
             return "tip"
 
         # Otherwise use the base/parent revision of first revision in the stack.
-        return needed_stack[0].base_revision
+        base_rev_hash = needed_stack[0].base_revision
+        if self.has_revision(base_rev_hash):
+            return base_rev_hash
+        else:
+            # Base revision may reference a Git hash on new repositories
+            return self.get_mercurial_base_hash(base_rev_hash)
 
     def apply_build(self, build):
         """
@@ -241,8 +301,7 @@ class Repository:
 
         # When base revision is missing, update to default revision
         build.base_revision = hg_base
-        # TODO: Re-enable base revision identification after https://github.com/mozilla/libmozevent/issues/110.
-        build.missing_base_revision = False  # not self.has_revision(hg_base)
+        build.missing_base_revision = not self.has_revision(hg_base)
         if build.missing_base_revision:
             logger.warning(
                 "Missing base revision from Phabricator",
@@ -250,7 +309,6 @@ class Repository:
                 fallback=self.default_revision,
             )
             hg_base = self.default_revision
-        hg_base = self.default_revision
 
         # Store the actual base revision we used
         build.actual_base_revision = hg_base
