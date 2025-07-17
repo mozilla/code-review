@@ -7,6 +7,6 @@ multidict==6.6.3
 rs_parsepatch==0.4.4
 sentry-sdk==2.32.0
 structlog==25.3.0
-taskcluster==86.0.2
+taskcluster==87.0.0
 treeherder-client==5.0.0
 yarl==1.20.1
