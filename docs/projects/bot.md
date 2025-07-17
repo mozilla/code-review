@@ -198,7 +198,6 @@ common:
   repositories:
     - checkout: robust
       try_url: 'ssh://hg.mozilla.org/try'
-      try_mode: json
       try_name: try
       name: mozilla-central
       ssh_user: <ssh_user>
