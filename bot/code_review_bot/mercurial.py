@@ -366,6 +366,7 @@ class Repository:
                     patches=io.BytesIO(patch.patch.encode("utf-8")),
                     message=message.encode("utf-8"),
                     user=user.encode("utf-8"),
+                    similarity=95,
                 )
             except Exception as e:
                 logger.info(
