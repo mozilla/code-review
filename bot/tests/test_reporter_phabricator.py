@@ -4,9 +4,11 @@
 
 import os
 import unittest
+from unittest.mock import MagicMock
 
 import pytest
 import responses
+from requests.exceptions import HTTPError
 from structlog.testing import capture_logs
 
 from code_review_bot import Level
@@ -474,6 +476,45 @@ def test_phabricator_coverage(
 
     # Check the callback has been used
     assert phab.comments[51] == [VALID_COVERAGE_MESSAGE]
+
+
+def test_phabricator_no_coverage_on_deleted_file(
+    monkeypatch,
+    mock_config,
+    mock_phabricator,
+    phab,
+    mock_try_task,
+    mock_decision_task,
+    mock_task,
+):
+    """
+    Ensure missing coverage warning is not publicated when a file is deleted
+    """
+
+    def raise_404(*args, **kwargs):
+        resp_mock = MagicMock()
+        resp_mock.status_code = 404
+        raise HTTPError(response=resp_mock)
+
+    with mock_phabricator as api:
+        revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+        revision.lines = {
+            # Add dummy lines diff
+            "test.txt": [0],
+            "path/to/test.cpp": [0],
+            "dom/test.cpp": [42],
+        }
+        revision.id = 52
+        monkeypatch.setattr(revision, "load_file", raise_404)
+
+    issue = CoverageIssue(
+        mock_task(ZeroCoverageTask, "coverage"),
+        "path/to/test.cpp",
+        0,
+        "This file is uncovered",
+        revision,
+    )
+    assert not issue.is_publishable()
 
 
 def test_phabricator_clang_tidy_and_coverage(
