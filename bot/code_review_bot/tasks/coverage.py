@@ -38,18 +38,14 @@ class CoverageIssue(Issue):
         Coverage issues are always publishable, unless
         they are in header files or on a deleted file.
         """
-        return self.validates()
+        return self.validates() and self.file_exists
 
     def validates(self):
         """
-        Coverage issues are always publishable, unless
-        they are in header files or on a deleted file.
+        Coverage issues are always publishable, unless they are in header files
         """
         _, ext = os.path.splitext(self.path)
-        return (
-            ext.lower() in settings.cpp_extensions.union(settings.js_extensions)
-            and self.file_exists
-        )
+        return ext.lower() in settings.cpp_extensions.union(settings.js_extensions)
 
     def as_text(self):
         """
