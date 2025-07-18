@@ -425,12 +425,17 @@ def test_phabricator_mozlint(
 
 
 def test_phabricator_coverage(
-    mock_config, mock_phabricator, phab, mock_try_task, mock_decision_task, mock_task
+    monkeypatch,
+    mock_config,
+    mock_phabricator,
+    phab,
+    mock_try_task,
+    mock_decision_task,
+    mock_task,
 ):
     """
     Test Phabricator reporter publication on a mock coverage issue
     """
-
     with mock_phabricator as api:
         revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
         revision.lines = {
@@ -441,6 +446,7 @@ def test_phabricator_coverage(
         }
         revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
+        monkeypatch.setattr(revision, "load_file", lambda x: "some_content")
 
     issue = CoverageIssue(
         mock_task(ZeroCoverageTask, "coverage"),
@@ -518,7 +524,13 @@ def test_phabricator_no_coverage_on_deleted_file(
 
 
 def test_phabricator_clang_tidy_and_coverage(
-    mock_config, mock_phabricator, phab, mock_try_task, mock_decision_task, mock_task
+    monkeypatch,
+    mock_config,
+    mock_phabricator,
+    phab,
+    mock_try_task,
+    mock_decision_task,
+    mock_task,
 ):
     """
     Test Phabricator reporter publication on a mock coverage issue
@@ -534,6 +546,7 @@ def test_phabricator_clang_tidy_and_coverage(
         }
         revision.files = ["test.txt", "test.cpp", "another_test.cpp"]
         revision.id = 52
+        monkeypatch.setattr(revision, "load_file", lambda x: "some_content")
         reporter = PhabricatorReporter(
             {"analyzers": ["coverage", "clang-tidy"]}, api=api
         )
@@ -1096,7 +1109,7 @@ def test_phabricator_external_tidy(
 
 
 def test_phabricator_newer_diff(
-    mock_phabricator, phab, mock_try_task, mock_decision_task, mock_task
+    monkeypatch, mock_phabricator, phab, mock_try_task, mock_decision_task, mock_task
 ):
     """
     Test Phabricator reporter publication won't be called when a newer diff exists for the patch
@@ -1111,6 +1124,7 @@ def test_phabricator_newer_diff(
             "dom/test.cpp": [42],
         }
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
+        monkeypatch.setattr(revision, "load_file", lambda x: "some_content")
 
     issue = CoverageIssue(
         mock_task(ZeroCoverageTask, "coverage"),
@@ -1189,6 +1203,7 @@ def test_phabricator_former_diff_comparison(
         }
         revision.id = 52
         reporter = PhabricatorReporter({"analyzers": ["coverage"]}, api=api)
+        monkeypatch.setattr(revision, "load_file", lambda x: "some_content")
 
     issues = [
         CoverageIssue(
