@@ -264,6 +264,32 @@ class Issue(abc.ABC):
         # Finally build the MD5 hash
         return hashlib.md5(payload).hexdigest()
 
+    @cached_property
+    def file_exists(self):
+        """
+        Check if the file that generated the issue still exists after applying the patch.
+        """
+        try:
+            if settings.mercurial_cache_checkout:
+                logger.debug(
+                    "Using the local repository to check if the file that caused the issue still exists."
+                )
+                return (settings.mercurial_cache_checkout / self.path).exists()
+            else:
+                # It is not possible to use revision.has_file directly because it returns file that have been modified
+                try:
+                    content = self.revision.load_file(self.path)
+                    return content != ""
+                except requests.exceptions.HTTPError as e:
+                    if e.response.status_code != 404:
+                        raise e
+                    return False
+        except Exception as e:
+            logger.error(
+                f"An unexpected error occurred while checking if the file {self.path} exists in the patch: {e}"
+            )
+            return True
+
     @abc.abstractmethod
     def validates(self):
         """
