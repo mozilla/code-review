@@ -19,6 +19,8 @@ from libmozdata.phabricator import PhabricatorPatch
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.utils import batch_checkout
 
+from code_review_bot.config import settings
+
 logger = structlog.get_logger(__name__)
 
 TREEHERDER_URL = "https://treeherder.mozilla.org/#/jobs?repo={}&revision={}"
@@ -33,7 +35,6 @@ MAX_PUSH_RETRIES = 4
 PUSH_RETRY_EXPONENTIAL_DELAY = 6
 
 # External services to manage hash reference related to Git repositories
-GITHUB_API_TOKEN = os.environ.get("GITHUB_API_TOKEN")
 GIT_TO_HG = "https://lando.moz.tools/api/git2hg/firefox/{}"
 FIREFOX_GITHUB_COMMIT_URL = (
     "https://api.github.com/repos/mozilla-firefox/firefox/commits/{}"
@@ -208,13 +209,13 @@ class Repository:
                 "Trying to retrieve complete hash from https://github.com/mozilla-firefox/firefox."
             )
             headers = {}
-            if not GITHUB_API_TOKEN:
+            if not settings.github_api_token:
                 logger.warning(
                     "Performing Github API request has rate limitation when not authenticated. "
                     "Hint: Set the GITHUB_API_TOKEN environment variable."
                 )
             else:
-                headers["Authorization"] = f"Bearer {GITHUB_API_TOKEN}"
+                headers["Authorization"] = f"Bearer {settings.github_api_token}"
             response = requests.get(
                 FIREFOX_GITHUB_COMMIT_URL.format(revision),
                 headers=headers,

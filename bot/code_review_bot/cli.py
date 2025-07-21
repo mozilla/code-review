@@ -116,6 +116,7 @@ def main():
         taskcluster.secrets["repositories"],
         taskcluster.secrets["ssh_key"],
         args.mercurial_repository,
+        taskcluster.secrets["GITHUB_API_TOKEN"],
     )
 
     # Setup statistics
