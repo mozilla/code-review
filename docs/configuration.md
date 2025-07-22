@@ -84,8 +84,8 @@ common:
       ssh_key: xxxx
 
       # (Optional) Force the application of the patches on top of the repository tip
-			# instead of the base revision specified by Phabricator
-			use_latest_revision: true
+      # instead of the base revision specified by Phabricator
+      use_latest_revision: true
 
 # This main section is only used by the bot project
 bot:
