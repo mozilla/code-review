@@ -40,4 +40,11 @@ The configuration [is explained in this documentation](./configuration.md) in de
 
 ### Backend database
 
-TODO
+You'll need to create or update a repository in the targeted environment's backend: - [Production](https://api.code-review.moz.tools/admin/issues/repository/) - [Testing](https://api.code-review.testing.moz.tools/admin/issues/repository/)
+
+It's pretty easy to create a repository on the backend, there are only 2 fields to fill in:
+
+- the **slug** must match your YAML configuration `name` key, and be unique across all repositories on the database,
+- the **url** must match your YAML configuration `url` key, and also be unique across all repositories on the database.
+
+![](./new_repository_backend.png)
