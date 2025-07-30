@@ -275,7 +275,7 @@ class Issue(abc.ABC):
             )
             return (settings.mercurial_cache_checkout / self.path).exists()
         else:
-            # It is not possible to use revision.has_file directly because it returns file that have been modified
+            # It is not possible to use revision.has_file directly because it returns files that have been modified
             try:
                 content = self.revision.load_file(self.path)
                 return content != ""
