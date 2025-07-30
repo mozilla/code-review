@@ -35,9 +35,10 @@ class CoverageIssue(Issue):
 
     def is_publishable(self):
         """
-        Coverage issues are always publishable, unless they are in header files
+        Coverage issues are always publishable, unless
+        they are in header files or on a deleted file.
         """
-        return self.validates()
+        return self.validates() and self.file_exists
 
     def validates(self):
         """
