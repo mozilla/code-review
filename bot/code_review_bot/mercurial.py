@@ -325,15 +325,11 @@ class Repository:
             )
             if len(repo_status) != 0:
                 logger.warn(
-                    "Repo is dirty! Let's clean it first.",
+                    "Repo is dirty!",
                     revision=hg_base,
                     repo=self.name,
                     repo_status=repo_status,
                 )
-                # Clean the repo - This is a workaround for Bug 1720302
-                self.repo.update(rev="null", clean=True)
-                # Redo the update to the correct revision
-                self.repo.update(rev=hg_base, clean=True)
 
         except hglib.error.CommandError:
             raise Exception(f"Failed to update to revision {hg_base}")
