@@ -335,7 +335,7 @@ class Revision:
                 break
             except Exception as e:
                 logger.info(
-                    "Failed to load Harbormaster build on try {i+1}/5, will retry in 30 seconds",
+                    f"Failed to load Harbormaster build on try {i+1}/5, will retry in 30 seconds",
                     error=str(e),
                 )
                 time.sleep(30)
