@@ -203,7 +203,7 @@ class Repository:
         """
         if len(revision) == 40:
             complete_hash = revision
-        elif len(revision) == 12:
+        elif len(revision) < 40:
             logger.info(
                 f"Base revision is {len(revision)} characters length. "
                 "Trying to retrieve complete hash from https://github.com/mozilla-firefox/firefox."
@@ -229,7 +229,7 @@ class Repository:
             complete_hash = response.json()["sha"]
         else:
             logger.error(
-                f"Revision must be a complete hash (40 chars) or short hash (12 chars) (got '{revision}')"
+                f"Revision must be a complete hash (40 chars) or short hash (<40 chars) (got '{revision}')"
             )
             raise ValueError(revision)
 
