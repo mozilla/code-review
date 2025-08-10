@@ -61,14 +61,6 @@ common:
       # try_name is a display name for that repository
       try_name: try
 
-      # try_mode describes how the try_task_config is published
-      # - json, to build a json v2 try_task_config.json
-      # - syntax, to add a commit with a try syntax as commit message
-      try_mode: json
-
-      # try_syntax is the full commit message used when try_mode = syntax
-      try_syntax: -p xxx -l code-review
-
       # Mercurial checkout mode, several modes available:
       # - robust, to use robustcheckout extension (recommended)
       # - batch, to clone from revision 1 up to tip (slow but lower memory usage)
@@ -79,11 +71,21 @@ common:
       # is setup from a decision task (more details on the bot documentation)
       decision_env_prefix: GECKO
 
+      # Name of the environment variable used by the bot to detect which revision is the head
+      decision_env_revision: GECKO_HEAD_REV
+
+      # Name of the environment variable used by the bot to detect which repository is in use
+      decision_env_repository: GECKO_HEAD_REPOSITORY
+
       # The ssh username (or email) used to push on Try
       ssh_user: someone@mozilla.com
 
       # (Optional) private ssh-key overriding the default one setup in the events main section
       ssh_key: xxxx
+
+      # (Optional) Force the application of the patches on top of the repository tip
+      # instead of the base revision specified by Phabricator
+      use_latest_revision: true
 
 # This main section is only used by the bot project
 bot:
