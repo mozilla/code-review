@@ -187,6 +187,7 @@ def test_workflow(
             b" @@\n+Hello World\n",
             {
                 "message": b"Random commit message\nDifferential Diff: PHID-DIFF-testABcd12",
+                "similarity": 95,
                 "user": b"test <test@mozilla.com>",
             },
         ),
