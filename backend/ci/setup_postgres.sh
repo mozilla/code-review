@@ -1,5 +1,5 @@
 #!/bin/bash -ex
-export PG_VERSION=15
+export PG_VERSION=17
 
 # Silent apt
 export DEBIAN_FRONTEND=noninteractive
