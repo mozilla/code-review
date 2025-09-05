@@ -643,7 +643,6 @@ class MercurialWorker:
 
         except Exception as e:
             logger.warn("Failed to process diff", error=e, build=build)
-            raise e
             return (
                 "fail:general",
                 build,
