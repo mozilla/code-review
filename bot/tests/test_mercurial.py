@@ -7,18 +7,11 @@ import time
 from unittest.mock import MagicMock
 
 import hglib
-import pytest
 import responses
 from conftest import MockBuild
 from libmozdata.phabricator import PhabricatorPatch
 
 from code_review_bot import mercurial
-
-MERCURIAL_FAILURE = """unable to find 'crash.txt' for patching
-(use '--prefix' to apply patch relative to the current directory)
-1 out of 1 hunks FAILED -- saving rejects to file crash.txt.rej
-abort: patch failed to apply
-"""
 
 
 class STDOutputMock:
@@ -457,8 +450,7 @@ def test_failure_general(PhabricatorMock, mock_mc):
     assert tip.node == initial.node
 
 
-@pytest.mark.skip(reason="Causing a failure when running test only on this module")
-def test_failure_mercurial(PhabricatorMock, mock_mc):
+def test_failure_mercurial(PhabricatorMock, mock_config, mock_mc):
     """
     Run mercurial worker on a single diff
     and check the treeherder link publication as an artifact
@@ -497,9 +489,35 @@ def test_failure_mercurial(PhabricatorMock, mock_mc):
 
     # Check the treeherder link was queued
     assert mode == "fail:mercurial"
+    import_calls = mock_mc.repo.rawcommand.call_args_list[-2:]
+    assert len(import_calls) == 2
+    assert [c.args[0] for c in import_calls] == [
+        [
+            b"import",
+            b"--message=This patch has no real base and will crash libmozevent\nDifferential Diff: PHID-DIFF-666",
+            b"--user=code review bot <release-mgmt-analysis@mozilla.com>",
+            b"--similarity=95",
+            b"-",
+        ],
+        [
+            b"import",
+            b"--message=This patch has no real base and will crash libmozevent\nDifferential Diff: PHID-DIFF-666",
+            b"--user=code review bot <release-mgmt-analysis@mozilla.com>",
+            b"--similarity=95",
+            b"--config=ui.patch=patch",
+            b"--",
+            b"--- a/crash.txt Thu Jan 01 00:00:00 2019 +0000\n",
+            b"+++ b/crash.txt  Fri Feb 08 10:54:26 2019 +0000\n",
+            b"@@ -12,0 +12,1 @@\n",
+            b"+This cannot apply !\n",
+            b"\n",
+        ],
+    ]
     assert out_build == build
     assert details["duration"] > 0
-    assert details["message"] == MERCURIAL_FAILURE
+    assert details["message"] == (
+        "abort: No such file or directory: '--- a/crash.txt Thu Jan 01 00:00:00 2019 +0000\n'\n"
+    )
 
     # Clone should not be modified
     tip = mock_mc.repo.tip()
