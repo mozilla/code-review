@@ -381,15 +381,23 @@ class Repository:
                 patches.seek(0)
                 # Same method as repo.import_() but with the extra argument "--config ui.patch=patch".
                 # https://repo.mercurial-scm.org/python-hglib/file/484b56ac4aec/hglib/client.py#l959
-                hg_command = hglib.cmdbuilder(
-                    b"import",
-                    message=message.encode("utf-8"),
-                    user=user.encode("utf-8"),
-                    similarity=95,
-                    config="ui.patch=patch",
-                    *patches,
+                self.repo.rawcommand(
+                    hglib.util.cmdbuilder(
+                        b"import",
+                        message=message.encode("utf-8"),
+                        user=user.encode("utf-8"),
+                        similarity=95,
+                        config="ui.patch=patch",
+                        *patches,
+                    )
                 )
-                hg_run(hg_command)
+                # When using an external patch util mercurial won't automatically handle add/remove/renames
+                self.repo.rawcommand(
+                    hglib.util.cmdbuilder(
+                        b"addremove",
+                        similarity=95,
+                    )
+                )
             except Exception as e:
                 logger.info(
                     f"Failed to apply patch: {e}",
@@ -635,6 +643,7 @@ class MercurialWorker:
 
         except Exception as e:
             logger.warn("Failed to process diff", error=e, build=build)
+            raise e
             return (
                 "fail:general",
                 build,
