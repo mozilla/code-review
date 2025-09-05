@@ -361,11 +361,42 @@ class Repository:
             message += f"Differential Diff: {patch.phid}"
 
             logger.info("Applying patch", phid=patch.phid, message=message)
+            patches = io.BytesIO(patch.patch.encode("utf-8"))
             try:
                 self.repo.import_(
-                    patches=io.BytesIO(patch.patch.encode("utf-8")),
+                    patches=patches,
                     message=message.encode("utf-8"),
                     user=user.encode("utf-8"),
+                    similarity=95,
+                )
+            except hglib.error.CommandError as e:
+                logger.warning(
+                    (
+                        f"Mercurial command from hglib failed: {e}. "
+                        "Retrying with --config ui.patch=patch."
+                    ),
+                    phid=patch.phid,
+                    exc_info=True,
+                )
+                patches.seek(0)
+                # Same method as repo.import_() but with the extra argument "--config ui.patch=patch".
+                # https://repo.mercurial-scm.org/python-hglib/file/484b56ac4aec/hglib/client.py#l959
+                self.repo.rawcommand(
+                    hglib.util.cmdbuilder(
+                        b"import",
+                        message=message.encode("utf-8"),
+                        user=user.encode("utf-8"),
+                        similarity=95,
+                        config="ui.patch=patch",
+                        *patches,
+                    )
+                )
+                # When using an external patch util mercurial won't automatically handle add/remove/renames
+                self.repo.rawcommand(
+                    hglib.util.cmdbuilder(
+                        b"addremove",
+                        similarity=95,
+                    )
                 )
             except Exception as e:
                 logger.info(

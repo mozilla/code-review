@@ -69,6 +69,7 @@ def mock_config(mock_repositories):
         "test",
         ["dom/*", "tests/*.py", "test/*.c"],
         mock_repositories,
+        github_api_token="test_token",
     )
 
     return settings
@@ -1034,6 +1035,7 @@ def build_repository(tmpdir, name):
 
     # Mock push to avoid reaching try server
     repo.push = MagicMock(return_value=True)
+    repo.rawcommand = MagicMock(wraps=repo.rawcommand)
 
     return repo
 
