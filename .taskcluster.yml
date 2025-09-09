@@ -125,8 +125,6 @@ tasks:
                 - { $eval: as_slugid("check_lint") }
                 - { $eval: as_slugid("bot_check_tests") }
               payload:
-                features:
-                  dind: true
                 maxRunTime: 3600
                 image: "${taskboot_image}"
                 env:
