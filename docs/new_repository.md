@@ -9,3 +9,47 @@
 ## Contact us
 
 As each new repository has different needs and constraints, please reach out to our team. Look in [README](../README.md) for contact information.
+
+## Onboarding a new repository
+
+⚠️ This section is for code-review bot administrators who wish to add a new repository into the system.
+
+There are 2 places where configuration must be updated: Runtime configuration in Taskcluster, and the backend database.
+
+### Runtime configuration in Taskcluster
+
+You'll need to edit either the [testing](https://firefox-ci-tc.services.mozilla.com/secrets/project%2Frelman%2Fcode-review%2Fruntime-testing) or [production](https://firefox-ci-tc.services.mozilla.com/secrets/project%2Frelman%2Fcode-review%2Fruntime-production) secret that holds the runtime configuration for the bot.
+
+The section to edit in the YAML content is `common.repositories`, which is a list of known repositories.
+
+Each repository has the following structure:
+
+```yaml
+repositories:
+  - checkout: robust
+    try_url: ssh://hg.mozilla.org/try
+    name: mozilla-central
+    ssh_user: reviewbot
+    url: https://hg.mozilla.org/mozilla-unified
+    decision_env_revision: GECKO_HEAD_REV
+    decision_env_repository: GECKO_HEAD_REPOSITORY
+    decision_env_prefix: GECKO
+```
+
+The configuration [is explained in this documentation](./configuration.md) in details.
+
+### Backend database
+
+Mercurial repositories hosted on `hg.mozilla.org` are automatically created on the backend, by the bot (since [#2530](https://github.com/mozilla/code-review/pull/2530)). In most cases, no management action is needed.
+
+If you need to edit or create an extra repository, you'll need to use the targeted environment's backend:
+
+- [Production](https://api.code-review.moz.tools/admin/issues/repository/)
+- [Testing](https://api.code-review.testing.moz.tools/admin/issues/repository/)
+
+It's pretty easy to create a repository on the backend, there are only 2 fields to fill in:
+
+- the **slug** must match your YAML configuration `name` key, and be unique across all repositories on the database,
+- the **url** must match your YAML configuration `url` key, and also be unique across all repositories on the database.
+
+![](./new_repository_backend.png)
