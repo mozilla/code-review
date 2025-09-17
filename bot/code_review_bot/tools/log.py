@@ -80,7 +80,11 @@ def remove_color_codes(event, hint):
     breadcrumbs = event.get("breadcrumbs", {})
     for value in breadcrumbs.get("values", []):
         if "message" in value:
+            message_old = value["message"]
             value["message"] = _remove(value["message"])
+            breadcrumbs_values = breadcrumbs.get("values", [])
+            message_new = breadcrumbs_values[0] if len(breadcrumbs_values) > 0 else None
+            logger.warning(f"message_old: {message_old}\n message_new: {message_new}")
 
     # Remove from log entry
     logentry = event.get("logentry", {})
