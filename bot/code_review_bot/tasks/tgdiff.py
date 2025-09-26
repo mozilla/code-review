@@ -80,10 +80,11 @@ class TaskGraphDiffTask(NoticeTask):
         if summary is None:
             logger.warn("Missing summary.json")
         elif "status" in summary and summary["status"] == "WARNING":
-            logger.info(
-                "TaskGraphDiff summary status is in WARNING, the #taskgraph-reviewers group will be added to the revision"
-            )
-            self.extra_reviewers_groups.append("taskgraph-reviewers")
+            if self.task.get("tags", {}).get("trust-domain") == "gecko":
+                logger.info(
+                    "TaskGraphDiff summary status is in WARNING, the #taskgraph-reviewers group will be added to the revision"
+                )
+                self.extra_reviewers_groups.append("taskgraph-reviewers")
 
         # We don't actually want the contents of these artifacts, just their
         # urls (which are now stored in `self.artifact_urls`).
