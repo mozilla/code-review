@@ -280,14 +280,15 @@ class Repository:
         # Find the first unknown base revision
         needed_stack = []
         for patch in reversed(build.stack):
-            needed_stack.insert(0, patch)
-
             # Skip already merged patches
             if patch.merged:
                 logger.info(
                     f"Skip applying patch {patch.id} as it's already been merged upstream"
                 )
                 continue
+
+            # Add the patch into the stack only if not already merged !
+            needed_stack.insert(0, patch)
 
             # Stop as soon as a base revision is available
             if self.has_revision(patch.base_revision):
