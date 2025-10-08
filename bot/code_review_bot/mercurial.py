@@ -132,7 +132,7 @@ class Repository:
         self.batch_size = config.get("batch_size", 10000)
         self.try_url = config["try_url"]
         self.try_name = config.get("try_name", "try")
-        self.default_revision = config.get("default_revision", "tip")
+        self.default_revision = config.get("default_revision", "default")
 
         # Apply patches to the latest revision when `True`.
         self.use_latest_revision = config.get("use_latest_revision", False)
@@ -169,11 +169,11 @@ class Repository:
         logger.info("Removed ssh key")
 
     def clone(self):
-        logger.info("Checking out tip", repo=self.url, mode=self.checkout_mode)
+        logger.info("Checking out default", repo=self.url, mode=self.checkout_mode)
         if self.checkout_mode == "batch":
-            batch_checkout(self.url, self.dir, b"tip", self.batch_size)
+            batch_checkout(self.url, self.dir, b"default", self.batch_size)
         elif self.checkout_mode == "robust":
-            robust_checkout(self.url, self.dir, self.share_base_dir, branch=b"tip")
+            robust_checkout(self.url, self.dir, self.share_base_dir, branch=b"default")
         else:
             hglib.clone(self.url, self.dir)
         logger.info("Full checkout finished")
@@ -257,8 +257,8 @@ class Repository:
     def get_base_identifier(self, needed_stack: list[PhabricatorPatch]) -> str:
         """Return the base identifier to apply patches against."""
         if self.use_latest_revision:
-            # Use `tip` when `use_latest_revision` is `True`.
-            return "tip"
+            # Use `default` when `use_latest_revision` is `True`.
+            return "default"
 
         # Otherwise use the base/parent revision of first revision in the stack.
         base_rev_hash = needed_stack[0].base_revision

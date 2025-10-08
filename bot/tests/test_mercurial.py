@@ -869,8 +869,8 @@ def test_get_base_identifier(mock_mc):
     mock_mc.use_latest_revision = True
 
     assert (
-        mock_mc.get_base_identifier(stack) == "tip"
-    ), "`tip` commit should be used when `use_latest_revision` is `True`."
+        mock_mc.get_base_identifier(stack) == "default"
+    ), "`default` commit should be used when `use_latest_revision` is `True`."
 
 
 def test_get_base_identifier_from_git(mock_mc):
@@ -899,5 +899,5 @@ def test_get_base_identifier_from_git(mock_mc):
     mock_mc.use_latest_revision = True
 
     assert (
-        mock_mc.get_base_identifier(stack) == "tip"
-    ), "`tip` commit should be used when `use_latest_revision` is `True`."
+        mock_mc.get_base_identifier(stack) == "default"
+    ), "`default` commit should be used when `use_latest_revision` is `True`."

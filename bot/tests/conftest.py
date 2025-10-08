@@ -1030,7 +1030,7 @@ def build_repository(tmpdir, name):
     readme = tmpdir.join(name, "README.md")
     readme.write("Hello World")
     repo.add(str(readme.realpath()).encode("utf-8"))
-    repo.branch(name=b"central", force=True)
+    repo.branch(name=b"default", force=True)
     repo.commit(message=b"Readme", user="test")
 
     # Mock push to avoid reaching try server
