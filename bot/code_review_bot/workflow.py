@@ -287,8 +287,6 @@ class Workflow:
                 "ssh_key": settings.ssh_key,
                 # Force usage of robustcheckout
                 "checkout": "robust",
-                # Custom default revision to rebase patches onto
-                "default_revision": revision.base_changeset,
             },
             cache_root=settings.mercurial_cache,
         )
