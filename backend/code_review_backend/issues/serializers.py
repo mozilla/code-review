@@ -207,7 +207,6 @@ class IssueSerializer(serializers.ModelSerializer):
 
     publishable = serializers.BooleanField(read_only=True)
     check = serializers.CharField(source="analyzer_check", required=False)
-    publishable = serializers.BooleanField(read_only=True)
     in_patch = serializers.BooleanField(
         source="issue_links__in_patch", allow_null=True, required=False
     )
@@ -335,7 +334,7 @@ class IssueBulkSerializer(serializers.Serializer):
                 output_link = {f"issue_links__{k}": v for k, v in link.items()}
                 output_link.update(vars(existing_issue))
                 output_link["publishable"] = (
-                    link["in_patch"] and existing_issue.level == LEVEL_ERROR
+                    link["in_patch"] or existing_issue.level == LEVEL_ERROR
                 )
 
                 output.append(output_link)
