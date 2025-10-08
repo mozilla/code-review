@@ -31,8 +31,6 @@ repositories:
     name: mozilla-central
     ssh_user: reviewbot
     url: https://hg.mozilla.org/mozilla-unified
-    decision_env_revision: GECKO_HEAD_REV
-    decision_env_repository: GECKO_HEAD_REPOSITORY
     decision_env_prefix: GECKO
 ```
 

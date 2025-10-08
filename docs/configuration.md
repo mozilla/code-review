@@ -71,12 +71,6 @@ common:
       # is setup from a decision task (more details on the bot documentation)
       decision_env_prefix: GECKO
 
-      # Name of the environment variable used by the bot to detect which revision is the head
-      decision_env_revision: GECKO_HEAD_REV
-
-      # Name of the environment variable used by the bot to detect which repository is in use
-      decision_env_repository: GECKO_HEAD_REPOSITORY
-
       # The ssh username (or email) used to push on Try
       ssh_user: someone@mozilla.com
 
