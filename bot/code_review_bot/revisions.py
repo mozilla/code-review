@@ -387,7 +387,7 @@ class Revision:
             build_target_phid=build_target_phid,
             url="https://{}/D{}".format(phabricator.hostname, revision["id"]),
             revision=revision,
-            base_changeset="tip",
+            base_changeset="default",
             base_repository=repository.url,
             base_repository_conf=repository,
             repository_try_name=repository.try_name,
