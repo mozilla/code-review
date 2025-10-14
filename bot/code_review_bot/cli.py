@@ -109,11 +109,6 @@ def main():
     # Setup libmozdata configuration
     setup_libmozdata("code-review-bot")
 
-    if "GITHUB_API_TOKEN" not in taskcluster.secrets:
-        logger.warning(
-            "No GITHUB_API_TOKEN set, requests to github.com might get rate-limited"
-        )
-
     # Setup settings before stats
     settings.setup(
         taskcluster.secrets["APP_CHANNEL"],
@@ -121,7 +116,6 @@ def main():
         taskcluster.secrets["repositories"],
         taskcluster.secrets["ssh_key"],
         args.mercurial_repository,
-        taskcluster.secrets.get("GITHUB_API_TOKEN", None),
     )
 
     # Setup statistics

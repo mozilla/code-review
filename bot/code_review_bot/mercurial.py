@@ -16,10 +16,9 @@ import requests
 import rs_parsepatch
 import structlog
 from libmozdata.phabricator import PhabricatorPatch
+from libmozevent.lando import LandoCommitMapAPI, LandoMissingCommit
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.utils import batch_checkout
-
-from code_review_bot.config import settings
 
 logger = structlog.get_logger(__name__)
 
@@ -33,12 +32,6 @@ TRY_STATUS_MAX_WAIT = 24 * 60 * 60
 MAX_PUSH_RETRIES = 4
 # Wait successive exponential delays: 6sec, 36sec, 3.6min, 21.6min
 PUSH_RETRY_EXPONENTIAL_DELAY = 6
-
-# External services to manage hash reference related to Git repositories
-GIT_TO_HG = "https://lando.moz.tools/api/git2hg/firefox/{}"
-FIREFOX_GITHUB_COMMIT_URL = (
-    "https://api.github.com/repos/mozilla-firefox/firefox/commits/{}"
-)
 
 logger = structlog.get_logger(__name__)
 
@@ -196,51 +189,30 @@ class Repository:
     def get_mercurial_base_hash(self, revision):
         """A revision may reference to a Git commit hash instead of Mercurial one.
         The revision can either be a 40 characters full hash or its first 12 characters (short hash).
-        It is the case for the base revision of the stack. Github's API helps to retrieve the full
-        revision in case it is known.
         A Lando API enables to "convert" the Git hash to a Mercurial hash that can
-        be found in the local repository.
+        be found in the local repository, whatever its length.
         """
-        if len(revision) == 40:
-            complete_hash = revision
-        elif len(revision) < 40:
+        api = LandoCommitMapAPI()
+        try:
+            commit_map = api.git2hg(revision)
             logger.info(
-                f"Base revision is {len(revision)} characters length. "
-                "Trying to retrieve complete hash from https://github.com/mozilla-firefox/firefox."
+                "Converted git revision into mercurial through Lando",
+                hg=commit_map.hg_hash,
+                git=commit_map.git_hash,
             )
-            headers = {}
-            if not settings.github_api_token:
-                logger.warning(
-                    "Performing Github API request has rate limitation when not authenticated. "
-                    "Hint: Set the GITHUB_API_TOKEN environment variable."
-                )
-            else:
-                headers["Authorization"] = f"Bearer {settings.github_api_token}"
-            response = requests.get(
-                FIREFOX_GITHUB_COMMIT_URL.format(revision),
-                headers=headers,
-            )
-            if not response.ok:
-                logger.warning(
-                    f"Could not retrieve the complete hash: {response=}. "
-                    "The default revision will be used instead."
-                )
-                return self.default_revision
-            complete_hash = response.json()["sha"]
-        else:
-            logger.error(
-                f"Revision must be a complete hash (40 chars) or short hash (<40 chars) (got '{revision}')"
-            )
-            raise ValueError(revision)
-
-        response = requests.get(GIT_TO_HG.format(complete_hash))
-        if not response.ok or not (hg_hash := response.json().get("hg_hash")):
+            return commit_map.hg_hash
+        except LandoMissingCommit:
             logger.warning(
-                f"Could not convert Git hash to Mercurial hash from Lando: {response=}. "
+                "No matching revision found on Lando. The default revision will be used instead."
+            )
+            return self.default_revision
+
+        except Exception as e:
+            logger.warning(
+                f"Could not convert Git hash to Mercurial hash from Lando: {e}. "
                 "The default revision will be used instead."
             )
             return self.default_revision
-        return hg_hash
 
     def has_revision(self, revision):
         """
