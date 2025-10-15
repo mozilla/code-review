@@ -78,7 +78,6 @@ class Settings:
         repositories,
         ssh_key=None,
         mercurial_cache=None,
-        github_api_token=None,
     ):
         # Detect source from env
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
@@ -148,8 +147,6 @@ class Settings:
 
             # Save ssh key when mercurial cache is enabled
             self.ssh_key = ssh_key
-
-        self.github_api_token = github_api_token
 
     def load_user_blacklist(self, usernames, phabricator_api):
         """

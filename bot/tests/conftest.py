@@ -69,7 +69,6 @@ def mock_config(mock_repositories):
         "test",
         ["dom/*", "tests/*.py", "test/*.c"],
         mock_repositories,
-        github_api_token="test_token",
     )
 
     return settings

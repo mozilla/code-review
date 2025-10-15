@@ -875,7 +875,7 @@ def test_get_base_identifier(mock_mc):
 
 def test_get_base_identifier_from_git(mock_mc):
     stack = [
-        PhabricatorPatch(1, "PHID-abc", "", "a" * 40, None, False),
+        PhabricatorPatch(1, "PHID-abc", "", "a" * 12, None, False),
         PhabricatorPatch(2, "PHID-def", "", "def", None, False),
         PhabricatorPatch(3, "PHID-ghi", "", "ghi", None, False),
     ]
@@ -883,13 +883,8 @@ def test_get_base_identifier_from_git(mock_mc):
     # mock_mc.has_revision = lambda x: x == "a" * 40
     responses.add(
         responses.GET,
-        "https://api.github.com/repos/mozilla-firefox/firefox/commits/aaaaaaaaaaaa",
-        json={"sha": "a" * 40},
-    )
-    responses.add(
-        responses.GET,
-        "https://lando.moz.tools/api/git2hg/firefox/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        json={"hg_hash": "b" * 40},
+        "https://lando.moz.tools/api/git2hg/firefox/aaaaaaaaaaaa",
+        json={"git_hash": "a" * 40, "hg_hash": "b" * 40},
     )
 
     assert (
