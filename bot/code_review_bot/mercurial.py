@@ -15,8 +15,8 @@ import hglib
 import requests
 import rs_parsepatch
 import structlog
+from libmozdata.lando import LandoCommitMapAPI, LandoMissingCommit
 from libmozdata.phabricator import PhabricatorPatch
-from libmozevent.lando import LandoCommitMapAPI, LandoMissingCommit
 from libmozevent.phabricator import PhabricatorBuild
 from libmozevent.utils import batch_checkout
 
