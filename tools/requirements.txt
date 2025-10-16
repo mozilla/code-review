@@ -9,4 +9,4 @@ sentry-sdk==2.42.0
 structlog==25.4.0
 taskcluster==90.0.5
 treeherder-client==5.0.0
-yarl==1.21.0
+yarl==1.22.0
