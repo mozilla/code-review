@@ -95,3 +95,75 @@ def test_index_autoland(
         "project.relman.test.code-review.head_repo.integration-autoland.deadbeef123.12345deadbeef",
         "project.relman.test.code-review.base_repo.mozilla-unified.123deadbeef.12345deadbeef",
     ]
+
+
+def test_index_phabricator(mock_phabricator, mock_workflow, mock_config):
+    """
+    Check the Taskcluster index generated for a task triggered by Phabricator
+    """
+
+    with mock_phabricator as api:
+        revision = Revision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-test",
+            phabricator=api,
+        )
+
+    mock_workflow.index_service = mock.Mock()
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+
+    mock_workflow.index(revision, state="unit-test")
+
+    assert mock_workflow.index_service.insertTask.call_count == 10
+    calls = mock_workflow.index_service.insertTask.call_args_list
+
+    assert [c[0][0] for c in calls] == [
+        "project.relman.test.code-review.phabricator.51",
+        "project.relman.test.code-review.phabricator.diff.42",
+        "project.relman.test.code-review.phabricator.phabricator_phid.PHID-DREV-zzzzz",
+        "project.relman.test.code-review.phabricator.diffphid.PHID-DIFF-testABcd12",
+        "project.relman.test.code-review.base_repo.mozilla-central.default",
+        "project.relman.test.code-review.phabricator.51.12345deadbeef",
+        "project.relman.test.code-review.phabricator.diff.42.12345deadbeef",
+        "project.relman.test.code-review.phabricator.phabricator_phid.PHID-DREV-zzzzz.12345deadbeef",
+        "project.relman.test.code-review.phabricator.diffphid.PHID-DIFF-testABcd12.12345deadbeef",
+        "project.relman.test.code-review.base_repo.mozilla-central.default.12345deadbeef",
+    ]
+
+
+def test_index_from_try(
+    mock_phabricator,
+    phab,
+    mock_try_task,
+    mock_decision_task,
+    mock_workflow,
+    mock_config,
+):
+    """
+    Check the Taskcluster index generated for a task triggered by end of try push
+    """
+
+    with mock_phabricator as api:
+        revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+
+    mock_workflow.index_service = mock.Mock()
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+
+    mock_workflow.index(revision, state="unit-test")
+
+    assert mock_workflow.index_service.insertTask.call_count == 12
+    calls = mock_workflow.index_service.insertTask.call_args_list
+
+    assert [c[0][0] for c in calls] == [
+        "project.relman.test.code-review.phabricator.51",
+        "project.relman.test.code-review.phabricator.diff.42",
+        "project.relman.test.code-review.phabricator.phabricator_phid.PHID-DREV-zzzzz",
+        "project.relman.test.code-review.phabricator.diffphid.PHID-DIFF-test",
+        "project.relman.test.code-review.head_repo.try.deadc0ffee",
+        "project.relman.test.code-review.base_repo.mozilla-central.c0ffeedead",
+        "project.relman.test.code-review.phabricator.51.12345deadbeef",
+        "project.relman.test.code-review.phabricator.diff.42.12345deadbeef",
+        "project.relman.test.code-review.phabricator.phabricator_phid.PHID-DREV-zzzzz.12345deadbeef",
+        "project.relman.test.code-review.phabricator.diffphid.PHID-DIFF-test.12345deadbeef",
+        "project.relman.test.code-review.head_repo.try.deadc0ffee.12345deadbeef",
+        "project.relman.test.code-review.base_repo.mozilla-central.c0ffeedead.12345deadbeef",
+    ]
