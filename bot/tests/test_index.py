@@ -72,7 +72,12 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
 
 
 def test_index_autoland(
-    mock_autoland_task, mock_phabricator, mock_hgmo, mock_config, mock_workflow
+    mock_autoland_task,
+    mock_phabricator,
+    mock_hgmo,
+    mock_config,
+    mock_workflow,
+    mock_taskcluster_date,
 ):
     """
     Check the Taskcluster index generated for an autoland task
@@ -96,8 +101,37 @@ def test_index_autoland(
         "project.relman.test.code-review.base_repo.mozilla-unified.123deadbeef.12345deadbeef",
     ]
 
+    # Check all calls have the same shared payload
+    payload = {
+        "base_changeset": "123deadbeef",
+        "base_repository": "https://hg.mozilla.org/mozilla-unified",
+        "bugzilla_id": None,
+        "diff_id": None,
+        "diff_phid": None,
+        "has_clang_files": False,
+        "head_changeset": "deadbeef123",
+        "head_repository": "https://hg.mozilla.org/integration/autoland",
+        "id": None,
+        "indexed": "2025-10-30T00:00:00.00Z",
+        "mercurial_revision": "deadbeef123",
+        "monitoring_restart": False,
+        "phid": None,
+        "repository": "https://hg.mozilla.org/mozilla-unified",
+        "source": "try",
+        "state": "unit-test",
+        "target_repository": "https://hg.mozilla.org/mozilla-unified",
+        "title": "Changeset deadbeef123 (https://hg.mozilla.org/integration/autoland)",
+        "try_group_id": "remoteTryGroup",
+        "try_task_id": "remoteTryTask",
+        "url": None,
+    }
+    assert calls[0][0][1]["data"] == payload
+    assert all([c[0][1]["data"] == payload for c in calls])
 
-def test_index_phabricator(mock_phabricator, mock_workflow, mock_config):
+
+def test_index_phabricator(
+    mock_phabricator, mock_workflow, mock_config, mock_taskcluster_date
+):
     """
     Check the Taskcluster index generated for a task triggered by Phabricator
     """
@@ -129,6 +163,33 @@ def test_index_phabricator(mock_phabricator, mock_workflow, mock_config):
         "project.relman.test.code-review.base_repo.mozilla-central.default.12345deadbeef",
     ]
 
+    # Check all calls have the same shared payload
+    payload = {
+        "base_changeset": "default",
+        "base_repository": "https://hg.mozilla.org/mozilla-central",
+        "bugzilla_id": 1234567,
+        "diff_id": 42,
+        "diff_phid": "PHID-DIFF-testABcd12",
+        "has_clang_files": False,
+        "head_changeset": None,
+        "head_repository": None,
+        "id": 51,
+        "indexed": "2025-10-30T00:00:00.00Z",
+        "mercurial_revision": None,
+        "monitoring_restart": False,
+        "phid": "PHID-DREV-zzzzz",
+        "repository": "https://hg.mozilla.org/mozilla-central",
+        "source": "try",
+        "state": "unit-test",
+        "target_repository": "https://hg.mozilla.org/mozilla-central",
+        "title": "Static Analysis tests",
+        "try_group_id": "remoteTryGroup",
+        "try_task_id": "remoteTryTask",
+        "url": "https://phabricator.test/D51",
+    }
+    assert calls[0][0][1]["data"] == payload
+    assert all([c[0][1]["data"] == payload for c in calls])
+
 
 def test_index_from_try(
     mock_phabricator,
@@ -137,6 +198,7 @@ def test_index_from_try(
     mock_decision_task,
     mock_workflow,
     mock_config,
+    mock_taskcluster_date,
 ):
     """
     Check the Taskcluster index generated for a task triggered by end of try push
@@ -167,3 +229,30 @@ def test_index_from_try(
         "project.relman.test.code-review.head_repo.try.deadc0ffee.12345deadbeef",
         "project.relman.test.code-review.base_repo.mozilla-central.c0ffeedead.12345deadbeef",
     ]
+
+    # Check all calls have the same shared payload
+    payload = {
+        "base_changeset": "c0ffeedead",
+        "base_repository": "https://hg.mozilla.org/mozilla-central",
+        "bugzilla_id": 1234567,
+        "diff_id": 42,
+        "diff_phid": "PHID-DIFF-test",
+        "has_clang_files": False,
+        "head_changeset": "deadc0ffee",
+        "head_repository": "https://hg.mozilla.org/try",
+        "id": 51,
+        "indexed": "2025-10-30T00:00:00.00Z",
+        "mercurial_revision": "deadc0ffee",
+        "monitoring_restart": False,
+        "phid": "PHID-DREV-zzzzz",
+        "repository": "https://hg.mozilla.org/mozilla-central",
+        "source": "try",
+        "state": "unit-test",
+        "target_repository": "https://hg.mozilla.org/mozilla-central",
+        "title": "Static Analysis tests",
+        "try_group_id": "remoteTryGroup",
+        "try_task_id": "remoteTryTask",
+        "url": "https://phabricator.test/D51",
+    }
+    assert calls[0][0][1]["data"] == payload
+    assert all([c[0][1]["data"] == payload for c in calls])
