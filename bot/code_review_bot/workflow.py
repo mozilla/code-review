@@ -172,6 +172,9 @@ class Workflow:
             self.backend_api.enabled
         ), "Backend storage is disabled, revision ingestion is not possible"
 
+        # Index ASAP Taskcluster task for this revision
+        self.index(revision, state="ingestion")
+
         supported_tasks = []
 
         def _build_tasks(tasks):
@@ -242,6 +245,9 @@ class Workflow:
         Apply a patch on a local clone and push to try to trigger a new Code review analysis
         """
         logger.info("Starting revision analysis", revision=revision)
+
+        # Index ASAP Taskcluster task for this revision
+        self.index(revision, state="analysis")
 
         # Do not process revisions from black-listed users
         if revision.is_blacklisted:
@@ -322,6 +328,9 @@ class Workflow:
         # Apply the stack of patches and push to try
         worker = MercurialWorker()
         output = worker.run(repository, build)
+
+        # Update index when the patch has been pushed to try
+        self.index(revision, state="pushed_to_try")
 
         # Update final state using worker output
         if self.update_build:
