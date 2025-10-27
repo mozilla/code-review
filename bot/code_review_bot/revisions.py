@@ -134,12 +134,37 @@ class Revision:
 
     @property
     def namespaces(self):
-        return [
-            f"phabricator.{self.phabricator_id}",
-            f"phabricator.diff.{self.diff_id}",
-            f"phabricator.phabricator_phid.{self.phabricator_phid}",
-            f"phabricator.diffphid.{self.diff_phid}",
-        ]
+        # Simplify repository names
+        def repo_slug(url):
+            if url.startswith("https://hg.mozilla.org/"):
+                url = url[23:]
+            return url.replace("/", "-")
+
+        return list(
+            filter(
+                None,
+                [
+                    # Phabricator indexes
+                    f"phabricator.{self.phabricator_id}"
+                    if self.phabricator_id
+                    else None,
+                    f"phabricator.diff.{self.diff_id}" if self.diff_id else None,
+                    f"phabricator.phabricator_phid.{self.phabricator_phid}"
+                    if self.phabricator_phid
+                    else None,
+                    f"phabricator.diffphid.{self.diff_phid}"
+                    if self.diff_phid
+                    else None,
+                    # Revision indexes
+                    f"head_repo.{repo_slug(self.head_repository)}.{self.head_changeset}"
+                    if (self.head_repository and self.head_changeset)
+                    else None,
+                    f"base_repo.{repo_slug(self.base_repository)}.{self.base_changeset}"
+                    if (self.base_repository and self.base_changeset)
+                    else None,
+                ],
+            )
+        )
 
     @property
     def from_autoland(self):
