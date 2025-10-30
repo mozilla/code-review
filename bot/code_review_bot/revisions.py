@@ -153,12 +153,10 @@ class Revision:
             out.append(f"phabricator.diffphid.{self.diff_phid}")
 
         # Revision indexes
+        # Only head changeset is useful to uniquely identify the revision
         if self.head_repository and self.head_changeset:
             repo = repo_slug(self.head_repository)
             out.append(f"head_repo.{repo}.{self.head_changeset}")
-        if self.base_repository and self.base_changeset:
-            repo = repo_slug(self.base_repository)
-            out.append(f"base_repo.{repo}.{self.base_changeset}")
 
         return out
 

@@ -91,14 +91,12 @@ def test_index_autoland(
 
     mock_workflow.index(revision, state="unit-test")
 
-    assert mock_workflow.index_service.insertTask.call_count == 4
+    assert mock_workflow.index_service.insertTask.call_count == 2
     calls = mock_workflow.index_service.insertTask.call_args_list
 
     assert [c[0][0] for c in calls] == [
         "project.relman.test.code-review.head_repo.integration-autoland.deadbeef123",
-        "project.relman.test.code-review.base_repo.mozilla-unified.123deadbeef",
         "project.relman.test.code-review.head_repo.integration-autoland.deadbeef123.12345deadbeef",
-        "project.relman.test.code-review.base_repo.mozilla-unified.123deadbeef.12345deadbeef",
     ]
 
     # Check all calls have the same shared payload
@@ -147,7 +145,7 @@ def test_index_phabricator(
 
     mock_workflow.index(revision, state="unit-test")
 
-    assert mock_workflow.index_service.insertTask.call_count == 10
+    assert mock_workflow.index_service.insertTask.call_count == 8
     calls = mock_workflow.index_service.insertTask.call_args_list
 
     assert [c[0][0] for c in calls] == [
@@ -155,12 +153,10 @@ def test_index_phabricator(
         "project.relman.test.code-review.phabricator.diff.42",
         "project.relman.test.code-review.phabricator.phabricator_phid.PHID-DREV-zzzzz",
         "project.relman.test.code-review.phabricator.diffphid.PHID-DIFF-testABcd12",
-        "project.relman.test.code-review.base_repo.mozilla-central.default",
         "project.relman.test.code-review.phabricator.51.12345deadbeef",
         "project.relman.test.code-review.phabricator.diff.42.12345deadbeef",
         "project.relman.test.code-review.phabricator.phabricator_phid.PHID-DREV-zzzzz.12345deadbeef",
         "project.relman.test.code-review.phabricator.diffphid.PHID-DIFF-testABcd12.12345deadbeef",
-        "project.relman.test.code-review.base_repo.mozilla-central.default.12345deadbeef",
     ]
 
     # Check all calls have the same shared payload
@@ -212,7 +208,7 @@ def test_index_from_try(
 
     mock_workflow.index(revision, state="unit-test")
 
-    assert mock_workflow.index_service.insertTask.call_count == 12
+    assert mock_workflow.index_service.insertTask.call_count == 10
     calls = mock_workflow.index_service.insertTask.call_args_list
 
     assert [c[0][0] for c in calls] == [
@@ -221,13 +217,11 @@ def test_index_from_try(
         "project.relman.test.code-review.phabricator.phabricator_phid.PHID-DREV-zzzzz",
         "project.relman.test.code-review.phabricator.diffphid.PHID-DIFF-test",
         "project.relman.test.code-review.head_repo.try.deadc0ffee",
-        "project.relman.test.code-review.base_repo.mozilla-central.c0ffeedead",
         "project.relman.test.code-review.phabricator.51.12345deadbeef",
         "project.relman.test.code-review.phabricator.diff.42.12345deadbeef",
         "project.relman.test.code-review.phabricator.phabricator_phid.PHID-DREV-zzzzz.12345deadbeef",
         "project.relman.test.code-review.phabricator.diffphid.PHID-DIFF-test.12345deadbeef",
         "project.relman.test.code-review.head_repo.try.deadc0ffee.12345deadbeef",
-        "project.relman.test.code-review.base_repo.mozilla-central.c0ffeedead.12345deadbeef",
     ]
 
     # Check all calls have the same shared payload
