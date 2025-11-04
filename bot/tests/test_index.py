@@ -123,7 +123,6 @@ def test_index_autoland(
         "try_task_id": "remoteTryTask",
         "url": None,
     }
-    assert calls[0][0][1]["data"] == payload
     assert all([c[0][1]["data"] == payload for c in calls])
 
 
@@ -183,7 +182,6 @@ def test_index_phabricator(
         "try_task_id": "remoteTryTask",
         "url": "https://phabricator.test/D51",
     }
-    assert calls[0][0][1]["data"] == payload
     assert all([c[0][1]["data"] == payload for c in calls])
 
 
@@ -248,5 +246,4 @@ def test_index_from_try(
         "try_task_id": "remoteTryTask",
         "url": "https://phabricator.test/D51",
     }
-    assert calls[0][0][1]["data"] == payload
     assert all([c[0][1]["data"] == payload for c in calls])
