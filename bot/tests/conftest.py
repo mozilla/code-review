@@ -1238,3 +1238,15 @@ def PhabricatorMock():
         )
         actions.mocks = resp  # used to assert in tests on callbacks
         yield actions
+
+
+@pytest.fixture(scope="function", autouse=True)
+def mock_taskcluster_date(monkeypatch):
+    """
+    Set a fixed taskcluster date to be able to assert on generated dates
+    """
+    import taskcluster.utils
+
+    monkeypatch.setattr(
+        taskcluster.utils, "stringDate", lambda x: "2025-10-30T00:00:00.00Z"
+    )
