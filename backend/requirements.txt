@@ -10,6 +10,6 @@ psycopg2-binary==2.9.11
 sentry-sdk==2.43.0
 setuptools==80.9.0
 sqlparse==0.5.3
-taskcluster==91.1.2
+taskcluster==94.0.1
 tqdm==4.67.1
 whitenoise==6.11.0
