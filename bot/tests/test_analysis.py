@@ -5,11 +5,10 @@
 import json
 import tempfile
 
-from libmozevent.phabricator import PhabricatorActions
-
 from code_review_bot import mercurial
 from code_review_bot.config import RepositoryConf
 from code_review_bot.revisions import Revision
+from code_review_bot.sources.phabricator import PhabricatorActions
 
 
 def test_revision(mock_phabricator):
