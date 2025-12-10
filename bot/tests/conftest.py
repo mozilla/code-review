@@ -19,16 +19,16 @@ import hglib
 import pytest
 import responses
 from libmozdata.phabricator import PhabricatorAPI
-from libmozevent.phabricator import (
-    PhabricatorActions,
-    PhabricatorBuild,
-    PhabricatorBuildState,
-)
 
 from code_review_bot import Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import GetAppUserAgent, settings
 from code_review_bot.mercurial import Repository
+from code_review_bot.sources.phabricator import (
+    PhabricatorActions,
+    PhabricatorBuild,
+    PhabricatorBuildState,
+)
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from code_review_bot.tasks.default import DefaultTask
 

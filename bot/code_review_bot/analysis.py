@@ -2,7 +2,8 @@ from functools import cached_property
 
 import structlog
 from libmozdata.phabricator import BuildState, UnitResult, UnitResultState
-from libmozevent.phabricator import PhabricatorBuild, PhabricatorBuildState
+
+from code_review_bot.sources.phabricator import PhabricatorBuild, PhabricatorBuildState
 
 logger = structlog.get_logger(__name__)
 
