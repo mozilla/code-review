@@ -1,9 +1,10 @@
 aiohttp<4
 influxdb==5.3.2
 libmozdata==0.2.12
-libmozevent==1.1.33
 python-hglib==2.6.2
 pyyaml==6.0.3
+rs_parsepatch==0.4.4
 sentry-sdk==2.47.0
 setuptools==80.9.0
 structlog==25.5.0
+taskcluster==94.1.1
