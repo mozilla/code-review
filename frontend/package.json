@@ -1,6 +1,6 @@
 {
   "name": "code-review-frontend",
-  "version": "1.11.4",
+  "version": "1.11.5",
   "repository": "https://github.com/mozilla/code-review",
   "author": "",
   "description": "Mozilla Code Review frontend",
