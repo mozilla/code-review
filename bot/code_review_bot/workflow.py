@@ -20,7 +20,7 @@ from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
 from code_review_bot.mercurial import MercurialWorker, Repository, robust_checkout
 from code_review_bot.report.debug import DebugReporter
-from code_review_bot.revisions import PhabricatorRevision, Revision
+from code_review_bot.revisions import GithubRevision, PhabricatorRevision, Revision
 from code_review_bot.sources.phabricator import (
     PhabricatorActions,
     PhabricatorBuildState,
@@ -678,6 +678,13 @@ class Workflow:
                 "Only Phabricator revisions are supported for now"
             )
         assert isinstance(state, BuildState)
+
+        if isinstance(revision, GithubRevision):
+            logger.warning(
+                "No github status update yet", revision=revision, status=state
+            )
+            return
+
         if not revision.build_target_phid:
             logger.info(
                 "No build target found, skipping HarborMaster update", state=state.value
