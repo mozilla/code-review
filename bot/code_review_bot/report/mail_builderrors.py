@@ -36,7 +36,7 @@ class BuildErrorsReporter(Reporter):
         """
         assert (
             revision.phabricator_id and revision.phabricator_phid
-        ), "Revision must have a Phabricator ID and PHID"
+        ), "PhabricatorRevision must have a Phabricator ID and PHID"
         assert (
             "attachments" in revision.diff
         ), f"Unable to find the commits for revision with phid {revision.phabricator_phid}."

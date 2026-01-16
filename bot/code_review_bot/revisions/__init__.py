@@ -3,3 +3,4 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from code_review_bot.revisions.base import ImprovementPatch, Revision  # noqa
+from code_review_bot.revisions.phabricator import PhabricatorRevision  # noqa

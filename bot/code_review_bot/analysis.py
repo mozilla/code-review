@@ -17,12 +17,12 @@ LANDO_FAILURE_HG_MESSAGE = (
 )
 
 
-class RevisionBuild(PhabricatorBuild):
+class PhabricatorRevisionBuild(PhabricatorBuild):
     """
     Convert the bot revision into a libmozevent compatible build
     """
 
-    def __init__(self, revision, phabricator_api):
+    def __init__(self, phab_revision, phabricator_api):
         # State should be updated to Public
         self.state = PhabricatorBuildState.Queued
 
@@ -32,18 +32,18 @@ class RevisionBuild(PhabricatorBuild):
         # Incremented on an unexpected failure during build's push to try
         self.retries = 0
 
-        # Revision used by Phabricator updates
+        # PhabricatorRevision used by Phabricator updates
         # Direct output of Phabricator API (not the object passed here)
-        self.revision_id = revision.phabricator_id
+        self.revision_id = phab_revision.phabricator_id
         self.revision_url = None
         self.revision = None
 
         # Needed to update Phabricator Harbormaster
-        self.target_phid = revision.build_target_phid
+        self.target_phid = phab_revision.build_target_phid
 
         # Needed to load stack of patches
-        self.diff = revision.diff
-        self.diff_id = revision.diff_id
+        self.diff = phab_revision.diff
+        self.diff_id = phab_revision.diff_id
 
         # Needed to apply patch and communicate on Phabricator
         self.base_revision = None
@@ -166,7 +166,7 @@ def publish_analysis_lando(payload, lando_warnings):
     Publish result of patch application and push to try on Lando
     """
     mode, build, extras = payload
-    assert isinstance(build, RevisionBuild), "Not a RevisionBuild"
+    assert isinstance(build, PhabricatorRevisionBuild), "Not a PhabricatorRevisionBuild"
     logger.debug("Publishing a Lando build update", mode=mode, build=str(build))
 
     if mode == "fail:general":

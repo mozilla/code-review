@@ -26,7 +26,7 @@ from code_review_bot import (
 )
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
-from code_review_bot.revisions import Revision
+from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tools.libmozdata import setup as setup_libmozdata
 from code_review_bot.tools.log import init_logger
 from code_review_bot.workflow import Workflow
@@ -160,18 +160,19 @@ def main():
     settings.load_user_blacklist(taskcluster.secrets["user_blacklist"], phabricator_api)
 
     # Load unique revision
+    # Only Phabricator revisions are supported for now but it is intended to support generic Revision
     try:
         if settings.generic_group_id:
-            revision = Revision.from_decision_task(
+            revision = PhabricatorRevision.from_decision_task(
                 queue_service.task(settings.generic_group_id), phabricator_api
             )
         elif settings.phabricator_build_target:
-            revision = Revision.from_phabricator_trigger(
+            revision = PhabricatorRevision.from_phabricator_trigger(
                 settings.phabricator_build_target,
                 phabricator_api,
             )
         else:
-            revision = Revision.from_try_task(
+            revision = PhabricatorRevision.from_try_task(
                 queue_service.task(settings.try_task_id),
                 queue_service.task(settings.try_group_id),
                 phabricator_api,

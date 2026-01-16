@@ -12,7 +12,7 @@ from taskcluster.utils import stringDate
 
 from code_review_bot import Level, stats
 from code_review_bot.analysis import (
-    RevisionBuild,
+    PhabricatorRevisionBuild,
     publish_analysis_lando,
     publish_analysis_phabricator,
 )
@@ -20,7 +20,7 @@ from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
 from code_review_bot.mercurial import MercurialWorker, Repository, robust_checkout
 from code_review_bot.report.debug import DebugReporter
-from code_review_bot.revisions import Revision
+from code_review_bot.revisions import PhabricatorRevision, Revision
 from code_review_bot.sources.phabricator import (
     PhabricatorActions,
     PhabricatorBuildState,
@@ -275,8 +275,13 @@ class Workflow:
                 url=settings.taskcluster_url,
             )
 
+        if not isinstance(revision, PhabricatorRevision):
+            raise NotImplementedError(
+                "Only Phabricator revisions are supported for now"
+            )
+
         # Initialize Phabricator build using revision
-        build = RevisionBuild(revision, self.phabricator)
+        build = PhabricatorRevisionBuild(revision, self.phabricator)
 
         # Copy internal Phabricator credentials to setup libmozevent
         phabricator = PhabricatorActions(
@@ -428,7 +433,7 @@ class Workflow:
         """
         Index current task on Taskcluster index
         """
-        assert isinstance(revision, Revision)
+        assert isinstance(revision, Revision), "Must be a Revision instance"
 
         if settings.taskcluster.local or self.index_service is None:
             logger.info("Skipping taskcluster indexing", rev=str(revision), **kwargs)
@@ -447,9 +452,10 @@ class Workflow:
         payload["try_task_id"] = settings.try_task_id
         payload["try_group_id"] = settings.try_group_id
 
-        # Always add the repository we are working on
+        # Add the repository we are working on for Phabricator revisions
         # This is mainly used by the frontend to list & filter diffs
-        payload["repository"] = revision.base_repository
+        if isinstance(revision, PhabricatorRevision):
+            payload["repository"] = revision.base_repository
 
         # Add restartable flag for monitoring
         payload["monitoring_restart"] = payload["state"] == "error" and payload.get(
@@ -664,6 +670,10 @@ class Workflow:
         """
         Update build status on HarborMaster
         """
+        if not isinstance(revision, PhabricatorRevision):
+            raise NotImplementedError(
+                "Only Phabricator revisions are supported for now"
+            )
         assert isinstance(state, BuildState)
         if not revision.build_target_phid:
             logger.info(
@@ -684,6 +694,10 @@ class Workflow:
         """
         Publish a link as a HarborMaster artifact
         """
+        if not isinstance(revision, PhabricatorRevision):
+            raise NotImplementedError(
+                "Only Phabricator revisions are supported for now"
+            )
         if not revision.build_target_phid:
             logger.info(
                 "No build target found, skipping HarborMaster link creation",

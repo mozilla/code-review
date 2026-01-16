@@ -18,7 +18,7 @@ from code_review_bot.config import (
     GetAppUserAgent,
     settings,
 )
-from code_review_bot.revision import Revision
+from code_review_bot.revisions import Revision
 
 logger = structlog.get_logger(__name__)
 
@@ -99,7 +99,7 @@ class PhabricatorRevision(Revision):
         if self.diff_phid:
             out.append(f"phabricator.diffphid.{self.diff_phid}")
 
-        # Revision indexes
+        # Phabricator revision indexes
         # Only head changeset is useful to uniquely identify the revision
         if self.head_repository and self.head_changeset:
             repo = repo_slug(self.head_repository)
@@ -217,7 +217,7 @@ class PhabricatorRevision(Revision):
 
         # Build a revision without repositories as they are retrieved later
         # when analyzing the full task group
-        return Revision(
+        return PhabricatorRevision(
             phabricator_id=revision["id"],
             phabricator_phid=phid,
             diff_id=diff_id,
@@ -262,7 +262,7 @@ class PhabricatorRevision(Revision):
         head_changeset = task["payload"]["env"]["GECKO_HEAD_REV"]
         base_changeset = task["payload"]["env"]["GECKO_BASE_REV"]
 
-        return Revision(
+        return PhabricatorRevision(
             head_changeset=head_changeset,
             base_changeset=base_changeset,
             head_repository=head_repository,
@@ -325,7 +325,7 @@ class PhabricatorRevision(Revision):
             )
         logger.info("Found repository", name=repo_name, phid=repo_phid)
 
-        return Revision(
+        return PhabricatorRevision(
             phabricator_id=revision["id"],
             phabricator_phid=revision_phid,
             diff_id=diff["id"],
@@ -379,7 +379,9 @@ class PhabricatorRevision(Revision):
         if author is None:
             return False
 
-        logger.info("Revision from a blacklisted user", revision=self, author=author)
+        logger.info(
+            "Phabricator revision from a blacklisted user", revision=self, author=author
+        )
         return True
 
     @property
