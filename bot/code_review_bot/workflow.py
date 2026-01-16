@@ -160,6 +160,10 @@ class Workflow:
         """
         Simpler workflow to ingest a revision
         """
+        if not isinstance(revision, PhabricatorRevision):
+            raise NotImplementedError(
+                "Only Phabricator revisions are supported for now"
+            )
         assert (
             revision.from_autoland or revision.from_mozilla_central
         ), "Need a revision from autoland or mozilla-central"
@@ -248,6 +252,10 @@ class Workflow:
         Apply a patch on a local clone and push to try to trigger a new Code review analysis
         """
         logger.info("Starting revision analysis", revision=revision)
+        if not isinstance(revision, PhabricatorRevision):
+            raise NotImplementedError(
+                "Only Phabricator revisions are supported for now"
+            )
 
         # Index ASAP Taskcluster task for this revision
         self.index(revision, state="analysis")
@@ -273,11 +281,6 @@ class Workflow:
                 slug="analysis",
                 name="Analysis task",
                 url=settings.taskcluster_url,
-            )
-
-        if not isinstance(revision, PhabricatorRevision):
-            raise NotImplementedError(
-                "Only Phabricator revisions are supported for now"
             )
 
         # Initialize Phabricator build using revision

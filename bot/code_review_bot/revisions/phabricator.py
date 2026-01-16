@@ -18,7 +18,7 @@ from code_review_bot.config import (
     GetAppUserAgent,
     settings,
 )
-from code_review_bot.revisions import Revision
+from code_review_bot.revisions.base import Revision
 
 logger = structlog.get_logger(__name__)
 

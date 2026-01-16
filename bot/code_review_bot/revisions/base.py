@@ -9,6 +9,7 @@ from datetime import timedelta
 
 import rs_parsepatch
 import structlog
+from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import Issue, stats, taskcluster
 from code_review_bot.config import (
@@ -235,3 +236,22 @@ class Revision(ABC):
         Outputs a serializable representation of this revision
         """
         raise NotImplementedError
+
+    @staticmethod
+    def from_try_task(
+        try_task: dict, decision_task: dict, phabricator: PhabricatorAPI = None
+    ):
+        """
+        Load identifiers from Phabricator, using the remote task description
+        """
+        from code_review_bot.revisions.phabricator import PhabricatorRevision
+
+        # Load build target phid from the task env
+        code_review = try_task["extra"]["code-review"]
+
+        if phabricator:
+            return PhabricatorRevision.from_try_task(
+                code_review, decision_task, phabricator
+            )
+        else:
+            raise NotImplementedError
