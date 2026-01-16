@@ -130,12 +130,12 @@ class PhabricatorRevision(Revision):
         return f"Phabricator #{self.diff_id} - {self.diff_phid}"
 
     @staticmethod
-    def from_try_task(
-        code_review: dict, decision_task: dict, phabricator: PhabricatorAPI
-    ):
+    def from_try_task(try_task: dict, decision_task: dict, phabricator: PhabricatorAPI):
         """
         Load identifiers from Phabricator, using the remote task description
         """
+        # Load build target phid from the task env
+        code_review = try_task["extra"]["code-review"]
         build_target_phid = code_review.get("phabricator-diff") or code_review.get(
             "phabricator-build-target"
         )
