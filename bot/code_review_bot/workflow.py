@@ -673,10 +673,6 @@ class Workflow:
         """
         Update build status on HarborMaster
         """
-        if not isinstance(revision, PhabricatorRevision):
-            raise NotImplementedError(
-                "Only Phabricator revisions are supported for now"
-            )
         assert isinstance(state, BuildState)
 
         if isinstance(revision, GithubRevision):
@@ -708,6 +704,7 @@ class Workflow:
             raise NotImplementedError(
                 "Only Phabricator revisions are supported for now"
             )
+
         if not revision.build_target_phid:
             logger.info(
                 "No build target found, skipping HarborMaster link creation",
