@@ -238,9 +238,7 @@ class Revision(ABC):
         raise NotImplementedError
 
     @staticmethod
-    def from_try_task(
-        try_task: dict, decision_task: dict, phabricator: PhabricatorAPI = None
-    ):
+    def from_try_task(try_task: dict, decision_task: dict, phabricator: PhabricatorAPI):
         """
         Load identifiers from Phabricator, using the remote task description
         """
@@ -249,9 +247,7 @@ class Revision(ABC):
         # Load build target phid from the task env
         code_review = try_task["extra"]["code-review"]
 
-        if phabricator:
-            return PhabricatorRevision.from_try_task(
-                code_review, decision_task, phabricator
-            )
-        else:
-            raise NotImplementedError
+        # TODO: support github revision here too
+        return PhabricatorRevision.from_try_task(
+            code_review, decision_task, phabricator
+        )
