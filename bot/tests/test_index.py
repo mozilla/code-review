@@ -5,10 +5,10 @@
 from unittest import mock
 
 from code_review_bot.config import TaskCluster
-from code_review_bot.revisions import Revision
+from code_review_bot.revisions import PhabricatorRevision
 
 
-class MockRevision(Revision):
+class MockPhabricatorRevision(PhabricatorRevision):
     """
     Fake revision to easily set properties
     """
@@ -34,7 +34,7 @@ def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
 
     mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
     mock_workflow.index_service = mock.Mock()
-    rev = MockRevision(
+    rev = MockPhabricatorRevision(
         namespaces=["mock.1234"],
         details={"id": "1234", "someData": "mock", "state": "done"},
         repository="test-repo",
@@ -84,7 +84,7 @@ def test_index_autoland(
     """
 
     with mock_phabricator as api:
-        revision = Revision.from_decision_task(mock_autoland_task, api)
+        revision = PhabricatorRevision.from_decision_task(mock_autoland_task, api)
 
     mock_workflow.index_service = mock.Mock()
     mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
@@ -134,7 +134,7 @@ def test_index_phabricator(
     """
 
     with mock_phabricator as api:
-        revision = Revision.from_phabricator_trigger(
+        revision = PhabricatorRevision.from_phabricator_trigger(
             build_target_phid="PHID-HMBT-test",
             phabricator=api,
         )
@@ -199,7 +199,9 @@ def test_index_from_try(
     """
 
     with mock_phabricator as api:
-        revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+        revision = PhabricatorRevision.from_try_task(
+            mock_try_task, mock_decision_task, api
+        )
 
     mock_workflow.index_service = mock.Mock()
     mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)

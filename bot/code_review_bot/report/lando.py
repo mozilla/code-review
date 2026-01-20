@@ -6,6 +6,7 @@ import structlog
 
 from code_review_bot import Level
 from code_review_bot.report.base import Reporter
+from code_review_bot.revisions import PhabricatorRevision
 
 logger = structlog.get_logger(__name__)
 
@@ -29,6 +30,11 @@ class LandoReporter(Reporter):
         """
         Send an email to administrators
         """
+        if not isinstance(revision, PhabricatorRevision):
+            raise NotImplementedError(
+                "Only Phabricator revisions are supported for now"
+            )
+
         assert (
             revision.phabricator_id and revision.phabricator_phid and revision.diff
         ), "Revision must have a Phabricator ID, a PHID and a diff"

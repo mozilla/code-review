@@ -56,7 +56,7 @@ class PhabricatorBuild:
         self.actual_base_revision = None
 
     def __str__(self):
-        return f"Revision {self.revision_id} - {self.target_phid}"
+        return f"Phabricator revision {self.revision_id} - {self.target_phid}"
 
 
 class PhabricatorActions:
@@ -121,17 +121,17 @@ class PhabricatorActions:
         if self.is_visible(build):
             build.state = PhabricatorBuildState.Public
             build.revision_url = self.build_revision_url(build)
-            logger.info("Revision is public", build=str(build))
+            logger.info("Phabricator revision is public", build=str(build))
 
             # Check if the build has not expired
             if self.is_expired_build(build):
                 build.state = PhabricatorBuildState.Expired
-                logger.info("Revision has expired", build=str(build))
+                logger.info("Phabricator revision has expired", build=str(build))
 
         elif retries_left <= 0:
             # Mark as secured when no retries are left
             build.state = PhabricatorBuildState.Secured
-            logger.info("Revision is marked as secure", build=str(build))
+            logger.info("Phabricator revision is marked as secure", build=str(build))
 
         else:
             # Enqueue back to retry later
@@ -157,7 +157,9 @@ class PhabricatorActions:
             if projects.intersection(self.secure_projects):
                 raise Exception("Secure revision")
         except Exception as e:
-            logger.info("Revision not accessible", build=str(build), error=str(e))
+            logger.info(
+                "Phabricator revision not accessible", build=str(build), error=str(e)
+            )
             return False
 
         return True
