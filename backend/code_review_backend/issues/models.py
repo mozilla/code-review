@@ -13,6 +13,13 @@ LEVEL_WARNING = "warning"
 LEVEL_ERROR = "error"
 ISSUE_LEVELS = ((LEVEL_WARNING, "Warning"), (LEVEL_ERROR, "Error"))
 
+PROVIDER_PHABRICATOR = "phabricator"
+PROVIDER_GITHUB = "github"
+PROVIDERS = (
+    (PROVIDER_PHABRICATOR, "Phabricator"),
+    (PROVIDER_GITHUB, "Github"),
+)
+
 
 class Repository(models.Model):
     id = models.AutoField(primary_key=True)
@@ -33,11 +40,12 @@ class Repository(models.Model):
 
 class Revision(models.Model):
     id = models.BigAutoField(primary_key=True)
+
     # Phabricator references will be left empty when ingesting a decision task (e.g. from MC or autoland)
-    phabricator_id = models.PositiveIntegerField(unique=True, null=True, blank=True)
-    phabricator_phid = models.CharField(
-        max_length=40, unique=True, null=True, blank=True
+    provider = models.CharField(
+        max_length=20, choices=PROVIDERS, default=PROVIDER_PHABRICATOR
     )
+    provider_id = models.PositiveIntegerField(unique=True, null=True, blank=True)
 
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
@@ -72,14 +80,14 @@ class Revision(models.Model):
     bugzilla_id = models.PositiveIntegerField(null=True)
 
     class Meta:
-        ordering = ("phabricator_id", "id")
+        ordering = ("provider", "provider_id", "id")
 
         indexes = (models.Index(fields=["head_repository", "head_changeset"]),)
         constraints = [
             models.UniqueConstraint(
-                fields=["phabricator_id"],
+                fields=["provider_id"],
                 name="revision_unique_phab_id",
-                condition=Q(phabricator_id__isnull=False),
+                condition=Q(provider_id__isnull=False),
             ),
             models.UniqueConstraint(
                 fields=["phabricator_phid"],
@@ -89,20 +97,26 @@ class Revision(models.Model):
         ]
 
     def __str__(self):
-        if self.phabricator_id is not None:
-            return f"D{self.phabricator_id} - {self.title}"
+        if self.provider == PROVIDER_PHABRICATOR and self.phabricator_id is not None:
+            return f"Phabricator D{self.phabricator_id} - {self.title}"
         return f"#{self.id} - {self.title}"
 
     @property
-    def phabricator_url(self):
-        if self.phabricator_id is None:
+    def url(self):
+        if self.provider_id is None:
             return
-        parser = urllib.parse.urlparse(settings.PHABRICATOR_HOST)
-        return f"{parser.scheme}://{parser.netloc}/D{self.phabricator_id}"
+
+        if self.provider == PROVIDER_PHABRICATOR:
+            parser = urllib.parse.urlparse(settings.PHABRICATOR_HOST)
+            return f"{parser.scheme}://{parser.netloc}/D{self.provider_id}"
+        elif self.provider == PROVIDER_GITHUB:
+            return f"{self.base_repository.url}/issues/{self.provider_id}"
+        else:
+            raise NotImplementedError
 
 
 class Diff(models.Model):
-    """Reference of a specific code patch (diff) in Phabricator.
+    """Reference of a specific code patch (diff) in Phabricator or Github.
     A revision can be linked to multiple successive diffs, or none in case of a repository push.
     """
 
