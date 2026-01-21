@@ -20,7 +20,8 @@ class DiffInline(admin.TabularInline):
 class RevisionAdmin(admin.ModelAdmin):
     list_display = (
         "id",
-        "phabricator_id",
+        "provider",
+        "provider_id",
         "title",
         "bugzilla_id",
         "base_repository",
