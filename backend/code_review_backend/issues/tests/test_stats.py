@@ -29,8 +29,8 @@ class StatsAPITestCase(APITestCase):
 
         # Create a revision
         revision = self.repo_try.head_revisions.create(
-            phabricator_id=10,
-            phabricator_phid="PHID-DREV-arev",
+            provider="phabricator",
+            provider_id=10,
             title="Revision A",
             bugzilla_id=None,
             base_repository=self.repo,
@@ -40,7 +40,7 @@ class StatsAPITestCase(APITestCase):
         for i in range(10):
             revision.diffs.create(
                 id=i + 1,
-                phid=f"PHID-DIFF-{i+1}",
+                provider_id=f"PHID-DIFF-{i+1}",
                 review_task_id=f"task-{i}",
                 mercurial_hash=hashlib.sha1(f"hg {i}".encode()).hexdigest(),
                 repository=self.repo_try,
@@ -251,12 +251,13 @@ class StatsAPITestCase(APITestCase):
             # Revision
             rev = diff["revision"]
             self.assertTrue(rev["id"] > 0)
-            self.assertTrue(rev["phabricator_id"] > 0)
+            self.assertEqual(rev["provider"], "phabricator")
+            self.assertTrue(rev["provider_id"] > 0)
             self.assertEqual(rev["base_repository"], "http://repo.test/myrepo")
             self.assertEqual(rev["head_repository"], "http://repo.test/myrepo-try")
             self.assertEqual(
-                rev["phabricator_url"],
-                f"http://anotherphab.test/D{rev['phabricator_id']}",
+                rev["url"],
+                f"http://anotherphab.test/D{rev['provider_id']}",
             )
 
             return True
