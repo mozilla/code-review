@@ -18,21 +18,19 @@ class RevisionAPITestCase(APITestCase):
 
     def test_phabricator_url(self):
         rev = Revision.objects.create(
-            phabricator_id=12,
-            phabricator_phid="PHID-REV-12345",
+            provider="phabricator",
+            provider_id=12,
             base_repository=self.repo,
             head_repository=self.repo,
         )
 
         # Default settings
-        self.assertEqual(
-            rev.phabricator_url, "https://phabricator.services.mozilla.com/D12"
-        )
+        self.assertEqual(rev.url, "https://phabricator.services.mozilla.com/D12")
 
         # Override host with /api
         settings.PHABRICATOR_HOST = "http://phab.test/api"
-        self.assertEqual(rev.phabricator_url, "http://phab.test/D12")
+        self.assertEqual(rev.url, "http://phab.test/D12")
 
         # Override host with complex url
         settings.PHABRICATOR_HOST = "http://anotherphab.test/api123/?custom"
-        self.assertEqual(rev.phabricator_url, "http://anotherphab.test/D12")
+        self.assertEqual(rev.url, "http://anotherphab.test/D12")
