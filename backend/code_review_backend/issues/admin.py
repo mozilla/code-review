@@ -33,7 +33,11 @@ class RevisionAdmin(admin.ModelAdmin):
         "base_repository",
         "head_repository",
     )
-    list_filter = ("base_repository", "head_repository")
+    list_filter = (
+        "base_repository",
+        "head_repository",
+        "provider",
+    )
     inlines = (DiffInline,)
 
 
