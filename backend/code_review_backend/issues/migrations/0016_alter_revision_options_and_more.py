@@ -22,10 +22,6 @@ class Migration(migrations.Migration):
             old_name="phabricator_id",
             new_name="provider_id",
         ),
-        migrations.RemoveField(
-            model_name="revision",
-            name="phabricator_phid",
-        ),
         migrations.AddField(
             model_name="revision",
             name="provider",
@@ -42,5 +38,13 @@ class Migration(migrations.Migration):
                 fields=("provider_id",),
                 name="revision_unique_phab_id",
             ),
+        ),
+        migrations.RemoveConstraint(
+            model_name="revision",
+            name="revision_unique_phab_phabid",
+        ),
+        migrations.RemoveField(
+            model_name="revision",
+            name="phabricator_phid",
         ),
     ]
