@@ -92,8 +92,8 @@ class Revision(models.Model):
         ]
 
     def __str__(self):
-        if self.provider == PROVIDER_PHABRICATOR and self.phabricator_id is not None:
-            return f"Phabricator D{self.phabricator_id} - {self.title}"
+        if self.provider == PROVIDER_PHABRICATOR and self.provider_id is not None:
+            return f"Phabricator D{self.provider_id} - {self.title}"
         return f"#{self.id} - {self.title}"
 
     @property

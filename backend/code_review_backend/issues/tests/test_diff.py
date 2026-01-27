@@ -30,8 +30,8 @@ class DiffAPITestCase(APITestCase):
         for i in range(2):
             cls.repo_try.head_revisions.create(
                 id=i + 1,
-                phabricator_id=i + 1,
-                phabricator_phid=f"PHID-DREV-{i+1}",
+                provider="phabricator",
+                provider_id=i + 1,
                 title=f"Revision {i+1}",
                 bugzilla_id=10000 + i,
                 base_repository=cls.repo,
@@ -58,6 +58,7 @@ class DiffAPITestCase(APITestCase):
         """
         response = self.client.get("/v1/diff/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.maxDiff = None
         self.assertDictEqual(
             response.json(),
             {
@@ -73,13 +74,13 @@ class DiffAPITestCase(APITestCase):
                             "head_repository": "http://repo.test/try",
                             "base_changeset": None,
                             "head_changeset": None,
-                            "phabricator_id": 1,
-                            "phabricator_phid": "PHID-DREV-1",
+                            "provider": "phabricator",
+                            "provider_id": 1,
                             "title": "Revision 1",
                             "bugzilla_id": 10000,
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
                             "issues_bulk_url": "http://testserver/v1/revision/1/issues/",
-                            "phabricator_url": "https://phabricator.services.mozilla.com/D1",
+                            "url": "https://phabricator.services.mozilla.com/D1",
                         },
                         "repository": {
                             "id": 2,
@@ -104,13 +105,13 @@ class DiffAPITestCase(APITestCase):
                             "head_repository": "http://repo.test/try",
                             "base_changeset": None,
                             "head_changeset": None,
-                            "phabricator_id": 2,
-                            "phabricator_phid": "PHID-DREV-2",
+                            "provider": "phabricator",
+                            "provider_id": 2,
                             "title": "Revision 2",
                             "bugzilla_id": 10001,
                             "diffs_url": "http://testserver/v1/revision/2/diffs/",
                             "issues_bulk_url": "http://testserver/v1/revision/2/issues/",
-                            "phabricator_url": "https://phabricator.services.mozilla.com/D2",
+                            "url": "https://phabricator.services.mozilla.com/D2",
                         },
                         "repository": {
                             "id": 2,
@@ -135,13 +136,13 @@ class DiffAPITestCase(APITestCase):
                             "head_repository": "http://repo.test/try",
                             "base_changeset": None,
                             "head_changeset": None,
-                            "phabricator_id": 1,
-                            "phabricator_phid": "PHID-DREV-1",
+                            "provider": "phabricator",
+                            "provider_id": 1,
                             "title": "Revision 1",
                             "bugzilla_id": 10000,
                             "diffs_url": "http://testserver/v1/revision/1/diffs/",
                             "issues_bulk_url": "http://testserver/v1/revision/1/issues/",
-                            "phabricator_url": "https://phabricator.services.mozilla.com/D1",
+                            "url": "https://phabricator.services.mozilla.com/D1",
                         },
                         "repository": {
                             "id": 2,

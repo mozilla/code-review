@@ -24,16 +24,16 @@ class IssueTestCase(TestCase):
             mock_now.return_value = datetime.fromisoformat("2010-01-01:10")
             self.revision = self.repo.base_revisions.create(
                 id=4000,
-                phabricator_id=1111,
-                phabricator_phid="PH-1111",
+                provider="phabricator",
+                provider_id=1111,
                 head_changeset="1" * 40,
                 head_repository=self.repo,
             )
             mock_now.return_value = datetime.fromisoformat("2000-01-01:10")
             self.old_revision = self.repo.base_revisions.create(
                 id=4001,
-                phabricator_id=2222,
-                phabricator_phid="PH-2222",
+                provider="phabricator",
+                provider_id=2222,
                 head_changeset="2" * 40,
                 head_repository=self.repo,
             )

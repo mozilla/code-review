@@ -29,8 +29,8 @@ class StatsAPITestCase(APITestCase):
 
         # Create a revision
         revision = self.repo_try.head_revisions.create(
-            phabricator_id=10,
-            phabricator_phid="PHID-DREV-arev",
+            provider="phabricator",
+            provider_id=10,
             title="Revision A",
             bugzilla_id=None,
             base_repository=self.repo,
@@ -251,12 +251,13 @@ class StatsAPITestCase(APITestCase):
             # Revision
             rev = diff["revision"]
             self.assertTrue(rev["id"] > 0)
-            self.assertTrue(rev["phabricator_id"] > 0)
+            self.assertEqual(rev["provider"], "phabricator")
+            self.assertTrue(rev["provider_id"] > 0)
             self.assertEqual(rev["base_repository"], "http://repo.test/myrepo")
             self.assertEqual(rev["head_repository"], "http://repo.test/myrepo-try")
             self.assertEqual(
-                rev["phabricator_url"],
-                f"http://anotherphab.test/D{rev['phabricator_id']}",
+                rev["url"],
+                f"http://anotherphab.test/D{rev['provider_id']}",
             )
 
             return True

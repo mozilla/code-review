@@ -31,8 +31,8 @@ class CreationAPITestCase(APITestCase):
         )
         # Create revision and diff
         self.revision = self.repo_try.head_revisions.create(
-            phabricator_id=456,
-            phabricator_phid="PHID-REV-XXX",
+            provider="phabricator",
+            provider_id=456,
             title="Bug XXX - Yet Another bug",
             bugzilla_id=78901,
             base_repository=self.repo,
@@ -51,8 +51,8 @@ class CreationAPITestCase(APITestCase):
         """
         self.revision.delete()
         data = {
-            "phabricator_id": 123,
-            "phabricator_phid": "PHID-REV-xxx",
+            "provider": "phabricator",
+            "provider_id": 123,
             "title": "Bug XXX - Some bug",
             "bugzilla_id": 123456,
             "base_repository": "http://repo.test/myrepo",
@@ -78,9 +78,9 @@ class CreationAPITestCase(APITestCase):
             "bugzilla_id": 123456,
             "diffs_url": f"http://testserver/v1/revision/{revision_id}/diffs/",
             "issues_bulk_url": f"http://testserver/v1/revision/{revision_id}/issues/",
-            "phabricator_url": "https://phabricator.services.mozilla.com/D123",
-            "phabricator_id": 123,
-            "phabricator_phid": "PHID-REV-xxx",
+            "url": "https://phabricator.services.mozilla.com/D123",
+            "provider": "phabricator",
+            "provider_id": 123,
             "base_repository": "http://repo.test/myrepo",
             "head_repository": "http://repo.test/myrepo",
             "base_changeset": "123456789ABCDEF",
@@ -88,7 +88,7 @@ class CreationAPITestCase(APITestCase):
             "title": "Bug XXX - Some bug",
         }
         self.assertEqual(Revision.objects.count(), 1)
-        revision = Revision.objects.get(phabricator_id=123)
+        revision = Revision.objects.get(provider_id=123)
         self.assertEqual(revision.title, "Bug XXX - Some bug")
         self.assertEqual(revision.bugzilla_id, 123456)
         self.assertDictEqual(response.json(), expected_response)
@@ -103,8 +103,8 @@ class CreationAPITestCase(APITestCase):
     def test_create_revision_wrong_new_repo(self):
         self.revision.delete()
         data = {
-            "phabricator_id": 123,
-            "phabricator_phid": "PHID-REV-xxx",
+            "provider": "phabricator",
+            "provider_id": 123,
             "title": "Bug XXX - Some bug",
             "bugzilla_id": 123456,
             "base_repository": "http://notamozrepo.test/myrepo",
@@ -128,8 +128,8 @@ class CreationAPITestCase(APITestCase):
     def test_create_revision_creates_new_repo(self):
         self.revision.delete()
         data = {
-            "phabricator_id": 123,
-            "phabricator_phid": "PHID-REV-xxx",
+            "provider": "phabricator",
+            "provider_id": 123,
             "title": "Bug XXX - Some bug",
             "bugzilla_id": 123456,
             "base_repository": "http://repo.test/myrepo",
@@ -354,9 +354,9 @@ class CreationAPITestCase(APITestCase):
             )
             self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
-        self.assertEqual(Issue.objects.filter(revisions__phabricator_id=456).count(), 1)
+        self.assertEqual(Issue.objects.filter(revisions__provider_id=456).count(), 1)
 
-        issue = Issue.objects.filter(revisions__phabricator_id=456).get()
+        issue = Issue.objects.filter(revisions__provider_id=456).get()
         self.assertDictEqual(
             response.json(),
             {
