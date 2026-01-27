@@ -4,6 +4,7 @@
 
 import structlog
 
+from code_review_bot.report.github import GithubReporter
 from code_review_bot.report.lando import LandoReporter
 from code_review_bot.report.mail import MailReporter
 from code_review_bot.report.mail_builderrors import BuildErrorsReporter
@@ -22,6 +23,7 @@ def get_reporters(configuration):
         "mail": MailReporter,
         "build_error": BuildErrorsReporter,
         "phabricator": PhabricatorReporter,
+        "github": GithubReporter,
     }
 
     out = {}
