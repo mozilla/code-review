@@ -142,7 +142,7 @@ class DiffSerializer(serializers.ModelSerializer):
         model = Diff
         fields = (
             "id",
-            "phid",
+            "provider_id",
             "review_task_id",
             "repository",
             "mercurial_hash",
@@ -187,7 +187,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "revision",
-            "phid",
+            "provider_id",
             "review_task_id",
             "repository",
             "mercurial_hash",

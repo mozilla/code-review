@@ -40,7 +40,7 @@ class StatsAPITestCase(APITestCase):
         for i in range(10):
             revision.diffs.create(
                 id=i + 1,
-                phid=f"PHID-DIFF-{i+1}",
+                provider_id=f"PHID-DIFF-{i+1}",
                 review_task_id=f"task-{i}",
                 mercurial_hash=hashlib.sha1(f"hg {i}".encode()).hexdigest(),
                 repository=self.repo_try,
