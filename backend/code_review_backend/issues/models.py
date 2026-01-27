@@ -117,7 +117,7 @@ class Diff(models.Model):
 
     # Phabricator's attributes
     id = models.PositiveIntegerField(primary_key=True)
-    phid = models.CharField(max_length=40, unique=True)
+    provider_id = models.CharField(max_length=40, unique=True)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
 

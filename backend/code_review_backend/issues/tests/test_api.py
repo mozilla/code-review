@@ -39,7 +39,7 @@ class CreationAPITestCase(APITestCase):
         )
         self.diff = self.revision.diffs.create(
             id=1234,
-            phid="PHID-DIFF-xxx",
+            provider_id="PHID-DIFF-xxx",
             review_task_id="deadbeef123",
             mercurial_hash="coffee12345",
             repository=self.repo_try,
@@ -153,7 +153,7 @@ class CreationAPITestCase(APITestCase):
         self.diff.delete()
         data = {
             "id": 1234,
-            "phid": "PHID-DIFF-xxx",
+            "provider_id": "PHID-DIFF-xxx",
             "review_task_id": "deadbeef123",
             "mercurial_hash": "coffee12345",
             "repository": "http://repo.test/try",
@@ -665,7 +665,7 @@ class CreationAPITestCase(APITestCase):
         self.client.force_authenticate(user=self.user)
         another_diff = self.revision.diffs.create(
             id=56748,
-            phid="PHID-DIFF-yyy",
+            provider_id="PHID-DIFF-yyy",
             review_task_id="deadbeef456",
             mercurial_hash="coffee67890",
             repository=self.repo_try,
