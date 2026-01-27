@@ -89,11 +89,6 @@ class Revision(models.Model):
                 name="revision_unique_phab_id",
                 condition=Q(provider_id__isnull=False),
             ),
-            models.UniqueConstraint(
-                fields=["phabricator_phid"],
-                name="revision_unique_phab_phabid",
-                condition=Q(phabricator_phid__isnull=False),
-            ),
         ]
 
     def __str__(self):
