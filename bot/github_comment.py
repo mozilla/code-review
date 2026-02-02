@@ -34,6 +34,9 @@ def main():
     """
     print("Initializing Github reporter")
     reporter = GithubReporter(get_configuration())
+    print("Doing a GET on app/installations")
+    data = reporter.github_client.make_request("get", "app/installations")
+    print(f"Returned ID: {data[0]['id']}")
     print("Publishing a comment to https://github.com/vrigal/test-dev-mozilla/pull/1")
     reporter.comment(
         owner="vrigal",
