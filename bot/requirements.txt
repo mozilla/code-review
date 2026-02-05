@@ -1,6 +1,5 @@
 aiohttp<4
 influxdb==5.3.2
-jwt==1.4.0
 libmozdata==0.2.12
 PyGithub==2.8.1
 python-hglib==2.6.2
