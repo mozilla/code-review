@@ -43,6 +43,9 @@ class GithubReporter(Reporter):
             logger.info("No publishable issue, nothing to do")
             return
 
-        # Publish a review comment summarizing detected, unresolved and closed issues
-        for issue in issues:
-            self.github_client.comment(revision=revision, issue=issue)
+        message = f"{len(issues)} issues have been found in this revision"
+
+        # Publish a review summarizing detected, unresolved and closed issues
+        self.github_client.publish_review(
+            issues=issues, revision=revision, message=message
+        )

@@ -5,6 +5,10 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 from github import Auth, GithubIntegration
+from github.PullRequest import ReviewComment
+
+from code_review_bot import Issue
+from code_review_bot.revisions.base import Revision
 
 
 class GithubClient:
@@ -28,17 +32,25 @@ class GithubClient:
         # setup API
         self.api = self.installation.get_github_for_installation()
 
-    def comment(
-        self,
-        *,
-        revision,  # GithubRevision
-        issue,
-    ):
-        repo = self.api.get_repo(revision.repository)
-        pull_request = repo.get_pull(revision.pull_id)
-        pull_request.create_comment(
-            commit=revision.commit,
+        self.review_comments = []
+
+    def _build_review_comment(self, issue):
+        return ReviewComment(
             path=issue.path,
             position=issue.line,
             body=issue.message,
+        )
+
+    def publish_review(self, issues: list[Issue], revision: Revision, message: str):
+        """
+        Publish a review from a list of publishable issues, requesting changes to the author.
+        """
+        repo = self.api.get_repo(revision.repository)
+        pull_request = repo.get_pull(revision.pull_id)
+        pull_request.create_review(
+            commit=repo.get_commit(revision.commit),
+            body=message,
+            comments=[self._build_review_comment(issue) for issue in issues],
+            # https://docs.github.com/en/rest/pulls/reviews?apiVersion=2022-11-28#create-a-review-for-a-pull-request
+            event="REQUEST_CHANGES",
         )
