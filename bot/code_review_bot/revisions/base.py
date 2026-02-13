@@ -240,14 +240,17 @@ class Revision(ABC):
     @staticmethod
     def from_try_task(try_task: dict, decision_task: dict, phabricator: PhabricatorAPI):
         """
-        Load identifiers from Phabricator, using the remote task description
+        Load identifiers from Phabricator or Github, using the remote task description
         """
+        from code_review_bot.revisions.github import GithubRevision
         from code_review_bot.revisions.phabricator import PhabricatorRevision
 
         # Load build target phid from the task env
         code_review = try_task["extra"]["code-review"]
 
-        # TODO: support github revision here too
-        return PhabricatorRevision.from_try_task(
-            code_review, decision_task, phabricator
-        )
+        if "github" in code_review:
+            return GithubRevision(**code_review["github"])
+        else:
+            return PhabricatorRevision.from_try_task(
+                code_review, decision_task, phabricator
+            )

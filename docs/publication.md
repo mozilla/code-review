@@ -23,14 +23,14 @@ worker:
 
 Here, the analyzer produces its JSON output as `/builds/worker/clang-tidy.json`, but Taskcluster will expose it on its own public hostname as `https://taskcluster-artifacts.net/<TASK_ID>/<RUN_ID>/public/code-review/clang-tidy.json`
 
-## Publish results on Phabricator
+## Publish results
 
 Once your task is triggered with the `code-review` attribute, its analysis artifact will be retrieved automatically by the bot. All issues found will be filtered using those basic rules:
 
 - if the issue is not in a modifided line of a file in the patch, it will be discarded.
 - if the issue is in a third party path, it will be discarded.
 
-We have [plans](https://bugzilla.mozilla.org/show_bug.cgi?id=1555721) to remove the first filter, by using a two pass approach and comparing the issues found before vs. after applying the patch.
+The bot supports publishing a review to either a Phabricator revision or a Github pull request.
 
 ## Troubleshooting
 

@@ -74,8 +74,8 @@ class RevisionSerializer(serializers.ModelSerializer):
     issues_bulk_url = serializers.HyperlinkedIdentityField(
         view_name="revision-issues-bulk", lookup_url_kwarg="revision_id"
     )
-    phabricator_url = serializers.URLField(read_only=True)
-    phabricator_id = serializers.IntegerField(
+    url = serializers.URLField(read_only=True)
+    provider_id = serializers.IntegerField(
         required=False,
         allow_null=True,
         min_value=1,
@@ -90,13 +90,13 @@ class RevisionSerializer(serializers.ModelSerializer):
             "head_repository",
             "base_changeset",
             "head_changeset",
-            "phabricator_id",
-            "phabricator_phid",
+            "provider",
+            "provider_id",
             "title",
             "bugzilla_id",
             "diffs_url",
             "issues_bulk_url",
-            "phabricator_url",
+            "url",
         )
 
 
@@ -107,21 +107,21 @@ class RevisionLightSerializer(serializers.ModelSerializer):
 
     base_repository = RepositoryGetOrCreateField()
     head_repository = RepositoryGetOrCreateField()
-    phabricator_url = serializers.URLField(read_only=True)
+    url = serializers.URLField(read_only=True)
 
     class Meta:
         model = Revision
         fields = (
             "id",
-            "phabricator_id",
+            "provider",
+            "provider_id",
             "base_repository",
             "head_repository",
             "base_changeset",
             "head_changeset",
-            "phabricator_id",
             "title",
             "bugzilla_id",
-            "phabricator_url",
+            "url",
         )
 
 
@@ -142,7 +142,7 @@ class DiffSerializer(serializers.ModelSerializer):
         model = Diff
         fields = (
             "id",
-            "phid",
+            "provider_id",
             "review_task_id",
             "repository",
             "mercurial_hash",
@@ -187,7 +187,7 @@ class DiffFullSerializer(serializers.ModelSerializer):
         fields = (
             "id",
             "revision",
-            "phid",
+            "provider_id",
             "review_task_id",
             "repository",
             "mercurial_hash",

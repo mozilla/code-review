@@ -14,19 +14,30 @@ class RepositoryAdmin(admin.ModelAdmin):
 class DiffInline(admin.TabularInline):
     # Read only inline
     model = Diff
-    readonly_fields = ("id", "repository", "mercurial_hash", "phid", "review_task_id")
+    readonly_fields = (
+        "id",
+        "repository",
+        "mercurial_hash",
+        "provider_id",
+        "review_task_id",
+    )
 
 
 class RevisionAdmin(admin.ModelAdmin):
     list_display = (
         "id",
-        "phabricator_id",
+        "provider",
+        "provider_id",
         "title",
         "bugzilla_id",
         "base_repository",
         "head_repository",
     )
-    list_filter = ("base_repository", "head_repository")
+    list_filter = (
+        "base_repository",
+        "head_repository",
+        "provider",
+    )
     inlines = (DiffInline,)
 
 
