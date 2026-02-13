@@ -9,6 +9,7 @@ import structlog
 
 from code_review_bot import taskcluster
 from code_review_bot.config import GetAppUserAgent, settings
+from code_review_bot.revisions.github import GithubRevision
 from code_review_bot.tasks.lint import MozLintIssue
 
 logger = structlog.get_logger(__name__)
@@ -46,6 +47,10 @@ class BackendAPI:
             logger.warn("Skipping revision publication on backend")
             return
 
+        if isinstance(revision, GithubRevision):
+            logger.warn("Skipping revision publication for github")
+            return {}
+
         # Check the repositories are urls
         for url in (revision.base_repository, revision.head_repository):
             assert isinstance(url, str), "Repository must be a string"
@@ -61,8 +66,7 @@ class BackendAPI:
 
         # Create revision on backend if it does not exists
         data = {
-            "phabricator_id": revision.phabricator_id,
-            "phabricator_phid": revision.phabricator_phid,
+            "provider_id": revision.phabricator_id,
             "title": revision.title,
             "bugzilla_id": revision.bugzilla_id,
             "base_repository": revision.base_repository,
@@ -94,7 +98,7 @@ class BackendAPI:
         # Create diff attached to revision on backend
         data = {
             "id": revision.diff_id,
-            "phid": revision.diff_phid,
+            "provider_id": revision.diff_phid,
             "review_task_id": settings.taskcluster.task_id,
             "mercurial_hash": revision.head_changeset,
             "repository": revision.head_repository,
@@ -114,6 +118,10 @@ class BackendAPI:
         if not self.enabled:
             logger.warn("Skipping issues publication on backend")
             return
+
+        if isinstance(revision, GithubRevision):
+            logger.warn("Skipping issues publication for github")
+            return {}
 
         published = 0
         assert (

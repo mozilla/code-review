@@ -45,13 +45,27 @@ export default {
   <section>
     <div class="notification is-info" v-if="state == 'loading'">Loading...</div>
     <div v-else-if="state == 'loaded'">
-      <h1 class="title">Revision D{{ revision.phabricator_id }}</h1>
+      <h1 v-if="revision.provider == 'phabricator'" class="title">
+        Revision D{{ revision.provider_id }}
+      </h1>
+      <h1 v-if="revision.provider == 'github'" class="title">
+        Pull request {{ revision.provider_id }}
+      </h1>
 
       <h2 class="subtitle">{{ revision.title }}</h2>
       <p>
         On <strong>{{ revision.head_repository }}</strong> -
-        <a :href="revision.phabricator_url" target="_blank"
+        <a
+          v-if="revision.provider == 'phabricator'"
+          :href="revision.url"
+          target="_blank"
           >View on Phabricator</a
+        >
+        <a
+          v-if="revision.provider == 'github'"
+          :href="revision.url"
+          target="_blank"
+          >View on Github</a
         >
         <span v-if="revision.bugzilla_id">
           -

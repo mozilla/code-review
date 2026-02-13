@@ -156,7 +156,7 @@ export default {
                   name: 'revision',
                   params: { revisionId: diff.revision.id },
                 }"
-                >D{{ diff.revision.phabricator_id }}</router-link
+                >Revision {{ diff.revision.provider_id }}</router-link
               >
               @ base: {{ diff.revision.base_repository | short_repo }} - head:
               {{ diff.revision.head_repository | short_repo }}
@@ -217,10 +217,18 @@ export default {
                   <div class="dropdown-content">
                     <hr class="dropdown-divider" />
                     <a
+                      v-if="revision.provider == 'phabricator'"
                       class="dropdown-item"
-                      :href="diff.revision.phabricator_url"
+                      :href="diff.revision.url"
                       target="_blank"
-                      >Phabricator D{{ diff.revision.phabricator_id }}</a
+                      >Phabricator D{{ diff.revision.provider_id }}</a
+                    >
+                    <a
+                      v-if="revision.provider == 'github'"
+                      class="dropdown-item"
+                      :href="diff.revision.url"
+                      target="_blank"
+                      >Github PR n°{{ diff.revision.provider_id }}</a
                     >
                     <a
                       class="dropdown-item"

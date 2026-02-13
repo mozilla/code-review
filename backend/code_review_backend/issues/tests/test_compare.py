@@ -27,8 +27,8 @@ class CompareAPITestCase(APITestCase):
 
         # Create a simple stack with 2 diffs
         self.revision = self.repo_try.head_revisions.create(
-            phabricator_id=1,
-            phabricator_phid="PHID-DREV-1",
+            provider="phabricator",
+            provider_id=1,
             title="Revision XYZ",
             bugzilla_id=1234567,
             base_repository=self.repo,
@@ -36,7 +36,7 @@ class CompareAPITestCase(APITestCase):
         for i in range(2):
             self.revision.diffs.create(
                 id=i + 1,
-                phid=f"PHID-DIFF-{i+1}",
+                provider_id=f"PHID-DIFF-{i+1}",
                 review_task_id=f"task-{i}",
                 mercurial_hash=hashlib.sha1(f"hg {i}".encode()).hexdigest(),
                 repository=self.repo_try,

@@ -5,7 +5,7 @@
 from unittest import mock
 
 from code_review_bot.config import TaskCluster
-from code_review_bot.revisions import PhabricatorRevision
+from code_review_bot.revisions import PhabricatorRevision, Revision
 
 
 class MockPhabricatorRevision(PhabricatorRevision):
@@ -199,9 +199,8 @@ def test_index_from_try(
     """
 
     with mock_phabricator as api:
-        revision = PhabricatorRevision.from_try_task(
-            mock_try_task, mock_decision_task, api
-        )
+        revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+        assert isinstance(revision, PhabricatorRevision)
 
     mock_workflow.index_service = mock.Mock()
     mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
