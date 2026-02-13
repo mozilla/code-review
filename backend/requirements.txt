@@ -2,7 +2,7 @@ Django==5.1.15
 django-cors-headers==4.9.0
 django-environ==0.12.0
 djangorestframework==3.16.1
-dockerflow==2024.4.2
+dockerflow==2026.1.26
 drf-yasg==1.21.11
 gunicorn==23.0.0
 parsepatch==0.1.3
