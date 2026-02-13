@@ -61,8 +61,7 @@ class BackendAPI:
 
         # Create revision on backend if it does not exists
         data = {
-            "phabricator_id": revision.phabricator_id,
-            "phabricator_phid": revision.phabricator_phid,
+            "provider_id": revision.phabricator_id,
             "title": revision.title,
             "bugzilla_id": revision.bugzilla_id,
             "base_repository": revision.base_repository,
@@ -94,7 +93,7 @@ class BackendAPI:
         # Create diff attached to revision on backend
         data = {
             "id": revision.diff_id,
-            "phid": revision.diff_phid,
+            "provider_id": revision.diff_phid,
             "review_task_id": settings.taskcluster.task_id,
             "mercurial_hash": revision.head_changeset,
             "repository": revision.head_repository,
