@@ -5,7 +5,7 @@
 import structlog
 
 from code_review_bot.report.base import Reporter
-from code_review_bot.sources.github import GithubClient
+from code_review_bot.sources.github import GithubClient, ReviewEvent
 
 logger = structlog.get_logger(__name__)
 
@@ -39,13 +39,20 @@ class GithubReporter(Reporter):
             if issue.is_publishable()
             and issue.analyzer.name not in self.analyzers_skipped
         ]
-        if not publishable_issues:
-            logger.info("No publishable issue, nothing to do")
-            return
 
-        message = f"{len(issues)} issues have been found in this revision"
+        if publishable_issues:
+            # Publish a review summarizing detected, unresolved and closed issues
+            message = f"{len(issues)} issues have been found in this revision"
+            event = ReviewEvent.RequestChanges
+        else:
+            # Simply approve the pull request
+            logger.info("No publishable issue, approving the pull request")
+            message = None
+            event = ReviewEvent.Approved
 
-        # Publish a review summarizing detected, unresolved and closed issues
         self.github_client.publish_review(
-            issues=issues, revision=revision, message=message
+            issues=issues,
+            revision=revision,
+            message=message,
+            event=event,
         )
