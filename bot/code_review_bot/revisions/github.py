@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from urllib.parse import urlparse
+
 import requests
 import structlog
 
@@ -31,6 +33,13 @@ class GithubRevision(Revision):
 
     def __repr__(self):
         return f"GithubRevision repo_url={self.repo_url} branch={self.branch} pull_number={self.pull_number} sha={self.pull_head_sha}"
+
+    @property
+    def repo_name(self):
+        """
+        Extract the name of the repository from its URL
+        """
+        return urlparse(self.repo_url).path.strip("/")
 
     def load_patch(self):
         """

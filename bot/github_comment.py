@@ -2,7 +2,7 @@
 import sys
 
 from code_review_bot.report.github import GithubReporter
-from code_review_bot.revisions.base import Revision
+from code_review_bot.revisions import GithubRevision
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 
 
@@ -52,12 +52,12 @@ def main():
     Initialize a Github reporter and publish issues
     """
     reporter = GithubReporter(get_configuration())
-    revision = Revision()
-
-    # Add the attributes that will be supported by GithubRevision
-    revision.repository = "vrigal/test-dev-mozilla"
-    revision.commit = "da4ed2eccaff01034c1c2091d2797d55bc0c57cf"
-    revision.pull_id = 3
+    revision = GithubRevision(
+        repo_url="https://github.com/vrigal/test-dev-mozilla",
+        branch="reporter-demo",
+        pull_head_sha="da4ed2eccaff01034c1c2091d2797d55bc0c57cf",
+        pull_number=3,
+    )
 
     analyzer = mock_task(ClangTidyTask, "source-test-clang-tidy")
     issue1 = ClangTidyIssue(

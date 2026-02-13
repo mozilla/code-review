@@ -8,7 +8,7 @@ from github import Auth, GithubIntegration
 from github.PullRequest import ReviewComment
 
 from code_review_bot import Issue
-from code_review_bot.revisions.base import Revision
+from code_review_bot.revisions import GithubRevision
 
 
 class GithubClient:
@@ -41,14 +41,16 @@ class GithubClient:
             body=issue.message,
         )
 
-    def publish_review(self, issues: list[Issue], revision: Revision, message: str):
+    def publish_review(
+        self, issues: list[Issue], revision: GithubRevision, message: str
+    ):
         """
         Publish a review from a list of publishable issues, requesting changes to the author.
         """
-        repo = self.api.get_repo(revision.repository)
-        pull_request = repo.get_pull(revision.pull_id)
+        repo = self.api.get_repo(revision.repo_name)
+        pull_request = repo.get_pull(revision.pull_number)
         pull_request.create_review(
-            commit=repo.get_commit(revision.commit),
+            commit=repo.get_commit(revision.pull_head_sha),
             body=message,
             comments=[self._build_review_comment(issue) for issue in issues],
             # https://docs.github.com/en/rest/pulls/reviews?apiVersion=2022-11-28#create-a-review-for-a-pull-request
