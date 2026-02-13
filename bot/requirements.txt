@@ -5,6 +5,6 @@ python-hglib==2.6.2
 pyyaml==6.0.3
 rs_parsepatch==0.4.4
 sentry-sdk==2.52.0
-setuptools==80.9.0
+setuptools==82.0.0
 structlog==25.5.0
 taskcluster==95.0.0
