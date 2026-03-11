@@ -47,7 +47,7 @@ If you need to edit or create an extra repository, you'll need to use the target
 
 It's pretty easy to create a repository on the backend, there are only 2 fields to fill in:
 
-- the **slug** must match your YAML configuration `name` key, and be unique across all repositories on the database,
 - the **url** must match your YAML configuration `url` key, and also be unique across all repositories on the database.
+- the **slug** must match your YAML configuration `name` key, and be unique across all repositories on the database,
 
-![](./new_repository_backend.png)
+⚠️ The slug field must match the repository path, replacing `/` by `-` in order for the bot to detect it correctly. For example, the slug for the repository `https://github.com/mozilla/test` would be `mozilla-test`.
