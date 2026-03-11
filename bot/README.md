@@ -76,6 +76,21 @@ Configuration:
 
 This reporter will send detailed information about every **publishable** issue.
 
+## Reporter: Github
+
+Key `reporter` is `github`
+
+Configuration:
+
+- `client_id` : Github App client ID.
+- `private_key_pem` : Content of the github App private key.
+- `installation_id` : ID of the Github App [installation](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app) (integer).
+- `analyzers_skipped` : The analyzers that will **not** be published on Phabricator.
+
+This reporter will send detailed information about every **publishable** issue.
+
+You can find more details about the Github reporter setup in the [documentation](/docs/github.md).
+
 ## Example configuration
 
 ```yaml
@@ -88,5 +103,12 @@ common:
 
 bot:
   REPORTERS:
-    - reporter: phabricator
+    - reporter: github
+      client_id: xxxxxxxxxxxxxxxxxxxx
+      private_key_pem: |-
+        -----BEGIN RSA PRIVATE KEY-----
+        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+        -----END RSA PRIVATE KEY-----
+      installation_id: 123456789
 ```
