@@ -1,0 +1,13 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - taskgraph.transforms.docker_image
+  - taskgraph.transforms.cached_tasks
+  - taskgraph.transforms.task
+
+tasks:
+  python: {}
+
+  taskboot: {}
+
+  node: {}

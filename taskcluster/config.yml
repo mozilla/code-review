@@ -1,0 +1,21 @@
+---
+trust-domain: code-analysis
+task-priority: low
+taskgraph:
+  register: code_review_taskgraph:register
+  decision-parameters: code_review_taskgraph.parameters:decision_parameters
+  repositories:
+    code_review:
+      name: code-review
+workers:
+  aliases:
+    b-linux:
+      provisioner: "{trust-domain}-{level}"
+      implementation: docker-worker
+      os: linux
+      worker-type: linux-docker
+    images:
+      provisioner: "{trust-domain}-{level}"
+      implementation: docker-worker
+      os: linux
+      worker-type: linux-gcp
