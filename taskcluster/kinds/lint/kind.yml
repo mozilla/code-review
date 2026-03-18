@@ -1,0 +1,27 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - taskgraph.transforms.run
+  - taskgraph.transforms.task
+
+kind-dependencies:
+  - docker-image
+
+task-defaults:
+  worker-type: b-linux
+  worker:
+    docker-image: { in-tree: python }
+    max-run-time: 3600
+  run:
+    using: run-task
+    cwd: "{checkout}"
+
+tasks:
+  pre-commit:
+    description: Check code style with pre-commit hooks
+    run:
+      command: >-
+        cd bot &&
+        pip install --disable-pip-version-check --no-cache-dir --quiet -r requirements-dev.txt &&
+        cd .. &&
+        pre-commit run -a --show-diff-on-failure
