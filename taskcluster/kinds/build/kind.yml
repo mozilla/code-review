@@ -1,0 +1,68 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - code_review_taskgraph.transforms.build
+  - taskgraph.transforms.task_context
+  - taskgraph.transforms.run
+  - taskgraph.transforms.task
+
+kind-dependencies:
+  - lint
+  - test
+
+task-defaults:
+  description: Build {name} Docker image
+  run-on-tasks-for:
+    - github-pull-request
+    - github-push
+  worker-type: b-linux
+  worker:
+    docker-image: { in-tree: taskboot }
+    max-run-time: 3600
+    artifacts:
+      - type: file
+        name: public/code-review-{name}.tar.zst
+        path: /builds/worker/artifacts/{name}.tar.zst
+  run:
+    using: run-task
+    cwd: "{checkout}"
+    run-as-root: true
+  dependencies:
+    lint: lint-pre-commit
+  task-context:
+    from-parameters:
+      channel: channel
+      head_rev: head_rev
+      head_ref: head_ref
+      head_repository: head_repository
+    substitution-fields:
+      - description
+      - run.command
+      - worker.artifacts
+
+tasks:
+  bot:
+    run:
+      command: >-
+        taskboot --target /builds/worker/checkouts/vcs
+        build --image mozilla/code-review
+        --tag {channel} --tag {head_rev}
+        --write /builds/worker/artifacts/bot.tar bot/docker/Dockerfile
+    dependencies:
+      test: test-bot
+
+  backend:
+    run:
+      command: backend/build.sh {head_rev} {head_ref} {head_repository} {channel}
+    dependencies:
+      test: test-backend
+
+  integration:
+    run:
+      command: >-
+        taskboot --target /builds/worker/checkouts/vcs
+        build --image mozilla/code-review
+        --tag integration-{channel} --tag integration-{head_rev}
+        --write /builds/worker/artifacts/integration.tar integration/docker/Dockerfile
+    dependencies:
+      test: test-integration
