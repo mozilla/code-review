@@ -1,0 +1,64 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - taskgraph.transforms.task_context
+  - taskgraph.transforms.run
+  - taskgraph.transforms.task
+
+kind-dependencies:
+  - build
+  - frontend
+
+task-defaults:
+  run-on-tasks-for:
+    - github-push
+  run-on-git-branches:
+    - testing
+    - production
+  worker-type: b-linux
+  worker:
+    docker-image: { in-tree: taskboot }
+    max-run-time: 3600
+    taskcluster-proxy: true
+    env:
+      TASKCLUSTER_SECRET: "project/relman/code-review/deploy-{channel}"
+  scopes:
+    - "secrets:get:project/relman/code-review/deploy-{channel}"
+  run:
+    using: run-task
+    checkout: false
+  task-context:
+    from-parameters:
+      channel: channel
+    substitution-fields:
+      - run.command
+      - worker.env.TASKCLUSTER_SECRET
+      - scopes
+
+tasks:
+  frontend:
+    description: Deploy frontend SPA to S3
+    run:
+      command: >-
+        taskboot deploy-s3
+        --artifact-folder public/frontend
+        --bucket relman-{channel}-code-review-{channel}-static-website
+    dependencies:
+      frontend: frontend-build
+
+  backend:
+    description: Deploy backend to Heroku
+    run:
+      command: >-
+        taskboot deploy-heroku
+        --heroku-app code-review-backend-{channel}
+        web:public/code-review-backend.tar.zst
+    dependencies:
+      build: build-backend
+
+  integration:
+    description: Push integration Docker image
+    run:
+      command: taskboot push-artifact --artifact-filter public/code-review-integration.tar.zst
+    dependencies:
+      build: build-integration
