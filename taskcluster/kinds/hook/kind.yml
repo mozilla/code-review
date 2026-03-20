@@ -1,0 +1,48 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - taskgraph.transforms.task_context
+  - taskgraph.transforms.run
+  - taskgraph.transforms.task
+
+kind-dependencies:
+  - deploy
+
+tasks:
+  integration:
+    description: Update Taskcluster hook for integration tests
+    run-on-tasks-for:
+      - github-push
+    run-on-git-branches:
+      - testing
+      - production
+    worker-type: b-linux
+    worker:
+      docker-image: { in-tree: taskboot }
+      max-run-time: 3600
+      taskcluster-proxy: true
+      env:
+        TASKCLUSTER_SECRET: "project/relman/code-review/deploy-{channel}"
+    scopes:
+      - "secrets:get:project/relman/code-review/deploy-{channel}"
+      - "assume:hook-id:project-relman/code-review-integration-{channel}"
+      - "hooks:modify-hook:project-relman/code-review-integration-{channel}"
+    run:
+      using: run-task
+      cwd: "{checkout}"
+      command: >-
+        sed -i -e 's/CHANNEL/{channel}/g' -e 's/REVISION/{head_rev}/g'
+        /builds/worker/checkouts/vcs/integration/taskcluster-hook.json &&
+        taskboot --target /builds/worker/checkouts/vcs
+        build-hook integration/taskcluster-hook.json
+        project-relman code-review-integration-{channel}
+    task-context:
+      from-parameters:
+        channel: channel
+        head_rev: head_rev
+      substitution-fields:
+        - run.command
+        - worker.env.TASKCLUSTER_SECRET
+        - scopes
+    dependencies:
+      deploy: deploy-integration
