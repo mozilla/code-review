@@ -1,0 +1,41 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - taskgraph.transforms.task_context
+  - taskgraph.transforms.run
+  - taskgraph.transforms.task
+
+kind-dependencies:
+  - build
+  - frontend
+
+tasks:
+  github:
+    description: Create GitHub release
+    run-on-tasks-for:
+      - github-release
+    run-on-git-branches:
+      - "v*"
+    worker-type: b-linux
+    worker:
+      docker-image: { in-tree: taskboot }
+      max-run-time: 3600
+      taskcluster-proxy: true
+      env:
+        TASKCLUSTER_SECRET: "project/relman/code-review/release"
+    scopes:
+      - "secrets:get:project/relman/code-review/release"
+    run:
+      using: run-task
+      checkout: false
+      command: taskboot github-release mozilla/code-review {head_ref}
+    task-context:
+      from-parameters:
+        head_ref: head_ref
+      substitution-fields:
+        - run.command
+    dependencies:
+      backend: build-backend
+      bot: build-bot
+      integration: build-integration
+      frontend: frontend-build
