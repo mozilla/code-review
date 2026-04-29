@@ -1,5 +1,5 @@
 pre-commit==4.6.0
-pytest==9.0.2
+pytest==9.0.3
 pytest-responses==0.5.1
 pytest-structlog==1.2
 responses==0.25.8
