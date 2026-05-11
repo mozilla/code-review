@@ -12,4 +12,4 @@ setuptools==80.9.0
 sqlparse==0.5.4
 taskcluster==100.0.1
 tqdm==4.67.3
-whitenoise==6.11.0
+whitenoise==6.12.0
