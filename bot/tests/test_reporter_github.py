@@ -26,7 +26,7 @@ def test_github_review(
     mock_backend_secret,
 ):
     """
-    Report 2 cland tidy issues by pushing a review to a Github pull request
+    Report 2 clang tidy issues by pushing a review to a Github pull request
     """
     revision = Revision.from_try_task(mock_try_task, mock_github_decision_task, None)
     assert isinstance(revision, GithubRevision)
