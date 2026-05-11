@@ -13,6 +13,8 @@ import uuid
 from collections import defaultdict, namedtuple
 from configparser import ConfigParser
 from contextlib import contextmanager
+from datetime import UTC, datetime, timedelta
+from textwrap import dedent
 from unittest.mock import MagicMock
 
 import hglib
@@ -283,11 +285,88 @@ def mock_phabricator(mock_config):
 
 
 @pytest.fixture
+def mock_github(mock_config):
+    """
+    Mock default github API calls made by the client
+    """
+    diff = dedent(
+        """diff --git a/path/to/test.cpp b/path/to/test.cpp
+        index c57eff55..980a0d5f 100644
+        --- a/path/to/test.cpp
+        +++ b/path/to/test.cpp
+        @@ -1 +1 @@
+        -#include <random>
+        +Hello World!
+        """
+    )
+
+    responses.add(
+        responses.GET,
+        "https://github.tests.com/owner/repo-name/pull/1.diff",
+        json=diff,
+    )
+    responses.add(
+        responses.GET,
+        "https://api.github.com:443/app/installations",
+        json=[
+            {
+                "id": 123456789,
+                "access_tokens_url": "https://github.tests.com/app/installations/123456789/access_tokens",
+            }
+        ],
+    )
+    responses.add(
+        responses.POST,
+        "https://api.github.com:443/app/installations/123456789/access_tokens",
+        json={
+            "token": "auth_token",
+            "expires_at": (datetime.now(UTC) + timedelta(1)).strftime(
+                "%Y-%m-%dT%H:%M:%S.%fZ"
+            ),
+        },
+    )
+    responses.add(
+        responses.GET,
+        "https://api.github.com:443/repos/owner/repo-name",
+        json={"url": "https://api.github.com/repos/owner/repo-name"},
+    )
+    responses.add(
+        responses.GET,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1",
+        json={"url": "https://api.github.com/repos/owner/repo-name/pulls/1"},
+    )
+    responses.add(
+        responses.GET,
+        "https://api.github.com:443/repos/owner/repo-name/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        json={"sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},
+    )
+
+
+@pytest.fixture
 def mock_try_task():
     """
     Mock a remote Try task definition
     """
     return {"extra": {"code-review": {"phabricator-diff": "PHID-HMBT-test"}}}
+
+
+@pytest.fixture
+def mock_github_decision_task():
+    """
+    Mock a decision task definition from a github revision
+    """
+    return {
+        "payload": {
+            "env": {
+                "GECKO_REPOSITORY_TYPE": "git",
+                "GECKO_HEAD_REPOSITORY": "https://github.tests.com/owner/repo-name",
+                "GECKO_HEAD_REV": "a" * 40,
+                "GECKO_BASE_REPOSITORY": "https://github.tests.com/owner/repo-name",
+                "GECKO_BASE_REV": "b" * 40,
+                "GECKO_PULL_REQUEST_NUMBER": 1,
+            }
+        }
+    }
 
 
 @pytest.fixture

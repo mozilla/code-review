@@ -1,0 +1,163 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
+
+import json
+from pathlib import Path
+
+import responses
+from conftest import FIXTURES_DIR
+
+from code_review_bot.report.github import GithubReporter
+from code_review_bot.revisions import GithubRevision, Revision
+from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
+from code_review_bot.tasks.coverage import CoverageIssue, ZeroCoverageTask
+
+
+def test_github_review(
+    monkeypatch,
+    mock_github,
+    mock_config,
+    phab,
+    mock_try_task,
+    mock_github_decision_task,
+    mock_task,
+    mock_backend_secret,
+):
+    """
+    Report 2 clang tidy issues by pushing a review to a Github pull request
+    """
+    revision = Revision.from_try_task(mock_try_task, mock_github_decision_task, None)
+    assert isinstance(revision, GithubRevision)
+    revision.lines = {
+        # Add dummy lines diff
+        "test.txt": [0],
+        "path/to/test.cpp": [0],
+        "another_test.cpp": [41, 42, 43],
+    }
+    revision.files = ["test.txt", "test.cpp", "another_test.cpp"]
+    revision.id = 52
+    monkeypatch.setattr(revision, "load_file", lambda x: "some_content")
+
+    reporter = GithubReporter(
+        {
+            "client_id": "client_id",
+            "private_key_pem": (Path(FIXTURES_DIR) / "private_key.pem").read_text(),
+            "installation_id": 123456789,
+        }
+    )
+
+    issue_clang_tidy = ClangTidyIssue(
+        mock_task(ClangTidyTask, "source-test-clang-tidy"),
+        revision,
+        "another_test.cpp",
+        "42",
+        "51",
+        "modernize-use-nullptr",
+        "dummy message",
+    )
+    assert issue_clang_tidy.is_publishable()
+
+    issue_coverage = CoverageIssue(
+        mock_task(ZeroCoverageTask, "coverage"),
+        "path/to/test.cpp",
+        "1",
+        "This file is uncovered",
+        revision,
+    )
+    assert issue_coverage.is_publishable()
+
+    responses.add(
+        responses.POST,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
+        json={},
+    )
+
+    reporter.publish([issue_clang_tidy, issue_coverage], revision, [], [], [])
+    assert [(call.request.method, call.request.url) for call in responses.calls] == [
+        ("GET", "https://github.tests.com/owner/repo-name/pull/1.diff"),
+        ("GET", "https://api.github.com:443/app/installations"),
+        (
+            "POST",
+            "https://api.github.com:443/app/installations/123456789/access_tokens",
+        ),
+        ("GET", "https://api.github.com:443/repos/owner/repo-name"),
+        ("GET", "https://api.github.com:443/repos/owner/repo-name/pulls/1"),
+        (
+            "GET",
+            "https://api.github.com:443/repos/owner/repo-name/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        ),
+        ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews"),
+    ]
+    review_creation = responses.calls[-1]
+    assert json.loads(review_creation.request.body) == {
+        "body": "2 issues have been found in this revision",
+        "comments": [
+            {
+                "body": "dummy message",
+                "path": "another_test.cpp",
+                "line": 42,
+            },
+            {
+                "body": "This file is uncovered",
+                "path": "path/to/test.cpp",
+                "line": 1,
+            },
+        ],
+        "commit_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "event": "REQUEST_CHANGES",
+    }
+
+
+def test_github_review_approve(
+    monkeypatch,
+    mock_github,
+    mock_config,
+    phab,
+    mock_try_task,
+    mock_github_decision_task,
+    mock_task,
+    mock_backend_secret,
+):
+    """In case no issue is found, the pull request is approved"""
+    revision = Revision.from_try_task(mock_try_task, mock_github_decision_task, None)
+    revision.lines = {}
+    revision.files = ["test.txt", "test.cpp", "another_test.cpp"]
+    revision.id = 52
+    reporter = GithubReporter(
+        {
+            "client_id": "client_id",
+            "private_key_pem": (Path(FIXTURES_DIR) / "private_key.pem").read_text(),
+            "installation_id": 123456789,
+        }
+    )
+
+    responses.add(
+        responses.POST,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
+        json={},
+    )
+
+    reporter.publish([], revision, [], [], [])
+    assert [(call.request.method, call.request.url) for call in responses.calls] == [
+        ("GET", "https://github.tests.com/owner/repo-name/pull/1.diff"),
+        ("GET", "https://api.github.com:443/app/installations"),
+        (
+            "POST",
+            "https://api.github.com:443/app/installations/123456789/access_tokens",
+        ),
+        ("GET", "https://api.github.com:443/repos/owner/repo-name"),
+        ("GET", "https://api.github.com:443/repos/owner/repo-name/pulls/1"),
+        (
+            "GET",
+            "https://api.github.com:443/repos/owner/repo-name/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        ),
+        ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews"),
+    ]
+    review_creation = responses.calls[-1]
+    assert json.loads(review_creation.request.body) == {
+        "comments": [],
+        "commit_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "event": "APPROVE",
+    }

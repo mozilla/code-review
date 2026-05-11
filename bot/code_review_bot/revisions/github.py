@@ -2,11 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from functools import cached_property
 from urllib.parse import urlparse
 
 import requests
 import structlog
 
+from code_review_bot import taskcluster
 from code_review_bot.git import build_repo_slug
 from code_review_bot.revisions import Revision
 
@@ -77,6 +79,27 @@ class GithubRevision(Revision):
             "pull_number": self.pull_number,
         }
 
+    @cached_property
+    def pull_request(self):
+        from code_review_bot.sources.github import GithubClient
+
+        reporter_conf = next(
+            (
+                reporter
+                for reporter in taskcluster.secrets["REPORTERS"]
+                if reporter["reporter"] == "github"
+            ),
+            None,
+        )
+        # A github reporter configuration is required to perform a github Pull Request analysis
+        assert reporter_conf, "Github reporter secrets must be set to access information about the pull request"
+        client = GithubClient(
+            client_id=reporter_conf["client_id"],
+            private_key=reporter_conf["private_key_pem"],
+            installation_id=reporter_conf["installation_id"],
+        )
+        return client.get_pull_request(self)
+
     def serialize(self):
         """
         Outputs a tuple of dicts for revision and diff (empty for Github) sent to backend
@@ -84,8 +107,7 @@ class GithubRevision(Revision):
         revision = {
             "provider": "github",
             "provider_id": self.pull_number,
-            # TODO: Use the pull request information from the API
-            "title": f"Issue {self.pull_number}",
+            "title": self.pull_request.title,
             "bugzilla_id": None,
             "base_repository": self.base_repository,
             "base_changeset": self.base_changeset,
