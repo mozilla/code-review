@@ -5,7 +5,7 @@ libmozdata==0.2.12
 PyGithub==2.8.1
 python-hglib==2.6.2
 pyyaml==6.0.3
-rs_parsepatch==0.4.4
+rs_parsepatch==0.4.6
 sentry-sdk==2.59.0
 setuptools==80.9.0
 structlog==25.5.0
