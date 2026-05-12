@@ -67,7 +67,7 @@ def parse_cli():
     parser.add_argument(
         "--github-repository",
         help="Optional path to a up-to-date github repository matching the analyzed revision.\n"
-        "This argument is required for Github reviusions in order to compute issues' hashes based on file content.",
+        "This argument is required for Github revisions in order to compute issues' hashes based on file content.",
         type=Path,
         default=None,
     )
