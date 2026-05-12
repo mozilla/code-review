@@ -87,9 +87,9 @@ Configuration:
 - `installation_id` : ID of the Github App [installation](https://docs.github.com/en/apps/using-github-apps/installing-your-own-github-app) (integer).
 - `analyzers_skipped` : The analyzers that will **not** be published on Phabricator.
 
-This reporter will send detailed information about every **publishable** issue.
+This reporter will send detailed information about every **publishable** issue in a review.
 
-You can find more details about the Github reporter setup in the [documentation](/docs/github.md).
+In case no issue is found, the reported will approve the Pull Request.
 
 ## Example configuration
 
