@@ -12,6 +12,7 @@ from libmozdata.phabricator import BuildState, PhabricatorAPI
 from code_review_bot import Issue, Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.report.base import Reporter
+from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
 from code_review_bot.tasks.coverage import CoverageIssue
 from code_review_bot.tools import treeherder
@@ -163,6 +164,11 @@ class PhabricatorReporter(Reporter):
         * publishable issues use lint results
         * build errors are displayed as unit test results
         """
+        if not isinstance(revision, PhabricatorRevision):
+            logger.debug(
+                f"Skipping Phabricator publication ({revision.__class__.__name__})"
+            )
+            return
 
         # Add extra reviewers groups to the revision
         if reviewers:

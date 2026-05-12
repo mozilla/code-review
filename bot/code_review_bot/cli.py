@@ -254,7 +254,7 @@ def main():
             duration=0,
         )
 
-        if phabricator_reporting_enabled:
+        if phabricator_reporting_enabled and isinstance(revision, PhabricatorRevision):
             w.phabricator.update_build_target(
                 revision.build_target_phid, BuildState.Fail, unit=[failure]
             )

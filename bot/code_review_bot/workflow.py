@@ -98,7 +98,7 @@ class Workflow:
 
         # Set the Phabricator build as running
         self.update_status(revision, state=BuildState.Work)
-        if settings.taskcluster_url:
+        if settings.taskcluster_url and isinstance(revision, PhabricatorRevision):
             self.publish_link(
                 revision,
                 slug="publication",
@@ -278,7 +278,7 @@ class Workflow:
 
         # Set the Phabricator build as running
         self.update_status(revision, state=BuildState.Work)
-        if settings.taskcluster_url:
+        if settings.taskcluster_url and isinstance(revision, PhabricatorRevision):
             self.publish_link(
                 revision,
                 slug="analysis",
@@ -347,7 +347,7 @@ class Workflow:
         self.index(revision, state="pushed_to_try")
 
         # Update final state using worker output
-        if self.update_build:
+        if self.update_build and isinstance(revision, PhabricatorRevision):
             publish_analysis_phabricator(output, self.phabricator)
         else:
             logger.info("Skipping Phabricator publication")
@@ -726,7 +726,7 @@ class Workflow:
             )
             return
 
-        if not self.update_build:
+        if not self.update_build or not isinstance(revision, PhabricatorRevision):
             logger.info(
                 "Update build disabled, skipping HarborMaster update", state=state.value
             )
