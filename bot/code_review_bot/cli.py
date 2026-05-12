@@ -67,7 +67,7 @@ def parse_cli():
     parser.add_argument(
         "--github-repository",
         help="Optional path to a up-to-date github repository matching the analyzed revision.\n"
-        "This argument is required for Github reviusions in order to compute issues' hashes based on file content.",
+        "This argument is required for Github revisions in order to compute issues' hashes based on file content.",
         type=Path,
         default=None,
     )
@@ -254,7 +254,7 @@ def main():
             duration=0,
         )
 
-        if phabricator_reporting_enabled:
+        if phabricator_reporting_enabled and isinstance(revision, PhabricatorRevision):
             w.phabricator.update_build_target(
                 revision.build_target_phid, BuildState.Fail, unit=[failure]
             )
