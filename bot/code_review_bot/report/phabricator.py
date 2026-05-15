@@ -13,6 +13,7 @@ from code_review_bot import Issue, Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import PhabricatorRevision
+from code_review_bot.tasks.a11y_frontend import handle_a11y_review_group
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
 from code_review_bot.tasks.coverage import CoverageIssue
 from code_review_bot.tools import treeherder
@@ -193,6 +194,9 @@ class PhabricatorReporter(Reporter):
                         }
                     ],
                 )
+
+        # Handle the accessibility-frontend-reviewers group workflow.
+        handle_a11y_review_group(self.api, revision)
 
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
