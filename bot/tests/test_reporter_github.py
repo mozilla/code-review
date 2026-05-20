@@ -76,7 +76,7 @@ def test_github_review(
 
     reporter.publish([issue_clang_tidy, issue_coverage], revision, [], [], [])
     assert [(call.request.method, call.request.url) for call in responses.calls] == [
-        ("GET", "https://github.tests.com/owner/repo-name/pull/1.diff"),
+        ("GET", "https://github.com/owner/repo-name/pull/1.diff"),
         ("GET", "https://api.github.com:443/app/installations"),
         (
             "POST",
@@ -141,7 +141,7 @@ def test_github_review_approve(
 
     reporter.publish([], revision, [], [], [])
     assert [(call.request.method, call.request.url) for call in responses.calls] == [
-        ("GET", "https://github.tests.com/owner/repo-name/pull/1.diff"),
+        ("GET", "https://github.com/owner/repo-name/pull/1.diff"),
         ("GET", "https://api.github.com:443/app/installations"),
         (
             "POST",

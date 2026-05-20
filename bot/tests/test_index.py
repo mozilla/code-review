@@ -248,3 +248,46 @@ def test_index_from_try(
         "url": "https://phabricator.test/D51",
     }
     assert all([c[0][1]["data"] == payload for c in calls])
+
+
+def test_github_index(
+    mock_github_revision,
+    mock_decision_task,
+    mock_workflow,
+    mock_config,
+    mock_taskcluster_date,
+):
+    mock_workflow.index_service = mock.Mock()
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+
+    mock_workflow.index(mock_github_revision, state="unit-test")
+
+    assert mock_workflow.index_service.insertTask.call_count == 8
+    calls = mock_workflow.index_service.insertTask.call_args_list
+
+    assert [c[0][0] for c in calls] == [
+        "project.relman.test.code-review.github.base.owner_repo-name.pr.1",
+        "project.relman.test.code-review.github.base.owner_repo-name.rev.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "project.relman.test.code-review.github.head.owner_repo-name.pr.1",
+        "project.relman.test.code-review.github.head.owner_repo-name.rev.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "project.relman.test.code-review.github.base.owner_repo-name.pr.1.12345deadbeef",
+        "project.relman.test.code-review.github.base.owner_repo-name.rev.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.12345deadbeef",
+        "project.relman.test.code-review.github.head.owner_repo-name.pr.1.12345deadbeef",
+        "project.relman.test.code-review.github.head.owner_repo-name.rev.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.12345deadbeef",
+    ]
+
+    # Check all calls have the same shared payload
+    payload = {
+        "base_repository": "https://github.com/owner/repo-name",
+        "base_changeset": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "head_repository": "https://github.com/owner/repo-name",
+        "head_changeset": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "pull_number": 1,
+        "state": "unit-test",
+        "indexed": "2025-10-30T00:00:00.00Z",
+        "source": "try",
+        "try_task_id": "remoteTryTask",
+        "try_group_id": "remoteTryGroup",
+        "monitoring_restart": False,
+    }
+    assert all([c[0][1]["data"] == payload for c in calls])

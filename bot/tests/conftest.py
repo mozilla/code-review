@@ -302,7 +302,7 @@ def mock_github(mock_config):
 
     responses.add(
         responses.GET,
-        "https://github.tests.com/owner/repo-name/pull/1.diff",
+        "https://github.com/owner/repo-name/pull/1.diff",
         json=diff,
     )
     responses.add(
@@ -311,7 +311,7 @@ def mock_github(mock_config):
         json=[
             {
                 "id": 123456789,
-                "access_tokens_url": "https://github.tests.com/app/installations/123456789/access_tokens",
+                "access_tokens_url": "https://github.com/app/installations/123456789/access_tokens",
             }
         ],
     )
@@ -359,9 +359,9 @@ def mock_github_decision_task():
         "payload": {
             "env": {
                 "GECKO_REPOSITORY_TYPE": "git",
-                "GECKO_HEAD_REPOSITORY": "https://github.tests.com/owner/repo-name",
+                "GECKO_HEAD_REPOSITORY": "https://github.com/owner/repo-name",
                 "GECKO_HEAD_REV": "a" * 40,
-                "GECKO_BASE_REPOSITORY": "https://github.tests.com/owner/repo-name",
+                "GECKO_BASE_REPOSITORY": "https://github.com/owner/repo-name",
                 "GECKO_BASE_REV": "b" * 40,
                 "GECKO_PULL_REQUEST_NUMBER": 1,
             }
@@ -428,6 +428,20 @@ def mock_revision_autoland(mock_phabricator, mock_autoland_task):
 
     with mock_phabricator as api:
         return PhabricatorRevision.from_decision_task(mock_autoland_task, api)
+
+
+@pytest.fixture
+def mock_github_revision(
+    mock_github, mock_try_task, mock_github_decision_task, mock_config
+):
+    """
+    Mock a github revision
+    """
+    from code_review_bot.revisions import GithubRevision, Revision
+
+    revision = Revision.from_try_task(mock_try_task, mock_github_decision_task, None)
+    assert isinstance(revision, GithubRevision)
+    return revision
 
 
 class Response:
