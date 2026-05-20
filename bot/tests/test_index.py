@@ -276,8 +276,6 @@ def test_github_index(
         "project.relman.test.code-review.github.base.owner_repo-name.rev.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.12345deadbeef",
     ]
 
-    print(calls[0][0][1]["data"])
-
     # Check all calls have the same shared payload
     payload = {
         "base_repository": "https://github.com/owner/repo-name",
