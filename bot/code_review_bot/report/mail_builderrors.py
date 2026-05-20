@@ -6,6 +6,7 @@ import structlog
 
 from code_review_bot import taskcluster
 from code_review_bot.report.base import Reporter
+from code_review_bot.revisions import PhabricatorRevision
 
 logger = structlog.get_logger(__name__)
 
@@ -34,6 +35,12 @@ class BuildErrorsReporter(Reporter):
         """
         Send an email to the author of the revision
         """
+        if not isinstance(revision, PhabricatorRevision):
+            logger.info(
+                "Skipping build error reporting, only available for Phabricator revisions"
+            )
+            return
+
         assert (
             revision.phabricator_id and revision.phabricator_phid
         ), "PhabricatorRevision must have a Phabricator ID and PHID"
