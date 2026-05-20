@@ -268,12 +268,12 @@ def test_github_index(
     assert [c[0][0] for c in calls] == [
         "project.relman.test.code-review.github.base.owner_repo-name.pr.1",
         "project.relman.test.code-review.github.base.owner_repo-name.rev.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        "project.relman.test.code-review.github.base.owner_repo-name.pr.1",
-        "project.relman.test.code-review.github.base.owner_repo-name.rev.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "project.relman.test.code-review.github.head.owner_repo-name.pr.1",
+        "project.relman.test.code-review.github.head.owner_repo-name.rev.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
         "project.relman.test.code-review.github.base.owner_repo-name.pr.1.12345deadbeef",
         "project.relman.test.code-review.github.base.owner_repo-name.rev.bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb.12345deadbeef",
-        "project.relman.test.code-review.github.base.owner_repo-name.pr.1.12345deadbeef",
-        "project.relman.test.code-review.github.base.owner_repo-name.rev.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.12345deadbeef",
+        "project.relman.test.code-review.github.head.owner_repo-name.pr.1.12345deadbeef",
+        "project.relman.test.code-review.github.head.owner_repo-name.rev.aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.12345deadbeef",
     ]
 
     # Check all calls have the same shared payload

@@ -65,8 +65,8 @@ class GithubRevision(Revision):
         return [
             f"github.base.{self.repository_slug}.pr.{self.pull_number}",
             f"github.base.{self.repository_slug}.rev.{self.base_changeset}",
-            f"github.base.{_head_repository_slug}.pr.{self.pull_number}",
-            f"github.base.{_head_repository_slug}.rev.{self.head_changeset}",
+            f"github.head.{_head_repository_slug}.pr.{self.pull_number}",
+            f"github.head.{_head_repository_slug}.rev.{self.head_changeset}",
         ]
 
     def load_patch(self):
