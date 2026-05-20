@@ -5,6 +5,7 @@
 import structlog
 
 from code_review_bot.report.base import Reporter
+from code_review_bot.revisions import GithubRevision
 from code_review_bot.sources.github import GithubClient, ReviewEvent
 
 logger = structlog.get_logger(__name__)
@@ -34,6 +35,12 @@ class GithubReporter(Reporter):
         """
         Publish issues on a Github pull request.
         """
+        if not isinstance(revision, GithubRevision):
+            logger.info(
+                "Skipping github reporting, only available for Github revisions"
+            )
+            return
+
         if reviewers:
             raise NotImplementedError
         # Avoid publishing a patch from a de-activated analyzer

@@ -32,8 +32,6 @@ def git_clone(base_repository, head_repository, revision, destination):
     base_slug = build_repo_slug(base_repository)
     head_slug = build_repo_slug(head_repository)
 
-    logger.info(base_slug, head_slug)
-
     # Clone or fetch upstream
     path = destination / base_slug
     if path.exists() and (path / ".git").is_dir():
