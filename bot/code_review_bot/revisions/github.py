@@ -59,6 +59,16 @@ class GithubRevision(Revision):
         """
         return build_repo_slug(self.base_repository)
 
+    @property
+    def namespaces(self):
+        _head_repository_slug = build_repo_slug(self.head_repository)
+        return [
+            f"github.base.{self.repository_slug}.pr.{self.pull_number}",
+            f"github.base.{self.repository_slug}.rev.{self.base_changeset}",
+            f"github.base.{_head_repository_slug}.pr.{self.pull_number}",
+            f"github.base.{_head_repository_slug}.rev.{self.head_changeset}",
+        ]
+
     def load_patch(self):
         """
         Load the patch content for the current pull request HEAD
