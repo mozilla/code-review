@@ -70,12 +70,7 @@ class GithubClient:
         """
         Publish a review from a list of publishable issues, requesting changes to the author.
         """
-
-        if not isinstance(revision, GithubRevision):
-            logger.warning(
-                f"Revision must originate from Github in order to publish a review, skipping {revision}."
-            )
-            return
+        assert isinstance(revision, GithubRevision), "Only for github revisions"
 
         repo = self.api.get_repo(revision.repo_name)
         pull_request = repo.get_pull(revision.pull_number)
@@ -95,3 +90,31 @@ class GithubClient:
             event=event.value,
             **attrs,
         )
+
+    def cleanup_pr(self, revision: GithubRevision):
+        """
+        Dismiss previous reviews from the bot
+        """
+        assert isinstance(revision, GithubRevision), "Only for github revisions"
+
+        pr = self.get_pull_request(revision)
+
+        for review in pr.get_reviews():
+            if review.user.login != "mozilla-code-review[bot]":
+                continue
+
+            try:
+                review.dismiss("This review is now deprecated.")
+                logger.info(
+                    "Dismissed previous Github review from the bot",
+                    review=review.id,
+                    submitted=review.submitted_at,
+                )
+            except Exception as e:
+                logger.warn(
+                    "Failed to dismiss previous Github review from the bot",
+                    review=review.id,
+                    submitted=review.submitted_at,
+                    error=e,
+                )
+                raise  # trashme
