@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import enum
+from functools import lru_cache
 
 import structlog
 from github import Auth, GithubIntegration
@@ -49,6 +50,7 @@ class GithubClient:
 
         self.review_comments = []
 
+    @lru_cache
     def get_pull_request(self, revision: GithubRevision):
         repo = self.api.get_repo(revision.repo_name)
         return repo.get_pull(revision.pull_number)
@@ -59,6 +61,19 @@ class GithubClient:
             line=issue.line,
             body=issue.message,
         )
+
+    def publish_comment(
+        self,
+        revision: GithubRevision,
+        message: str | None = None,
+    ):
+        """
+        Publish a comment on a pull request
+        """
+        assert isinstance(revision, GithubRevision), "Only for github revisions"
+
+        pull_request = self.get_pull_request(revision)
+        pull_request.create_issue_comment(body=message)
 
     def publish_review(
         self,
@@ -99,6 +114,7 @@ class GithubClient:
 
         pr = self.get_pull_request(revision)
 
+        nb = 0
         for review in pr.get_reviews():
             if review.user.login != "mozilla-code-review[bot]":
                 continue
@@ -110,6 +126,7 @@ class GithubClient:
                     review=review.id,
                     submitted=review.submitted_at,
                 )
+                nb += 1
             except Exception as e:
                 logger.warn(
                     "Failed to dismiss previous Github review from the bot",
@@ -118,3 +135,5 @@ class GithubClient:
                     error=e,
                 )
                 raise  # trashme
+
+        return nb

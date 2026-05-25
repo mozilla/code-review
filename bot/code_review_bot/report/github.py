@@ -55,7 +55,7 @@ class GithubReporter(Reporter):
         ]
 
         # Remove any earlier review to get a clean state
-        self.github_client.cleanup_pr(revision)
+        nb_dismissed = self.github_client.cleanup_pr(revision)
 
         if publishable_issues:
             # Publish a review summarizing detected, unresolved and closed issues
@@ -66,7 +66,17 @@ class GithubReporter(Reporter):
                 event=ReviewEvent.RequestChanges,
             )
         else:
-            # Simply approve the pull request
+            # Publish a comment, mentioning if previous issues were cleared up
             logger.info(
-                "No publishable issue, no review nor comment published on Github."
+                "No publishable issue, posting a standalone comment",
+                nb_dismissed=nb_dismissed,
+            )
+            if nb_dismissed > 0:
+                message = "Previous issues have been fixed. This pull request is :ok:"
+            else:
+                message = "No new issues detected. This pull request is :ok:"
+
+            self.github_client.publish_comment(
+                revision=revision,
+                message=message,
             )

@@ -172,6 +172,12 @@ def test_github_review_cleanup(
         json={},
     )
 
+    responses.add(
+        responses.POST,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments",
+        json={},
+    )
+
     reporter.publish([], revision, [], [], [])
     assert [(call.request.method, call.request.url) for call in responses.calls] == [
         ("GET", "https://github.com/owner/repo-name/pull/1.diff"),
@@ -187,4 +193,13 @@ def test_github_review_cleanup(
             "PUT",
             "https://api.github.com:443/repos/owner/repo-name/pulls/2/reviews/2/dismissals",
         ),
+        (
+            "POST",
+            "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments",
+        ),
     ]
+
+    # Check published comment
+    assert json.loads(responses.calls[-1].request.body) == {
+        "body": "Previous issues have been fixed. This pull request is :ok:"
+    }
