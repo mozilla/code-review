@@ -6,7 +6,7 @@ import structlog
 
 from code_review_bot import taskcluster
 from code_review_bot.report.base import Reporter
-from code_review_bot.revisions import PhabricatorRevision
+from code_review_bot.revisions import GithubRevision, PhabricatorRevision
 
 logger = structlog.get_logger(__name__)
 
@@ -19,10 +19,15 @@ EMAIL_HEADER = """
 
 {content}"""
 
+# https://github.com/dead-claudia/github-limits#issue-comments
+GITHUB_COMMENT_LIMIT = 65536
+
 
 class BuildErrorsReporter(Reporter):
     """
-    Send an email to the author of the revision in case there are build errors
+    In case there are build errors, notify the author of the revision:
+    * By email in case of a Phabricator revision
+    * In a PR thread in case of a Github revision
     """
 
     def __init__(self, configuration):
@@ -32,14 +37,33 @@ class BuildErrorsReporter(Reporter):
         logger.info("BuildErrorsReporter report enabled.")
 
     def publish(self, issues, revision, task_failures, links, reviewers):
-        """
-        Send an email to the author of the revision
-        """
-        if not isinstance(revision, PhabricatorRevision):
-            logger.info(
-                "Skipping build error reporting, only available for Phabricator revisions"
-            )
+        build_errors = [issue for issue in issues if issue.is_build_error()]
+
+        if not build_errors:
+            logger.info("No build errors encountered.")
             return
+
+        if isinstance(revision, GithubRevision):
+            # Comment directly to the pull request
+
+            messages = [f"Hello @{revision.pull_request.user.login},"]
+            messages.append(
+                f"[Code Review bot](https://github.com/mozilla/code-review) detected {len(build_errors)} build errors when analyzing this Pull Request:"
+            )
+            for issue in build_errors:
+                messages.append(issue.as_error())
+
+            content = "\n".join(messages)
+            if len(content) > GITHUB_COMMENT_LIMIT:
+                content = content[: GITHUB_COMMENT_LIMIT - 1] + "…"
+
+            revision.pull_request.create_issue_comment(content)
+            return
+
+        elif not isinstance(revision, PhabricatorRevision):
+            raise NotImplementedError(
+                "Only Github and Phabricator revisions are supported"
+            )
 
         assert (
             revision.phabricator_id and revision.phabricator_phid
@@ -54,12 +78,6 @@ class BuildErrorsReporter(Reporter):
             logger.info(
                 f"Unable to find the commits for revision with phid {revision.phabricator_phid}."
             )
-            return
-
-        build_errors = [issue for issue in issues if issue.is_build_error()]
-
-        if not build_errors:
-            logger.info("No build errors encountered.")
             return
 
         content = EMAIL_HEADER.format(
