@@ -17,6 +17,11 @@ from code_review_bot.revisions import GithubRevision
 logger = structlog.get_logger(__name__)
 
 
+# Github does not provide an exact limit for the body content on its API.
+# We prefer using a safe interval here, based on https://github.com/dead-claudia/github-limits#issue-comments
+GITHUB_COMMENT_LIMIT = 65536
+
+
 class ReviewEvent(enum.Enum):
     """
     Review action you want to perform.
@@ -56,10 +61,14 @@ class GithubClient:
         return repo.get_pull(revision.pull_number)
 
     def _build_review_comment(self, issue):
+        message = issue.message
+        if len(message) > GITHUB_COMMENT_LIMIT:
+            message = message[: GITHUB_COMMENT_LIMIT - 1] + "…"
+
         return ReviewComment(
             path=issue.path,
             line=issue.line,
-            body=issue.message,
+            body=message,
         )
 
     def publish_comment(
@@ -73,6 +82,10 @@ class GithubClient:
         assert isinstance(revision, GithubRevision), "Only for github revisions"
 
         pull_request = self.get_pull_request(revision)
+
+        if len(message) > GITHUB_COMMENT_LIMIT:
+            message = message[: GITHUB_COMMENT_LIMIT - 1] + "…"
+
         pull_request.create_issue_comment(body=message)
 
     def publish_review(

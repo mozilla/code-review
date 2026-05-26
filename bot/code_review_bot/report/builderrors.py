@@ -19,9 +19,6 @@ EMAIL_HEADER = """
 
 {content}"""
 
-# https://github.com/dead-claudia/github-limits#issue-comments
-GITHUB_COMMENT_LIMIT = 65536
-
 
 class BuildErrorsReporter(Reporter):
     """
@@ -54,9 +51,6 @@ class BuildErrorsReporter(Reporter):
                 messages.append(issue.as_error())
 
             content = "\n".join(messages)
-            if len(content) > GITHUB_COMMENT_LIMIT:
-                content = content[: GITHUB_COMMENT_LIMIT - 1] + "…"
-
             revision.github_client.publish_comment(revision, content)
             return
 
