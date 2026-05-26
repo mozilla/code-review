@@ -19,12 +19,7 @@ class GithubReporter(Reporter):
             if not configuration.get(key):
                 raise Exception(f"Missing github reporter configuration key {key}")
 
-        # Setup github App secret from the configuration
-        self.github_client = GithubClient(
-            client_id=configuration["client_id"],
-            private_key=configuration["private_key_pem"],
-            installation_id=configuration["installation_id"],
-        )
+        self.github_client = GithubClient.from_configuration(configuration)
 
         self.analyzers_skipped = configuration.get("analyzers_skipped", [])
         assert isinstance(
@@ -38,6 +33,11 @@ class GithubReporter(Reporter):
         if not isinstance(revision, GithubRevision):
             logger.info(
                 "Skipping github reporting, only available for Github revisions"
+            )
+            return
+        if not self.github_client:
+            logger.error(
+                "Github API client is not initialized, skipping Github reporting"
             )
             return
 

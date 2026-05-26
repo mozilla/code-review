@@ -7,6 +7,7 @@ import structlog
 from code_review_bot import taskcluster
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import GithubRevision, PhabricatorRevision
+from code_review_bot.sources.github import GithubClient
 
 logger = structlog.get_logger(__name__)
 
@@ -30,7 +31,7 @@ class BuildErrorsReporter(Reporter):
     def __init__(self, configuration):
         # Load TC services
         self.notify = taskcluster.get_service("notify")
-
+        self.github_client = GithubClient.from_configuration(configuration)
         logger.info("BuildErrorsReporter report enabled.")
 
     def publish(self, issues, revision, task_failures, links, reviewers):
@@ -41,8 +42,13 @@ class BuildErrorsReporter(Reporter):
             return
 
         if isinstance(revision, GithubRevision):
-            # Comment directly to the pull request
+            if not self.github_client:
+                logger.error(
+                    "Github API client is not initialized, skipping Github reporting"
+                )
+                return
 
+            # Comment directly to the pull request
             messages = [f"Hello @{revision.pull_request.user.login},"]
             messages.append(
                 f"[Code Review bot](https://github.com/mozilla/code-review) detected {len(build_errors)} build errors when analyzing this Pull Request:"
@@ -51,7 +57,7 @@ class BuildErrorsReporter(Reporter):
                 messages.append(issue.as_error())
 
             content = "\n".join(messages)
-            revision.github_client.publish_comment(revision, content)
+            self.github_client.publish_comment(revision, content)
             return
 
         elif not isinstance(revision, PhabricatorRevision):

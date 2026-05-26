@@ -55,6 +55,23 @@ class GithubClient:
 
         self.review_comments = []
 
+    @classmethod
+    def from_configuration(cls, configuration: dict):
+        """Setup github App secrets from the configuration"""
+        if not all(
+            configuration.get(key)
+            for key in ("client_id", "private_key_pem", "installation_id")
+        ):
+            logger.warning(
+                "Missing github reporter configuration key. Github API client was not initialized"
+            )
+            return
+        return cls(
+            client_id=configuration["client_id"],
+            private_key=configuration["private_key_pem"],
+            installation_id=configuration["installation_id"],
+        )
+
     @lru_cache
     def get_pull_request(self, revision: GithubRevision):
         repo = self.api.get_repo(revision.repo_name)
