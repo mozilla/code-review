@@ -90,7 +90,7 @@ class GithubRevision(Revision):
         }
 
     @cached_property
-    def pull_request(self):
+    def github_client(self):
         from code_review_bot.sources.github import GithubClient
 
         reporter_conf = next(
@@ -103,12 +103,15 @@ class GithubRevision(Revision):
         )
         # A github reporter configuration is required to perform a github Pull Request analysis
         assert reporter_conf, "Github reporter secrets must be set to access information about the pull request"
-        client = GithubClient(
+        return GithubClient(
             client_id=reporter_conf["client_id"],
             private_key=reporter_conf["private_key_pem"],
             installation_id=reporter_conf["installation_id"],
         )
-        return client.get_pull_request(self)
+
+    @cached_property
+    def pull_request(self):
+        return self.github_client.get_pull_request(self)
 
     def serialize(self):
         """

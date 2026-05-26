@@ -57,7 +57,7 @@ class BuildErrorsReporter(Reporter):
             if len(content) > GITHUB_COMMENT_LIMIT:
                 content = content[: GITHUB_COMMENT_LIMIT - 1] + "…"
 
-            revision.pull_request.create_issue_comment(content)
+            revision.github_client.publish_comment(revision, content)
             return
 
         elif not isinstance(revision, PhabricatorRevision):
