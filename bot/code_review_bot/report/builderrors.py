@@ -34,78 +34,78 @@ class BuildErrorsReporter(Reporter):
         self.github_client = GithubClient.from_configuration(configuration)
         logger.info("BuildErrorsReporter report enabled.")
 
-        def publish_github(self, revision: GithubRevision, build_errors: list[Issue]):
-            """
-            Comment directly on the Pull Request, as a comment mentioning the author
-            """
-            if not self.github_client:
-                logger.error(
-                    "Github API client is not initialized, skipping Github reporting"
-                )
-                return
-
-            messages = [f"Hello @{revision.pull_request.user.login},"]
-            messages.append(
-                f"[Code Review bot](https://github.com/mozilla/code-review) detected {len(build_errors)} build errors when analyzing this Pull Request:"
+    def publish_github(self, revision: GithubRevision, build_errors: list[Issue]):
+        """
+        Comment directly on the Pull Request, as a comment mentioning the author
+        """
+        if not self.github_client:
+            logger.error(
+                "Github API client is not initialized, skipping Github reporting"
             )
-            for issue in build_errors:
-                messages.append(issue.as_error())
+            return
 
-            content = "\n".join(messages)
-            self.github_client.publish_comment(revision, content)
+        messages = [f"Hello @{revision.pull_request.user.login},"]
+        messages.append(
+            f"[Code Review bot](https://github.com/mozilla/code-review) detected {len(build_errors)} build errors when analyzing this Pull Request:"
+        )
+        for issue in build_errors:
+            messages.append(issue.as_error())
 
-        def publish_phabricator(
-            self, revision: PhabricatorRevision, build_errors: list[Issue]
-        ):
-            """
-            Notify by email the author of the last commit for this revision
-            """
-            assert (
-                revision.phabricator_id and revision.phabricator_phid
-            ), "PhabricatorRevision must have a Phabricator ID and PHID"
-            assert (
-                "attachments" in revision.diff
-            ), f"Unable to find the commits for revision with phid {revision.phabricator_phid}."
+        content = "\n".join(messages)
+        self.github_client.publish_comment(revision, content)
 
-            attachments = revision.diff["attachments"]
+    def publish_phabricator(
+        self, revision: PhabricatorRevision, build_errors: list[Issue]
+    ):
+        """
+        Notify by email the author of the last commit for this revision
+        """
+        assert (
+            revision.phabricator_id and revision.phabricator_phid
+        ), "PhabricatorRevision must have a Phabricator ID and PHID"
+        assert (
+            "attachments" in revision.diff
+        ), f"Unable to find the commits for revision with phid {revision.phabricator_phid}."
 
-            if "commits" not in attachments and "commits" not in attachments["commits"]:
-                logger.info(
-                    f"Unable to find the commits for revision with phid {revision.phabricator_phid}."
-                )
-                return
+        attachments = revision.diff["attachments"]
 
-            content = EMAIL_HEADER.format(
-                build_errors=len(build_errors),
-                phabricator_id=revision.phabricator_id,
-                review_url=revision.url,
-                content="\n".join([i.as_error() for i in build_errors]),
+        if "commits" not in attachments and "commits" not in attachments["commits"]:
+            logger.info(
+                f"Unable to find the commits for revision with phid {revision.phabricator_phid}."
             )
+            return
 
-            if len(content) > 102400:
-                # Content is 102400 chars max
-                content = content[:102000] + "\n\n... Content max limit reached!"
+        content = EMAIL_HEADER.format(
+            build_errors=len(build_errors),
+            phabricator_id=revision.phabricator_id,
+            review_url=revision.url,
+            content="\n".join([i.as_error() for i in build_errors]),
+        )
 
-            # Get the last commit
-            commit = attachments["commits"]["commits"][-1]
+        if len(content) > 102400:
+            # Content is 102400 chars max
+            content = content[:102000] + "\n\n... Content max limit reached!"
 
-            if "author" not in commit:
-                logger.info("Unable to find the author for commit.")
-                return
+        # Get the last commit
+        commit = attachments["commits"]["commits"][-1]
 
-            logger.info("Send build error email", to=commit["author"]["email"])
+        if "author" not in commit:
+            logger.info("Unable to find the author for commit.")
+            return
 
-            # Since we now know that there is an "author" field we assume that we have "email"
-            self.notify.email(
-                {
-                    "address": commit["author"]["email"],
-                    "subject": EMAIL_SUBJECT.format(
-                        build_errors=len(build_errors),
-                        phabricator_id=revision.phabricator_id,
-                    ),
-                    "content": content,
-                }
-            )
+        logger.info("Send build error email", to=commit["author"]["email"])
+
+        # Since we now know that there is an "author" field we assume that we have "email"
+        self.notify.email(
+            {
+                "address": commit["author"]["email"],
+                "subject": EMAIL_SUBJECT.format(
+                    build_errors=len(build_errors),
+                    phabricator_id=revision.phabricator_id,
+                ),
+                "content": content,
+            }
+        )
 
     def publish(self, issues, revision, task_failures, links, reviewers):
         build_errors = [issue for issue in issues if issue.is_build_error()]
