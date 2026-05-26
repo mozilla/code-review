@@ -116,7 +116,12 @@ class GithubClient:
 
         nb = 0
         for review in pr.get_reviews():
+            # Only process our own reviews
             if review.user.login != "mozilla-code-review[bot]":
+                continue
+
+            # Only process active reviews
+            if review.state == "DISMISSED":
                 continue
 
             try:
