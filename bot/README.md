@@ -39,11 +39,6 @@ The following configuration variables are currently supported:
 - `PAPERTRAIL_PORT` is the optional Papertrail port configuration, used for logging.
 - `SENTRY_DSN` is the optional Sentry full url to report runtime errors.
 
-The `REPORTERS` configuration is a list of dictionaries describing which reporting tool to use at the end of the patches code review.
-Supported reporting tools are emails (for admins) and Phabricator.
-
-Each reporter configuration must contain a `reporter` key with a unique name per tool. Each tool has its own configuration requirement.
-
 You can view a [full configuration sample here](/docs/configuration.md).
 
 ## Phabricator credentials
@@ -56,7 +51,19 @@ They are required, and must be set like this:
     api_key: api-XXXX
 ```
 
-## Reporter: Mail
+## Reporters
+
+The `REPORTERS` configuration is a list of dictionaries describing which reporting tool to use at the end of the code review analysis.
+Supported reporting tools are:
+
+- Emails (only for admins)
+- Phabricator (only for revisions coming from Phabricator)
+- Lando (updates lando with a warning message, only for revisions coming from Phabricator)
+- Build errors (warns about build errors, by email for Phabricator and as a comment in Github)
+
+Each reporter configuration must contain a `reporter` key with a unique name per tool. If a reporter cannot handle the revision source, it will be skipped. Each tool has its own configuration requirement.
+
+### Reporter: Mail
 
 Key `reporter` is `mail`
 
@@ -66,7 +73,7 @@ Only one configuration is required: `emails` is a list of emails addresses recei
 
 This reporter will send detailed information about every issue.
 
-## Reporter: Phabricator
+### Reporter: Phabricator
 
 Key `reporter` is `phabricator`
 
@@ -76,7 +83,7 @@ Configuration:
 
 This reporter will send detailed information about every **publishable** issue.
 
-## Reporter: Github
+### Reporter: Github
 
 Key `reporter` is `github`
 
@@ -103,6 +110,7 @@ common:
 
 bot:
   REPORTERS:
+    - reporter: phabricator
     - reporter: github
       client_id: xxxxxxxxxxxxxxxxxxxx
       private_key_pem: |-
