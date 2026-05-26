@@ -42,7 +42,10 @@ class GithubReporter(Reporter):
             return
 
         if reviewers:
-            raise NotImplementedError
+            logger.warn(
+                f"These reviewer groups should be assigned, but it's not yet possible on Github: {', '.join(reviewers)}"
+            )
+
         # Avoid publishing a patch from a de-activated analyzer
         publishable_issues = [
             issue
@@ -51,19 +54,29 @@ class GithubReporter(Reporter):
             and issue.analyzer.name not in self.analyzers_skipped
         ]
 
+        # Remove any earlier review to get a clean state
+        nb_dismissed = self.github_client.cleanup_pr(revision)
+
         if publishable_issues:
             # Publish a review summarizing detected, unresolved and closed issues
-            message = f"{len(issues)} issues have been found in this revision"
-            event = ReviewEvent.RequestChanges
+            self.github_client.publish_review(
+                issues=publishable_issues,
+                revision=revision,
+                message=f"{len(publishable_issues)} issues have been found in this revision",
+                event=ReviewEvent.RequestChanges,
+            )
         else:
-            # Simply approve the pull request
-            logger.info("No publishable issue, approving the pull request")
-            message = None
-            event = ReviewEvent.Approved
+            # Publish a comment, mentioning if previous issues were cleared up
+            logger.info(
+                "No publishable issue, posting a standalone comment",
+                nb_dismissed=nb_dismissed,
+            )
+            if nb_dismissed > 0:
+                message = "Previous issues have been fixed. This pull request is :ok:"
+            else:
+                message = "No new issues detected. This pull request is :ok:"
 
-        self.github_client.publish_review(
-            issues=publishable_issues,
-            revision=revision,
-            message=message,
-            event=event,
-        )
+            self.github_client.publish_comment(
+                revision=revision,
+                message=message,
+            )

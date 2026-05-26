@@ -5,6 +5,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import enum
+from functools import lru_cache
 
 import structlog
 from github import Auth, GithubIntegration
@@ -49,6 +50,7 @@ class GithubClient:
 
         self.review_comments = []
 
+    @lru_cache
     def get_pull_request(self, revision: GithubRevision):
         repo = self.api.get_repo(revision.repo_name)
         return repo.get_pull(revision.pull_number)
@@ -60,6 +62,19 @@ class GithubClient:
             body=issue.message,
         )
 
+    def publish_comment(
+        self,
+        revision: GithubRevision,
+        message: str | None = None,
+    ):
+        """
+        Publish a comment on a pull request
+        """
+        assert isinstance(revision, GithubRevision), "Only for github revisions"
+
+        pull_request = self.get_pull_request(revision)
+        pull_request.create_issue_comment(body=message)
+
     def publish_review(
         self,
         issues: list[Issue],
@@ -70,12 +85,7 @@ class GithubClient:
         """
         Publish a review from a list of publishable issues, requesting changes to the author.
         """
-
-        if not isinstance(revision, GithubRevision):
-            logger.warning(
-                f"Revision must originate from Github in order to publish a review, skipping {revision}."
-            )
-            return
+        assert isinstance(revision, GithubRevision), "Only for github revisions"
 
         repo = self.api.get_repo(revision.repo_name)
         pull_request = repo.get_pull(revision.pull_number)
@@ -95,3 +105,40 @@ class GithubClient:
             event=event.value,
             **attrs,
         )
+
+    def cleanup_pr(self, revision: GithubRevision):
+        """
+        Dismiss previous reviews from the bot
+        """
+        assert isinstance(revision, GithubRevision), "Only for github revisions"
+
+        pr = self.get_pull_request(revision)
+
+        nb = 0
+        for review in pr.get_reviews():
+            # Only process our own reviews
+            if review.user.login != "mozilla-code-review[bot]":
+                continue
+
+            # Only process active reviews
+            if review.state == "DISMISSED":
+                continue
+
+            try:
+                review.dismiss("This review is now deprecated.")
+                logger.info(
+                    "Dismissed previous Github review from the bot",
+                    review=review.id,
+                    submitted=review.submitted_at,
+                )
+                nb += 1
+            except Exception as e:
+                logger.warn(
+                    "Failed to dismiss previous Github review from the bot",
+                    review=review.id,
+                    submitted=review.submitted_at,
+                    error=e,
+                )
+                raise  # trashme
+
+        return nb

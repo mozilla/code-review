@@ -68,10 +68,18 @@ def test_github_review(
     )
     assert issue_coverage.is_publishable()
 
+    # Mock to publish a new review
     responses.add(
         responses.POST,
         "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
         json={},
+    )
+
+    # Mock to list existing reviews
+    responses.add(
+        responses.GET,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
+        json=[],
     )
 
     reporter.publish([issue_clang_tidy, issue_coverage], revision, [], [], [])
@@ -84,6 +92,18 @@ def test_github_review(
         ),
         ("GET", "https://api.github.com:443/repos/owner/repo-name"),
         ("GET", "https://api.github.com:443/repos/owner/repo-name/pulls/1"),
+        (
+            "GET",
+            "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
+        ),
+        (
+            "GET",
+            "https://api.github.com:443/repos/owner/repo-name",
+        ),
+        (
+            "GET",
+            "https://api.github.com:443/repos/owner/repo-name/pulls/1",
+        ),
         (
             "GET",
             "https://api.github.com:443/repos/owner/repo-name/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
@@ -110,7 +130,7 @@ def test_github_review(
     }
 
 
-def test_github_review_approve(
+def test_github_review_cleanup(
     monkeypatch,
     mock_github,
     mock_config,
@@ -120,7 +140,7 @@ def test_github_review_approve(
     mock_task,
     mock_backend_secret,
 ):
-    """In case no issue is found, the pull request is approved"""
+    """In case no issue is found, previous reviews are dismissed"""
     revision = Revision.from_try_task(mock_try_task, mock_github_decision_task, None)
     revision.lines = {}
     revision.files = ["test.txt", "test.cpp", "another_test.cpp"]
@@ -134,8 +154,27 @@ def test_github_review_approve(
     )
 
     responses.add(
-        responses.POST,
+        responses.GET,
         "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
+        json=[
+            {"id": 1, "user": {"login": "a-moz-developer"}},
+            {
+                "id": 2,
+                "user": {"login": "mozilla-code-review[bot]"},
+                "pull_request_url": "https://api.github.com/repos/owner/repo-name/pulls/2",
+            },
+        ],
+    )
+
+    responses.add(
+        responses.PUT,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/2/reviews/2/dismissals",
+        json={},
+    )
+
+    responses.add(
+        responses.POST,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments",
         json={},
     )
 
@@ -149,15 +188,18 @@ def test_github_review_approve(
         ),
         ("GET", "https://api.github.com:443/repos/owner/repo-name"),
         ("GET", "https://api.github.com:443/repos/owner/repo-name/pulls/1"),
+        ("GET", "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews"),
         (
-            "GET",
-            "https://api.github.com:443/repos/owner/repo-name/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "PUT",
+            "https://api.github.com:443/repos/owner/repo-name/pulls/2/reviews/2/dismissals",
         ),
-        ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews"),
+        (
+            "POST",
+            "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments",
+        ),
     ]
-    review_creation = responses.calls[-1]
-    assert json.loads(review_creation.request.body) == {
-        "comments": [],
-        "commit_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "event": "APPROVE",
+
+    # Check published comment
+    assert json.loads(responses.calls[-1].request.body) == {
+        "body": "Previous issues have been fixed. This pull request is :ok:"
     }
