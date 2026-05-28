@@ -5,6 +5,7 @@
 
 import json
 from pathlib import Path
+from textwrap import dedent
 
 import responses
 from conftest import FIXTURES_DIR
@@ -57,6 +58,7 @@ def test_github_review(
         "modernize-use-nullptr",
         "dummy message",
     )
+    assert issue_clang_tidy.in_patch is True
     assert issue_clang_tidy.is_publishable()
 
     issue_coverage = CoverageIssue(
@@ -66,7 +68,15 @@ def test_github_review(
         "This file is uncovered",
         revision,
     )
+    assert issue_coverage.in_patch is False
     assert issue_coverage.is_publishable()
+
+    # Mock to publish a comment, regarding issues outside of the patch
+    responses.add(
+        responses.POST,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments",
+        json={},
+    )
 
     # Mock to publish a new review
     responses.add(
@@ -96,6 +106,7 @@ def test_github_review(
             "GET",
             "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
         ),
+        ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments"),
         (
             "GET",
             "https://api.github.com:443/repos/owner/repo-name",
@@ -110,6 +121,19 @@ def test_github_review(
         ),
         ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews"),
     ]
+    comment_body = next(
+        call.request.body
+        for call in responses.calls
+        if (call.request.method, call.request.url)
+        == ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments")
+    )
+    assert json.loads(comment_body) == {
+        "body": dedent("""
+            Code review bot detected 1 issues outside of the patch:
+            * `path/to/test.cpp:1` This file is uncovered
+        """).strip()
+    }
+
     review_creation = responses.calls[-1]
     assert json.loads(review_creation.request.body) == {
         "body": "2 issues have been found in this revision",
@@ -118,11 +142,6 @@ def test_github_review(
                 "body": "dummy message",
                 "path": "another_test.cpp",
                 "line": 42,
-            },
-            {
-                "body": "This file is uncovered",
-                "path": "path/to/test.cpp",
-                "line": 1,
             },
         ],
         "commit_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
