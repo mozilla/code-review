@@ -93,6 +93,7 @@ class GithubRevision(Revision):
     def pull_request(self):
         from code_review_bot.sources.github import GithubClient
 
+        # Setup Github API client, needed to get PR information
         reporter_conf = next(
             (
                 reporter
@@ -101,14 +102,9 @@ class GithubRevision(Revision):
             ),
             None,
         )
-        # A github reporter configuration is required to perform a github Pull Request analysis
-        assert reporter_conf, "Github reporter secrets must be set to access information about the pull request"
-        client = GithubClient(
-            client_id=reporter_conf["client_id"],
-            private_key=reporter_conf["private_key_pem"],
-            installation_id=reporter_conf["installation_id"],
-        )
-        return client.get_pull_request(self)
+        assert reporter_conf, "Github reporter secrets must be set to access information about the Pull Request"
+        github_client = GithubClient.from_configuration(reporter_conf)
+        return github_client.get_pull_request(self)
 
     def serialize(self):
         """

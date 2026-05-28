@@ -17,6 +17,11 @@ from code_review_bot.revisions import GithubRevision
 logger = structlog.get_logger(__name__)
 
 
+# Github does not provide an exact limit for the body content on its API.
+# We prefer using a safe interval here, based on https://github.com/dead-claudia/github-limits#issue-comments
+GITHUB_COMMENT_LIMIT = 65536
+
+
 class ReviewEvent(enum.Enum):
     """
     Review action you want to perform.
@@ -50,16 +55,37 @@ class GithubClient:
 
         self.review_comments = []
 
+    @classmethod
+    def from_configuration(cls, configuration: dict):
+        """Setup github App secrets from the configuration"""
+        if not all(
+            configuration.get(key)
+            for key in ("client_id", "private_key_pem", "installation_id")
+        ):
+            logger.warning(
+                "Missing github reporter configuration key. Github API client was not initialized"
+            )
+            return
+        return cls(
+            client_id=configuration["client_id"],
+            private_key=configuration["private_key_pem"],
+            installation_id=configuration["installation_id"],
+        )
+
     @lru_cache
     def get_pull_request(self, revision: GithubRevision):
         repo = self.api.get_repo(revision.repo_name)
         return repo.get_pull(revision.pull_number)
 
     def _build_review_comment(self, issue):
+        message = issue.message
+        if len(message) > GITHUB_COMMENT_LIMIT:
+            message = message[: GITHUB_COMMENT_LIMIT - 1] + "…"
+
         return ReviewComment(
             path=issue.path,
             line=issue.line,
-            body=issue.message,
+            body=message,
         )
 
     def publish_comment(
@@ -73,6 +99,10 @@ class GithubClient:
         assert isinstance(revision, GithubRevision), "Only for github revisions"
 
         pull_request = self.get_pull_request(revision)
+
+        if len(message) > GITHUB_COMMENT_LIMIT:
+            message = message[: GITHUB_COMMENT_LIMIT - 1] + "…"
+
         pull_request.create_issue_comment(body=message)
 
     def publish_review(

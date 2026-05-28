@@ -336,6 +336,7 @@ def mock_github(mock_config):
         json={
             "url": "https://api.github.com/repos/owner/repo-name/pulls/1",
             "issue_url": "https://api.github.com/repos/owner/repo-name/pulls/1",
+            "user": {"login": "test_user"},
         },
     )
     responses.add(
