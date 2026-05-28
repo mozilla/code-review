@@ -53,37 +53,39 @@ class GithubReporter(Reporter):
             if issue.is_publishable()
             and issue.analyzer.name not in self.analyzers_skipped
         ]
-        # Issues that are not in patch cannot be published directly through a Github review
-        inside_patch_issues = [issue for issue in publishable_issues if issue.in_patch]
-        outside_patch_issues = [
-            issue for issue in publishable_issues if not issue.in_patch
-        ]
 
         # Remove any earlier review to get a clean state
         nb_dismissed = self.github_client.cleanup_pr(revision)
 
         if publishable_issues:
+            messages = [
+                f"{len(publishable_issues)} issue{'s' if len(publishable_issues) > 1 else ''} "
+                f"{'have' if len(publishable_issues) > 1 else 'has'} "
+                "been found in this revision."
+            ]
+
+            # Issues that are not in patch cannot be published directly through a Github review
+            inside_patch_issues = [
+                issue for issue in publishable_issues if issue.in_patch
+            ]
+            outside_patch_issues = [
+                issue for issue in publishable_issues if not issue.in_patch
+            ]
             if outside_patch_issues:
-                # Directly publish a comment to the PR for issues outside of the patch
-                message = [
-                    f"Code review bot detected {len(outside_patch_issues)} issue{'s' if len(issues) > 1 else ''} "
-                    "outside of the patch:"
-                ]
-                for issue in outside_patch_issues:
-                    message.append(f"* `{issue.path}:{issue.line}` {issue.as_text()}")
-                self.github_client.publish_comment(
-                    revision=revision, message="\n".join(message)
+                # Mention issues outside of the patch in the review main comment, after a new line
+                messages.append("")
+                messages.append(
+                    f"{len(outside_patch_issues)} issue{'s' if len(outside_patch_issues) > 1 else ''} "
+                    f"{'are' if len(outside_patch_issues) > 1 else 'is'} located outside of the patch:"
                 )
+                for issue in outside_patch_issues:
+                    messages.append(f"* `{issue.path}:{issue.line}` {issue.as_text()}")
 
             # Publish a review summarizing detected, unresolved and closed issues
             self.github_client.publish_review(
                 issues=inside_patch_issues,
                 revision=revision,
-                message=(
-                    f"{len(publishable_issues)} issue{'s' if len(publishable_issues) > 1 else ''} "
-                    f"{'have' if len(publishable_issues) > 1 else 'has'} "
-                    "been found in this revision"
-                ),
+                message="\n".join(messages),
                 event=ReviewEvent.RequestChanges,
             )
         else:

@@ -106,7 +106,6 @@ def test_github_review(
             "GET",
             "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
         ),
-        ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments"),
         (
             "GET",
             "https://api.github.com:443/repos/owner/repo-name",
@@ -121,22 +120,15 @@ def test_github_review(
         ),
         ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews"),
     ]
-    comment_body = next(
-        call.request.body
-        for call in responses.calls
-        if (call.request.method, call.request.url)
-        == ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments")
-    )
-    assert json.loads(comment_body) == {
-        "body": dedent("""
-            Code review bot detected 1 issues outside of the patch:
-            * `path/to/test.cpp:1` This file is uncovered
-        """).strip()
-    }
 
     review_creation = responses.calls[-1]
     assert json.loads(review_creation.request.body) == {
-        "body": "2 issues have been found in this revision",
+        "body": dedent("""
+            2 issues have been found in this revision.
+
+            1 issue is located outside of the patch:
+            * `path/to/test.cpp:1` This file is uncovered
+        """).strip(),
         "comments": [
             {
                 "body": "dummy message",
