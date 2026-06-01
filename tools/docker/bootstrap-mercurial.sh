@@ -1,6 +1,6 @@
 #!/bin/bash -ex
 MERCURIAL_VERSION="7.2.2"
-VERSION_CONTROL_TOOLS_REV="5e36b6028416b2fbefcbee2bb9960c8cacb18caa"
+VERSION_CONTROL_TOOLS_REV="2ac9666f77313d31f542413f3120e5598b173733"
 
 # Check source hgrc is available
 HGRC=/src/tools/docker/hgrc
