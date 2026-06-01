@@ -58,11 +58,34 @@ class GithubReporter(Reporter):
         nb_dismissed = self.github_client.cleanup_pr(revision)
 
         if publishable_issues:
+            messages = [
+                f"{len(publishable_issues)} issue{'s' if len(publishable_issues) > 1 else ''} "
+                f"{'have' if len(publishable_issues) > 1 else 'has'} "
+                "been found in this revision."
+            ]
+
+            # Issues that are not in patch cannot be published directly through a Github review
+            inside_patch_issues = [
+                issue for issue in publishable_issues if issue.in_patch
+            ]
+            outside_patch_issues = [
+                issue for issue in publishable_issues if not issue.in_patch
+            ]
+            if outside_patch_issues:
+                # Mention issues outside of the patch in the review main comment, after a new line
+                messages.append("")
+                messages.append(
+                    f"{len(outside_patch_issues)} issue{'s' if len(outside_patch_issues) > 1 else ''} "
+                    f"{'are' if len(outside_patch_issues) > 1 else 'is'} located outside of the patch:"
+                )
+                for issue in outside_patch_issues:
+                    messages.append(f"* `{issue.path}:{issue.line}` {issue.as_text()}")
+
             # Publish a review summarizing detected, unresolved and closed issues
             self.github_client.publish_review(
-                issues=publishable_issues,
+                issues=inside_patch_issues,
                 revision=revision,
-                message=f"{len(publishable_issues)} issues have been found in this revision",
+                message="\n".join(messages),
                 event=ReviewEvent.RequestChanges,
             )
         else:
