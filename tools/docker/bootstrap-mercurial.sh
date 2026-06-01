@@ -1,5 +1,5 @@
 #!/bin/bash -ex
-MERCURIAL_VERSION="6.8.2"
+MERCURIAL_VERSION="7.2.2"
 VERSION_CONTROL_TOOLS_REV="5e36b6028416b2fbefcbee2bb9960c8cacb18caa"
 
 # Check source hgrc is available
