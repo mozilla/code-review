@@ -9,4 +9,4 @@ rs_parsepatch==0.4.6
 sentry-sdk==2.60.0
 setuptools==80.9.0
 structlog==25.5.0
-taskcluster==100.1.1
+taskcluster==100.2.0
