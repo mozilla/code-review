@@ -987,6 +987,14 @@ class MockPhabricator:
             result = [
                 {"phid": "PHID-123456789-TGReviewers", "slug": "taskgraph-reviewers"}
             ]
+        elif params["constraints"]["slugs"] == ["accessibility-frontend-reviewers"]:
+            result = [
+                {
+                    "phid": "PHID-123456789-A11yReviewers",
+                    "slug": "accessibility-frontend-reviewers",
+                    "attachments": {"members": {"members": []}},
+                }
+            ]
 
         return (
             201,
