@@ -14,4 +14,4 @@ printf '{"commit": "%s", "version": "%s", "source": "%s", "build": "%s"}\n' \
 # Run 'taskboot build' with our local copy of the Git repository where we updated the version.json with correct values.
 # To do so, we use '--target /path/to/existing/clone' instead of passing environment variables (GIT_REPOSITORY, GIT_REVISION)
 # to taskboot that would activate an automated clone.
-taskboot --target /code-review build --image mozilla/code-review --tag "$CHANNEL" --tag "$COMMIT_SHA" --write /backend.tar backend/Dockerfile
+taskboot --target . build --image mozilla/code-review --tag "$CHANNEL" --tag "$COMMIT_SHA" --write /builds/worker/artifacts/backend.tar backend/Dockerfile

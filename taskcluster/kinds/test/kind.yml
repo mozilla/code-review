@@ -1,0 +1,51 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - taskgraph.transforms.run
+  - taskgraph.transforms.task
+
+kind-dependencies:
+  - docker-image
+
+task-defaults:
+  worker-type: b-linux
+  worker:
+    docker-image: { in-tree: python }
+    max-run-time: 3600
+  run:
+    using: run-task
+    cwd: "{checkout}"
+
+tasks:
+  bot:
+    description: Check bot code with pytest
+    run:
+      command: >-
+        ln -sf /builds/worker/checkouts/vcs/tools/docker/hgrc ~/.hgrc &&
+        cd bot &&
+        pip install --disable-pip-version-check --no-cache-dir --quiet . &&
+        pip install --disable-pip-version-check --no-cache-dir --quiet -r requirements-dev.txt &&
+        pytest -v
+
+  backend:
+    description: Check backend with Django tests
+    worker:
+      env:
+        DATABASE_URL: postgres://tester@127.0.0.1/code-review
+    run:
+      run-as-root: true
+      command: >-
+        cd backend &&
+        pip install --disable-pip-version-check --no-cache-dir --quiet . &&
+        pip install --disable-pip-version-check --no-cache-dir --quiet -r requirements-dev.txt &&
+        ./ci/setup_postgres.sh &&
+        ./manage.py test &&
+        ./manage.py makemigrations --check --noinput --dry-run -v 3
+
+  integration:
+    description: Check integration code with pytest
+    run:
+      command: >-
+        cd integration &&
+        pip install --disable-pip-version-check --no-cache-dir --quiet -r requirements.txt -r requirements-dev.txt &&
+        pytest -v
