@@ -13,7 +13,4 @@ ENV DEBUG=false
 
 RUN pip install --disable-pip-version-check --no-cache-dir --quiet .
 
-# Collect all static files
-RUN ./manage.py collectstatic --no-input
-
-CMD gunicorn code_review_backend.app.wsgi
+ENTRYPOINT ["/src/backend/docker/entrypoint.sh"]
