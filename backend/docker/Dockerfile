@@ -13,4 +13,7 @@ ENV DEBUG=false
 
 RUN pip install --disable-pip-version-check --no-cache-dir --quiet .
 
+# Collect all static files
+RUN ./manage.py collectstatic --no-input
+
 ENTRYPOINT ["/src/backend/docker/entrypoint.sh"]

@@ -4,9 +4,6 @@
 # Make non-zero exit codes & other errors fatal.
 set -euo pipefail
 
-# Collect all static files
-./manage.py collectstatic --no-input
-
 # Run the migrations
 ./manage.py migrate --noinput
 
