@@ -4,8 +4,15 @@
 
 import json
 import tempfile
+from unittest import mock
+
+import pytest
+from libmozdata.phabricator import ConduitError
 
 from code_review_bot import mercurial
+from code_review_bot.analysis import (
+    publish_analysis_phabricator,
+)
 from code_review_bot.config import RepositoryConf
 from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.sources.phabricator import PhabricatorActions
@@ -220,3 +227,46 @@ def test_workflow(
     # Reset settings for following tests
     mock_config.mercurial_cache = None
     mock_config.ssh_key = None
+
+
+def test_publish_analysis_phabricator_duplicate_harbormaster_uri():
+    """
+    When create_harbormaster_uri raises a ConduitError due to a duplicate key
+    (e.g. on task retry after worker shutdown), the error should be swallowed
+    and a warning logged instead of crashing the publication task.
+    """
+    build = mock.MagicMock()
+    build.target_phid = "PHID-HMBT-test"
+    build.missing_base_revision = False
+
+    phabricator_api = mock.MagicMock()
+    phabricator_api.create_harbormaster_uri.side_effect = ConduitError(
+        "Duplicate entry",
+        error_code="ERR-CONDUIT-CORE",
+        error_info="Duplicate entry 'uri-VEVIsJOfD0wc' for key 'harbormaster_buildartifact.key_artifact'",
+    )
+
+    payload = ("success", build, {"treeherder_url": "https://treeherder.mozilla.org/"})
+    publish_analysis_phabricator(payload, phabricator_api)
+
+    phabricator_api.create_harbormaster_uri.assert_called_once()
+
+
+def test_publish_analysis_phabricator_reraises_other_conduit_errors():
+    """
+    Non-duplicate ConduitErrors must still propagate.
+    """
+    build = mock.MagicMock()
+    build.target_phid = "PHID-HMBT-test"
+    build.missing_base_revision = False
+
+    phabricator_api = mock.MagicMock()
+    phabricator_api.create_harbormaster_uri.side_effect = ConduitError(
+        "Some other error",
+        error_code="ERR-CONDUIT-CORE",
+        error_info="Some unrelated error",
+    )
+
+    payload = ("success", build, {"treeherder_url": "https://treeherder.mozilla.org/"})
+    with pytest.raises(ConduitError):
+        publish_analysis_phabricator(payload, phabricator_api)

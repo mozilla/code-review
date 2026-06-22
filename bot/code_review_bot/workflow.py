@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from itertools import groupby
 
 import structlog
-from libmozdata.phabricator import BuildState, PhabricatorAPI
+from libmozdata.phabricator import BuildState, ConduitError, PhabricatorAPI
 from taskcluster.utils import stringDate
 
 from code_review_bot import Level, stats
@@ -760,6 +760,16 @@ class Workflow:
             )
             return
 
-        self.phabricator.create_harbormaster_uri(
-            revision.build_target_phid, slug, name, url
-        )
+        try:
+            self.phabricator.create_harbormaster_uri(
+                revision.build_target_phid, slug, name, url
+            )
+        except ConduitError as e:
+            if e.error_info and "Duplicate entry" in e.error_info:
+                logger.warning(
+                    "Harbormaster URI artifact already exists, skipping creation (retry?)",
+                    slug=slug,
+                    url=url,
+                )
+            else:
+                raise

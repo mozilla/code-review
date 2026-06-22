@@ -1,7 +1,7 @@
 from functools import cached_property
 
 import structlog
-from libmozdata.phabricator import BuildState, UnitResult, UnitResultState
+from libmozdata.phabricator import BuildState, ConduitError, UnitResult, UnitResultState
 
 from code_review_bot.sources.phabricator import PhabricatorBuild, PhabricatorBuildState
 
@@ -146,12 +146,21 @@ def publish_analysis_phabricator(payload, phabricator_api):
                 "Missing base revision on PhabricatorBuild, adding a warning to Unit Tests section on Phabricator"
             )
 
-        phabricator_api.create_harbormaster_uri(
-            build.target_phid,
-            "treeherder",
-            "CI (Treeherder) Jobs",
-            extras["treeherder_url"],
-        )
+        try:
+            phabricator_api.create_harbormaster_uri(
+                build.target_phid,
+                "treeherder",
+                "CI (Treeherder) Jobs",
+                extras["treeherder_url"],
+            )
+        except ConduitError as e:
+            if e.error_info and "Duplicate entry" in e.error_info:
+                logger.warning(
+                    "Harbormaster URI artifact already exists, skipping creation (retry?)",
+                    build=str(build),
+                )
+            else:
+                raise
 
     elif mode == "work":
         phabricator_api.update_build_target(build.target_phid, BuildState.Work)
