@@ -5,11 +5,13 @@
 import os
 from datetime import datetime
 from unittest import mock
+from urllib.parse import unquote_plus
 
 import pytest
 import responses
 
 from code_review_bot.config import Settings
+from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
@@ -168,3 +170,31 @@ def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_re
     ]
     assert issues[0].new_issue is True
     assert issues[1].new_issue is False
+
+
+def test_publish_link(mock_phabricator, mock_workflow):
+    # Allow build updates
+    mock_workflow.update_build = True
+
+    with mock_phabricator as api:
+        mock_workflow.phabricator = api
+
+        revision = PhabricatorRevision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-test",
+            phabricator=api,
+        )
+        mock_workflow.publish_link(
+            revision,
+            "some-unique-code",
+            "A nice display name",
+            "http://taskcluster/x.y.z",
+        )
+
+    # Check request & response for the link publication
+    call = responses.calls[-1]
+    assert call.request.method == "POST"
+    assert call.request.url == "http://phabricator.test/api/harbormaster.createartifact"
+    assert (
+        unquote_plus(call.request.body)
+        == 'params={"buildTargetPHID": "PHID-HMBT-test", "artifactType": "uri", "artifactKey": "some-unique-code", "artifactData": {"uri": "http://taskcluster/x.y.z", "name": "A nice display name", "ui.external": true}, "__conduit__": {"token": "deadbeef"}}&output=json'
+    )
