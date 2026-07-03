@@ -765,11 +765,19 @@ class Workflow:
                 revision.build_target_phid, slug, name, url
             )
         except ConduitError as e:
-            logger.warn(
-                "Failed to publish a URI on harbormaster",
-                build=revision.build_target_phid,
-                slug=slug,
-                name=name,
-                url=url,
-                error=str(e),
-            )
+            if e.error_info and "Duplicate entry" in e.error_info:
+                logger.warning(
+                    "Harbormaster URI artifact already exists, skipping creation (retry?)",
+                    slug=slug,
+                    url=url,
+                )
+            else:
+                logger.warn(
+                    "Failed to publish a URI on harbormaster",
+                    build=revision.build_target_phid,
+                    slug=slug,
+                    name=name,
+                    url=url,
+                    error=str(e),
+                )
+                raise
