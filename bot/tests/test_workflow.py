@@ -8,8 +8,10 @@ from unittest import mock
 
 import pytest
 import responses
+from libmozdata.phabricator import ConduitError
 
 from code_review_bot.config import Settings
+from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
@@ -168,3 +170,48 @@ def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_re
     ]
     assert issues[0].new_issue is True
     assert issues[1].new_issue is False
+
+
+def test_publish_link_duplicate_harbormaster_uri(mock_workflow):
+    """
+    When publish_link raises a ConduitError due to a duplicate Harbormaster URI
+    artifact (e.g. on task retry after worker shutdown), the error should be
+    swallowed and a warning logged.
+    """
+    mock_workflow.update_build = True
+    mock_workflow.phabricator = mock.MagicMock()
+    mock_workflow.phabricator.create_harbormaster_uri.side_effect = ConduitError(
+        "Duplicate entry",
+        error_code="ERR-CONDUIT-CORE",
+        error_info="Duplicate entry 'uri-VEVIsJOfD0wc' for key 'harbormaster_buildartifact.key_artifact'",
+    )
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.build_target_phid = "PHID-HMBT-test"
+
+    mock_workflow.publish_link(
+        revision, "treeherder", "CI Jobs", "https://treeherder.mozilla.org/"
+    )
+
+    mock_workflow.phabricator.create_harbormaster_uri.assert_called_once()
+
+
+def test_publish_link_reraises_other_conduit_errors(mock_workflow):
+    """
+    Non-duplicate ConduitErrors must still propagate from publish_link.
+    """
+    mock_workflow.update_build = True
+    mock_workflow.phabricator = mock.MagicMock()
+    mock_workflow.phabricator.create_harbormaster_uri.side_effect = ConduitError(
+        "Some other error",
+        error_code="ERR-CONDUIT-CORE",
+        error_info="Some unrelated error",
+    )
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.build_target_phid = "PHID-HMBT-test"
+
+    with pytest.raises(ConduitError):
+        mock_workflow.publish_link(
+            revision, "treeherder", "CI Jobs", "https://treeherder.mozilla.org/"
+        )
