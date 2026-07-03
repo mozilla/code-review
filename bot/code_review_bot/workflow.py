@@ -772,4 +772,12 @@ class Workflow:
                     url=url,
                 )
             else:
+                logger.warn(
+                    "Failed to publish a URI on harbormaster",
+                    build=revision.build_target_phid,
+                    slug=slug,
+                    name=name,
+                    url=url,
+                    error=str(e),
+                )
                 raise

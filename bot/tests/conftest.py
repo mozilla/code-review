@@ -269,6 +269,13 @@ def mock_phabricator(mock_config):
         content_type="application/json",
     )
 
+    responses.add(
+        responses.POST,
+        "http://phabricator.test/api/harbormaster.createartifact",
+        body=_response("harbormaster_createartifact"),
+        content_type="application/json",
+    )
+
     config_file = tempfile.NamedTemporaryFile()
     with open(config_file.name, "w") as f:
         custom_conf = ConfigParser()

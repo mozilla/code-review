@@ -5,6 +5,7 @@
 import os
 from datetime import datetime
 from unittest import mock
+from urllib.parse import unquote_plus
 
 import pytest
 import responses
@@ -215,3 +216,31 @@ def test_publish_link_reraises_other_conduit_errors(mock_workflow):
         mock_workflow.publish_link(
             revision, "treeherder", "CI Jobs", "https://treeherder.mozilla.org/"
         )
+
+
+def test_publish_link(mock_phabricator, mock_workflow):
+    # Allow build updates
+    mock_workflow.update_build = True
+
+    with mock_phabricator as api:
+        mock_workflow.phabricator = api
+
+        revision = PhabricatorRevision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-test",
+            phabricator=api,
+        )
+        mock_workflow.publish_link(
+            revision,
+            "some-unique-code",
+            "A nice display name",
+            "http://taskcluster/x.y.z",
+        )
+
+    # Check request & response for the link publication
+    call = responses.calls[-1]
+    assert call.request.method == "POST"
+    assert call.request.url == "http://phabricator.test/api/harbormaster.createartifact"
+    assert (
+        unquote_plus(call.request.body)
+        == 'params={"buildTargetPHID": "PHID-HMBT-test", "artifactType": "uri", "artifactKey": "some-unique-code", "artifactData": {"uri": "http://taskcluster/x.y.z", "name": "A nice display name", "ui.external": true}, "__conduit__": {"token": "deadbeef"}}&output=json'
+    )
