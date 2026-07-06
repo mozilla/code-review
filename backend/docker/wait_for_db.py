@@ -11,7 +11,7 @@ def connect(host, port):
         client.connect((host, port))
         client.close()
     except Exception as e:
-        print(f"Failed to connect: {e!r}")
+        print(f"Failed to connect: {e!r}", file=sys.stderr)
         return False
 
     return True
@@ -27,15 +27,15 @@ def main():
     parts = urlparse(db_url)
     host = parts.hostname
     port = parts.port or 5432
-    print(f"Checking Postgres host is up at {host} (port {port})")
+    print(f"Checking Postgres host is up at {host} (port {port})", file=sys.stderr)
 
     # Try to connect to the DB opening a TCP socket
     max_tries = 20
     for i in range(max_tries):
-        print(f"Try {i+1}/{max_tries}")
+        print(f"Try {i+1}/{max_tries}", file=sys.stderr)
 
         if connect(host, port):
-            print("Connection successful")
+            print("Connection successful", file=sys.stderr)
             return
 
         # Wait a bit until next try
@@ -49,5 +49,5 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        print(f"ERROR: {e!r}")
+        print(f"ERROR: {e!r}", file=sys.stderr)
         sys.exit(1)
