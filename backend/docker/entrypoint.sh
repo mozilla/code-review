@@ -5,12 +5,7 @@
 set -euo pipefail
 
 # Ensure the database accepts connections
-echo "Checking database status at $DATABASE_URL"
-while ! nc -z db 5432; do
-    echo "-----> Waiting for PostgreSQL server to be ready"
-    sleep 1;
-done
-echo "-----> PostgreSQL service is available"
+python /src/backend/docker/wait_for_db.py
 
 # Run the migrations
 ./manage.py migrate --noinput
