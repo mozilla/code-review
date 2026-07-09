@@ -198,23 +198,14 @@ class GitRepository:
     def get_base_identifier(self, needed_stack: list[PhabricatorPatch]) -> str:
         """Return the base identifier to apply patches against.
 
-        Unlike Mercurial, the base revision is already a Git hash, so there is no
-        Lando ``git2hg`` conversion: when the base is not available locally we fall
+        Unlike Mercurial, the base revision is already a Git hash, so there is
+        no Lando ``git2hg`` conversion. A base revision missing locally is
+        handled by ``apply_build``, which records it on the build and falls
         back to the default revision.
         """
         if self.use_latest_revision:
             return self.default_revision
-
-        base_revision = needed_stack[0].base_revision
-        if self.has_revision(base_revision):
-            return base_revision
-
-        logger.warning(
-            "Base revision not available locally, using the default revision",
-            revision=base_revision,
-            default=self.default_revision,
-        )
-        return self.default_revision
+        return needed_stack[0].base_revision
 
     @staticmethod
     def get_author(commit):
@@ -402,9 +393,18 @@ class GitRepository:
         # Return to the pristine base, dropping any previously applied commits.
         # Prefer the remote-tracking base so we also pick up upstream updates.
         upstream = f"origin/{self.default_revision}"
-        target = upstream if self.has_revision(upstream) else self.default_revision
-        self.repo.git.checkout(self.default_revision, force=True)
-        self.repo.git.reset("--hard", target)
+        if self.has_revision(upstream):
+            target = upstream
+        elif self.default_revision != "HEAD":
+            target = self.default_revision
+        else:
+            # A bare HEAD cannot identify a pristine base once patches have
+            # been committed on top of it
+            raise Exception(
+                "Cannot determine the base to reset to: configure default_revision "
+                "or make sure the repository has an origin remote"
+            )
+        self.repo.git.checkout(target, force=True, detach=True)
 
 
 class GitWorker:

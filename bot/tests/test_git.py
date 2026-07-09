@@ -5,6 +5,7 @@ import json
 import os.path
 from unittest.mock import MagicMock
 
+import pytest
 from conftest import MockBuild
 from git.exc import GitCommandError
 
@@ -57,16 +58,16 @@ def test_has_revision(mock_mc_git):
 
 
 def test_get_base_identifier_no_git2hg(mock_mc_git):
-    """The git base is used directly: no Lando git2hg lookup, fall back to default."""
+    """The git base is used directly: no Lando git2hg lookup."""
     head = mock_mc_git.repo.head.commit.hexsha
 
-    # Base present locally -> returned as-is
     present = MagicMock(base_revision=head)
     assert mock_mc_git.get_base_identifier([present]) == head
 
-    # Base absent -> fall back to the default revision (no git2hg call)
+    # An unknown base is returned as-is: apply_build detects it is missing,
+    # records it on the build and falls back to the default revision
     absent = MagicMock(base_revision="abcdef123456")
-    assert mock_mc_git.get_base_identifier([absent]) == mock_mc_git.default_revision
+    assert mock_mc_git.get_base_identifier([absent]) == "abcdef123456"
 
 
 def test_apply_patches(PhabricatorMock, mock_mc_git):
@@ -81,6 +82,11 @@ def test_apply_patches(PhabricatorMock, mock_mc_git):
     # The patched file now has the expected content
     assert os.path.exists(target)
     assert open(target).read() == "First Line\nSecond Line\n"
+
+    # The unknown base revision is recorded on the build with the fallback used
+    assert build.missing_base_revision is True
+    assert build.base_revision == build.stack[0].base_revision
+    assert build.actual_base_revision == mock_mc_git.default_revision
 
     # Commits (newest first): the two patches on top of the base Readme
     commits = list(mock_mc_git.repo.iter_commits())
@@ -181,6 +187,66 @@ def test_clean_drops_previous_build(PhabricatorMock, mock_mc_git):
     assert mock_mc_git.repo.git.rev_list("--count", branch).strip() == "1"
     assert not os.path.exists(os.path.join(mock_mc_git.dir, "test.txt"))
     assert not os.path.exists(os.path.join(mock_mc_git.dir, "try_task_config.json"))
+
+
+def test_clean_requires_pristine_base(tmpdir):
+    """Without a configured default_revision nor an origin remote, clean()
+    fails loudly instead of silently keeping the previous build's commits."""
+    from conftest import build_git_repository
+
+    repo = build_git_repository(tmpdir, "no-default")
+    config = {
+        "name": "no-default",
+        "url": "https://github.com/mozilla/test",
+        "try_url": str(tmpdir.mkdir("no-default-try.git").realpath()),
+        "ssh_key": "privateSSHkey",
+    }
+    git_repo = GitRepository(config, str(tmpdir.realpath()))
+    git_repo._repo = repo
+
+    with pytest.raises(Exception, match="configure default_revision"):
+        git_repo.clean()
+
+
+def test_clean_picks_up_remote_updates(tmpdir, mock_mc_git):
+    """clean() resets onto the remote-tracking base, so upstream commits
+    landed since the last build are picked up (mirrors hg pull)."""
+    from git import Actor, Repo
+
+    # Clone the repo to act as its origin, and move it one commit ahead
+    origin_dir = str(tmpdir.mkdir("origin-repo").realpath())
+    origin = mock_mc_git.repo.clone(origin_dir)
+    with origin.config_writer() as cw:
+        cw.set_value("user", "name", "test")
+        cw.set_value("user", "email", "test")
+        cw.set_value("commit", "gpgsign", "false")
+    with open(os.path.join(origin_dir, "update.txt"), "w") as f:
+        f.write("upstream update")
+    origin.index.add(["update.txt"])
+    actor = Actor("test", "test")
+    upstream_tip = origin.index.commit("upstream update", author=actor, committer=actor)
+
+    mock_mc_git.repo.create_remote("origin", origin_dir)
+    mock_mc_git.clean()
+
+    assert mock_mc_git.repo.head.commit.hexsha == upstream_tip.hexsha
+    assert os.path.exists(os.path.join(mock_mc_git.dir, "update.txt"))
+    # The remote in the local clone is untouched by cleanup
+    assert Repo(origin_dir).head.commit.hexsha == upstream_tip.hexsha
+
+
+def test_worker_failure_git(PhabricatorMock, mock_mc_git):
+    """A non-retryable Git error yields a fail:git result with the error log."""
+    build = make_build(PhabricatorMock)
+    error = GitCommandError("git apply", 128, b"fatal: corrupt patch at line 3")
+    mock_mc_git.apply_build = MagicMock(side_effect=error)
+
+    worker = GitWorker()
+    mode, out_build, details = worker.run(mock_mc_git, build)
+
+    assert mode == "fail:git"
+    assert out_build is build
+    assert "corrupt patch" in details["message"]
 
 
 def test_worker_run_success(PhabricatorMock, mock_mc_git):
