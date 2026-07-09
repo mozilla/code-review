@@ -1,6 +1,6 @@
 # Phabricator
 
-The main goal of the project is to publish issues on Phabricator, so we need a good integration with their API and interface.
+The main goal of the project was to publish issues on Phabricator, so we need a good integration with their API and interface.
 
 ## Structure
 

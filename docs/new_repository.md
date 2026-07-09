@@ -38,7 +38,7 @@ The configuration [is explained in this documentation](./configuration.md) in de
 
 ### Backend database
 
-Mercurial repositories hosted on `hg.mozilla.org` are automatically created on the backend, by the bot (since [#2530](https://github.com/mozilla/code-review/pull/2530)). In most cases, no management action is needed.
+Mercurial repositories (hosted on `hg.mozilla.org`) and Github repositories (hosted on `github.com`), are automatically created on the backend, by the bot (since [#2530](https://github.com/mozilla/code-review/pull/2530)). In most cases, no management action is needed.
 
 If you need to edit or create an extra repository, you'll need to use the targeted environment's backend:
 
@@ -47,7 +47,7 @@ If you need to edit or create an extra repository, you'll need to use the target
 
 It's pretty easy to create a repository on the backend, there are only 2 fields to fill in:
 
-- the **slug** must match your YAML configuration `name` key, and be unique across all repositories on the database,
 - the **url** must match your YAML configuration `url` key, and also be unique across all repositories on the database.
+- the **slug** must match your YAML configuration `name` key, and be unique across all repositories on the database,
 
-![](./new_repository_backend.png)
+⚠️ The slug field must match the repository path, replacing `/` by `_` in order for the bot to detect it correctly. For example, the slug for the repository `https://github.com/mozilla/test` would be `mozilla_test`.
