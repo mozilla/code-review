@@ -3,8 +3,10 @@ import json
 import os
 import re
 import tempfile
+import time
 from urllib.parse import urlparse
 
+import rs_parsepatch
 import structlog
 from git import Repo
 from git.exc import GitCommandError
@@ -13,6 +15,16 @@ from libmozdata.phabricator import PhabricatorPatch
 from code_review_bot.sources.phabricator import PhabricatorBuild
 
 logger = structlog.getLogger(__name__)
+
+# Treeherder job URL for a pushed revision. The repository name (first slot) is
+# the Treeherder repo, refined for the Git try repository in a later change.
+TREEHERDER_URL = "https://treeherder.mozilla.org/#/jobs?repo={}&revision={}"
+
+# Number of allowed retries on an unexpected push failure, and the base of the
+# exponential backoff between them (6s, 36s, 3.6min, 21.6min). Mirrors the
+# Mercurial worker, minus the treestatus wait (there is no Git "try" tree).
+MAX_PUSH_RETRIES = 4
+PUSH_RETRY_EXPONENTIAL_DELAY = 6
 
 # Default author for commits without explicit Phabricator author data, and the
 # committer for all bot-created commits. Matches the Mercurial worker.
@@ -25,6 +37,12 @@ DEFAULT_AUTHOR_EMAIL = "release-mgmt-analysis@mozilla.com"
 DIFF_HEADER_TIMESTAMP = re.compile(
     r"[ \t]+\w{3}\s+\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4}\s+[+-]\d{4}\s*$"
 )
+
+
+class RetryNeeded(Exception):
+    """
+    Raised when retrying a Git build is needed
+    """
 
 
 def build_repo_slug(repo_url):
@@ -292,9 +310,11 @@ class GitRepository:
         # Store the actual base revision we used
         build.actual_base_revision = git_base
 
-        # Move the working tree to the base revision
+        # Move the working tree to the base revision. Detach HEAD so the patches
+        # we commit on top stay throwaway drafts and never advance a branch ref;
+        # clean() can then discard them simply by returning to the base.
         logger.info(f"Updating repo to revision {git_base}")
-        self.repo.git.checkout(git_base, force=True)
+        self.repo.git.checkout(git_base, force=True, detach=True)
 
         for patch in needed_stack:
             if patch.commits:
@@ -359,7 +379,182 @@ class GitRepository:
         return head
 
     def clean(self):
-        """Reset the local checkout to a pristine state."""
+        """Reset the local checkout to a pristine state.
+
+        Mirrors the Mercurial ``clean()`` (revert + strip outgoing drafts +
+        pull): a reused clone can hold the patch commits and ``try_task_config``
+        commit from a previous build, so we discard local changes, refresh from
+        the remote and return to the base revision. Because ``apply_build``
+        commits on a detached HEAD, returning to the base leaves those commits
+        unreferenced instead of accumulating them on a branch.
+        """
         logger.info("Cleaning git checkout")
+
+        # Discard uncommitted changes and untracked/ignored files
         self.repo.git.reset("--hard")
         self.repo.git.clean("-fxd")
+
+        # Refresh from the remote when one is configured (mirrors hg pull)
+        if any(remote.name == "origin" for remote in self.repo.remotes):
+            with self.repo.git.custom_environment(GIT_SSH_COMMAND=self.git_ssh_command):
+                self.repo.remotes.origin.fetch()
+
+        # Return to the pristine base, dropping any previously applied commits.
+        # Prefer the remote-tracking base so we also pick up upstream updates.
+        upstream = f"origin/{self.default_revision}"
+        target = upstream if self.has_revision(upstream) else self.default_revision
+        self.repo.git.checkout(self.default_revision, force=True)
+        self.repo.git.reset("--hard", target)
+
+
+class GitWorker:
+    """
+    Drive a GitRepository through a single build: clean, apply the patch stack,
+    push to the remote try repository and return a Treeherder link.
+
+    Mirrors ``code_review_bot.mercurial.MercurialWorker`` but for Git. The key
+    difference is that there is no treestatus wait before retrying: Git has no
+    "try" tree to gate on, so failed pushes are simply retried with backoff.
+    """
+
+    ELIGIBLE_RETRY_ERRORS = [
+        error.lower()
+        for error in [
+            "could not read from remote repository",
+            "connection closed by remote host",
+            "connection timed out",
+            "early eof",
+            "rpc failed",
+            "the remote end hung up unexpectedly",
+            "ssh_exchange_identification",
+        ]
+    ]
+
+    def __init__(self, skippable_files=[]):
+        self.skippable_files = skippable_files
+
+    def run(self, repository, build):
+        """
+        Apply the stack of patches from the build, retrying on remote push
+        errors. Unlike the Mercurial worker, there is no treestatus wait.
+        """
+        while build.retries <= MAX_PUSH_RETRIES:
+            start = time.time()
+
+            if build.retries:
+                logger.warning(
+                    "Trying to apply build's diff after a remote push error "
+                    f"[{build.retries}/{MAX_PUSH_RETRIES}]"
+                )
+
+            try:
+                return self.handle_build(repository, build)
+            except RetryNeeded:
+                build.retries += 1
+
+                if build.retries > MAX_PUSH_RETRIES:
+                    error_log = "Max number of retries has been reached pushing the build to try repository"
+                    logger.warn("Git error on diff", error=error_log, build=build)
+                    return (
+                        "fail:git",
+                        build,
+                        {"message": error_log, "duration": time.time() - start},
+                    )
+
+                # Wait an exponential time before retrying the build
+                delay = PUSH_RETRY_EXPONENTIAL_DELAY**build.retries
+                logger.info(
+                    f"An error occurred pushing the build to try, retrying after {delay}s"
+                )
+                time.sleep(delay)
+
+    def is_commit_skippable(self, build):
+        def get_files_touched_in_diff(rawdiff):
+            patched = []
+            for parsed_diff in rs_parsepatch.get_diffs(rawdiff):
+                # filename is sometimes of format 'test.txt  Tue Feb 05 17:23:40 2019 +0100'
+                # fix after https://github.com/mozilla/rust-parsepatch/issues/61
+                if "filename" in parsed_diff:
+                    filename = parsed_diff["filename"].split(" ")[0]
+                    patched.append(filename)
+            return patched
+
+        return any(
+            patched_file in self.skippable_files
+            for rev in build.stack
+            for patched_file in get_files_touched_in_diff(rev.patch)
+        )
+
+    def is_eligible_for_retry(self, error):
+        """
+        Given a Git error message, if it's likely due to a temporary connection
+        problem, consider it eligible for retry.
+        """
+        error = error.lower()
+        return any(
+            eligible_message in error for eligible_message in self.ELIGIBLE_RETRY_ERRORS
+        )
+
+    def handle_build(self, repository, build):
+        """
+        Apply the build's diff on the local clone; on success push to try and
+        return a treeherder link. Unexpected push failures raise RetryNeeded so
+        run() retries; other failures return a warning result.
+        """
+        assert isinstance(repository, GitRepository)
+        start = time.time()
+
+        try:
+            # Start by cleaning the repo
+            repository.clean()
+
+            # First apply patches on local repo
+            repository.apply_build(build)
+
+            # Check Eligibility: some commits don't need to be pushed to try.
+            if self.is_commit_skippable(build):
+                logger.info("This patch series is ineligible for automated try push")
+                return (
+                    "fail:ineligible",
+                    build,
+                    {
+                        "message": "Modified files match skippable internal configuration files",
+                        "duration": time.time() - start,
+                    },
+                )
+
+            # Configure the try task
+            repository.add_try_commit(build)
+
+            # Then push that stack on try
+            tip = repository.push_to_try()
+            logger.info("Diff has been pushed !")
+
+            # Publish Treeherder link
+            uri = TREEHERDER_URL.format(repository.try_name, tip.hexsha)
+        except GitCommandError as e:
+            error_log = e.stderr or str(e)
+
+            if self.is_eligible_for_retry(error_log):
+                raise RetryNeeded
+
+            logger.warn("Git error on diff", error=error_log, args=e.args, build=build)
+            return (
+                "fail:git",
+                build,
+                {"message": error_log, "duration": time.time() - start},
+            )
+
+        except Exception as e:
+            logger.warn("Failed to process diff", error=e, build=build)
+            return (
+                "fail:general",
+                build,
+                {"message": str(e), "duration": time.time() - start},
+            )
+
+        return (
+            "success",
+            build,
+            {"treeherder_url": uri, "revision": tip.hexsha},
+        )

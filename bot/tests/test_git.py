@@ -6,8 +6,9 @@ import os.path
 from unittest.mock import MagicMock
 
 from conftest import MockBuild
+from git.exc import GitCommandError
 
-from code_review_bot.git import GitRepository
+from code_review_bot.git import MAX_PUSH_RETRIES, GitRepository, GitWorker
 
 # A diff whose base revision exists neither in Git nor Mercurial: patches will be
 # applied on the repository's default revision (mirrors the Mercurial tests).
@@ -155,3 +156,111 @@ def test_clean(mock_mc_git):
     assert not mock_mc_git.repo.is_dirty(untracked_files=True)
     assert not os.path.exists(untracked)
     assert open(readme).read() == "Hello World"
+
+
+def test_clean_drops_previous_build(PhabricatorMock, mock_mc_git):
+    """A reused clone does not accumulate a previous build's commits."""
+    branch = mock_mc_git.default_revision
+    base = mock_mc_git.repo.commit(branch).hexsha
+    assert mock_mc_git.repo.git.rev_list("--count", branch).strip() == "1"
+
+    # First build: apply the stack and the try_task_config commit
+    build = make_build(PhabricatorMock)
+    mock_mc_git.apply_build(build)
+    mock_mc_git.add_try_commit(build)
+
+    # Those commits live on a detached HEAD; the branch has not moved
+    assert mock_mc_git.repo.head.is_detached
+    assert mock_mc_git.repo.commit(branch).hexsha == base
+    assert os.path.exists(os.path.join(mock_mc_git.dir, "test.txt"))
+
+    # Cleaning returns to the pristine base, dropping the build's commits
+    mock_mc_git.clean()
+
+    assert mock_mc_git.repo.head.commit.hexsha == base
+    assert mock_mc_git.repo.git.rev_list("--count", branch).strip() == "1"
+    assert not os.path.exists(os.path.join(mock_mc_git.dir, "test.txt"))
+    assert not os.path.exists(os.path.join(mock_mc_git.dir, "try_task_config.json"))
+
+
+def test_worker_run_success(PhabricatorMock, mock_mc_git):
+    """Full success path: apply, configure try, push, return treeherder link."""
+    build = make_build(PhabricatorMock)
+
+    worker = GitWorker()
+    result = worker.run(mock_mc_git, build)
+
+    tip = mock_mc_git.repo.head.commit
+    assert result == (
+        "success",
+        build,
+        {
+            "revision": tip.hexsha,
+            "treeherder_url": (
+                "https://treeherder.mozilla.org/#/jobs?repo=try&revision="
+                f"{tip.hexsha}"
+            ),
+        },
+    )
+
+    # The remote try repo received the configured branch at the pushed commit
+    from git import Repo
+
+    remote = Repo(mock_mc_git.try_url)
+    assert remote.refs["code-review"].commit.hexsha == tip.hexsha
+
+
+def test_worker_skippable(PhabricatorMock, mock_mc_git):
+    """A patch touching only skippable files is not pushed to try."""
+    build = make_build(PhabricatorMock)
+
+    worker = GitWorker(skippable_files=["test.txt"])
+    mode, out_build, details = worker.run(mock_mc_git, build)
+
+    assert mode == "fail:ineligible"
+    assert out_build is build
+    assert "skippable" in details["message"]
+    # Nothing was pushed
+    from git import Repo
+
+    assert "code-review" not in Repo(mock_mc_git.try_url).refs
+
+
+def test_worker_failure_general(PhabricatorMock, mock_mc_git):
+    """A non-Git error while applying yields a fail:general result."""
+    build = make_build(PhabricatorMock)
+    mock_mc_git.apply_build = MagicMock(side_effect=Exception("boom"))
+
+    worker = GitWorker()
+    mode, out_build, details = worker.run(mock_mc_git, build)
+
+    assert mode == "fail:general"
+    assert details["message"] == "boom"
+
+
+def test_worker_retry_no_treestatus(PhabricatorMock, mock_mc_git, monkeypatch):
+    """Eligible push errors are retried (no treestatus wait) up to the max."""
+    build = make_build(PhabricatorMock)
+
+    # Isolate the worker's retry logic from the repo mechanics
+    mock_mc_git.clean = MagicMock()
+    mock_mc_git.apply_build = MagicMock()
+    mock_mc_git.add_try_commit = MagicMock()
+    error = GitCommandError(
+        "git push", 128, b"fatal: Could not read from remote repository"
+    )
+    mock_mc_git.push_to_try = MagicMock(side_effect=error)
+
+    # Don't actually wait through the exponential backoff
+    monkeypatch.setattr("code_review_bot.git.time.sleep", lambda *a, **k: None)
+
+    worker = GitWorker()
+
+    # The Git worker has no treestatus gate at all
+    assert not hasattr(worker, "wait_try_available")
+
+    mode, out_build, details = worker.run(mock_mc_git, build)
+
+    assert mode == "fail:git"
+    # Initial attempt + one per retry
+    assert mock_mc_git.push_to_try.call_count == MAX_PUSH_RETRIES + 1
