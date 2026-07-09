@@ -18,7 +18,7 @@ from code_review_bot.analysis import (
 )
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
-from code_review_bot.git import git_clone
+from code_review_bot.git import GitRepository, GitWorker, git_clone
 from code_review_bot.mercurial import MercurialWorker, Repository, robust_checkout
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import GithubRevision, PhabricatorRevision, Revision
@@ -295,21 +295,38 @@ class Workflow:
             api_key=self.phabricator.api_key,
         )
 
-        # Initialize mercurial repository
-        repository = Repository(
-            config={
-                "name": revision.base_repository_conf.name,
-                "try_name": revision.base_repository_conf.try_name,
-                "url": revision.base_repository_conf.url,
-                "try_url": revision.base_repository_conf.try_url,
-                # Setup ssh identity
-                "ssh_user": revision.base_repository_conf.ssh_user,
-                "ssh_key": settings.ssh_key,
-                # Force usage of robustcheckout
-                "checkout": "robust",
-            },
-            cache_root=settings.mercurial_cache,
-        )
+        # Initialize the repository and worker for the configured backend.
+        # Git is selected per-repository via repo_type; Mercurial is the default.
+        base_conf = revision.base_repository_conf
+        if base_conf.repo_type == "git":
+            repository = GitRepository(
+                config={
+                    "name": base_conf.name,
+                    "try_name": base_conf.try_name,
+                    "url": base_conf.url,
+                    "try_url": base_conf.try_url,
+                    # Setup ssh identity (a GitHub deploy key)
+                    "ssh_key": settings.ssh_key,
+                },
+                cache_root=settings.git_cache,
+            )
+            worker = GitWorker()
+        else:
+            repository = Repository(
+                config={
+                    "name": base_conf.name,
+                    "try_name": base_conf.try_name,
+                    "url": base_conf.url,
+                    "try_url": base_conf.try_url,
+                    # Setup ssh identity
+                    "ssh_user": base_conf.ssh_user,
+                    "ssh_key": settings.ssh_key,
+                    # Force usage of robustcheckout
+                    "checkout": "robust",
+                },
+                cache_root=settings.mercurial_cache,
+            )
+            worker = MercurialWorker()
 
         # Try to update the state 5 consecutive time
         for i in range(5):
@@ -340,7 +357,6 @@ class Workflow:
         repository.clone()
 
         # Apply the stack of patches and push to try
-        worker = MercurialWorker()
         output = worker.run(repository, build)
 
         # Update index when the patch has been pushed to try

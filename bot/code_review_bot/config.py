@@ -24,7 +24,10 @@ TaskCluster = collections.namedtuple(
 )
 RepositoryConf = collections.namedtuple(
     "RepositoryConf",
-    "name, try_name, url, try_url, decision_env_prefix, ssh_user",
+    "name, try_name, url, try_url, decision_env_prefix, ssh_user, repo_type",
+    # repo_type is optional and defaults to Mercurial so existing repository
+    # secrets keep working; set it to "git" to push to a Git remote instead.
+    defaults=("hg",),
 )
 
 
@@ -123,13 +126,18 @@ class Settings:
             assert isinstance(
                 repo, dict
             ), "Repository configuration #{nb+1} is not a dict"
-            data = []
+            data = {}
             for key in RepositoryConf._fields:
-                assert (
-                    key in repo
-                ), f"Missing key {key} in repository configuration #{nb+1}"
-                data.append(repo[key])
-            return RepositoryConf._make(data)
+                if key in repo:
+                    data[key] = repo[key]
+                elif key in RepositoryConf._field_defaults:
+                    # Optional field, fall back to its default (e.g. repo_type)
+                    data[key] = RepositoryConf._field_defaults[key]
+                else:
+                    raise AssertionError(
+                        f"Missing key {key} in repository configuration #{nb+1}"
+                    )
+            return RepositoryConf(**data)
 
         self.repositories = [build_conf(i, repo) for i, repo in enumerate(repositories)]
         assert self.repositories, "No repositories available"
