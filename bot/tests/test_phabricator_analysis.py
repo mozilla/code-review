@@ -11,7 +11,6 @@ import pytest
 from libmozdata.phabricator import BuildState, ConduitError
 
 from code_review_bot import mercurial
-from code_review_bot import workflow as workflow_module
 from code_review_bot.analysis import (
     LANDO_FAILURE_HG_MESSAGE,
     PhabricatorRevisionBuild,
@@ -345,6 +344,12 @@ def test_start_analysis_selects_backend(
     git_ssh_key,
 ):
     """start_analysis picks the Git or Mercurial backend from repo_type."""
+    # Import lazily: a module-level import binds taskcluster.utils.stringDate in
+    # code_review_bot.workflow at collection time, before the autouse
+    # mock_taskcluster_date fixture can patch it, breaking the date assertions
+    # of unrelated tests (e.g. test_index.py)
+    from code_review_bot import workflow as workflow_module
+
     mock_config.mercurial_cache = tmpdir
     mock_config.git_cache = tmpdir
     mock_config.ssh_key = "Dummy Private SSH Key"
