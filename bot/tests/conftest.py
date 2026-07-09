@@ -1191,6 +1191,63 @@ def mock_nss(tmpdir):
     return repo
 
 
+def build_git_repository(tmpdir, name):
+    """
+    Mock a local git repo with a single base commit (no remote access).
+    Mirror of build_repository() for the Mercurial tests.
+    """
+    from git import Actor, Repo
+
+    repo_dir = str(tmpdir.mkdir(name).realpath())
+    repo = Repo.init(repo_dir)
+
+    # Set a committer identity and disable signing for the fixture
+    with repo.config_writer() as cw:
+        cw.set_value("user", "name", "test")
+        cw.set_value("user", "email", "test")
+        cw.set_value("commit", "gpgsign", "false")
+
+    # Commit a Readme as the base revision
+    readme = os.path.join(repo_dir, "README.md")
+    with open(readme, "w") as f:
+        f.write("Hello World")
+    repo.index.add(["README.md"])
+    actor = Actor("test", "test")
+    repo.index.commit("Readme", author=actor, committer=actor)
+
+    return repo
+
+
+@pytest.fixture
+def mock_mc_git(tmpdir):
+    """
+    Mock a Mozilla Central repository backed by Git
+    """
+    from git import Repo
+
+    from code_review_bot.git import GitRepository
+
+    repo = build_git_repository(tmpdir, "mozilla-central")
+
+    # A local bare repo acts as the remote "try" target (no network access)
+    try_dir = str(tmpdir.mkdir("try.git").realpath())
+    Repo.init(try_dir, bare=True)
+
+    config = {
+        "name": "mozilla-central",
+        "url": "https://github.com/mozilla/test",
+        "try_url": try_dir,
+        "try_name": "try",
+        "ssh_key": "privateSSHkey",
+        "default_revision": repo.active_branch.name,
+        "head_branch": "code-review",
+    }
+    git_repo = GitRepository(config, str(tmpdir.realpath()))
+    git_repo._repo = repo
+    git_repo.clone = MagicMock(side_effect=lambda: True)
+    return git_repo
+
+
 @pytest.fixture
 @contextmanager
 def PhabricatorMock():
