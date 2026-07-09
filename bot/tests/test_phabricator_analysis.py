@@ -326,7 +326,14 @@ def test_repository_conf_repo_type():
     assert conf._replace(repo_type="git").repo_type == "git"
 
 
-@pytest.mark.parametrize("repo_type, uses_git", [("git", True), ("hg", False)])
+@pytest.mark.parametrize(
+    "repo_type, uses_git, git_ssh_key",
+    [
+        ("git", True, "GitDeployKey"),
+        ("git", True, None),
+        ("hg", False, None),
+    ],
+)
 def test_start_analysis_selects_backend(
     mock_phabricator,
     mock_workflow,
@@ -335,11 +342,13 @@ def test_start_analysis_selects_backend(
     monkeypatch,
     repo_type,
     uses_git,
+    git_ssh_key,
 ):
     """start_analysis picks the Git or Mercurial backend from repo_type."""
     mock_config.mercurial_cache = tmpdir
     mock_config.git_cache = tmpdir
     mock_config.ssh_key = "Dummy Private SSH Key"
+    mock_config.git_ssh_key = git_ssh_key
 
     # Force the configured repository's backend type
     mock_config.repositories = [
@@ -375,11 +384,16 @@ def test_start_analysis_selects_backend(
         assert not hg_repo.called and not hg_worker.called
         # Git path uses the git cache, not the mercurial one
         assert git_repo.call_args.kwargs["cache_root"] == mock_config.git_cache
+        # The dedicated deploy key wins, falling back to the global key
+        expected_key = git_ssh_key or "Dummy Private SSH Key"
+        assert git_repo.call_args.kwargs["config"]["ssh_key"] == expected_key
     else:
         assert hg_repo.called and hg_worker.called
         assert not git_repo.called and not git_worker.called
+        assert hg_repo.call_args.kwargs["config"]["ssh_key"] == "Dummy Private SSH Key"
 
     # Reset settings for following tests
     mock_config.mercurial_cache = None
     mock_config.git_cache = None
     mock_config.ssh_key = None
+    mock_config.git_ssh_key = None
