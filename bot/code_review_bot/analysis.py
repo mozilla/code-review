@@ -117,6 +117,25 @@ def publish_analysis_phabricator(payload, phabricator_api):
             build.target_phid, BuildState.Fail, unit=[failure]
         )
 
+    elif mode == "fail:git":
+        extra_content = ""
+        if build.missing_base_revision:
+            extra_content = f" because the parent revision ({build.base_revision}) does not exist on the target repository. If possible, you should publish that revision"
+
+        failure = UnitResult(
+            namespace="code-review",
+            name="git",
+            result=UnitResultState.Fail,
+            details="WARNING: The code review bot failed to apply your patch{}.\n\n```{}```".format(
+                extra_content, extras["message"]
+            ),
+            format="remarkup",
+            duration=extras.get("duration", 0),
+        )
+        phabricator_api.update_build_target(
+            build.target_phid, BuildState.Fail, unit=[failure]
+        )
+
     elif mode == "test_result":
         result = UnitResult(
             namespace="code-review",
@@ -192,10 +211,11 @@ def publish_analysis_lando(payload, lando_warnings):
         except Exception as ex:
             logger.error(str(ex), exc_info=True)
 
-    elif mode == "fail:mercurial":
-        # Send mercurial message to Lando
+    elif mode in ("fail:mercurial", "fail:git"):
+        # Send patch application failure message to Lando
         logger.info(
-            "Publishing code review hg failure.",
+            "Publishing code review VCS failure.",
+            mode=mode,
             revision=build.revision["id"],
             diff=build.diff_id,
         )
