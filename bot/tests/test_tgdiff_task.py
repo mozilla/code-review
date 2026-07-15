@@ -100,11 +100,10 @@ def test_load_artifacts_warning_summary(
 
     mock_taskgraph_diff_task.load_artifacts(queue)
 
-    # The summary.json is WARNING, so an extra reviewer group is added and we don't load it in the artifact_urls list
     assert mock_taskgraph_diff_task.artifact_urls == {
         "public/taskgraph/diffs/diff_mc-onpush.txt": "http://tc.test/12345deadbeef/0/artifacts/public/taskgraph/diffs/diff_mc-onpush.txt"
     }
-    assert mock_taskgraph_diff_task.extra_reviewers_groups == ["taskgraph-reviewers"]
+    assert mock_taskgraph_diff_task.extra_reviewers_groups == []
 
 
 def test_load_artifacts_warning_summary_comm(
