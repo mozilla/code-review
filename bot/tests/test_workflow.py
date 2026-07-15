@@ -16,6 +16,7 @@ from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
+from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
 
@@ -33,6 +34,8 @@ from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
         ("source-test-mozlint-whatever", MozLintTask, True),
         ("source-test-clang-format", ClangFormatTask, False),
         ("source-test-clang-format", ClangFormatTask, True),
+        ("source-test-doc-upload", DocUploadTask, False),
+        ("source-test-doc-upload", DocUploadTask, True),
         ("source-test-taskgraph-diff", TaskGraphDiffTask, False),
         ("source-test-taskgraph-diff", TaskGraphDiffTask, True),
         ("source-test-unsupported", None, False),
@@ -65,6 +68,81 @@ def test_build_task(task_name, result, on_autoland, mock_config, mock_workflow):
         assert task is None
     else:
         assert isinstance(task, result)
+
+
+def test_find_issues_doc_upload_both_issues_and_notice(mock_workflow, mock_revision):
+    """
+    A source-test-doc-upload task both reports issues found in its
+    code-review issues.json artifact, and builds a documentation preview
+    notice from its doc artifacts (DocUploadTask now supports both, see #3488).
+    """
+    mock_revision.files = ["docs/folderA/index.rst"]
+
+    mock_workflow.setup_mock_tasks(
+        {
+            "remoteTryTask": {"dependencies": ["doc-upload-task"]},
+            "doc-upload-task": {
+                "name": "source-test-doc-upload",
+                "artifacts": {
+                    "public/code-review/issues.json": {
+                        "docs/folderA/index.rst": [
+                            {
+                                "path": "docs/folderA/index.rst",
+                                "line": 1,
+                                "column": 1,
+                                "level": "warning",
+                                "check": "some-check",
+                                "message": "A doc issue",
+                            }
+                        ]
+                    },
+                    "public/firefox-source-docs-url.txt": "http://firefox-test-docs.mozilla.org/index.html",
+                    "public/trees.json": {"section1": "docs/folderA"},
+                },
+            },
+        }
+    )
+    # Bypass revision publication check (backend storage is disabled in tests)
+    mock_workflow.backend_api.publish_revision = lambda rev: {}
+
+    issues, task_failures, notices, reviewers = mock_workflow.find_issues(
+        mock_revision, "remoteTryTask"
+    )
+
+    assert len(issues) == 1
+    assert issues[0].message == "A doc issue"
+    assert task_failures == []
+    assert len(notices) == 1
+    assert "docs/folderA/index.rst" in notices[0]
+
+
+def test_find_issues_doc_upload_failure_reported_once(mock_workflow, mock_revision):
+    """
+    A failed source-test-doc-upload task with no parsed issues or patches
+    must only be reported once as a task failure, even though DocUploadTask
+    exercises both the AnalysisTask and NoticeTask dispatch branches.
+    """
+    mock_revision.files = []
+
+    mock_workflow.setup_mock_tasks(
+        {
+            "remoteTryTask": {"dependencies": ["doc-upload-task"]},
+            "doc-upload-task": {
+                "name": "source-test-doc-upload",
+                "state": "failed",
+                "artifacts": {},
+            },
+        }
+    )
+    mock_workflow.backend_api.publish_revision = lambda rev: {}
+
+    issues, task_failures, notices, reviewers = mock_workflow.find_issues(
+        mock_revision, "remoteTryTask"
+    )
+
+    assert issues == []
+    assert notices == []
+    assert len(task_failures) == 1
 
 
 def test_on_production(mock_config, mock_repositories):
