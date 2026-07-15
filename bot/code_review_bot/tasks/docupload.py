@@ -3,6 +3,7 @@ import os
 import structlog
 
 from code_review_bot.tasks.base import NoticeTask
+from code_review_bot.tasks.default import DefaultTask
 
 logger = structlog.get_logger(__name__)
 
@@ -58,12 +59,19 @@ def direct_doc_url(path, docs_url, trees):
     return docs_url
 
 
-class DocUploadTask(NoticeTask):
+class DocUploadTask(DefaultTask, NoticeTask):
     """
     Support doc-upload tasks
+
+    This task both reports issues using the generic code-review format
+    (inherited from DefaultTask, e.g. failure reporting) and builds a
+    documentation preview notice (NoticeTask).
     """
 
-    artifacts = ["public/firefox-source-docs-url.txt", "public/trees.json"]
+    artifacts = DefaultTask.artifacts + [
+        "public/firefox-source-docs-url.txt",
+        "public/trees.json",
+    ]
 
     @property
     def display_name(self):
