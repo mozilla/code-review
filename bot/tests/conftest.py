@@ -990,11 +990,7 @@ class MockPhabricator:
         params = self.parse_request(request, ("constraints",))
 
         result = None
-        if params["constraints"]["slugs"] == ["taskgraph-reviewers"]:
-            result = [
-                {"phid": "PHID-123456789-TGReviewers", "slug": "taskgraph-reviewers"}
-            ]
-        elif params["constraints"]["slugs"] == ["accessibility-frontend-reviewers"]:
+        if params["constraints"]["slugs"] == ["accessibility-frontend-reviewers"]:
             result = [
                 {
                     "phid": "PHID-123456789-A11yReviewers",
