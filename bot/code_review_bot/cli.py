@@ -56,11 +56,6 @@ def parse_cli():
         default=os.environ.get("TASKCLUSTER_SECRET"),
     )
     parser.add_argument(
-        "--git-ssh-key-secret",
-        help="Taskcluster secret holding the SSH deploy key used to push to Git try repositories",
-        default=os.environ.get("GIT_SSH_KEY_SECRET"),
-    )
-    parser.add_argument(
         "--mercurial-repository",
         help="Optional path to a up-to-date mercurial repository matching the analyzed revision.\n"
         "Reduce the time required to read updated files, i.e. to compute the unique hash of multiple issues.\n"
@@ -103,6 +98,8 @@ def main():
             "ALLOWED_PATHS": ["*"],
             "task_failures_ignored": [],
             "ssh_key": None,
+            "GITHUB_APP_ID": None,
+            "GITHUB_APP_PRIVKEY": None,
             "user_blacklist": [],
         },
         local_secrets=yaml.safe_load(args.configuration)
@@ -121,12 +118,6 @@ def main():
     # Setup libmozdata configuration
     setup_libmozdata("code-review-bot")
 
-    # Load the dedicated Git deploy key from its own secret when configured
-    git_ssh_key = None
-    if args.git_ssh_key_secret:
-        secret = taskcluster.get_service("secrets").get(args.git_ssh_key_secret)
-        git_ssh_key = secret["secret"]["ssh_privkey"]
-
     # Setup settings before stats
     settings.setup(
         taskcluster.secrets["APP_CHANNEL"],
@@ -135,7 +126,8 @@ def main():
         taskcluster.secrets["ssh_key"],
         args.mercurial_repository,
         args.github_repository,
-        git_ssh_key=git_ssh_key,
+        github_app_id=taskcluster.secrets["GITHUB_APP_ID"],
+        github_app_privkey=taskcluster.secrets["GITHUB_APP_PRIVKEY"],
     )
 
     # Setup statistics

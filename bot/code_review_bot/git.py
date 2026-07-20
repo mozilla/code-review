@@ -1,4 +1,4 @@
-import atexit
+import asyncio
 import json
 import os
 import re
@@ -11,6 +11,7 @@ import structlog
 from git import Repo
 from git.exc import GitCommandError
 from libmozdata.phabricator import PhabricatorPatch
+from simple_github import AppAuth, AppInstallationAuth
 
 from code_review_bot.sources.phabricator import PhabricatorBuild
 
@@ -124,7 +125,8 @@ class GitRepository:
 
     Notable differences from the Mercurial implementation:
     - the base revision is already a Git hash, so there is no Lando ``git2hg`` lookup;
-    - authentication uses an SSH deploy key passed through ``GIT_SSH_COMMAND``.
+    - pushes are authenticated over HTTPS with a short-lived GitHub App
+      installation token generated at push time.
     """
 
     def __init__(self, config, cache_root):
@@ -147,23 +149,13 @@ class GitRepository:
 
         self._repo = None
 
-        # Write the SSH (deploy) key from the configuration to a temporary file
-        _, self.ssh_key_path = tempfile.mkstemp(suffix=".key")
-        with open(self.ssh_key_path, "w") as f:
-            f.write(config["ssh_key"])
-        os.chmod(self.ssh_key_path, 0o600)
-        self.git_ssh_command = f"ssh -i {self.ssh_key_path} -o StrictHostKeyChecking=no"
-
-        # Remove the key when finished
-        atexit.register(self.end_of_life)
+        # GitHub App credentials used to generate short-lived push tokens
+        self.github_app_id = config.get("github_app_id")
+        self.github_app_privkey = config.get("github_app_privkey")
+        self._github_token = None
 
     def __str__(self):
         return self.name
-
-    def end_of_life(self):
-        if os.path.exists(self.ssh_key_path):
-            os.unlink(self.ssh_key_path)
-            logger.info("Removed ssh key")
 
     @property
     def repo(self):
@@ -173,16 +165,55 @@ class GitRepository:
             self._repo = Repo(self.dir)
         return self._repo
 
+    def github_token(self):
+        """Short-lived GitHub App installation token for the try repository.
+
+        Generated on first use and cached for the run (a bot run is well within
+        the one hour validity of installation tokens).
+        """
+        if self._github_token is None:
+            assert (
+                self.github_app_id and self.github_app_privkey
+            ), "Missing GitHub App credentials"
+            self._github_token = asyncio.run(self._generate_github_token())
+        return self._github_token
+
+    async def _generate_github_token(self):
+        parts = urlparse(self.try_url)
+        assert (
+            parts.netloc == "github.com"
+        ), "GitHub App tokens only support github.com repositories"
+        path = parts.path.strip("/").removesuffix(".git")
+        owner, _, repo = path.partition("/")
+        auth = AppInstallationAuth(
+            AppAuth(self.github_app_id, self.github_app_privkey),
+            owner,
+            repositories=[repo],
+        )
+        try:
+            return await auth.get_token()
+        finally:
+            await auth.close()
+
+    def authenticated_url(self, url):
+        """Inject an installation token in an HTTPS GitHub url.
+
+        Other urls (e.g. local paths in the test suite) are returned unchanged.
+        """
+        parts = urlparse(url)
+        if parts.scheme not in ("http", "https"):
+            return url
+        return f"{parts.scheme}://git:{self.github_token()}@{parts.netloc}{parts.path}"
+
     def clone(self):
+        # Read operations use the plain url: the repositories are public, only
+        # pushes need authentication
         logger.info("Checking out git repository", repo=self.url, dir=self.dir)
         if os.path.isdir(os.path.join(self.dir, ".git")):
             self._repo = Repo(self.dir)
-            with self.repo.git.custom_environment(GIT_SSH_COMMAND=self.git_ssh_command):
-                self.repo.remotes.origin.fetch()
+            self.repo.remotes.origin.fetch()
         else:
-            self._repo = Repo.clone_from(
-                self.url, self.dir, env={"GIT_SSH_COMMAND": self.git_ssh_command}
-            )
+            self._repo = Repo.clone_from(self.url, self.dir)
         logger.info("Full checkout finished")
 
     def has_revision(self, revision):
@@ -360,13 +391,14 @@ class GitRepository:
             self.repo.git.commit("--no-verify", "-m", message)
 
     def push_to_try(self):
-        """Push the current HEAD to the remote try repository over the deploy key."""
+        """Push the current HEAD to the remote try repository."""
         head = self.repo.head.commit
         logger.info("Pushing patches to try", rev=head.hexsha, branch=self.head_branch)
-        with self.repo.git.custom_environment(GIT_SSH_COMMAND=self.git_ssh_command):
-            self.repo.git.push(
-                self.try_url, f"HEAD:refs/heads/{self.head_branch}", force=True
-            )
+        self.repo.git.push(
+            self.authenticated_url(self.try_url),
+            f"HEAD:refs/heads/{self.head_branch}",
+            force=True,
+        )
         return head
 
     def clean(self):
@@ -387,8 +419,7 @@ class GitRepository:
 
         # Refresh from the remote when one is configured (mirrors hg pull)
         if any(remote.name == "origin" for remote in self.repo.remotes):
-            with self.repo.git.custom_environment(GIT_SSH_COMMAND=self.git_ssh_command):
-                self.repo.remotes.origin.fetch()
+            self.repo.remotes.origin.fetch()
 
         # Return to the pristine base, dropping any previously applied commits.
         # Prefer the remote-tracking base so we also pick up upstream updates.

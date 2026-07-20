@@ -199,7 +199,6 @@ def test_clean_requires_pristine_base(tmpdir):
         "name": "no-default",
         "url": "https://github.com/mozilla/test",
         "try_url": str(tmpdir.mkdir("no-default-try.git").realpath()),
-        "ssh_key": "privateSSHkey",
     }
     git_repo = GitRepository(config, str(tmpdir.realpath()))
     git_repo._repo = repo
@@ -247,6 +246,60 @@ def test_worker_failure_git(PhabricatorMock, mock_mc_git):
     assert mode == "fail:git"
     assert out_build is build
     assert "corrupt patch" in details["message"]
+
+
+def test_github_token(monkeypatch, tmpdir):
+    """An installation token is generated from the App credentials, restricted
+    to the try repository, and cached for the run."""
+    from conftest import build_git_repository
+
+    repo = build_git_repository(tmpdir, "app-repo")
+    config = {
+        "name": "app-repo",
+        "url": "https://github.com/mozilla-releng/staging-firefox",
+        "try_url": "https://github.com/mozilla-releng/staging-firefox.git",
+        "github_app_id": 12345,
+        "github_app_privkey": "AppPrivateKey",
+    }
+    git_repo = GitRepository(config, str(tmpdir.realpath()))
+    git_repo._repo = repo
+
+    calls = []
+
+    class FakeInstallationAuth:
+        def __init__(self, app_auth, owner, repositories):
+            calls.append((app_auth, owner, repositories))
+
+        async def get_token(self):
+            return "generated-token"
+
+        async def close(self):
+            pass
+
+    monkeypatch.setattr(
+        "code_review_bot.git.AppAuth", lambda app_id, privkey: (app_id, privkey)
+    )
+    monkeypatch.setattr("code_review_bot.git.AppInstallationAuth", FakeInstallationAuth)
+
+    assert git_repo.github_token() == "generated-token"
+    assert calls == [((12345, "AppPrivateKey"), "mozilla-releng", ["staging-firefox"])]
+
+    # Cached: no second generation
+    assert git_repo.github_token() == "generated-token"
+    assert len(calls) == 1
+
+    # The token is injected in https urls only
+    assert (
+        git_repo.authenticated_url(
+            "https://github.com/mozilla-releng/staging-firefox.git"
+        )
+        == "https://git:generated-token@github.com/mozilla-releng/staging-firefox.git"
+    )
+
+
+def test_authenticated_url_local_paths(mock_mc_git):
+    """Local paths (as used by the test remotes) are never authenticated."""
+    assert mock_mc_git.authenticated_url(mock_mc_git.try_url) == mock_mc_git.try_url
 
 
 def test_worker_run_success(PhabricatorMock, mock_mc_git):

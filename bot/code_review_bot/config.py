@@ -66,8 +66,9 @@ class Settings:
         # SSH Key used to push on try
         self.ssh_key = None
 
-        # SSH deploy key used to push on Git try repositories
-        self.git_ssh_key = None
+        # GitHub App credentials used to push on Git try repositories
+        self.github_app_id = None
+        self.github_app_privkey = None
 
         # List of users that should trigger a new analysis
         # Indexed by their Phabricator ID
@@ -86,7 +87,8 @@ class Settings:
         ssh_key=None,
         mercurial_cache=None,
         git_cache=None,
-        git_ssh_key=None,
+        github_app_id=None,
+        github_app_privkey=None,
     ):
         # Detect source from env
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
@@ -173,7 +175,8 @@ class Settings:
             # Fallback to mercurial cache to ease migration on production systems
             self.git_cache = self.mercurial_cache
 
-        self.git_ssh_key = git_ssh_key
+        self.github_app_id = github_app_id
+        self.github_app_privkey = github_app_privkey
 
     def load_user_blacklist(self, usernames, phabricator_api):
         """

@@ -272,9 +272,11 @@ class Workflow:
                 "One of Mercurial cache or github cache must be configured to start analysis"
             )
 
-        # Cannot run without an ssh key
-        if not settings.ssh_key and not settings.git_ssh_key:
-            raise Exception("An SSH key must be configured to start analysis")
+        # Cannot run without a push credential
+        if not settings.ssh_key and not settings.github_app_privkey:
+            raise Exception(
+                "An SSH key or GitHub App must be configured to start analysis"
+            )
 
         # Set the Phabricator build as running
         self.update_status(revision, state=BuildState.Work)
@@ -305,8 +307,9 @@ class Workflow:
                     "try_name": base_conf.try_name,
                     "url": base_conf.url,
                     "try_url": base_conf.try_url,
-                    # Deploy key from the dedicated secret, fallback to the global key
-                    "ssh_key": settings.git_ssh_key or settings.ssh_key,
+                    # GitHub App credentials to generate short-lived push tokens
+                    "github_app_id": settings.github_app_id,
+                    "github_app_privkey": settings.github_app_privkey,
                 },
                 cache_root=settings.git_cache,
             )

@@ -1238,7 +1238,6 @@ def mock_mc_git(tmpdir):
         "url": "https://github.com/mozilla/test",
         "try_url": try_dir,
         "try_name": "try",
-        "ssh_key": "privateSSHkey",
         "default_revision": repo.active_branch.name,
         "head_branch": "code-review",
     }
