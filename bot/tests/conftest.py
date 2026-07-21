@@ -269,6 +269,13 @@ def mock_phabricator(mock_config):
         content_type="application/json",
     )
 
+    responses.add(
+        responses.POST,
+        "http://phabricator.test/api/harbormaster.createartifact",
+        body=_response("harbormaster_createartifact"),
+        content_type="application/json",
+    )
+
     config_file = tempfile.NamedTemporaryFile()
     with open(config_file.name, "w") as f:
         custom_conf = ConfigParser()
@@ -983,9 +990,13 @@ class MockPhabricator:
         params = self.parse_request(request, ("constraints",))
 
         result = None
-        if params["constraints"]["slugs"] == ["taskgraph-reviewers"]:
+        if params["constraints"]["slugs"] == ["accessibility-frontend-reviewers"]:
             result = [
-                {"phid": "PHID-123456789-TGReviewers", "slug": "taskgraph-reviewers"}
+                {
+                    "phid": "PHID-123456789-A11yReviewers",
+                    "slug": "accessibility-frontend-reviewers",
+                    "attachments": {"members": {"members": []}},
+                }
             ]
 
         return (
