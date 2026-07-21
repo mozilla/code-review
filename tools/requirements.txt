@@ -1,7 +1,7 @@
 aiohttp==3.14.1
 
 # Limit idna to avid conflicts
-idna>=3.16,<3.17
+idna>=3.18,<3.19
 libmozdata==0.2.14
 multidict==6.7.1
 rs_parsepatch==0.4.6
