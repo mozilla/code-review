@@ -144,7 +144,7 @@ tasks:
                   - bot/docker/Dockerfile
                 artifacts:
                   public/code-review-bot.tar.zst:
-                    expires: { $fromNow: "6 months" }
+                    expires: { $fromNow: "1 year" }
                     path: /bot.tar.zst
                     type: file
               routes:
@@ -156,8 +156,8 @@ tasks:
                   - "index.code-analysis.v2.code-review.revision.${head_rev}"
                   - "index.code-analysis.v2.code-review.branch.${head_branch}"
               metadata:
-                name: Code Review Bot docker in docker build
-                description: Build docker image of code review bot, using a remote docker daemon
+                name: Code Review Bot docker image build
+                description: Build docker image of code review bot
                 owner: bastien@mozilla.com
                 source: https://github.com/mozilla/code-review
 
