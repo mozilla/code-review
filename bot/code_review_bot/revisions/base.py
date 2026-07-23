@@ -174,8 +174,8 @@ class Revision(ABC):
             try:
                 with (local_cache_repository / file_path).open() as f:
                     file_content = f.read()
-            except (FileNotFoundError, IsADirectoryError):
-                logger.warning("Failed to find issue's related file", path=file_path)
+            except (FileNotFoundError, IsADirectoryError, UnicodeDecodeError):
+                logger.warning("Failed to read issue's related file", path=file_path)
                 file_content = None
         else:
             try:
