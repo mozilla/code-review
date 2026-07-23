@@ -93,6 +93,13 @@ def test_autoland(mock_config, mock_revision_autoland):
     )
 
 
+def test_binary_file_content_is_ignored(mock_revision, tmp_path):
+    binary_file = tmp_path / "artifact.webp"
+    binary_file.write_bytes(b"RIFF\xac=\x00\x00WEBP")
+
+    assert mock_revision.get_file_content(binary_file.name, tmp_path) is None
+
+
 def test_clang_files(mock_revision):
     """
     Test clang files detection
