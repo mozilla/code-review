@@ -40,7 +40,7 @@
       "image": "mozilla/code-review:integration-REVISION",
       "maxRunTime": 7200
     },
-    "priority": "normal",
+    "priority": "lowest",
     "provisionerId": "proj-relman",
     "retries": 1,
     "routes": [],
