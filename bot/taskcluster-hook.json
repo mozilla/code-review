@@ -75,7 +75,7 @@
       "image": "mozilla/code-review:REVISION",
       "maxRunTime": 7200
     },
-    "priority": "normal",
+    "priority": "lowest",
     "provisionerId": "aws-provisioner-v1",
     "retries": 3,
     "routes": ["index.project.relman.CHANNEL.code-review.latest"],
