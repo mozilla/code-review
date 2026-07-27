@@ -65,25 +65,31 @@ class GithubReporter(Reporter):
             ]
 
             # Issues that are not in patch cannot be published directly through a Github review
-            inside_patch_issues = [
-                issue for issue in publishable_issues if issue.in_patch
+            issues_in_patch_files = [
+                issue for issue in publishable_issues if issue.in_touched_files
             ]
-            outside_patch_issues = [
-                issue for issue in publishable_issues if not issue.in_patch
+            issues_outside_patch_files = [
+                issue for issue in publishable_issues if not issue.in_touched_files
             ]
-            if outside_patch_issues:
+            if issues_outside_patch_files:
                 # Mention issues outside of the patch in the review main comment, after a new line
                 messages.append("")
                 messages.append(
-                    f"{len(outside_patch_issues)} issue{'s' if len(outside_patch_issues) > 1 else ''} "
-                    f"{'are' if len(outside_patch_issues) > 1 else 'is'} located outside of the patch:"
+                    f"{len(issues_outside_patch_files)} issue{'s' if len(issues_outside_patch_files) > 1 else ''} "
+                    f"{'are' if len(issues_outside_patch_files) > 1 else 'is'} located outside of the files "
+                    "touched by the patch:"
                 )
-                for issue in outside_patch_issues:
-                    messages.append(f"* `{issue.path}:{issue.line}` {issue.as_text()}")
+                for issue in issues_outside_patch_files:
+                    if issue.line:
+                        messages.append(
+                            f"* `{issue.path}:{issue.line}` {issue.as_text()}"
+                        )
+                    else:
+                        messages.append(f"* `{issue.path}` {issue.as_text()}")
 
             # Publish a review summarizing detected, unresolved and closed issues
             self.github_client.publish_review(
-                issues=inside_patch_issues,
+                issues=issues_in_patch_files,
                 revision=revision,
                 message="\n".join(messages),
                 event=ReviewEvent.RequestChanges,

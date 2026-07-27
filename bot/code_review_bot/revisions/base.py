@@ -166,6 +166,13 @@ class Revision(ABC):
         lines = set(range(issue.line, issue.line + issue.nb_lines))
         return not lines.isdisjoint(modified_lines)
 
+    def in_touched_files(self, issue):
+        """
+        Check if the issue (path+lines) is in this patch
+        """
+        assert isinstance(issue, Issue)
+        return issue.path in self.files
+
     def get_file_content(
         self, file_path: str, local_cache_repository: Path | None = None
     ):

@@ -10,6 +10,7 @@ from textwrap import dedent
 import responses
 from conftest import FIXTURES_DIR
 
+from code_review_bot import Level
 from code_review_bot.report.github import GithubReporter
 from code_review_bot.revisions import GithubRevision, Revision
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
@@ -33,8 +34,8 @@ def test_github_review(
     assert isinstance(revision, GithubRevision)
     revision.lines = {
         # Add dummy lines diff
-        "test.txt": [0],
-        "path/to/test.cpp": [0],
+        "test.txt": [42],
+        "path/to/test.cpp": [42],
         "another_test.cpp": [41, 42, 43],
     }
     revision.files = ["test.txt", "test.cpp", "another_test.cpp"]
@@ -59,7 +60,22 @@ def test_github_review(
         "dummy message",
     )
     assert issue_clang_tidy.in_patch is True
+    assert issue_clang_tidy.in_touched_files is True
     assert issue_clang_tidy.is_publishable()
+
+    issue_on_touched_file = ClangTidyIssue(
+        analyzer=mock_task(ClangTidyTask, "source-test-clang-tidy"),
+        revision=revision,
+        path="test.txt",
+        line=10,
+        column=0,
+        level=Level("error"),
+        check="Some check",
+        message="Some error",
+    )
+    assert issue_on_touched_file.in_patch is False
+    assert issue_on_touched_file.in_touched_files is True
+    assert issue_on_touched_file.is_publishable()
 
     issue_coverage = CoverageIssue(
         mock_task(ZeroCoverageTask, "coverage"),
@@ -92,7 +108,9 @@ def test_github_review(
         json=[],
     )
 
-    reporter.publish([issue_clang_tidy, issue_coverage], revision, [], [], [])
+    reporter.publish(
+        [issue_clang_tidy, issue_on_touched_file, issue_coverage], revision, [], [], []
+    )
     assert [(call.request.method, call.request.url) for call in responses.calls] == [
         ("GET", "https://github.com/owner/repo-name/pull/1.diff"),
         ("GET", "https://api.github.com:443/app/installations"),
@@ -124,9 +142,9 @@ def test_github_review(
     review_creation = responses.calls[-1]
     assert json.loads(review_creation.request.body) == {
         "body": dedent("""
-            2 issues have been found in this revision.
+            3 issues have been found in this revision.
 
-            1 issue is located outside of the patch:
+            1 issue is located outside of the files touched by the patch:
             * `path/to/test.cpp:1` This file is uncovered
         """).strip(),
         "comments": [
@@ -134,6 +152,11 @@ def test_github_review(
                 "body": "dummy message",
                 "path": "another_test.cpp",
                 "line": 42,
+            },
+            {
+                "body": "Some error",
+                "path": "test.txt",
+                "line": 10,
             },
         ],
         "commit_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",

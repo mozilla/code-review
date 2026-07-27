@@ -182,6 +182,10 @@ class Issue(abc.ABC):
     def in_patch(self):
         return self.revision.contains(self)
 
+    @property
+    def in_touched_files(self):
+        return self.revision.in_touched_files(self)
+
     @cached_property
     def hash(self):
         """
