@@ -25,7 +25,7 @@ from libmozdata.phabricator import PhabricatorAPI
 from code_review_bot import Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import GetAppUserAgent, settings
-from code_review_bot.mercurial import Repository
+from code_review_bot.mercurial import MercurialRepository
 from code_review_bot.sources.phabricator import (
     PhabricatorActions,
     PhabricatorBuild,
@@ -1162,7 +1162,7 @@ def mock_mc(tmpdir):
         "try_url": "http://mozilla-central/try",
         "batch_size": 100,
     }
-    repo = Repository(config, tmpdir.realpath())
+    repo = MercurialRepository(config, tmpdir.realpath())
     repo._repo = build_repository(tmpdir, "mozilla-central")
     repo.clone = MagicMock(side_effect=lambda: True)
     return repo
@@ -1181,7 +1181,7 @@ def mock_nss(tmpdir):
         "try_url": "http://nss/try",
         "batch_size": 100,
     }
-    repo = Repository(config, tmpdir.realpath())
+    repo = MercurialRepository(config, tmpdir.realpath())
     repo._repo = build_repository(tmpdir, "nss")
     repo.clone = MagicMock(side_effect=lambda: True)
     return repo
