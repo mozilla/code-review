@@ -690,10 +690,8 @@ class Workflow:
         except KeyError:
             raise Exception(f"Cannot read task name {task_id}")
 
-        # Default format is used first when the correct artifact is available
-        if DefaultTask.matches(task_id):
-            return DefaultTask(task_id, task_status)
-        elif name.startswith("source-test-mozlint-"):
+        # Specific tasks detections are enabled first, default format is used as a fallback
+        if name.startswith("source-test-mozlint-"):
             return MozLintTask(task_id, task_status)
         elif name == "source-test-clang-tidy":
             return ClangTidyTask(task_id, task_status)
@@ -705,6 +703,8 @@ class Workflow:
             return ExternalTidyTask(task_id, task_status)
         elif name == "source-test-taskgraph-diff":
             return TaskGraphDiffTask(task_id, task_status)
+        elif DefaultTask.matches(task_id):
+            return DefaultTask(task_id, task_status)
 
     def update_status(self, revision, state):
         """
