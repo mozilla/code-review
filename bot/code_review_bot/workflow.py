@@ -690,7 +690,7 @@ class Workflow:
         except KeyError:
             raise Exception(f"Cannot read task name {task_id}")
 
-        # Default format is used first when the correct artifact is available
+        # Specific tasks detections are enabled first, default format is used as a fallback
         if name.startswith("source-test-mozlint-"):
             return MozLintTask(task_id, task_status)
         elif name == "source-test-clang-tidy":
