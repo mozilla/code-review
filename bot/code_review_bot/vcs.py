@@ -58,12 +58,17 @@ class BaseRepository:
         return self.name
 
     def clone(self):
+        """Clone the repository in the local cache directory, or refresh an
+        existing clone, so that a stack of patches can be applied on it"""
         raise NotImplementedError
 
     def has_revision(self, revision):
+        """Check if a revision is directly available in the local repository"""
         raise NotImplementedError
 
     def get_base_identifier(self, needed_stack: list[PhabricatorPatch]) -> str:
+        """Return the revision identifier the stack of patches must be
+        applied against"""
         raise NotImplementedError
 
     def checkout_base(self, base):
@@ -80,6 +85,8 @@ class BaseRepository:
         raise NotImplementedError
 
     def push_to_try(self):
+        """Push the locally applied stack to the remote try repository and
+        return the pushed tip, in the format accepted by revision_id()"""
         raise NotImplementedError
 
     def revision_id(self, tip):
@@ -87,6 +94,8 @@ class BaseRepository:
         raise NotImplementedError
 
     def clean(self):
+        """Restore the local repository to a pristine state, dropping the
+        commits applied by a previous build and pulling remote updates"""
         raise NotImplementedError
 
     def apply_build(self, build):
