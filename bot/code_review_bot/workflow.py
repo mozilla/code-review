@@ -641,7 +641,7 @@ class Workflow:
                         for patch in task_patches:
                             revision.add_improvement_patch(task, patch)
 
-                    elif isinstance(task, NoticeTask):
+                    if isinstance(task, NoticeTask):
                         notice = task.build_notice(artifacts, revision)
                         if notice:
                             notices.append(notice)

@@ -54,13 +54,22 @@ class DefaultTask(AnalysisTask):
     https://github.com/mozilla/code-review/blob/master/docs/analysis_format.md
     """
 
-    artifacts = ["public/code-review/issues.json"]
+    ISSUES_ARTIFACT = "public/code-review/issues.json"
+    artifacts = [ISSUES_ARTIFACT]
 
     def parse_issues(self, artifacts, revision):
         """
         Parse issues from a log file content
+
+        Only the dedicated code-review issues artifact is read, so that
+        subclasses can extend `artifacts` with other, differently shaped
+        artifacts (e.g. DocUploadTask) without breaking this parser.
         """
         assert isinstance(artifacts, dict)
+
+        issues_artifact = artifacts.get(self.ISSUES_ARTIFACT)
+        if not issues_artifact:
+            return []
 
         def default_check(issue):
             # Use analyzer name when check is not provided
@@ -84,8 +93,7 @@ class DefaultTask(AnalysisTask):
                 check=default_check(issue),
                 message=issue["message"],
             )
-            for artifact in artifacts.values()
-            for _, path_issues in artifact.items()
+            for _, path_issues in issues_artifact.items()
             for issue in path_issues
         ]
 
