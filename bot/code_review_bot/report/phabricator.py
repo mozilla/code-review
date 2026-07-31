@@ -171,6 +171,12 @@ class PhabricatorReporter(Reporter):
             )
             return
 
+        if not hasattr(self, "api"):
+            logger.warning(
+                "Phabricator API is not set: you need to configure credentials"
+            )
+            return
+
         # Add extra reviewers groups to the revision
         if reviewers:
             phids = []
