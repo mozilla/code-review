@@ -20,6 +20,7 @@ dependencies = [
     "pyyaml==6.0.3",
     "rs-parsepatch==0.4.6",
     "sentry-sdk==2.73.0",
+    "simple-github==3.1.0",
     "structlog==26.1.0",
     "taskcluster==113.2.0",
 ]
