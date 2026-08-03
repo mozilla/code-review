@@ -46,6 +46,16 @@ common:
     api_key: api-xxxx
     publish: true
 
+  # GitHub App credentials used by the bot to push patch stacks to Git try
+  # repositories (see repo_type below). The App must be installed on the
+  # target repositories, with "Contents" read & write permission.
+  GITHUB:
+    app_id: 123456
+    app_privkey: |
+      -----BEGIN RSA PRIVATE KEY-----
+      xxxx
+      -----END RSA PRIVATE KEY-----
+
   repositories:
     # A unique display name for the repository
     - name: mozilla-central
@@ -66,6 +76,12 @@ common:
       # - batch, to clone from revision 1 up to tip (slow but lower memory usage)
       # - default, to use the default hg clone (for small repositories only)
       checkout: robust
+
+      # (Optional) Version control system of the repository: hg (default) or git
+      # A git repository is pushed to its try_url over HTTPS, authenticated with
+      # a short-lived token generated from the GITHUB App credentials, on the
+      # code-review branch (can be overridden with head_branch)
+      repo_type: hg
 
       # Prefix of the environment variables used by the bot to detect which repository
       # is setup from a decision task (more details on the bot documentation)
