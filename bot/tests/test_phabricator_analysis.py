@@ -270,3 +270,89 @@ def test_publish_analysis_phabricator_reraises_other_conduit_errors():
     payload = ("success", build, {"treeherder_url": "https://treeherder.mozilla.org/"})
     with pytest.raises(ConduitError):
         publish_analysis_phabricator(payload, phabricator_api)
+
+
+def test_repository_conf_repo_type():
+    """repo_type is optional, defaults to hg, and can be set to git (additive)."""
+    conf = RepositoryConf(
+        name="mozilla-central",
+        try_name="try",
+        url="https://hg.mozilla.org/mozilla-central",
+        try_url="ssh://hg.mozilla.org/try",
+        decision_env_prefix="GECKO",
+        ssh_user="reviewbot@mozilla.com",
+    )
+    assert conf.repo_type == "hg"
+    assert conf._replace(repo_type="git").repo_type == "git"
+
+
+@pytest.mark.parametrize("repo_type, uses_git", [("git", True), ("hg", False)])
+def test_start_analysis_selects_backend(
+    mock_phabricator,
+    mock_workflow,
+    mock_config,
+    tmpdir,
+    monkeypatch,
+    repo_type,
+    uses_git,
+):
+    """start_analysis picks the Git or Mercurial backend from repo_type."""
+    # Import lazily: a module-level import binds taskcluster.utils.stringDate in
+    # code_review_bot.workflow at collection time, before the autouse
+    # mock_taskcluster_date fixture can patch it, breaking the date assertions
+    # of unrelated tests (e.g. test_index.py)
+    from code_review_bot import workflow as workflow_module
+
+    mock_config.mercurial_cache = tmpdir
+    mock_config.git_cache = tmpdir
+    mock_config.ssh_key = "Dummy Private SSH Key"
+    mock_config.github = {"app_id": 12345, "app_privkey": "AppPrivateKey"}
+
+    # Force the configured repository's backend type
+    mock_config.repositories = [
+        conf._replace(repo_type=repo_type) for conf in mock_config.repositories
+    ]
+
+    # Build never expires so the analysis proceeds
+    monkeypatch.setattr(PhabricatorActions, "is_expired_build", lambda _, build: False)
+
+    # Replace both backends with mocks so nothing clones or pushes for real
+    git_repo, git_worker = mock.MagicMock(), mock.MagicMock()
+    hg_repo, hg_worker = mock.MagicMock(), mock.MagicMock()
+    monkeypatch.setattr(workflow_module, "GitRepository", git_repo)
+    monkeypatch.setattr(workflow_module, "GitWorker", git_worker)
+    monkeypatch.setattr(workflow_module, "MercurialRepository", hg_repo)
+    monkeypatch.setattr(workflow_module, "MercurialWorker", hg_worker)
+    git_worker.return_value.run.return_value = ("success", mock.MagicMock(), {})
+    hg_worker.return_value.run.return_value = ("success", mock.MagicMock(), {})
+
+    # Skip Phabricator/Lando publication of the (mocked) output
+    mock_workflow.update_build = False
+
+    with mock_phabricator as api:
+        mock_workflow.phabricator = api
+        revision = PhabricatorRevision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-test",
+            phabricator=api,
+        )
+        mock_workflow.start_analysis(revision)
+
+    if uses_git:
+        assert git_repo.called and git_worker.called
+        assert not hg_repo.called and not hg_worker.called
+        # Git path uses the git cache, not the mercurial one
+        assert git_repo.call_args.kwargs["cache_root"] == mock_config.git_cache
+        # The GitHub App credentials are passed through
+        conf = git_repo.call_args.kwargs["config"]
+        assert conf["github_app_id"] == 12345
+        assert conf["github_app_privkey"] == "AppPrivateKey"
+    else:
+        assert hg_repo.called and hg_worker.called
+        assert not git_repo.called and not git_worker.called
+        assert hg_repo.call_args.kwargs["config"]["ssh_key"] == "Dummy Private SSH Key"
+
+    # Reset settings for following tests
+    mock_config.mercurial_cache = None
+    mock_config.git_cache = None
+    mock_config.ssh_key = None
+    mock_config.github = {}
