@@ -98,6 +98,7 @@ def main():
             "ALLOWED_PATHS": ["*"],
             "task_failures_ignored": [],
             "ssh_key": None,
+            "GITHUB": {},
             "user_blacklist": [],
         },
         local_secrets=yaml.safe_load(args.configuration)
@@ -132,6 +133,7 @@ def main():
         taskcluster_parallel_requests=taskcluster.secrets.get(
             "TASKCLUSTER_PARALLEL_REQUESTS"
         ),
+        github=taskcluster.secrets["GITHUB"],
     )
 
     # Setup statistics
