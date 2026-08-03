@@ -7,10 +7,13 @@ import tempfile
 from unittest import mock
 
 import pytest
-from libmozdata.phabricator import ConduitError
+from libmozdata.phabricator import BuildState, ConduitError
 
 from code_review_bot import mercurial
 from code_review_bot.analysis import (
+    LANDO_FAILURE_HG_MESSAGE,
+    PhabricatorRevisionBuild,
+    publish_analysis_lando,
     publish_analysis_phabricator,
 )
 from code_review_bot.config import RepositoryConf
@@ -356,3 +359,38 @@ def test_start_analysis_selects_backend(
     mock_config.git_cache = None
     mock_config.ssh_key = None
     mock_config.github = {}
+
+
+@pytest.mark.parametrize("missing_base", [False, True])
+def test_publish_analysis_phabricator_git_failure(missing_base):
+    """A fail:git worker output marks the Phabricator build as failed."""
+    build = mock.MagicMock()
+    build.target_phid = "PHID-HMBT-test"
+    build.missing_base_revision = missing_base
+    build.base_revision = "abcdef123456"
+
+    phabricator_api = mock.MagicMock()
+    payload = ("fail:git", build, {"message": "git apply failed", "duration": 1})
+    publish_analysis_phabricator(payload, phabricator_api)
+
+    phabricator_api.update_build_target.assert_called_once()
+    args, kwargs = phabricator_api.update_build_target.call_args
+    assert args == ("PHID-HMBT-test", BuildState.Fail)
+    unit = kwargs["unit"][0]
+    assert unit["name"] == "git"
+    assert unit["result"] == "fail"
+    assert "failed to apply your patch" in unit["details"]
+    # The missing parent revision is only mentioned when it is the cause
+    assert ("abcdef123456" in unit["details"]) is missing_base
+
+
+def test_publish_analysis_lando_git_failure():
+    """A fail:git worker output publishes the patch failure warning to Lando."""
+    build = PhabricatorRevisionBuild(mock.MagicMock(), mock.MagicMock())
+    build.revision = {"id": 51}
+    build.diff_id = 42
+
+    lando_api = mock.MagicMock()
+    publish_analysis_lando(("fail:git", build, {}), lando_api)
+
+    lando_api.add_warning.assert_called_once_with(LANDO_FAILURE_HG_MESSAGE, 51, 42)
