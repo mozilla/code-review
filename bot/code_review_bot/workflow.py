@@ -19,7 +19,11 @@ from code_review_bot.analysis import (
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
 from code_review_bot.git import git_clone
-from code_review_bot.mercurial import MercurialWorker, Repository, robust_checkout
+from code_review_bot.mercurial import (
+    MercurialRepository,
+    MercurialWorker,
+    robust_checkout,
+)
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import GithubRevision, PhabricatorRevision, Revision
 from code_review_bot.sources.phabricator import (
@@ -296,7 +300,7 @@ class Workflow:
         )
 
         # Initialize mercurial repository
-        repository = Repository(
+        repository = MercurialRepository(
             config={
                 "name": revision.base_repository_conf.name,
                 "try_name": revision.base_repository_conf.try_name,

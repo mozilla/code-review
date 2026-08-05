@@ -681,11 +681,11 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
 
-    from code_review_bot import mercurial
+    from code_review_bot import mercurial, vcs
 
-    mercurial.MAX_PUSH_RETRIES = 1
+    vcs.MAX_PUSH_RETRIES = 1
     mercurial.TRY_STATUS_URL = "http://test.status/try"
-    mercurial.PUSH_RETRY_EXPONENTIAL_DELAY = 0
+    vcs.PUSH_RETRY_EXPONENTIAL_DELAY = 0
     mercurial.TRY_STATUS_DELAY = 0
     mercurial.TRY_STATUS_MAX_WAIT = 0
 
@@ -693,7 +693,7 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
         "http://test.status/try", status=200, json={"result": {"status": "open"}}
     )
 
-    repository_mock = MagicMock(spec=mercurial.Repository)
+    repository_mock = MagicMock(spec=mercurial.MercurialRepository)
     repository_mock.push_to_try.side_effect = [
         hglib.error.CommandError(
             args=("push", "try_url"),
@@ -703,6 +703,7 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
         ),
         mock_mc.repo.tip(),
     ]
+    repository_mock.revision_id.side_effect = lambda tip: tip.node.decode("utf-8")
     repository_mock.try_name = "try"
     repository_mock.retries = 0
 
@@ -743,11 +744,11 @@ def test_push_failure_max_retries(PhabricatorMock, mock_mc, monkeypatch):
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
 
-    from code_review_bot import mercurial
+    from code_review_bot import mercurial, vcs
 
-    mercurial.MAX_PUSH_RETRIES = 2
+    vcs.MAX_PUSH_RETRIES = 2
     mercurial.TRY_STATUS_URL = "http://test.status/try"
-    mercurial.PUSH_RETRY_EXPONENTIAL_DELAY = 2
+    vcs.PUSH_RETRY_EXPONENTIAL_DELAY = 2
     mercurial.TRY_STATUS_DELAY = 0
     mercurial.TRY_STATUS_MAX_WAIT = 0
 
@@ -755,7 +756,7 @@ def test_push_failure_max_retries(PhabricatorMock, mock_mc, monkeypatch):
         "http://test.status/try", status=200, json={"result": {"status": "open"}}
     )
 
-    repository_mock = MagicMock(spec=mercurial.Repository)
+    repository_mock = MagicMock(spec=mercurial.MercurialRepository)
     repository_mock.push_to_try.side_effect = hglib.error.CommandError(
         args=("push", "try_url"),
         ret=1,
@@ -799,11 +800,11 @@ def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
     with PhabricatorMock as phab:
         phab.load_patches_stack(build)
 
-    from code_review_bot import mercurial
+    from code_review_bot import mercurial, vcs
 
-    mercurial.MAX_PUSH_RETRIES = 2
+    vcs.MAX_PUSH_RETRIES = 2
     mercurial.TRY_STATUS_URL = "http://test.status/try"
-    mercurial.PUSH_RETRY_EXPONENTIAL_DELAY = 2
+    vcs.PUSH_RETRY_EXPONENTIAL_DELAY = 2
     mercurial.TRY_STATUS_DELAY = 42
     mercurial.TRY_STATUS_MAX_WAIT = 1
 
@@ -819,7 +820,7 @@ def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
         "http://test.status/try", status=200, json={"result": {"status": "open"}}
     )
 
-    repository_mock = MagicMock(spec=mercurial.Repository)
+    repository_mock = MagicMock(spec=mercurial.MercurialRepository)
     repository_mock.push_to_try.side_effect = [
         hglib.error.CommandError(
             args=("push", "try_url"),
@@ -829,6 +830,7 @@ def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
         ),
         mock_mc.repo.tip(),
     ]
+    repository_mock.revision_id.side_effect = lambda tip: tip.node.decode("utf-8")
     repository_mock.try_name = "try"
     repository_mock.retries = 0
 
