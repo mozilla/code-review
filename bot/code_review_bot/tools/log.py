@@ -2,12 +2,12 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import importlib.metadata
 import logging
 import logging.handlers
 import os
 import re
 
-import pkg_resources
 import sentry_sdk
 import structlog
 from sentry_sdk.integrations.logging import LoggingIntegration
@@ -116,7 +116,7 @@ def setup_sentry(name, channel, dsn):
         integrations=[sentry_logging],
         server_name=name,
         environment=channel,
-        release=pkg_resources.get_distribution(f"code-review-{name}").version,
+        release=importlib.metadata.version(f"code-review-{name}"),
         before_send=remove_color_codes,
     )
     sentry_sdk.set_tag("site", site)
