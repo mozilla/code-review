@@ -11,5 +11,5 @@ sentry-sdk==2.66.1
 setuptools==83.0.0
 sqlparse==0.5.5
 taskcluster==103.0.1
-tqdm==4.69.0
+tqdm==4.70.0
 whitenoise==6.12.0
