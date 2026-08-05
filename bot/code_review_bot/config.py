@@ -6,12 +6,12 @@
 import atexit
 import collections
 import fnmatch
+import importlib.metadata
 import os
 import shutil
 import tempfile
 from pathlib import Path
 
-import pkg_resources
 import structlog
 
 REPO_MOZILLA_CENTRAL = "https://hg.mozilla.org/mozilla-central"
@@ -70,7 +70,7 @@ class Settings:
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
         # caching the versions of the app
-        self.version = pkg_resources.require("code-review-bot")[0].version
+        self.version = importlib.metadata.version("code-review-bot")
 
     def setup(
         self,
