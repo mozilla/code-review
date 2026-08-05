@@ -11,7 +11,7 @@
     "lodash": "^4.18.1",
     "vue": "^2.7.15",
     "vue-chartjs": "^5.3.4",
-    "vue-router": "^3.6.5",
+    "vue-router": "^5.2.0",
     "vue-template-compiler": "^2.7.16",
     "vuex": "^3.6.2"
   },
