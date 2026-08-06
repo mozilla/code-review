@@ -184,6 +184,12 @@ class Revision(ABC):
             except (FileNotFoundError, IsADirectoryError):
                 logger.warning("Failed to find issue's related file", path=file_path)
                 file_content = None
+            except UnicodeDecodeError:
+                logger.warning(
+                    "Failed to decode issue's related file, it is not text",
+                    path=file_path,
+                )
+                file_content = None
         else:
             try:
                 file_content = self.load_file(file_path)
