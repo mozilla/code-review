@@ -4,12 +4,14 @@
 
 import json
 import os
+import random
 import time
 
 import rs_parsepatch
 import structlog
 from libmozdata.phabricator import PhabricatorPatch
 
+from code_review_bot.config import settings
 from code_review_bot.sources.phabricator import PhabricatorBuild
 
 logger = structlog.get_logger(__name__)
@@ -20,6 +22,13 @@ TREEHERDER_URL = "https://treeherder.mozilla.org/#/jobs?repo={}&revision={}"
 MAX_PUSH_RETRIES = 4
 # Wait successive exponential delays: 6sec, 36sec, 3.6min, 21.6min
 PUSH_RETRY_EXPONENTIAL_DELAY = 6
+
+
+def bugbug_enabled(repository_name):
+    if repository_name not in settings.bugbug_enabled_repositories:
+        return False
+
+    return random.random() < settings.bugbug_enabled_percent
 
 
 class RetryNeeded(Exception):
@@ -176,6 +185,13 @@ class BaseRepository:
                 "phabricator_diff": build.target_phid,
             },
         }
+
+        if bugbug_enabled(self.name):
+            config["parameters"]["test_manifest_loader"] = "bugbug"
+            config["parameters"]["optimize_strategies"] = (
+                settings.bugbug_optimize_strategy
+            )
+
         diff_phid = build.stack[-1].phid
 
         if build.revision_url:
