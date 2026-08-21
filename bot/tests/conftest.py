@@ -469,6 +469,14 @@ class Response:
             return json.dumps(self.body)
 
     @property
+    def ok(self):
+        return self.code < 300
+
+    @property
+    def status_code(self):
+        return self.code
+
+    @property
     def content(self):
         return self.body.encode()
 
@@ -508,6 +516,8 @@ class MockQueue:
     def __init__(self):
         self._artifacts = {}
         self.session = SessionMock()
+        self.sealed_groups = []
+        self.cancelled_groups = []
 
     def configure(self, relations):
         # Reset the session mock
@@ -584,9 +594,23 @@ class MockQueue:
     def listLatestArtifacts(self, task_id):
         return self._artifacts.get(task_id, {})
 
-    def buildUrl(self, route_name, task, run, name):
+    def buildUrl(self, route_name, *args):
+        if route_name == "getLatestArtifact":
+            task, name = args
+            return f"http://tc.test/{task}/artifacts/{name}"
+
         assert route_name == "getArtifact"
+        task, run, name = args
         return f"http://tc.test/{task}/{run}/artifacts/{name}"
+
+    def sealTaskGroup(self, group_id):
+        self.sealed_groups.append(group_id)
+        return {"taskGroupId": group_id, "sealed": "2026-01-01T00:00:00.000Z"}
+
+    def cancelTaskGroup(self, group_id):
+        assert group_id in self.sealed_groups, "Task group must be sealed first"
+        self.cancelled_groups.append(group_id)
+        return {"taskGroupId": group_id, "taskIds": []}
 
     def createArtifact(self, task_id, run_id, name, payload):
         if task_id not in self._artifacts:

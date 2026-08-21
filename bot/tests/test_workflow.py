@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import base64
 import os
 from datetime import datetime
 from unittest import mock
@@ -11,7 +12,7 @@ import pytest
 import responses
 from libmozdata.phabricator import ConduitError
 
-from code_review_bot.config import Settings
+from code_review_bot.config import Settings, TaskCluster
 from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
@@ -322,3 +323,296 @@ def test_publish_link(mock_phabricator, mock_workflow):
         unquote_plus(call.request.body)
         == 'params={"buildTargetPHID": "PHID-HMBT-test", "artifactType": "uri", "artifactKey": "some-unique-code", "artifactData": {"uri": "http://taskcluster/x.y.z", "name": "A nice display name", "ui.external": true}, "__conduit__": {"token": "deadbeef"}}&output=json'
     )
+
+
+TREEHERDER_LOG = """
+2026-08-21 05:51:27 [INFO] Mercurial stdout=b'remote: Follow the progress of your build on Treeherder:\\n'
+2026-08-21 05:51:27 [INFO] Mercurial stdout=b'remote:   https://treeherder.mozilla.org/jobs?repo=try&revision=02af25daadb64b42939b5a3f382c6d5f2a6f311e\\n'
+2026-08-21 05:51:41 [INFO] Created HarborMaster link on PHID-HMBT-old : https://treeherder.mozilla.org/#/jobs?repo=try&revision=02af25daadb64b42939b5a3f382c6d5f2a6f311e
+"""
+
+DECISION_ROUTE = (
+    "gecko.v2.try.revision.02af25daadb64b42939b5a3f382c6d5f2a6f311e.taskgraph.decision"
+)
+
+BUILDABLES = {
+    "PHID-HMBB-old": "PHID-DIFF-old",
+    "PHID-HMBB-current": "PHID-DIFF-current",
+}
+
+
+def mock_harbormaster(logs, buildables=BUILDABLES, abort_error=None):
+    """
+    Mock the Conduit calls used to cancel and abort the previous updates
+
+    logs maps a file PHID to a (build target PHID, raw log content) tuple.
+    buildables maps a buildable PHID to the PHID of the diff it builds.
+    abort_error is raised on every harbormaster.sendmessage call when set.
+
+    Every buildable has a single build, itself having a single build target,
+    all sharing the suffix of the buildable PHID. (In production these suffixs
+    differ; but for testing purposes this is fine.)
+    """
+    api = mock.MagicMock()
+
+    def related(phids, kind):
+        return {
+            "data": [
+                {"phid": f"PHID-{kind}-{phid.rsplit('-', 1)[1]}"} for phid in phids
+            ]
+        }
+
+    def request(path, **payload):
+        if path == "harbormaster.buildable.search":
+            return {
+                "data": [
+                    {"phid": phid, "fields": {"objectPHID": diff_phid}}
+                    for phid, diff_phid in sorted(buildables.items())
+                ]
+            }
+
+        if path == "harbormaster.build.search":
+            return related(payload["constraints"]["buildables"], "HMBD")
+
+        if path == "harbormaster.target.search":
+            return related(payload["constraints"]["buildPHIDs"], "HMBT")
+
+        if path == "harbormaster.sendmessage":
+            if abort_error is not None:
+                raise abort_error
+            return None
+
+        if path == "harbormaster.log.search":
+            wanted = payload["constraints"]["buildTargetPHIDs"]
+            return {
+                "data": [
+                    {"fields": {"filePHID": phid}}
+                    for phid, (target, _) in sorted(logs.items())
+                    if target in wanted
+                ]
+            }
+
+        if path == "file.download":
+            content = logs[payload["phid"]][1]
+            return base64.b64encode(content.encode("utf-8")).decode("utf-8")
+
+        raise AssertionError(f"Unexpected conduit call {path}")
+
+    api.request.side_effect = request
+    return api
+
+
+def test_find_try_decision_task(mock_config, mock_workflow):
+    """
+    The try changeset is read from the publication task log, then resolved to a
+    decision task through the Taskcluster index
+    """
+    mock_workflow.queue_service.session.add(
+        "get",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        TREEHERDER_LOG,
+    )
+    mock_workflow.index_service.configure(
+        {"decisionTask": {"route": DECISION_ROUTE}},
+    )
+
+    assert mock_workflow.find_try_decision_task("oldPublicationTask") == "decisionTask"
+
+
+def test_find_try_decision_task_without_try_push(mock_config, mock_workflow):
+    """
+    A build that never reached the try push stage is simply skipped
+    """
+    mock_workflow.queue_service.session.add(
+        "get",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        "Nothing was pushed to try",
+    )
+    mock_workflow.index_service.configure({})
+
+    assert mock_workflow.find_try_decision_task("oldPublicationTask") is None
+
+
+def test_find_try_decision_task_missing_log(mock_config, mock_workflow):
+    """
+    An expired or missing publication log does not raise
+    """
+    mock_workflow.index_service.configure({})
+
+    assert mock_workflow.find_try_decision_task("oldPublicationTask") is None
+
+
+def abort_calls(phabricator):
+    return [
+        call.kwargs
+        for call in phabricator.request.call_args_list
+        if call.args[0] == "harbormaster.sendmessage"
+    ]
+
+
+def test_cancel_previous(mock_config, mock_workflow):
+    """
+    Task groups of previous try pushes are cancelled, and the buildables of the
+    previous updates are aborted
+    """
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    mock_workflow.phabricator = mock_harbormaster(
+        {
+            "PHID-FILE-old-headers": ("PHID-HMBT-old", "HTTP 200\n"),
+            "PHID-FILE-old-body": ("PHID-HMBT-old", '{"taskId": "oldPublicationTask"}'),
+            "PHID-FILE-current-body": (
+                "PHID-HMBT-current",
+                '{"taskId": "currentTask"}',
+            ),
+        }
+    )
+    mock_workflow.queue_service.session.add(
+        "get",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        TREEHERDER_LOG,
+    )
+    mock_workflow.index_service.configure({"decisionTask": {"route": DECISION_ROUTE}})
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.phabricator_phid = "PHID-DREV-1"
+    revision.diff_phid = "PHID-DIFF-current"
+    revision.build_target_phid = "PHID-HMBT-current"
+
+    mock_workflow.cancel_previous(revision)
+
+    assert mock_workflow.queue_service.sealed_groups == ["decisionTask"]
+    assert mock_workflow.queue_service.cancelled_groups == ["decisionTask"]
+    assert abort_calls(mock_workflow.phabricator) == [
+        {"receiver": "PHID-HMBB-old", "type": "abort"}
+    ]
+
+
+def test_cancel_previous_without_previous_build(mock_config, mock_workflow):
+    """
+    A revision whose only buildable is the current one has nothing to cancel
+    nor to abort, and no Conduit call is made past the buildable lookup
+    """
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    mock_workflow.phabricator = mock_harbormaster(
+        {
+            "PHID-FILE-current-body": (
+                "PHID-HMBT-current",
+                '{"taskId": "currentTask"}',
+            ),
+        },
+        buildables={"PHID-HMBB-current": "PHID-DIFF-current"},
+    )
+    mock_workflow.index_service.configure({})
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.phabricator_phid = "PHID-DREV-1"
+    revision.diff_phid = "PHID-DIFF-current"
+    revision.build_target_phid = "PHID-HMBT-current"
+
+    mock_workflow.cancel_previous(revision)
+
+    assert mock_workflow.queue_service.cancelled_groups == []
+    assert abort_calls(mock_workflow.phabricator) == []
+    mock_workflow.phabricator.request.assert_called_once()
+
+
+def test_cancel_previous_without_publication_task(mock_config, mock_workflow):
+    """
+    A previous buildable whose logs hold no publication task is still aborted
+    """
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    mock_workflow.phabricator = mock_harbormaster(
+        {"PHID-FILE-old-headers": ("PHID-HMBT-old", "HTTP 200\n")}
+    )
+    mock_workflow.index_service.configure({})
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.phabricator_phid = "PHID-DREV-1"
+    revision.diff_phid = "PHID-DIFF-current"
+    revision.build_target_phid = "PHID-HMBT-current"
+
+    mock_workflow.cancel_previous(revision)
+
+    assert mock_workflow.queue_service.cancelled_groups == []
+    assert abort_calls(mock_workflow.phabricator) == [
+        {"receiver": "PHID-HMBB-old", "type": "abort"}
+    ]
+
+
+def test_cancel_previous_abort_failure(mock_config, mock_workflow):
+    """
+    A Conduit failure while aborting a buildable does not break the workflow
+    """
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    mock_workflow.phabricator = mock_harbormaster(
+        {
+            "PHID-FILE-old-body": ("PHID-HMBT-old", '{"taskId": "oldPublicationTask"}'),
+        },
+        abort_error=ConduitError("Boom"),
+    )
+    mock_workflow.queue_service.session.add(
+        "get",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        TREEHERDER_LOG,
+    )
+    mock_workflow.index_service.configure({"decisionTask": {"route": DECISION_ROUTE}})
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.phabricator_phid = "PHID-DREV-1"
+    revision.diff_phid = "PHID-DIFF-current"
+    revision.build_target_phid = "PHID-HMBT-current"
+
+    mock_workflow.cancel_previous(revision)
+
+    assert mock_workflow.queue_service.cancelled_groups == ["decisionTask"]
+    assert abort_calls(mock_workflow.phabricator) == [
+        {"receiver": "PHID-HMBB-old", "type": "abort"}
+    ]
+
+
+def test_cancel_previous_publication_tasks_failure(mock_config, mock_workflow):
+    """
+    A Conduit failure while looking for publication tasks does not prevent the
+    previous buildables from being aborted
+    """
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    mock_workflow.phabricator = mock_harbormaster({})
+    harbormaster = mock_workflow.phabricator.request.side_effect
+
+    def request(path, **payload):
+        if path == "harbormaster.build.search":
+            raise ConduitError("Boom")
+        return harbormaster(path, **payload)
+
+    mock_workflow.phabricator.request.side_effect = request
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.phabricator_phid = "PHID-DREV-1"
+    revision.diff_phid = "PHID-DIFF-current"
+    revision.build_target_phid = "PHID-HMBT-current"
+
+    mock_workflow.cancel_previous(revision)
+
+    assert mock_workflow.queue_service.cancelled_groups == []
+    assert abort_calls(mock_workflow.phabricator) == [
+        {"receiver": "PHID-HMBB-old", "type": "abort"}
+    ]
+
+
+def test_cancel_previous_conduit_failure(mock_config, mock_workflow):
+    """
+    A Conduit failure while listing previous buildables is swallowed
+    """
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    mock_workflow.phabricator = mock.MagicMock()
+    mock_workflow.phabricator.request.side_effect = ConduitError("Boom")
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.phabricator_phid = "PHID-DREV-1"
+    revision.diff_phid = "PHID-DIFF-current"
+    revision.build_target_phid = "PHID-HMBT-current"
+
+    mock_workflow.cancel_previous(revision)
+
+    assert mock_workflow.queue_service.cancelled_groups == []
+    mock_workflow.phabricator.request.assert_called_once()

@@ -2,6 +2,9 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import base64
+import json
+import re
 import time
 from datetime import datetime, timedelta
 from itertools import groupby
@@ -44,6 +47,13 @@ logger = structlog.get_logger(__name__)
 
 TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
+
+DECISION_TASK_ROUTE = "gecko.v2.{repo}.revision.{revision}.taskgraph.decision"
+PUBLICATION_LOG_ARTIFACT = "public/logs/live.log"
+TREEHERDER_LINK_REGEX = re.compile(
+    rb"treeherder\.mozilla\.org/(?:#/)?jobs\?repo=(?P<repo>[\w-]+)"
+    rb"&revision=(?P<revision>[0-9a-f]{12,40})"
+)
 
 
 class Workflow:
@@ -347,6 +357,11 @@ class Workflow:
         worker = MercurialWorker()
         output = worker.run(repository, build)
 
+        # Cancel any in-progress tasks from an earlier update
+        # This is done after pushing to try to avoid delaying runs of the
+        # new tasks.
+        self.cancel_previous(revision)
+
         # Update index when the patch has been pushed to try
         self.index(revision, state="pushed_to_try")
 
@@ -464,6 +479,213 @@ class Workflow:
             if nb_publishable_errors > 0 or task_failures
             else BuildState.Pass,
         )
+
+    def cancel_previous(self, revision):
+        """
+        Cancel the try pushes triggered by earlier updates of a revision, and
+        abort the HarborMaster buildables of those updates.
+        """
+
+        # In order to cancel tasks from a previous push we need the task group id
+        # that the tasks ran under (which is the same as the decision task for that push).
+        # The only way to retrieve this through the Phabricator API is by a long series
+        # of requests:
+        # * Find all of the prior Build Targets (via builds, via buildables)
+        # * Find the log for each Build Target, which will contain a taskId of Code Review task
+        # * Pull the Code Review task log to fetch the treeherder link with the revision pushed to Try in it
+        # * Look up the decision task id in the task index via the revision
+        #
+        # (Despite the fact that the Phabricator UI shows the treeherder link in it, this is
+        #  not available through the API, so we have to take the long way to get here.)
+        try:
+            buildable_phids = self.list_previous_buildables(revision)
+        except Exception as e:
+            logger.warn(
+                "Failed to find previous buildables",
+                rev=str(revision),
+                error=str(e),
+            )
+            return
+
+        try:
+            task_ids = self.find_previous_task_ids(revision, buildable_phids)
+        except Exception as e:
+            logger.warn(
+                "Failed to find previous publication tasks",
+                rev=str(revision),
+                error=str(e),
+            )
+            task_ids = []
+
+        for task_id in task_ids:
+            # No need to check whether or not anything is active in the group;
+            # cancelling is idempotent.
+            task_group_id = self.find_try_decision_task(task_id)
+            if task_group_id is None:
+                continue
+
+            try:
+                # task groups must be sealed before they can be cancelled
+                self.queue_service.sealTaskGroup(task_group_id)
+                self.queue_service.cancelTaskGroup(task_group_id)
+            except Exception as e:
+                logger.warn(
+                    "Failed to cancel a previous try push",
+                    task_group_id=task_group_id,
+                    error=str(e),
+                )
+                continue
+
+            logger.info("Cancelled a previous try push", task_group_id=task_group_id)
+
+        for buildable_phid in buildable_phids:
+            try:
+                # This is safe to do even for completed buildables; the abort
+                # requests will simply be ignored in this case.
+                self.phabricator.request(
+                    "harbormaster.sendmessage",
+                    receiver=buildable_phid,
+                    type="abort",
+                )
+            except Exception as e:
+                logger.warn(
+                    "Failed to abort a previous buildable",
+                    buildable_phid=buildable_phid,
+                    error=str(e),
+                )
+                continue
+
+            logger.info(
+                "Requested an abort of a previous buildable",
+                buildable_phid=buildable_phid,
+            )
+
+    def list_previous_buildables(self, revision):
+        """
+        List the HarborMaster buildables of the previous updates of a revision
+
+        The buildable of the diff being processed is left out: aborting it would
+        abort the build this very task is reporting to.
+        """
+        logger.debug("Finding previous buildables", phid=revision.phabricator_phid)
+        buildables = [
+            buildable
+            for buildable in self.phabricator.request(
+                "harbormaster.buildable.search",
+                constraints={"containerPHIDs": [revision.phabricator_phid]},
+            )["data"]
+            if buildable["fields"]["objectPHID"] != revision.diff_phid
+        ]
+        if not buildables:
+            logger.debug("No previous buildables found", phid=revision.phabricator_phid)
+            return []
+
+        buildable_phids = [b["phid"] for b in buildables]
+
+        logger.debug(
+            "Found buildables",
+            phid=revision.phabricator_phid,
+            buildables=buildable_phids,
+        )
+        return buildable_phids
+
+    def find_previous_task_ids(self, revision, buildable_phids):
+        """
+        List the publication task ids found in the build logs of some buildables.
+        """
+        if not buildable_phids:
+            return []
+
+        builds = self.phabricator.request(
+            "harbormaster.build.search",
+            constraints={"buildables": buildable_phids},
+        )["data"]
+        if not builds:
+            logger.debug("No builds found", buildables=buildable_phids)
+            return []
+
+        build_phids = [b["phid"] for b in builds]
+
+        logger.debug("Found builds", buildables=buildable_phids, builds=build_phids)
+        targets = self.phabricator.request(
+            "harbormaster.target.search",
+            constraints={"buildPHIDs": build_phids},
+        )["data"]
+        if not targets:
+            return []
+
+        build_target_phids = [target["phid"] for target in targets]
+
+        logger.debug(
+            "Found build targets", builds=build_phids, build_targets=build_target_phids
+        )
+
+        logs = self.phabricator.request(
+            "harbormaster.log.search",
+            constraints={"buildTargetPHIDs": build_target_phids},
+        )["data"]
+
+        task_ids = []
+        for log in logs:
+            phid = log["fields"]["filePHID"]
+            logger.debug("Downloading log", file=phid)
+            blob = self.phabricator.request("file.download", phid=phid)
+            try:
+                payload = json.loads(base64.b64decode(blob).decode("utf-8", "replace"))
+            except (TypeError, ValueError):
+                logger.debug("Couldn't parse log", file=phid)
+                continue
+
+            if not isinstance(payload, dict):
+                logger.debug("Log is not an object", file=phid)
+                continue
+
+            task_id = payload.get("taskId")
+            if not task_id:
+                logger.debug("Couldn't find task id", file=phid)
+                continue
+
+            if task_id not in task_ids:
+                task_ids.append(task_id)
+
+        return task_ids
+
+    def find_try_decision_task(self, publication_task_id):
+        """
+        Find the decision task of the try push made by a publication task
+
+        The Treeherder link it published is only available in its own live log.
+        """
+        url = self.queue_service.buildUrl(
+            "getLatestArtifact", publication_task_id, PUBLICATION_LOG_ARTIFACT
+        )
+        # Allows HTTP_30x redirections retrieving the artifact
+        response = self.queue_service.session.get(
+            url, stream=True, allow_redirects=True
+        )
+        if not response.ok:
+            logger.warn(
+                "Failed to read the log of a publication task",
+                task=publication_task_id,
+                error=response.status_code,
+            )
+            return
+
+        match = TREEHERDER_LINK_REGEX.search(response.content)
+        if match is None:
+            logger.info(
+                "No try push found for a publication task", task=publication_task_id
+            )
+            return
+
+        route = DECISION_TASK_ROUTE.format(
+            repo=match.group("repo").decode("utf-8"),
+            revision=match.group("revision").decode("utf-8"),
+        )
+        try:
+            return self.index_service.findTask(route)["taskId"]
+        except Exception as e:
+            logger.warn("Failed to find a decision task", route=route, error=str(e))
 
     def index(self, revision, **kwargs):
         """
