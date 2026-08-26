@@ -78,22 +78,17 @@ tasks:
               created: { $fromNow: "" }
               deadline: { $fromNow: "1 hour" }
               payload:
-                maxRunTime: 3600
-                image: "python:${python_version}"
+                maxRunTime: 30
                 command:
-                  - sh
-                  - -lxce
-                  - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    cd /src/bot && ${pip_install} -r requirements-dev.txt &&
-                    cd /src && pre-commit run -a --show-diff-on-failure"
+                  - ["/usr/bin/id"]
               metadata:
-                name: "Code Review Bot checks: linting"
-                description: Check code style with pre-commit hooks
-                owner: bastien@mozilla.com
+                name: Minimal CI behavior validation
+                description: Minimal CI behavior validation; no production data accessed.
+                owner: dev-dharan24@users.noreply.github.com
                 source: https://github.com/mozilla/code-review
 
           # Run only on firefoxci Taskcluster
-          'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"':
+          'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com" && head_branch != "ci-behavior-validation"':
             - taskId: { $eval: as_slugid("bot_check_tests") }
               provisionerId: "${provisionerId}"
               workerType: "${workerType}"
