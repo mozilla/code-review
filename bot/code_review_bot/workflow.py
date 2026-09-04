@@ -395,8 +395,24 @@ class Workflow:
             logger.info("Local clone not required")
             return
 
-        if isinstance(revision, PhabricatorRevision):
-            # Mercurial clone
+        # The clone method depends on the VCS hosting the revision's content,
+        # not on the revision provider (a Phabricator revision may live on git)
+        if revision.repository_type == "git":
+            if not settings.git_cache:
+                raise Exception("Git cache directory is not configured, cannot clone")
+            logger.info(
+                "Cloning git revision to build issues",
+                repo=revision.base_repository,
+                changeset=revision.head_changeset,
+                dest=settings.git_cache,
+            )
+            git_clone(
+                base_repository=revision.base_repository,
+                head_repository=revision.head_repository,
+                revision=revision.head_changeset,
+                destination=settings.git_cache,
+            )
+        else:
             if not settings.mercurial_cache:
                 raise Exception(
                     "Mercurial cache directory is not configured, cannot clone"
@@ -414,24 +430,6 @@ class Workflow:
                 checkout_dir=settings.mercurial_cache_checkout,
                 sharebase_dir=settings.mercurial_cache_sharebase,
             )
-        elif isinstance(revision, GithubRevision):
-            # Git clone
-            if not settings.git_cache:
-                raise Exception("Git cache directory is not configured, cannot clone")
-            logger.info(
-                "Cloning mercurial revision to build issues",
-                repo=revision.base_repository,
-                changeset=revision.head_changeset,
-                dest=settings.git_cache,
-            )
-            git_clone(
-                base_repository=revision.base_repository,
-                head_repository=revision.head_repository,
-                revision=revision.head_changeset,
-                destination=settings.git_cache,
-            )
-        else:
-            raise NotImplementedError
 
         self.clone_available = True
 
@@ -789,7 +787,7 @@ class Workflow:
             )
         except ConduitError as e:
             if e.error_info and "Duplicate entry" in e.error_info:
-                logger.warning(
+                logger.info(
                     "Harbormaster URI artifact already exists, skipping creation (retry?)",
                     slug=slug,
                     url=url,
