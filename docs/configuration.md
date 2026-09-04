@@ -79,9 +79,14 @@ common:
 
       # (Optional) Version control system of the repository: hg (default) or git
       # A git repository is pushed to its try_url over HTTPS, authenticated with
-      # a short-lived token generated from the GITHUB App credentials, on the
-      # code-review branch (can be overridden with head_branch)
+      # a short-lived token generated from the GITHUB App credentials
       repo_type: hg
+
+      # (Optional, git only) Branch template used for pushes to the try repository
+      # Rendered per analysis so concurrent pushes never overwrite each other
+      # Supported placeholders: {revision_id}, {diff_id}
+      # A template without placeholder produces a single fixed branch
+      head_branch: "code-review/D{revision_id}"
 
       # Prefix of the environment variables used by the bot to detect which repository
       # is setup from a decision task (more details on the bot documentation)

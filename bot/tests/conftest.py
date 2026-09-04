@@ -1233,7 +1233,7 @@ def mock_mc_git(tmpdir):
         "name": "mozilla-central",
         "url": "https://github.com/mozilla/test",
         "try_url": try_dir,
-        "try_name": "try",
+        "try_name": "staging-firefox",
         "default_revision": repo.active_branch.name,
         "head_branch": "code-review",
     }

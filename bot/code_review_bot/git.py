@@ -115,8 +115,11 @@ class GitRepository(BaseRepository):
     def __init__(self, config, cache_root):
         super().__init__(config, cache_root)
 
-        # Branch pushed to the remote try repository
-        self.head_branch = config.get("head_branch", "code-review")
+        # Branch template pushed to the remote try repository, rendered per
+        # build so concurrent analyses never overwrite each other.
+        # Supported placeholders: {revision_id}, {diff_id}
+        self.head_branch = config.get("head_branch", "code-review/D{revision_id}")
+        self.push_branch = None
 
         # GitHub App credentials used to generate short-lived push tokens
         self.github_app_id = config.get("github_app_id")
@@ -278,13 +281,31 @@ class GitRepository(BaseRepository):
         with self.repo.git.custom_environment(**env):
             self.repo.git.commit("--no-verify", "-m", message)
 
+    def render_push_branch(self, build):
+        """Render the head_branch template for a specific build."""
+        try:
+            return self.head_branch.format(
+                revision_id=build.revision_id, diff_id=build.diff_id
+            )
+        except (AttributeError, IndexError, KeyError) as e:
+            raise Exception(
+                f"Invalid head_branch template {self.head_branch!r}: {e}"
+            ) from e
+
+    def add_try_commit(self, build):
+        # Rendered before the try commit so a bad template fails ahead of any
+        # remote interaction
+        self.push_branch = self.render_push_branch(build)
+        super().add_try_commit(build)
+
     def push_to_try(self):
         """Push the current HEAD to the remote try repository."""
         head = self.repo.head.commit
-        logger.info("Pushing patches to try", rev=head.hexsha, branch=self.head_branch)
+        branch = self.push_branch or self.head_branch
+        logger.info("Pushing patches to try", rev=head.hexsha, branch=branch)
         self.repo.git.push(
             self.authenticated_url(self.try_url),
-            f"HEAD:refs/heads/{self.head_branch}",
+            f"HEAD:refs/heads/{branch}",
             force=True,
         )
         return head
