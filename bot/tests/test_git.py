@@ -317,7 +317,7 @@ def test_worker_run_success(PhabricatorMock, mock_mc_git):
         {
             "revision": tip.hexsha,
             "treeherder_url": (
-                "https://treeherder.mozilla.org/#/jobs?repo=try&revision="
+                "https://treeherder.mozilla.org/#/jobs?repo=staging-firefox&revision="
                 f"{tip.hexsha}"
             ),
         },
@@ -384,3 +384,47 @@ def test_worker_retry_no_treestatus(PhabricatorMock, mock_mc_git, monkeypatch):
     assert mode == "fail:git"
     # Initial attempt + one per retry
     assert mock_mc_git.push_to_try.call_count == MAX_PUSH_RETRIES + 1
+
+
+def test_head_branch_template(tmpdir, PhabricatorMock, mock_mc_git):
+    """The default head_branch is rendered per build, custom templates too."""
+    build = make_build(PhabricatorMock)
+
+    # Default configuration builds a unique branch per revision
+    config = {
+        "name": "mozilla-central",
+        "url": "https://github.com/mozilla/test",
+        "try_url": "https://github.com/mozilla/test-try",
+        "try_name": "try",
+    }
+    repo = GitRepository(config, str(tmpdir.realpath()))
+    assert repo.head_branch == "code-review/D{revision_id}"
+    assert repo.render_push_branch(build) == "code-review/D5678"
+
+    # Static branch names are rendered unchanged
+    assert mock_mc_git.render_push_branch(build) == "code-review"
+
+    # Custom templates may combine identifiers
+    mock_mc_git.head_branch = "cr/{revision_id}-{diff_id}"
+    assert mock_mc_git.render_push_branch(build) == "cr/5678-1234"
+
+    # Unknown placeholders are rejected
+    mock_mc_git.head_branch = "cr/{unknown}"
+    with pytest.raises(Exception, match="Invalid head_branch template"):
+        mock_mc_git.render_push_branch(build)
+
+
+def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):
+    """The rendered per-build branch is what lands on the try remote."""
+    from git import Repo
+
+    mock_mc_git.head_branch = "code-review/D{revision_id}"
+    build = make_build(PhabricatorMock)
+
+    worker = GitWorker()
+    mode, _, _ = worker.run(mock_mc_git, build)
+    assert mode == "success"
+
+    tip = mock_mc_git.repo.head.commit
+    remote = Repo(mock_mc_git.try_url)
+    assert remote.refs["code-review/D5678"].commit.hexsha == tip.hexsha
