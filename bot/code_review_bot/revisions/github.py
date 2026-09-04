@@ -20,6 +20,8 @@ class GithubRevision(Revision):
     A revision from a github pull-request
     """
 
+    repository_type = "git"
+
     def __init__(
         self,
         base_repository,
