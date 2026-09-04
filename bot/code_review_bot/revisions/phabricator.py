@@ -46,8 +46,12 @@ class PhabricatorRevision(Revision):
         phabricator_repository=None,
         patch=None,
         url=None,
+        repository_type="hg",
     ):
         super().__init__()
+
+        # VCS of the repository holding the revision's content
+        self.repository_type = repository_type
 
         # Identification
         self.phabricator_id = phabricator_id
@@ -78,6 +82,16 @@ class PhabricatorRevision(Revision):
 
         # Patch analysis
         self.patch = patch
+
+    @property
+    def repository_slug(self):
+        """Slug of the git repository holding that revision, used as local clone directory name"""
+        from code_review_bot.git import build_repo_slug
+
+        assert (
+            self.repository_type == "git"
+        ), "repository_slug is only available for git repositories"
+        return build_repo_slug(self.base_repository)
 
     @property
     def namespaces(self):
@@ -177,11 +191,12 @@ class PhabricatorRevision(Revision):
         assert decision_task is not None, "Missing parent decision task"
         logger.info("Found decision task", name=decision_task["metadata"]["name"])
 
-        # Match the decision task environment to get the mercurial information
+        # Match the decision task environment to get the repository information
         decision_env = decision_task["payload"]["env"]
         head_repository = base_repository = head_changeset = base_changeset = (
             repository_try_name
         ) = None
+        repository_type = "hg"
         for prefix in settings.decision_env_prefixes:
             head_repository_key = f"{prefix}_HEAD_REPOSITORY"
             base_repository_key = f"{prefix}_BASE_REPOSITORY"
@@ -199,6 +214,7 @@ class PhabricatorRevision(Revision):
             base_repository = decision_env[base_repository_key]
             head_changeset = decision_env[head_changeset_key]
             base_changeset = decision_env[base_changeset_key]
+            repository_type = decision_env.get(f"{prefix}_REPOSITORY_TYPE", "hg")
             repository_try_name = (
                 urllib.parse.urlparse(head_repository)
                 .path.rstrip("/")
@@ -234,6 +250,7 @@ class PhabricatorRevision(Revision):
             head_repository=head_repository,
             repository_try_name=repository_try_name,
             base_repository=base_repository,
+            repository_type=repository_type,
         )
 
     @staticmethod
@@ -339,6 +356,7 @@ class PhabricatorRevision(Revision):
             base_repository=repository.url,
             base_repository_conf=repository,
             repository_try_name=repository.try_name,
+            repository_type=repository.repo_type,
         )
 
     def load_file(self, path):

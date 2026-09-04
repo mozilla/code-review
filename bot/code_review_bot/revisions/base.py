@@ -70,6 +70,9 @@ class Revision(ABC):
     A generic revision class to override using provider specific details
     """
 
+    # VCS of the repository holding the analyzed revision's content
+    repository_type = "hg"
+
     def __init__(
         self,
     ):
@@ -280,7 +283,13 @@ class Revision(ABC):
 
         task_env = decision_task.get("payload", {}).get("env", {})
 
-        if task_env.get("GECKO_REPOSITORY_TYPE") == "git":
+        # A git revision is only a Github pull-request when the decision task
+        # carries a pull request number; git pushes driven by Phabricator
+        # (e.g. the code-review try pushes) are Phabricator revisions.
+        if (
+            task_env.get("GECKO_REPOSITORY_TYPE") == "git"
+            and "GECKO_PULL_REQUEST_NUMBER" in task_env
+        ):
             return GithubRevision(
                 base_repository=task_env["GECKO_BASE_REPOSITORY"],
                 base_changeset=task_env["GECKO_BASE_REV"],
