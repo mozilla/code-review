@@ -100,15 +100,22 @@ def publish_analysis_phabricator(payload, phabricator_api):
 
     elif mode == "fail:mercurial":
         extra_content = ""
+        developer_instructions = ""
         if build.missing_base_revision:
             extra_content = f" because the parent revision ({build.base_revision}) does not exist on mozilla-unified. If possible, you should publish that revision"
+        if "abort: uncommitted changes" in extras["message"]:
+            developer_instructions = "The patch will likely fail to land. Possible causes:" \
+                "* A parent revision has been set in Phabricator after the patch had been submitted." \
+                  "Rebase the patch onto the new parent revision to resolve the issue."
 
+        if developer_instructions != "":
+            developer_instructions += "\n\n"
         failure = UnitResult(
             namespace="code-review",
             name="mercurial",
             result=UnitResultState.Fail,
-            details="WARNING: The code review bot failed to apply your patch{}.\n\n```{}```".format(
-                extra_content, extras["message"]
+            details="WARNING: The code review bot failed to apply your patch{}.\n\n{}```{}```".format(
+                extra_content, developer_instructions, extras["message"]
             ),
             format="remarkup",
             duration=extras.get("duration", 0),
