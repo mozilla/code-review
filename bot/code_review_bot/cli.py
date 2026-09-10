@@ -98,6 +98,7 @@ def main():
             "ALLOWED_PATHS": ["*"],
             "task_failures_ignored": [],
             "ssh_key": None,
+            "GITHUB": {},
             "user_blacklist": [],
         },
         local_secrets=yaml.safe_load(args.configuration)
@@ -124,6 +125,7 @@ def main():
         taskcluster.secrets["ssh_key"],
         args.mercurial_repository,
         args.github_repository,
+        github=taskcluster.secrets["GITHUB"],
     )
 
     # Setup statistics

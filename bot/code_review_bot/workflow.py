@@ -21,7 +21,7 @@ from code_review_bot.analysis import (
 )
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import settings
-from code_review_bot.git import git_clone
+from code_review_bot.git import GitRepository, GitWorker, git_clone
 from code_review_bot.mercurial import (
     MercurialRepository,
     MercurialWorker,
@@ -286,9 +286,11 @@ class Workflow:
                 "One of Mercurial cache or github cache must be configured to start analysis"
             )
 
-        # Cannot run without ssh key
-        if not settings.ssh_key:
-            raise Exception("SSH Key must be configured to start analysis")
+        # Cannot run without a push credential
+        if not settings.ssh_key and not settings.github.get("app_privkey"):
+            raise Exception(
+                "An SSH key or GitHub App must be configured to start analysis"
+            )
 
         # Set the Phabricator build as running
         self.update_status(revision, state=BuildState.Work)
@@ -309,21 +311,39 @@ class Workflow:
             api_key=self.phabricator.api_key,
         )
 
-        # Initialize mercurial repository
-        repository = MercurialRepository(
-            config={
-                "name": revision.base_repository_conf.name,
-                "try_name": revision.base_repository_conf.try_name,
-                "url": revision.base_repository_conf.url,
-                "try_url": revision.base_repository_conf.try_url,
-                # Setup ssh identity
-                "ssh_user": revision.base_repository_conf.ssh_user,
-                "ssh_key": settings.ssh_key,
-                # Force usage of robustcheckout
-                "checkout": "robust",
-            },
-            cache_root=settings.mercurial_cache,
-        )
+        # Initialize the repository and worker for the configured backend.
+        # Git is selected per-repository via repo_type; Mercurial is the default.
+        base_conf = revision.base_repository_conf
+        if base_conf.repo_type == "git":
+            repository = GitRepository(
+                config={
+                    "name": base_conf.name,
+                    "try_name": base_conf.try_name,
+                    "url": base_conf.url,
+                    "try_url": base_conf.try_url,
+                    # GitHub App credentials to generate short-lived push tokens
+                    "github_app_id": settings.github.get("app_id"),
+                    "github_app_privkey": settings.github.get("app_privkey"),
+                },
+                cache_root=settings.git_cache,
+            )
+            worker = GitWorker()
+        else:
+            repository = MercurialRepository(
+                config={
+                    "name": base_conf.name,
+                    "try_name": base_conf.try_name,
+                    "url": base_conf.url,
+                    "try_url": base_conf.try_url,
+                    # Setup ssh identity
+                    "ssh_user": base_conf.ssh_user,
+                    "ssh_key": settings.ssh_key,
+                    # Force usage of robustcheckout
+                    "checkout": "robust",
+                },
+                cache_root=settings.mercurial_cache,
+            )
+            worker = MercurialWorker()
 
         # Try to update the state 5 consecutive time
         for i in range(5):
@@ -354,7 +374,6 @@ class Workflow:
         repository.clone()
 
         # Apply the stack of patches and push to try
-        worker = MercurialWorker()
         output = worker.run(repository, build)
 
         # Cancel any in-progress tasks from an earlier update
@@ -391,8 +410,24 @@ class Workflow:
             logger.info("Local clone not required")
             return
 
-        if isinstance(revision, PhabricatorRevision):
-            # Mercurial clone
+        # The clone method depends on the VCS hosting the revision's content,
+        # not on the revision provider (a Phabricator revision may live on git)
+        if revision.repository_type == "git":
+            if not settings.git_cache:
+                raise Exception("Git cache directory is not configured, cannot clone")
+            logger.info(
+                "Cloning git revision to build issues",
+                repo=revision.base_repository,
+                changeset=revision.head_changeset,
+                dest=settings.git_cache,
+            )
+            git_clone(
+                base_repository=revision.base_repository,
+                head_repository=revision.head_repository,
+                revision=revision.head_changeset,
+                destination=settings.git_cache,
+            )
+        else:
             if not settings.mercurial_cache:
                 raise Exception(
                     "Mercurial cache directory is not configured, cannot clone"
@@ -410,24 +445,6 @@ class Workflow:
                 checkout_dir=settings.mercurial_cache_checkout,
                 sharebase_dir=settings.mercurial_cache_sharebase,
             )
-        elif isinstance(revision, GithubRevision):
-            # Git clone
-            if not settings.git_cache:
-                raise Exception("Git cache directory is not configured, cannot clone")
-            logger.info(
-                "Cloning mercurial revision to build issues",
-                repo=revision.base_repository,
-                changeset=revision.head_changeset,
-                dest=settings.git_cache,
-            )
-            git_clone(
-                base_repository=revision.base_repository,
-                head_repository=revision.head_repository,
-                revision=revision.head_changeset,
-                destination=settings.git_cache,
-            )
-        else:
-            raise NotImplementedError
 
         self.clone_available = True
 
@@ -992,7 +1009,7 @@ class Workflow:
             )
         except ConduitError as e:
             if e.error_info and "Duplicate entry" in e.error_info:
-                logger.warning(
+                logger.info(
                     "Harbormaster URI artifact already exists, skipping creation (retry?)",
                     slug=slug,
                     url=url,
