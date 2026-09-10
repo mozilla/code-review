@@ -640,3 +640,41 @@ def test_cancel_previous_conduit_failure(mock_config, mock_workflow):
 
     assert mock_workflow.queue_service.cancelled_groups == []
     mock_workflow.phabricator.request.assert_called_once()
+
+
+def test_cancel_previous_ignores_later_buildables(mock_config, mock_workflow):
+    """
+    The buildable of a later diff is left alone: it belongs to an update that is
+    itself superseding the one being processed
+    """
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    mock_workflow.phabricator = mock_harbormaster(
+        {
+            "PHID-FILE-old-body": ("PHID-HMBT-old", '{"taskId": "oldPublicationTask"}'),
+            "PHID-FILE-next-body": (
+                "PHID-HMBT-next",
+                '{"taskId": "nextPublicationTask"}',
+            ),
+        },
+        buildables={
+            "PHID-HMBB-old": "PHID-DIFF-old",
+            "PHID-HMBB-current": "PHID-DIFF-current",
+            "PHID-HMBB-next": "PHID-DIFF-next",
+        },
+    )
+    mock_workflow.queue_service.task_states["oldPublicationTask"] = "running"
+    mock_workflow.queue_service.task_states["nextPublicationTask"] = "running"
+    mock_workflow.index_service.configure({})
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.phabricator_phid = "PHID-DREV-1"
+    revision.diff_phid = "PHID-DIFF-current"
+    revision.diff_id = CURRENT_DIFF_ID
+    revision.build_target_phid = "PHID-HMBT-current"
+
+    mock_workflow.cancel_previous(revision)
+
+    assert mock_workflow.queue_service.cancelled_tasks == ["oldPublicationTask"]
+    assert abort_calls(mock_workflow.phabricator) == [
+        {"receiver": "PHID-HMBB-old", "type": "abort"}
+    ]

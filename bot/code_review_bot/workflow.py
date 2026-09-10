@@ -482,8 +482,8 @@ class Workflow:
 
     def cancel_previous(self, revision):
         """
-        Cancel the try pushes triggered by earlier updates of a revision, and
-        abort the HarborMaster buildables of those updates.
+        Cancel the code-review task, try pushes, and HarborMaster buildables of earlier
+        updates of a revision.
         """
 
         # In order to cancel tasks from a previous push we need the task group id
@@ -518,6 +518,17 @@ class Workflow:
             task_ids = []
 
         for task_id in task_ids:
+            # cancel the publication task, which may or may not be running still
+            try:
+                self.queue_service.cancelTask(task_id)
+                logger.info("Cancelled a previous publication task", task=task_id)
+            except Exception as e:
+                logger.warn(
+                    "Failed to cancel a previous publication task",
+                    task=task_id,
+                    error=str(e),
+                )
+
             # No need to check whether or not anything is active in the group;
             # cancelling is idempotent.
             task_group_id = self.find_try_decision_task(task_id)
