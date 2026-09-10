@@ -7,6 +7,7 @@ from django.contrib import admin
 from code_review_backend.issues.models import Diff, Issue, Repository, Revision
 
 
+@admin.register(Repository)
 class RepositoryAdmin(admin.ModelAdmin):
     list_display = ("slug", "url")
 
@@ -23,6 +24,7 @@ class DiffInline(admin.TabularInline):
     )
 
 
+@admin.register(Revision)
 class RevisionAdmin(admin.ModelAdmin):
     list_display = (
         "id",
@@ -41,6 +43,7 @@ class RevisionAdmin(admin.ModelAdmin):
     inlines = (DiffInline,)
 
 
+@admin.register(Issue)
 class IssueAdmin(admin.ModelAdmin):
     list_filter = ("analyzer",)
     list_display = (
@@ -54,10 +57,6 @@ class IssueAdmin(admin.ModelAdmin):
     search_fields = ("line", "analyzer", "path")
     ordering = ("-created",)
 
-
-admin.site.register(Repository, RepositoryAdmin)
-admin.site.register(Revision, RevisionAdmin)
-admin.site.register(Issue, IssueAdmin)
 
 # Naming
 admin.site.site_header = "Mozilla Code Review Backend"

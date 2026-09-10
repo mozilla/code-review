@@ -26,12 +26,12 @@ services:
 
   db:
     container_name: code-review-db
-    image: postgres:16-alpine
+    image: postgres:18-alpine
 
     ports:
       - 127.0.0.1:5432:5432
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata:/var/lib/postgresql
     environment:
       POSTGRES_USER: devuser
       POSTGRES_PASSWORD: devdata
