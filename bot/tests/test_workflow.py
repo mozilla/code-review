@@ -409,7 +409,7 @@ def test_find_try_decision_task(mock_config, mock_workflow):
     """
     mock_workflow.queue_service.session.add(
         "get",
-        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live_backing.log",
         TREEHERDER_LOG,
     )
     mock_workflow.index_service.configure(
@@ -425,7 +425,7 @@ def test_find_try_decision_task_without_try_push(mock_config, mock_workflow):
     """
     mock_workflow.queue_service.session.add(
         "get",
-        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live_backing.log",
         "Nothing was pushed to try",
     )
     mock_workflow.index_service.configure({})
@@ -468,7 +468,7 @@ def test_cancel_previous(mock_config, mock_workflow):
     )
     mock_workflow.queue_service.session.add(
         "get",
-        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live_backing.log",
         TREEHERDER_LOG,
     )
     mock_workflow.index_service.configure({"decisionTask": {"route": DECISION_ROUTE}})
@@ -552,7 +552,7 @@ def test_cancel_previous_abort_failure(mock_config, mock_workflow):
     )
     mock_workflow.queue_service.session.add(
         "get",
-        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live_backing.log",
         TREEHERDER_LOG,
     )
     mock_workflow.index_service.configure({"decisionTask": {"route": DECISION_ROUTE}})

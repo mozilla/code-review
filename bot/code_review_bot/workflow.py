@@ -49,7 +49,7 @@ TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
 
 DECISION_TASK_ROUTE = "gecko.v2.{repo}.revision.{revision}.taskgraph.decision"
-PUBLICATION_LOG_ARTIFACT = "public/logs/live.log"
+PUBLICATION_LOG_ARTIFACT = "public/logs/live_backing.log"
 TREEHERDER_LINK_REGEX = re.compile(
     rb"treeherder\.mozilla\.org/(?:#/)?jobs\?repo=(?P<repo>[\w-]+)"
     rb"&revision=(?P<revision>[0-9a-f]{12,40})"
@@ -654,7 +654,8 @@ class Workflow:
         """
         Find the decision task of the try push made by a publication task
 
-        The Treeherder link it published is only available in its own live log.
+        The Treeherder link it published is only available in its own backing
+        log, so this is only usable once that task has resolved.
         """
         url = self.queue_service.buildUrl(
             "getLatestArtifact", publication_task_id, PUBLICATION_LOG_ARTIFACT
