@@ -140,7 +140,14 @@ class MercurialRepository(BaseRepository):
 
     def __init__(self, config, cache_root):
         super().__init__(config, cache_root)
-        self.share_base_dir = os.path.join(cache_root, f"{config['name']}-shared")
+        # Use a single shared store for every repository, rather than one per
+        # repository name. robustcheckout pools the clone under this directory,
+        # so sharing it lets a checkout reuse the store left behind by a
+        # previous task on the same worker (e.g. an autoland push-to-try
+        # followed by a try build-issues checkout), instead of re-cloning
+        # Firefox from scratch. This matches settings.mercurial_cache_sharebase
+        # used by the build-issues checkout path.
+        self.share_base_dir = os.path.join(cache_root, "shared")
         self.checkout_mode = config.get("checkout", "batch")
         self.batch_size = config.get("batch_size", 10000)
 

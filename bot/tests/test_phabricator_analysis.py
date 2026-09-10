@@ -112,7 +112,7 @@ def test_workflow(
         [
             "robustcheckout",
             b"--purge",
-            f"--sharebase={tmpdir}/mozilla-central-shared".encode(),
+            f"--sharebase={tmpdir}/shared".encode(),
             b"--branch=default",
             b"--",
             "https://hg.mozilla.org/mozilla-central",
