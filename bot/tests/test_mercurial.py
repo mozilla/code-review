@@ -7,11 +7,13 @@ import time
 from unittest.mock import MagicMock
 
 import hglib
+import pytest
 import responses
 from conftest import MockBuild
 from libmozdata.phabricator import PhabricatorPatch
 
 from code_review_bot import mercurial
+from code_review_bot.config import settings
 
 
 class STDOutputMock:
@@ -73,11 +75,20 @@ def test_robustcheckout(monkeypatch):
     ]
 
 
-def test_push_to_try(PhabricatorMock, mock_mc, responses):
+@pytest.mark.parametrize("bugbug", [False, True], ids=["bugbug-off", "bugbug-on"])
+def test_push_to_try(PhabricatorMock, mock_mc, responses, monkeypatch, bugbug):
     """
     Run mercurial worker on a single diff
     with a push to try server
+
+    The bugbug parameters only affect try_task_config.json: the commits
+    themselves are identical whether the repository is selected or not
     """
+    if bugbug:
+        monkeypatch.setattr(settings, "bugbug_enabled_repositories", [mock_mc.name])
+        monkeypatch.setattr(settings, "bugbug_enabled_percent", 1)
+        monkeypatch.setattr(settings, "bugbug_optimize_strategy", "test:strategy")
+
     # Preload the build
     diff = {
         "phid": "PHID-DIFF-test123",
@@ -128,14 +139,18 @@ def test_push_to_try(PhabricatorMock, mock_mc, responses):
     assert open(target).read() == "First Line\nSecond Line\n"
 
     # Check the try_task_config file
+    expected_parameters = {
+        "target_tasks_method": "codereview",
+        "optimize_target_tasks": True,
+        "phabricator_diff": "PHID-HMBT-deadbeef",
+    }
+    if bugbug:
+        expected_parameters["test_manifest_loader"] = "bugbug"
+        expected_parameters["optimize_strategies"] = "test:strategy"
     assert os.path.exists(config)
     assert json.load(open(config)) == {
         "version": 2,
-        "parameters": {
-            "target_tasks_method": "codereview",
-            "optimize_target_tasks": True,
-            "phabricator_diff": "PHID-HMBT-deadbeef",
-        },
+        "parameters": expected_parameters,
     }
 
     # Get tip commit in repo

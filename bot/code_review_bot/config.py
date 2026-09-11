@@ -67,6 +67,12 @@ class Settings:
         # Indexed by their Phabricator ID
         self.user_blacklist = {}
 
+        # bugbug test configuration
+        self.bugbug_enabled_repositories = ["firefox-autoland"]
+        # Because it's unclear how much load this will add, this is being rolled out gradually.
+        self.bugbug_enabled_percent = 0.1
+        self.bugbug_optimize_strategy = "gecko_taskgraph.optimize:tryselect.bugbug_reduced_manifests_config_selection_medium"
+
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
         # caching the versions of the app
