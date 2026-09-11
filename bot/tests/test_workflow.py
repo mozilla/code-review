@@ -678,3 +678,121 @@ def test_cancel_previous_ignores_later_buildables(mock_config, mock_workflow):
     assert abort_calls(mock_workflow.phabricator) == [
         {"receiver": "PHID-HMBB-old", "type": "abort"}
     ]
+
+
+def test_clone_repository_background(
+    mock_workflow, mock_revision, monkeypatch, tmp_path
+):
+    """
+    The clone is started in the background and awaited by clone_repository
+    """
+    import threading
+
+    started = threading.Event()
+    release = threading.Event()
+    calls = []
+
+    def _robust_checkout(**kwargs):
+        calls.append(kwargs)
+        assert threading.current_thread() is not threading.main_thread()
+        started.set()
+        assert release.wait(timeout=5)
+
+    monkeypatch.setattr("code_review_bot.workflow.robust_checkout", _robust_checkout)
+    monkeypatch.setattr(
+        "code_review_bot.workflow.settings.mercurial_cache", tmp_path / "hg"
+    )
+    mock_workflow.clone_available = False
+
+    mock_workflow.start_clone(mock_revision)
+    assert mock_workflow.clone_future is not None
+    assert started.wait(timeout=5)
+    assert mock_workflow.clone_available is False
+
+    # Starting twice does not clone twice
+    mock_workflow.start_clone(mock_revision)
+    assert len(calls) == 1
+
+    # Waiting blocks until the clone is done
+    waiter = threading.Thread(
+        target=mock_workflow.clone_repository, args=(mock_revision,)
+    )
+    waiter.start()
+    waiter.join(timeout=0.5)
+    assert waiter.is_alive()
+    release.set()
+    waiter.join(timeout=5)
+    assert not waiter.is_alive()
+
+    assert mock_workflow.clone_available is True
+    assert mock_workflow.clone_future is None
+    assert calls == [
+        {
+            "repo_upstream_url": mock_revision.base_repository,
+            "repo_url": mock_revision.head_repository,
+            "revision": mock_revision.head_changeset,
+            "checkout_dir": tmp_path / "hg" / "checkout",
+            "sharebase_dir": tmp_path / "hg" / "shared",
+        }
+    ]
+
+    # Once cloned, nothing else is triggered
+    mock_workflow.clone_repository(mock_revision)
+    mock_workflow.start_clone(mock_revision)
+    assert len(calls) == 1
+
+
+def test_clone_repository_without_start(
+    mock_workflow, mock_revision, monkeypatch, tmp_path
+):
+    """
+    clone_repository runs the clone itself when it was not started before
+    """
+    checkout = mock.Mock()
+    monkeypatch.setattr("code_review_bot.workflow.robust_checkout", checkout)
+    monkeypatch.setattr(
+        "code_review_bot.workflow.settings.mercurial_cache", tmp_path / "hg"
+    )
+    mock_workflow.clone_available = False
+
+    mock_workflow.clone_repository(mock_revision)
+    assert checkout.call_count == 1
+    assert mock_workflow.clone_available is True
+
+
+def test_clone_repository_failure(mock_workflow, mock_revision, monkeypatch, tmp_path):
+    """
+    A failure in the background clone is raised when waiting for it
+    """
+
+    def _robust_checkout(**kwargs):
+        raise RuntimeError("hg is broken")
+
+    monkeypatch.setattr("code_review_bot.workflow.robust_checkout", _robust_checkout)
+    monkeypatch.setattr(
+        "code_review_bot.workflow.settings.mercurial_cache", tmp_path / "hg"
+    )
+    mock_workflow.clone_available = False
+
+    mock_workflow.start_clone(mock_revision)
+    with pytest.raises(RuntimeError, match="hg is broken"):
+        mock_workflow.clone_repository(mock_revision)
+    assert mock_workflow.clone_available is False
+    assert mock_workflow.clone_future is None
+
+
+def test_clone_repository_not_required(mock_workflow, mock_revision, monkeypatch):
+    """
+    No clone is started when no local cache is configured
+    """
+    checkout = mock.Mock()
+    monkeypatch.setattr("code_review_bot.workflow.robust_checkout", checkout)
+    monkeypatch.setattr("code_review_bot.workflow.settings.mercurial_cache", None)
+    monkeypatch.setattr("code_review_bot.workflow.settings.git_cache", None)
+    mock_workflow.clone_available = False
+
+    mock_workflow.start_clone(mock_revision)
+    assert mock_workflow.clone_future is None
+    mock_workflow.clone_repository(mock_revision)
+    assert checkout.call_count == 0
+    assert mock_workflow.clone_available is False
