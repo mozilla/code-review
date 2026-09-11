@@ -202,12 +202,17 @@ class MercurialRepository(BaseRepository):
 
         return self._repo
 
-    def get_mercurial_base_hash(self, revision):
+    def get_mercurial_base_hash(
+        self, revision: str | None, revision_type: str = "base revision"
+    ) -> str | None:
         """A revision may reference to a Git commit hash instead of Mercurial one.
         The revision can either be a 40 characters full hash or its first 12 characters (short hash).
         A Lando API enables to "convert" the Git hash to a Mercurial hash that can
         be found in the local repository, whatever its length.
         """
+        if not revision:
+            return None
+
         api = LandoCommitMapAPI()
         try:
             commit_map = api.git2hg(revision)
@@ -218,17 +223,15 @@ class MercurialRepository(BaseRepository):
             )
             return commit_map.hg_hash
         except LandoMissingCommit:
-            logger.warning(
-                "No matching revision found on Lando. The default revision will be used instead."
-            )
-            return self.default_revision
+            logger.warning(f"No matching {revision_type} found on Lando.")
+            return None
 
         except Exception as e:
             logger.warning(
-                f"Could not convert Git hash to Mercurial hash from Lando: {e}. "
-                "The default revision will be used instead."
+                f"Could not convert {revision_type} Git hash to Mercurial hash"
+                f"from Lando: {e}. "
             )
-            return self.default_revision
+            return None
 
     def has_revision(self, revision):
         """
@@ -248,13 +251,22 @@ class MercurialRepository(BaseRepository):
             # Use `default` when `use_latest_revision` is `True`.
             return "default"
 
-        # Otherwise use the base/parent revision of first revision in the stack.
-        base_rev_hash = needed_stack[0].base_revision
-        if self.has_revision(base_rev_hash):
-            return base_rev_hash
-        else:
-            # Base revision may reference a Git hash on new repositories
-            return self.get_mercurial_base_hash(base_rev_hash)
+        for revision, revision_type in (
+            (needed_stack[0].base_revision, "base revision"),
+            (needed_stack[0].first_public_parent, "first public parent"),
+        ):
+            if not revision:
+                continue
+
+            if self.has_revision(revision):
+                return revision
+
+            # Base revisions may reference Git hashes on new repositories.
+            mercurial_version = self.get_mercurial_base_hash(revision, revision_type)
+            if mercurial_version:
+                return mercurial_version
+
+        return self.default_revision
 
     def checkout_base(self, base):
         """Update the local checkout to the base revision"""
