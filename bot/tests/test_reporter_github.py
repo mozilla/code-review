@@ -134,7 +134,7 @@ def test_github_review(
         ),
         (
             "GET",
-            "https://api.github.com:443/repos/owner/repo-name/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "https://api.github.com:443/repos/owner/repo-name/commits/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa?page=1",
         ),
         ("POST", "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews"),
     ]
