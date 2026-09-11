@@ -111,6 +111,9 @@ class BackendAPI:
             revision.issues_url is not None
         ), "Missing issues_url on the revision to publish issues in bulk."
 
+        # Build the issues hashes in parallel
+        revision.build_issues_hashes(issues)
+
         logger.info(f"Publishing issues in bulk of {settings.bulk_issue_chunks} items.")
         chunks = (
             issues[i : i + settings.bulk_issue_chunks]

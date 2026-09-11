@@ -9,6 +9,7 @@ import requests
 import structlog
 
 from code_review_bot import taskcluster
+from code_review_bot.config import settings
 from code_review_bot.git import build_repo_slug
 from code_review_bot.revisions import Revision
 
@@ -68,6 +69,13 @@ class GithubRevision(Revision):
             f"github.head.{_head_repository_slug}.pr.{self.pull_number}",
             f"github.head.{_head_repository_slug}.rev.{self.head_changeset}",
         ]
+
+    @property
+    def local_repository(self):
+        assert (
+            settings.git_cache
+        ), "Github cache repository is mandatory to analyse a github revision"
+        return settings.git_cache / self.repository_slug
 
     def load_patch(self):
         """

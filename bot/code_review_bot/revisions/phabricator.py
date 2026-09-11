@@ -80,6 +80,11 @@ class PhabricatorRevision(Revision):
         self.patch = patch
 
     @property
+    def local_repository(self):
+        # Files are loaded from HGMO when no local mercurial checkout is configured
+        return settings.mercurial_cache_checkout
+
+    @property
     def namespaces(self):
         # Simplify repository names
         def repo_slug(url):

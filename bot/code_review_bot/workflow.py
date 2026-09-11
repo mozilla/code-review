@@ -6,6 +6,7 @@ import base64
 import json
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from itertools import groupby
 
@@ -776,16 +777,28 @@ class Workflow:
         else:
             raise NotImplementedError
 
-        for path, group_issues in issues_groups:
+        # Build the issues hashes in parallel
+        revision.build_issues_hashes(issues)
+
+        def _list_known_hashes(path):
             known_issues = self.backend_api.list_repo_issues(
                 repository_slug,
                 date=current_date,
                 revision_changeset=base_rev_changeset,
                 path=path,
             )
-            hashes = [issue["hash"] for issue in known_issues]
-            for issue in group_issues:
-                issue.new_issue = bool(issue.hash and issue.hash not in hashes)
+            return {issue["hash"] for issue in known_issues}
+
+        # Query the backend for each affected file in parallel
+        issues_groups = [(path, list(group)) for path, group in issues_groups]
+        with ThreadPoolExecutor(max_workers=8) as executor:
+            known_hashes = executor.map(
+                _list_known_hashes, [path for path, _ in issues_groups]
+            )
+
+            for (path, group_issues), hashes in zip(issues_groups, known_hashes):
+                for issue in group_issues:
+                    issue.new_issue = bool(issue.hash and issue.hash not in hashes)
 
     def find_issues(self, revision, group_id):
         """
