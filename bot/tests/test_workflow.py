@@ -340,13 +340,22 @@ BUILDABLES = {
     "PHID-HMBB-current": "PHID-DIFF-current",
 }
 
+DIFF_IDS = {
+    "PHID-DIFF-old": 1,
+    "PHID-DIFF-current": 2,
+    "PHID-DIFF-next": 3,
+}
 
-def mock_harbormaster(logs, buildables=BUILDABLES, abort_error=None):
+CURRENT_DIFF_ID = DIFF_IDS["PHID-DIFF-current"]
+
+
+def mock_harbormaster(logs, buildables=BUILDABLES, abort_error=None, diff_ids=DIFF_IDS):
     """
     Mock the Conduit calls used to cancel and abort the previous updates
 
     logs maps a file PHID to a (build target PHID, raw log content) tuple.
     buildables maps a buildable PHID to the PHID of the diff it builds.
+    diff_ids maps a diff PHID to its id, which orders the updates.
     abort_error is raised on every harbormaster.sendmessage call when set.
 
     Every buildable has a single build, itself having a single build target,
@@ -368,6 +377,15 @@ def mock_harbormaster(logs, buildables=BUILDABLES, abort_error=None):
                 "data": [
                     {"phid": phid, "fields": {"objectPHID": diff_phid}}
                     for phid, diff_phid in sorted(buildables.items())
+                ]
+            }
+
+        if path == "differential.diff.search":
+            return {
+                "data": [
+                    {"phid": phid, "id": diff_ids[phid]}
+                    for phid in payload["constraints"]["phids"]
+                    if phid in diff_ids
                 ]
             }
 
@@ -409,7 +427,7 @@ def test_find_try_decision_task(mock_config, mock_workflow):
     """
     mock_workflow.queue_service.session.add(
         "get",
-        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live_backing.log",
         TREEHERDER_LOG,
     )
     mock_workflow.index_service.configure(
@@ -425,7 +443,7 @@ def test_find_try_decision_task_without_try_push(mock_config, mock_workflow):
     """
     mock_workflow.queue_service.session.add(
         "get",
-        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live_backing.log",
         "Nothing was pushed to try",
     )
     mock_workflow.index_service.configure({})
@@ -468,7 +486,7 @@ def test_cancel_previous(mock_config, mock_workflow):
     )
     mock_workflow.queue_service.session.add(
         "get",
-        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live_backing.log",
         TREEHERDER_LOG,
     )
     mock_workflow.index_service.configure({"decisionTask": {"route": DECISION_ROUTE}})
@@ -476,6 +494,7 @@ def test_cancel_previous(mock_config, mock_workflow):
     revision = mock.MagicMock(spec=PhabricatorRevision)
     revision.phabricator_phid = "PHID-DREV-1"
     revision.diff_phid = "PHID-DIFF-current"
+    revision.diff_id = CURRENT_DIFF_ID
     revision.build_target_phid = "PHID-HMBT-current"
 
     mock_workflow.cancel_previous(revision)
@@ -507,6 +526,7 @@ def test_cancel_previous_without_previous_build(mock_config, mock_workflow):
     revision = mock.MagicMock(spec=PhabricatorRevision)
     revision.phabricator_phid = "PHID-DREV-1"
     revision.diff_phid = "PHID-DIFF-current"
+    revision.diff_id = CURRENT_DIFF_ID
     revision.build_target_phid = "PHID-HMBT-current"
 
     mock_workflow.cancel_previous(revision)
@@ -529,6 +549,7 @@ def test_cancel_previous_without_publication_task(mock_config, mock_workflow):
     revision = mock.MagicMock(spec=PhabricatorRevision)
     revision.phabricator_phid = "PHID-DREV-1"
     revision.diff_phid = "PHID-DIFF-current"
+    revision.diff_id = CURRENT_DIFF_ID
     revision.build_target_phid = "PHID-HMBT-current"
 
     mock_workflow.cancel_previous(revision)
@@ -552,7 +573,7 @@ def test_cancel_previous_abort_failure(mock_config, mock_workflow):
     )
     mock_workflow.queue_service.session.add(
         "get",
-        "http://tc.test/oldPublicationTask/artifacts/public/logs/live.log",
+        "http://tc.test/oldPublicationTask/artifacts/public/logs/live_backing.log",
         TREEHERDER_LOG,
     )
     mock_workflow.index_service.configure({"decisionTask": {"route": DECISION_ROUTE}})
@@ -560,6 +581,7 @@ def test_cancel_previous_abort_failure(mock_config, mock_workflow):
     revision = mock.MagicMock(spec=PhabricatorRevision)
     revision.phabricator_phid = "PHID-DREV-1"
     revision.diff_phid = "PHID-DIFF-current"
+    revision.diff_id = CURRENT_DIFF_ID
     revision.build_target_phid = "PHID-HMBT-current"
 
     mock_workflow.cancel_previous(revision)
@@ -589,6 +611,7 @@ def test_cancel_previous_publication_tasks_failure(mock_config, mock_workflow):
     revision = mock.MagicMock(spec=PhabricatorRevision)
     revision.phabricator_phid = "PHID-DREV-1"
     revision.diff_phid = "PHID-DIFF-current"
+    revision.diff_id = CURRENT_DIFF_ID
     revision.build_target_phid = "PHID-HMBT-current"
 
     mock_workflow.cancel_previous(revision)
@@ -610,9 +633,48 @@ def test_cancel_previous_conduit_failure(mock_config, mock_workflow):
     revision = mock.MagicMock(spec=PhabricatorRevision)
     revision.phabricator_phid = "PHID-DREV-1"
     revision.diff_phid = "PHID-DIFF-current"
+    revision.diff_id = CURRENT_DIFF_ID
     revision.build_target_phid = "PHID-HMBT-current"
 
     mock_workflow.cancel_previous(revision)
 
     assert mock_workflow.queue_service.cancelled_groups == []
     mock_workflow.phabricator.request.assert_called_once()
+
+
+def test_cancel_previous_ignores_later_buildables(mock_config, mock_workflow):
+    """
+    The buildable of a later diff is left alone: it belongs to an update that is
+    itself superseding the one being processed
+    """
+    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    mock_workflow.phabricator = mock_harbormaster(
+        {
+            "PHID-FILE-old-body": ("PHID-HMBT-old", '{"taskId": "oldPublicationTask"}'),
+            "PHID-FILE-next-body": (
+                "PHID-HMBT-next",
+                '{"taskId": "nextPublicationTask"}',
+            ),
+        },
+        buildables={
+            "PHID-HMBB-old": "PHID-DIFF-old",
+            "PHID-HMBB-current": "PHID-DIFF-current",
+            "PHID-HMBB-next": "PHID-DIFF-next",
+        },
+    )
+    mock_workflow.queue_service.task_states["oldPublicationTask"] = "running"
+    mock_workflow.queue_service.task_states["nextPublicationTask"] = "running"
+    mock_workflow.index_service.configure({})
+
+    revision = mock.MagicMock(spec=PhabricatorRevision)
+    revision.phabricator_phid = "PHID-DREV-1"
+    revision.diff_phid = "PHID-DIFF-current"
+    revision.diff_id = CURRENT_DIFF_ID
+    revision.build_target_phid = "PHID-HMBT-current"
+
+    mock_workflow.cancel_previous(revision)
+
+    assert mock_workflow.queue_service.cancelled_tasks == ["oldPublicationTask"]
+    assert abort_calls(mock_workflow.phabricator) == [
+        {"receiver": "PHID-HMBB-old", "type": "abort"}
+    ]

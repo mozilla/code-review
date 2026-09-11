@@ -49,7 +49,7 @@ TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
 
 DECISION_TASK_ROUTE = "gecko.v2.{repo}.revision.{revision}.taskgraph.decision"
-PUBLICATION_LOG_ARTIFACT = "public/logs/live.log"
+PUBLICATION_LOG_ARTIFACT = "public/logs/live_backing.log"
 TREEHERDER_LINK_REGEX = re.compile(
     rb"treeherder\.mozilla\.org/(?:#/)?jobs\?repo=(?P<repo>[\w-]+)"
     rb"&revision=(?P<revision>[0-9a-f]{12,40})"
@@ -482,8 +482,8 @@ class Workflow:
 
     def cancel_previous(self, revision):
         """
-        Cancel the try pushes triggered by earlier updates of a revision, and
-        abort the HarborMaster buildables of those updates.
+        Cancel the code-review task, try pushes, and HarborMaster buildables of earlier
+        updates of a revision.
         """
 
         # In order to cancel tasks from a previous push we need the task group id
@@ -518,6 +518,17 @@ class Workflow:
             task_ids = []
 
         for task_id in task_ids:
+            # cancel the publication task, which may or may not be running still
+            try:
+                self.queue_service.cancelTask(task_id)
+                logger.info("Cancelled a previous publication task", task=task_id)
+            except Exception as e:
+                logger.warn(
+                    "Failed to cancel a previous publication task",
+                    task=task_id,
+                    error=str(e),
+                )
+
             # No need to check whether or not anything is active in the group;
             # cancelling is idempotent.
             task_group_id = self.find_try_decision_task(task_id)
@@ -564,23 +575,42 @@ class Workflow:
         """
         List the HarborMaster buildables of the previous updates of a revision
 
-        The buildable of the diff being processed is left out: aborting it would
-        abort the build this very task is reporting to.
+        Only the buildables of the diffs preceding the one being processed are
+        returned. The buildable of the current diff is left out because aborting
+        it would abort the build this very task is reporting to, and those of
+        later diffs because they belong to updates that are themselves busy
+        superseding this one.
         """
         logger.debug("Finding previous buildables", phid=revision.phabricator_phid)
-        buildables = [
-            buildable
-            for buildable in self.phabricator.request(
-                "harbormaster.buildable.search",
-                constraints={"containerPHIDs": [revision.phabricator_phid]},
-            )["data"]
-            if buildable["fields"]["objectPHID"] != revision.diff_phid
-        ]
-        if not buildables:
+        buildables = self.phabricator.request(
+            "harbormaster.buildable.search",
+            constraints={"containerPHIDs": [revision.phabricator_phid]},
+        )["data"]
+
+        diff_phids = {buildable["fields"]["objectPHID"] for buildable in buildables} - {
+            revision.diff_phid
+        }
+        if not diff_phids:
             logger.debug("No previous buildables found", phid=revision.phabricator_phid)
             return []
 
-        buildable_phids = [b["phid"] for b in buildables]
+        diff_ids = {
+            diff["phid"]: diff["id"]
+            for diff in self.phabricator.request(
+                "differential.diff.search",
+                constraints={"phids": sorted(diff_phids)},
+            )["data"]
+        }
+
+        buildable_phids = []
+        for buildable in buildables:
+            diff_id = diff_ids.get(buildable["fields"]["objectPHID"])
+            if diff_id is not None and diff_id < revision.diff_id:
+                buildable_phids.append(buildable["phid"])
+
+        if not buildable_phids:
+            logger.debug("No previous buildables found", phid=revision.phabricator_phid)
+            return []
 
         logger.debug(
             "Found buildables",
@@ -654,7 +684,8 @@ class Workflow:
         """
         Find the decision task of the try push made by a publication task
 
-        The Treeherder link it published is only available in its own live log.
+        The Treeherder link it published is only available in its own backing
+        log, so this is only usable once that task has resolved.
         """
         url = self.queue_service.buildUrl(
             "getLatestArtifact", publication_task_id, PUBLICATION_LOG_ARTIFACT

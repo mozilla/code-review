@@ -518,6 +518,8 @@ class MockQueue:
         self.session = SessionMock()
         self.sealed_groups = []
         self.cancelled_groups = []
+        self.cancelled_tasks = []
+        self.task_states = {}
 
     def configure(self, relations):
         # Reset the session mock
@@ -611,6 +613,11 @@ class MockQueue:
         assert group_id in self.sealed_groups, "Task group must be sealed first"
         self.cancelled_groups.append(group_id)
         return {"taskGroupId": group_id, "taskIds": []}
+
+    def cancelTask(self, task_id):
+        self.cancelled_tasks.append(task_id)
+        self.task_states[task_id] = "exception"
+        return {"status": self.status(task_id)["status"]}
 
     def createArtifact(self, task_id, run_id, name, payload):
         if task_id not in self._artifacts:
