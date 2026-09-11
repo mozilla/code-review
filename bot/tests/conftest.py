@@ -701,6 +701,8 @@ def mock_workflow(mock_config, mock_taskcluster_config):
             self.update_build = False
             self.task_failures_ignored = []
             self.clone_available = True
+            self.clone_executor = None
+            self.clone_future = None
 
         def setup_mock_tasks(self, tasks):
             """

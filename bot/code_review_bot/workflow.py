@@ -6,6 +6,7 @@ import base64
 import json
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from itertools import groupby
 
@@ -102,11 +103,18 @@ class Workflow:
 
         # Is local clone already setup ?
         self.clone_available = False
+        # Background clone in progress, see start_clone & clone_repository
+        self.clone_executor = None
+        self.clone_future = None
 
     def run(self, revision):
         """
         Find all issues on remote tasks and publish them
         """
+        # Start cloning the local repo in the background ASAP
+        # It is only awaited when the issues hashes are needed
+        self.start_clone(revision)
+
         # Index ASAP Taskcluster task for this revision
         self.index(revision, state="started")
 
@@ -193,6 +201,10 @@ class Workflow:
         assert (
             self.backend_api.enabled
         ), "Backend storage is disabled, revision ingestion is not possible"
+
+        # Start cloning the local repo in the background ASAP
+        # It is only awaited when the issues hashes are needed
+        self.start_clone(revision)
 
         # Index ASAP Taskcluster task for this revision
         self.index(revision, state="ingestion")
@@ -325,22 +337,30 @@ class Workflow:
             cache_root=settings.mercurial_cache,
         )
 
-        # Try to update the state 5 consecutive time
-        for i in range(5):
-            # Update the internal build state using Phabricator infos
-            phabricator.update_state(build)
+        # Clone the required repository in the background
+        # while waiting for the build to become public
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            clone = executor.submit(repository.clone)
 
-            # Continue with workflow once the build is public
-            if build.state is PhabricatorBuildState.Public:
-                break
+            # Try to update the state 5 consecutive time
+            for i in range(5):
+                # Update the internal build state using Phabricator infos
+                phabricator.update_state(build)
 
-            # Retry later if the build is not yet seen as public
-            logger.warning(
-                "Build is not public, retrying in 30s",
-                build=build,
-                retries_left=build.retries,
-            )
-            time.sleep(30)
+                # Continue with workflow once the build is public
+                if build.state is PhabricatorBuildState.Public:
+                    break
+
+                # Retry later if the build is not yet seen as public
+                logger.warning(
+                    "Build is not public, retrying in 30s",
+                    build=build,
+                    retries_left=build.retries,
+                )
+                time.sleep(30)
+
+            # Wait for the clone to be finished, raising on failure
+            clone.result()
 
         # Make sure the build is now public
         if build.state is not PhabricatorBuildState.Public:
@@ -349,9 +369,6 @@ class Workflow:
         # When the build is public, load patches from Phabricator
         if not build.stack:
             raise Exception("No stack of patches to apply.")
-
-        # We'll clone the required repository
-        repository.clone()
 
         # Apply the stack of patches and push to try
         worker = MercurialWorker()
@@ -378,19 +395,60 @@ class Workflow:
         else:
             logger.info("Skipping Lando publication")
 
-    def clone_repository(self, revision):
+    def start_clone(self, revision):
         """
-        Clone the repo locally when configured
-        On production this should use a Taskcluster cache
+        Start cloning the repo locally in a background thread when configured
+        Use clone_repository to wait for the clone to be available
         """
         if self.clone_available:
             logger.debug("Local clone already setup")
+            return
+
+        if self.clone_future is not None:
+            logger.debug("Local clone already in progress")
             return
 
         if not settings.mercurial_cache and not settings.git_cache:
             logger.info("Local clone not required")
             return
 
+        logger.info("Starting local clone in the background")
+        self.clone_executor = ThreadPoolExecutor(
+            max_workers=1, thread_name_prefix="clone"
+        )
+        self.clone_future = self.clone_executor.submit(self._clone, revision)
+
+    def clone_repository(self, revision):
+        """
+        Make sure the repo is cloned locally when configured
+        Wait for a background clone started with start_clone, or run it now
+        On production this should use a Taskcluster cache
+        """
+        if self.clone_available:
+            logger.debug("Local clone already setup")
+            return
+
+        if self.clone_future is None:
+            self.start_clone(revision)
+
+        # Clone not required
+        if self.clone_future is None:
+            return
+
+        logger.info("Waiting for local clone to be available")
+        try:
+            self.clone_future.result()
+        finally:
+            self.clone_future = None
+            self.clone_executor.shutdown(wait=False)
+            self.clone_executor = None
+
+        self.clone_available = True
+
+    def _clone(self, revision):
+        """
+        Effectively clone the repo locally
+        """
         if isinstance(revision, PhabricatorRevision):
             # Mercurial clone
             if not settings.mercurial_cache:
@@ -428,8 +486,6 @@ class Workflow:
             )
         else:
             raise NotImplementedError
-
-        self.clone_available = True
 
     def publish(self, revision, issues, task_failures, notices, reviewers):
         """
