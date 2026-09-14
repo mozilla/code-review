@@ -99,6 +99,10 @@ class PhabricatorRevision(Revision):
         def repo_slug(url):
             if url.startswith("https://hg.mozilla.org/"):
                 url = url[23:]
+            else:
+                # Strip the scheme from other (git) repository urls, as the
+                # scheme separator is not a valid index namespace character
+                url = urllib.parse.urlparse(url)._replace(scheme="").geturl()[2:]
             return url.replace("/", "_")
 
         out = []
