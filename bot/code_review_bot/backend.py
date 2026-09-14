@@ -25,7 +25,12 @@ class BackendAPI:
         self.url = configuration.get("url")
         self.username = configuration.get("username")
         self.password = configuration.get("password")
+
+        # Reuse a single session to keep connections alive across requests
+        self.session = requests.Session()
+        self.session.headers.update(GetAppUserAgent())
         if self.enabled:
+            self.session.auth = (self.username, self.password)
             logger.info("Will use backend", url=self.url, user=self.username)
         else:
             logger.info("Skipping backend storage")
@@ -68,11 +73,8 @@ class BackendAPI:
         # Try to create the revision, or retrieve it in case it exists with that provider and ID.
         # The backend always returns a revisions, either a new one, or a pre-existing one
         revision_url = "/v1/revision/"
-        auth = (self.username, self.password)
         url_post = urllib.parse.urljoin(self.url, revision_url)
-        response = requests.post(
-            url_post, headers=GetAppUserAgent(), json=revision_data, auth=auth
-        )
+        response = self.session.post(url_post, json=revision_data)
         if not response.ok:
             logger.warn(f"Backend rejected the payload: {response.content}")
             return
@@ -182,12 +184,11 @@ class BackendAPI:
         """
         Yield results from a paginated API one by one
         """
-        auth = (self.username, self.password)
         next_url = urllib.parse.urljoin(self.url, url_path)
 
         # Iterate until there is no page left or a status error happen
         while next_url:
-            resp = requests.get(next_url, auth=auth, headers=GetAppUserAgent())
+            resp = self.session.get(next_url)
             resp.raise_for_status()
             data = resp.json()
             yield from data.get("results", [])
@@ -200,21 +201,18 @@ class BackendAPI:
         """
         assert self.enabled is True, "Backend API is not enabled"
         assert url_path.endswith("/")
-        auth = (self.username, self.password)
 
         if "id" in data:
             # Check that the item does not already exists
             url_get = urllib.parse.urljoin(self.url, f"{url_path}{data['id']}/")
-            response = requests.get(url_get, auth=auth, headers=GetAppUserAgent())
+            response = self.session.get(url_get)
             if response.ok:
                 logger.info("Found existing item on backend", url=url_get)
                 return response.json()
 
         # Create the requested item
         url_post = urllib.parse.urljoin(self.url, url_path)
-        response = requests.post(
-            url_post, headers=GetAppUserAgent(), json=data, auth=auth
-        )
+        response = self.session.post(url_post, json=data)
         if not response.ok:
             logger.warn(f"Backend rejected the payload: {response.content}")
             return None
