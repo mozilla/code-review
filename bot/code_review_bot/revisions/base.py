@@ -123,7 +123,11 @@ class Revision(ABC):
         patch_stats = rs_parsepatch.get_lines(self.patch)
         assert len(patch_stats) > 0, "Empty patch"
 
-        self.lines = {stat["filename"]: stat["added_lines"] for stat in patch_stats}
+        # Store added lines as sets, as `contains` is called several times per
+        # issue and needs a fast membership test against the patch lines
+        self.lines = {
+            stat["filename"]: set(stat["added_lines"]) for stat in patch_stats
+        }
 
         # Shortcut to files modified
         self.files = self.lines.keys()
