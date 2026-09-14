@@ -179,11 +179,11 @@ index 83db48f8..84275f99 100644
 
     mock_revision.analyze_patch()
     assert "new.txt" in mock_revision.lines
-    assert mock_revision.lines["new.txt"] == [1, 2, 3]
+    assert mock_revision.lines["new.txt"] == {1, 2, 3}
     assert "modified.txt" in mock_revision.lines
-    assert mock_revision.lines["modified.txt"] == [3]
+    assert mock_revision.lines["modified.txt"] == {3}
     assert "added.txt" in mock_revision.lines
-    assert mock_revision.lines["added.txt"] == [4]
+    assert mock_revision.lines["added.txt"] == {4}
     assert "new.txt" in mock_revision.files
     assert "modified.txt" in mock_revision.files
     assert "added.txt" in mock_revision.files
