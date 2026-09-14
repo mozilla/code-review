@@ -65,6 +65,25 @@ def test_phabricator_revision_repository_type(mock_config):
         hg_revision.repository_slug
 
 
+def test_namespaces_git_head_repository(mock_config):
+    """Index namespaces built from a git head repository must not keep the
+    url scheme, as its separator is not a valid namespace character."""
+    revision = PhabricatorRevision(
+        head_repository="https://github.com/mozilla-releng/staging-firefox",
+        head_changeset="f89976a1f9fbbe009aed429750efcfc6687c3775",
+        repository_type="git",
+    )
+    assert revision.namespaces == [
+        "head_repo.github.com_mozilla-releng_staging-firefox.f89976a1f9fbbe009aed429750efcfc6687c3775"
+    ]
+
+    hg_revision = PhabricatorRevision(
+        head_repository="https://hg.mozilla.org/try",
+        head_changeset="deadc0ffee",
+    )
+    assert hg_revision.namespaces == ["head_repo.try.deadc0ffee"]
+
+
 def test_clone_repository_follows_repository_type(mock_workflow, monkeypatch, tmp_path):
     """Publication cloning follows the repository type, not the revision class."""
     git_clone = MagicMock()
