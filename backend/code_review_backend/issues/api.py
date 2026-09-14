@@ -21,7 +21,6 @@ from code_review_backend.issues.models import (
     LEVEL_ERROR,
     Diff,
     Issue,
-    IssueLink,
     Repository,
     Revision,
 )
@@ -128,10 +127,6 @@ class DiffViewSet(viewsets.ReadOnlyModelViewSet):
             # Because of the perf. hit filter issues that are not older than today - 3 months.
             .filter(created__gte=date.today() - timedelta(days=90))
             .prefetch_related(
-                Prefetch(
-                    "issue_links",
-                    queryset=IssueLink.objects.select_related("issue"),
-                ),
                 "revision",
                 "revision__base_repository",
                 "revision__head_repository",
