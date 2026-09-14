@@ -56,6 +56,9 @@ class Settings:
         # Number of concurrent requests made to the code review backend
         self.backend_parallel_requests = 8
 
+        # Number of concurrent requests made to Taskcluster
+        self.taskcluster_parallel_requests = 8
+
         # Cache to store file-by-file from HGMO Rest API
         self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
 
@@ -84,6 +87,7 @@ class Settings:
         mercurial_cache=None,
         git_cache=None,
         backend_parallel_requests=None,
+        taskcluster_parallel_requests=None,
     ):
         # Detect source from env
         if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
@@ -120,6 +124,10 @@ class Settings:
         if backend_parallel_requests is not None:
             self.backend_parallel_requests = int(backend_parallel_requests)
             assert self.backend_parallel_requests > 0, "Invalid parallel requests"
+
+        if taskcluster_parallel_requests is not None:
+            self.taskcluster_parallel_requests = int(taskcluster_parallel_requests)
+            assert self.taskcluster_parallel_requests > 0, "Invalid parallel requests"
 
         # Save allowed paths
         assert isinstance(allowed_paths, list)

@@ -236,10 +236,20 @@ class Workflow:
             nb=len(supported_tasks),
         )
 
-        # Load all the artifacts and potential issues
+        # Load all the artifacts in parallel, as each task download is independent
+        with ThreadPoolExecutor(
+            max_workers=settings.taskcluster_parallel_requests
+        ) as executor:
+            tasks_artifacts = list(
+                executor.map(
+                    lambda task: task.load_artifacts(self.queue_service),
+                    supported_tasks,
+                )
+            )
+
+        # Then parse potential issues from the main thread
         issues = []
-        for task in supported_tasks:
-            artifacts = task.load_artifacts(self.queue_service)
+        for task, artifacts in zip(supported_tasks, tasks_artifacts):
             if artifacts is not None:
                 task_issues = task.parse_issues(artifacts, revision)
                 logger.info(
