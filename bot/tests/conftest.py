@@ -40,6 +40,16 @@ FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
 MockArtifactResponse = namedtuple("MockArtifactResponse", "content")
 
 
+def _querydiffs_response(diff_id):
+    return json.dumps(
+        {
+            "error_code": None,
+            "error_info": None,
+            "result": {str(diff_id): {"properties": {}}},
+        }
+    )
+
+
 @pytest.fixture(scope="function")
 def mock_repositories():
     return [
@@ -170,6 +180,18 @@ def mock_phabricator(mock_config):
 
         return (200, {"Content-Type": "application/json"}, content)
 
+    def query_diffs(request):
+        payload = dict(urllib.parse.parse_qsl(request.body))
+        assert "params" in payload
+        params = json.loads(payload["params"])
+
+        assert params.get("ids") and len(params["ids"]) == 1
+        return (
+            200,
+            {"Content-Type": "application/json"},
+            _querydiffs_response(params["ids"][0]),
+        )
+
     responses.add(
         responses.POST,
         "http://phabricator.test/api/user.whoami",
@@ -181,6 +203,12 @@ def mock_phabricator(mock_config):
         responses.POST,
         "http://phabricator.test/api/differential.diff.search",
         callback=diff_search,
+    )
+
+    responses.add_callback(
+        responses.POST,
+        "http://phabricator.test/api/differential.querydiffs",
+        callback=query_diffs,
     )
 
     responses.add(
@@ -1258,6 +1286,11 @@ def PhabricatorMock():
         assert "diffID" in params
         return (200, json_headers, _response("raw-{}".format(params["diffID"])))
 
+    def _query_diffs(request):
+        params = _phab_params(request)
+        assert params.get("ids") and len(params["ids"]) == 1
+        return (200, json_headers, _querydiffs_response(params["ids"][0]))
+
     def _edges(request):
         params = _phab_params(request)
         assert "sourcePHIDs" in params
@@ -1329,6 +1362,12 @@ def PhabricatorMock():
             responses.POST,
             "http://phabricator.test/api/differential.diff.search",
             callback=_diff_search,
+        )
+
+        resp.add_callback(
+            responses.POST,
+            "http://phabricator.test/api/differential.querydiffs",
+            callback=_query_diffs,
         )
 
         resp.add_callback(

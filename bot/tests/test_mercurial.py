@@ -898,3 +898,37 @@ def test_get_base_identifier_from_git(mock_mc):
     assert (
         mock_mc.get_base_identifier(stack) == "default"
     ), "`default` commit should be used when `use_latest_revision` is `True`."
+
+
+def test_get_base_identifier_converts_first_public_parent(mock_mc, monkeypatch):
+    stack = [
+        PhabricatorPatch(
+            1, "PHID-abc", "", "a" * 12, None, False, first_public_parent="c" * 12
+        )
+    ]
+    mock_mc.has_revision = lambda x: False
+    converted = []
+
+    def get_mercurial_base_hash(revision):
+        converted.append(revision)
+        return "d" * 40 if revision == "c" * 12 else None
+
+    monkeypatch.setattr(mock_mc, "get_mercurial_base_hash", get_mercurial_base_hash)
+
+    assert mock_mc.get_base_identifier(stack) == "d" * 40
+    assert converted == [
+        "a" * 12,
+        "c" * 12,
+    ]
+
+
+def test_get_base_identifier_falls_back_to_default(mock_mc, monkeypatch):
+    stack = [PhabricatorPatch(1, "PHID-abc", "", "a" * 12, None, False)]
+    mock_mc.has_revision = lambda x: False
+    monkeypatch.setattr(
+        mock_mc,
+        "get_mercurial_base_hash",
+        lambda x: None,
+    )
+
+    assert mock_mc.get_base_identifier(stack) == "default"
