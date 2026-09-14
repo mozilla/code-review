@@ -125,6 +125,9 @@ def main():
         args.mercurial_repository,
         args.github_repository,
         backend_parallel_requests=taskcluster.secrets.get("BACKEND_PARALLEL_REQUESTS"),
+        taskcluster_parallel_requests=taskcluster.secrets.get(
+            "TASKCLUSTER_PARALLEL_REQUESTS"
+        ),
     )
 
     # Setup statistics
