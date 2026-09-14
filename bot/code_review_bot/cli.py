@@ -124,6 +124,7 @@ def main():
         taskcluster.secrets["ssh_key"],
         args.mercurial_repository,
         args.github_repository,
+        backend_parallel_requests=taskcluster.secrets.get("BACKEND_PARALLEL_REQUESTS"),
     )
 
     # Setup statistics

@@ -6,8 +6,9 @@ import base64
 import json
 import re
 import time
+from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from itertools import groupby
 
 import structlog
 from libmozdata.phabricator import BuildState, ConduitError, PhabricatorAPI
@@ -789,11 +790,10 @@ class Workflow:
 
         current_date = datetime.now().strftime("%Y-%m-%d")
 
-        # Group issues by path, so we only list know issues for the affected files
-        issues_groups = groupby(
-            sorted(issues, key=lambda i: i.path),
-            lambda i: i.path,
-        )
+        # Group issues by path, so we only list known issues for the affected files
+        issues_by_path = defaultdict(list)
+        for issue in issues:
+            issues_by_path[issue.path].append(issue)
         logger.info(
             "Checking for existing issues in the backend",
             base_revision_changeset=base_rev_changeset,
@@ -807,14 +807,27 @@ class Workflow:
         else:
             raise NotImplementedError
 
-        for path, group_issues in issues_groups:
+        def _list_known_hashes(path):
             known_issues = self.backend_api.list_repo_issues(
                 repository_slug,
                 date=current_date,
                 revision_changeset=base_rev_changeset,
                 path=path,
             )
-            hashes = {issue["hash"] for issue in known_issues}
+            return {issue["hash"] for issue in known_issues}
+
+        # Each path needs its own paginated request to the backend, and those
+        # requests are independent, so run them in parallel
+        with ThreadPoolExecutor(
+            max_workers=settings.backend_parallel_requests
+        ) as executor:
+            known_hashes = dict(
+                zip(issues_by_path, executor.map(_list_known_hashes, issues_by_path))
+            )
+
+        # Issues are updated from the main thread only
+        for path, group_issues in issues_by_path.items():
+            hashes = known_hashes[path]
             for issue in group_issues:
                 issue.new_issue = bool(issue.hash and issue.hash not in hashes)
 
