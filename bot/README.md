@@ -35,6 +35,7 @@ The following configuration variables are currently supported:
 - `REPORTERS` **[required]** lists all the reporting tools to use when a code review is completed (details below)
 - `PHABRICATOR` **[required]** holds the credentials to make API calls on Phabricator.
 - `ZERO_COVERAGE_ENABLED` is a boolean value enabling or disabling the zero coverage warning report.
+- `BACKEND_PARALLEL_REQUESTS` is the optional number of concurrent requests made to the code review backend (defaults to 8).
 - `PAPERTRAIL_HOST` is the optional Papertrail host configuration, used for logging.
 - `PAPERTRAIL_PORT` is the optional Papertrail port configuration, used for logging.
 - `SENTRY_DSN` is the optional Sentry full url to report runtime errors.
