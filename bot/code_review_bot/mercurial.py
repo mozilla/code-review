@@ -202,9 +202,7 @@ class MercurialRepository(BaseRepository):
 
         return self._repo
 
-    def get_mercurial_base_hash(
-        self, revision: str | None, revision_type: str = "base revision"
-    ) -> str | None:
+    def get_mercurial_base_hash(self, revision: str | None) -> str | None:
         """A revision may reference to a Git commit hash instead of Mercurial one.
         The revision can either be a 40 characters full hash or its first 12 characters (short hash).
         A Lando API enables to "convert" the Git hash to a Mercurial hash that can
@@ -223,12 +221,12 @@ class MercurialRepository(BaseRepository):
             )
             return commit_map.hg_hash
         except LandoMissingCommit:
-            logger.warning(f"No matching {revision_type} found on Lando.")
+            logger.warning("No matching revision found on Lando.")
             return None
 
         except Exception as e:
             logger.warning(
-                f"Could not convert {revision_type} Git hash to Mercurial hash"
+                f"Could not convert revision Git hash to Mercurial hash"
                 f"from Lando: {e}. "
             )
             return None
@@ -251,9 +249,9 @@ class MercurialRepository(BaseRepository):
             # Use `default` when `use_latest_revision` is `True`.
             return "default"
 
-        for revision, revision_type in (
-            (needed_stack[0].base_revision, "base revision"),
-            (needed_stack[0].first_public_parent, "first public parent"),
+        for revision in (
+            needed_stack[0].base_revision,
+            needed_stack[0].first_public_parent,
         ):
             if not revision:
                 continue
@@ -262,7 +260,7 @@ class MercurialRepository(BaseRepository):
                 return revision
 
             # Base revisions may reference Git hashes on new repositories.
-            mercurial_version = self.get_mercurial_base_hash(revision, revision_type)
+            mercurial_version = self.get_mercurial_base_hash(revision)
             if mercurial_version:
                 return mercurial_version
 
