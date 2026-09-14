@@ -427,7 +427,7 @@ class IssueList(generics.ListAPIView):
     serializer_class = IssueHashSerializer
 
     def get_queryset(self):
-        qs = Issue.objects.all().only("id", "hash").prefetch_related("revisions")
+        qs = Issue.objects.all().only("id", "hash")
 
         errors = defaultdict(list)
         repo_slug = self.kwargs["repo_slug"]

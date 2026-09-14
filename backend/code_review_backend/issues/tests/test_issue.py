@@ -104,7 +104,7 @@ class IssueTestCase(TestCase):
         )
 
     def test_list_repository_issues(self):
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(3):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
             )
@@ -126,7 +126,7 @@ class IssueTestCase(TestCase):
         """
         Primarily filter issues depending on an existing revision
         """
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(5):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
                 + "?date=1999-01-01&revision_changeset="
@@ -146,7 +146,7 @@ class IssueTestCase(TestCase):
         """
         Fall back to the date when no issue match the given revision
         """
-        with self.assertNumQueries(6):
+        with self.assertNumQueries(5):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
                 + "?date=2000-01-02&revision_changeset="
@@ -163,7 +163,7 @@ class IssueTestCase(TestCase):
         )
 
     def test_list_repository_issues_date_only(self):
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(4):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
                 + "?date=2010-01-01"
