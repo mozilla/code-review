@@ -180,6 +180,8 @@ def main():
                 settings.phabricator_build_target,
                 phabricator_api,
             )
+            if revision is None:
+                return 0
         else:
             revision = Revision.from_try_task(
                 queue_service.task(settings.try_task_id),

@@ -262,15 +262,11 @@ class Workflow:
         # Publish issues in the backend
         self.backend_api.publish_issues(issues, revision)
 
-    def start_analysis(self, revision):
+    def start_analysis(self, revision: PhabricatorRevision) -> None:
         """
         Apply a patch on a local clone and push to try to trigger a new Code review analysis
         """
         logger.info("Starting revision analysis", revision=revision)
-        if not isinstance(revision, PhabricatorRevision):
-            raise NotImplementedError(
-                "Only Phabricator revisions are supported for now"
-            )
 
         # Index ASAP Taskcluster task for this revision
         self.index(revision, state="analysis")
@@ -342,9 +338,14 @@ class Workflow:
             )
             time.sleep(30)
 
-        # Make sure the build is now public
+        # Make sure the build is now public, otherwise skip the analysis
         if build.state is not PhabricatorBuildState.Public:
-            raise Exception("Cannot process private builds")
+            logger.warning(
+                "Cannot process private builds, skipping analysis",
+                build=build,
+                state=build.state.name,
+            )
+            return
 
         # When the build is public, load patches from Phabricator
         if not build.stack:

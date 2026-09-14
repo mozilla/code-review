@@ -4,6 +4,7 @@
 
 import json
 import tempfile
+import time
 from unittest import mock
 
 import pytest
@@ -58,6 +59,72 @@ def test_revision(mock_phabricator):
         ssh_user="reviewbot@mozilla.com",
     )
     assert revision.repository_try_name == "try"
+
+
+def test_revision_not_public(mock_phabricator, monkeypatch):
+    """
+    A revision whose Harbormaster build cannot be loaded (not public)
+    must not raise, but return None so the caller can stop early
+    """
+    # Avoid waiting between retries
+    monkeypatch.setattr(time, "sleep", lambda _: None)
+
+    with mock_phabricator as api:
+        api.find_target_buildable = mock.Mock(
+            side_effect=AssertionError("Build target not found")
+        )
+
+        revision = PhabricatorRevision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-private",
+            phabricator=api,
+        )
+
+    assert revision is None
+    assert api.find_target_buildable.call_count == 5
+
+
+def test_workflow_private_build(
+    mock_mercurial_repo,
+    mock_phabricator,
+    mock_workflow,
+    mock_config,
+    tmpdir,
+    monkeypatch,
+):
+    """
+    A build that never becomes public must stop the analysis
+    without raising nor touching the mercurial repository
+    """
+    mock_config.mercurial_cache = tmpdir
+    mock_config.ssh_key = "Dummy Private SSH Key"
+
+    # Capture hg calls
+    hgrun_calls = []
+    monkeypatch.setattr(mercurial, "hg_run", lambda cmd: hgrun_calls.append(cmd))
+
+    # The build stays in its initial queued state
+    monkeypatch.setattr(PhabricatorActions, "update_state", lambda _, build: None)
+
+    # Avoid waiting between retries
+    monkeypatch.setattr(time, "sleep", lambda _: None)
+
+    with mock_phabricator as api:
+        mock_workflow.phabricator = api
+
+        revision = PhabricatorRevision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-test",
+            phabricator=api,
+        )
+
+        assert mock_workflow.start_analysis(revision) is None
+
+    # No clone nor push happened
+    assert hgrun_calls == []
+    assert mock_mercurial_repo._calls == []
+
+    # Reset settings for following tests
+    mock_config.mercurial_cache = None
+    mock_config.ssh_key = None
 
 
 def test_workflow(

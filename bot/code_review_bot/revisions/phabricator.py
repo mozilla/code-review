@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 import os
 import time
 import urllib.parse
@@ -271,7 +273,13 @@ class PhabricatorRevision(Revision):
         )
 
     @staticmethod
-    def from_phabricator_trigger(build_target_phid: str, phabricator: PhabricatorAPI):
+    def from_phabricator_trigger(
+        build_target_phid: str, phabricator: PhabricatorAPI
+    ) -> PhabricatorRevision | None:
+        """
+        Build a revision from a Harbormaster build target.
+        Returns None when the revision is not public (the build cannot be loaded).
+        """
         assert build_target_phid.startswith("PHID-HMBT-")
 
         # This is the very first call on Phabricator API for that build, so we need to retry
@@ -288,7 +296,12 @@ class PhabricatorRevision(Revision):
                 )
                 time.sleep(30)
         if buildable is None:
-            raise Exception("Failed to load Habormaster build, no more tries left")
+            logger.warning(
+                "Failed to load Harbormaster build, no more tries left. "
+                "The revision is probably not public, skipping it.",
+                build_target_phid=build_target_phid,
+            )
+            return None
 
         diff_phid = buildable["fields"]["objectPHID"]
         assert diff_phid.startswith("PHID-DIFF-")
