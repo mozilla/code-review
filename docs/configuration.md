@@ -108,7 +108,8 @@ bot:
   # the before/after feature (filters out known issues and warn about issues outside the patch)
   BEFORE_AFTER_RATIO: 0.3
 
-  # Number of concurrent requests made to the code review backend (defaults to 8)
+  # Number of concurrent requests made to the code review backend, e.g. to list known
+  # issues or publish issues in bulk (defaults to 8)
   # Can be lowered on instances using a smaller backend
   BACKEND_PARALLEL_REQUESTS: 8
 

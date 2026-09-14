@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import urllib.parse
+from concurrent.futures import ThreadPoolExecutor
 
 import requests
 import structlog
@@ -118,6 +119,10 @@ class BackendAPI:
             issues[i : i + settings.bulk_issue_chunks]
             for i in range(0, len(issues), settings.bulk_issue_chunks)
         )
+
+        # Build the payload of every chunk first, from the main thread,
+        # as serializing an issue may read its file to compute the hash
+        chunks_data = []
         for issues_chunk in chunks:
             # Store valid data as couples of (<issue>, <json_data>)
             valid_data = []
@@ -148,10 +153,21 @@ class BackendAPI:
                 )
                 continue
 
-            response = self.create(
+            chunks_data.append(valid_data)
+
+        # Post all the chunks in parallel, as the backend handles each one independently
+        def _create_chunk(valid_data):
+            return self.create(
                 revision.issues_url,
                 {"issues": [json_data for _, json_data in valid_data]},
             )
+
+        with ThreadPoolExecutor(
+            max_workers=settings.backend_parallel_requests
+        ) as executor:
+            responses = list(executor.map(_create_chunk, chunks_data))
+
+        for valid_data, response in zip(chunks_data, responses):
             if response is None:
                 # Backend rejected the payload, nothing more to do.
                 continue
