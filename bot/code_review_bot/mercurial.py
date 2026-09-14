@@ -202,15 +202,12 @@ class MercurialRepository(BaseRepository):
 
         return self._repo
 
-    def get_mercurial_base_hash(self, revision: str | None) -> str | None:
+    def get_mercurial_base_hash(self, revision: str) -> str | None:
         """A revision may reference to a Git commit hash instead of Mercurial one.
         The revision can either be a 40 characters full hash or its first 12 characters (short hash).
         A Lando API enables to "convert" the Git hash to a Mercurial hash that can
         be found in the local repository, whatever its length.
         """
-        if not revision:
-            return None
-
         api = LandoCommitMapAPI()
         try:
             commit_map = api.git2hg(revision)
