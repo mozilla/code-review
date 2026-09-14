@@ -814,7 +814,7 @@ class Workflow:
                 revision_changeset=base_rev_changeset,
                 path=path,
             )
-            hashes = [issue["hash"] for issue in known_issues]
+            hashes = {issue["hash"] for issue in known_issues}
             for issue in group_issues:
                 issue.new_issue = bool(issue.hash and issue.hash not in hashes)
 

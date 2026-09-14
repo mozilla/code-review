@@ -153,9 +153,12 @@ class PhabricatorReporter(Reporter):
             for issue in issues
             if issue.on_backend and issue.on_backend["hash"] in indexed_issues
         ]
+        unresolved_hashes = set(unresolved)
 
         # All previous issues that are not unresolved are closed
-        closed = [issue for issue in previous_issues if issue["hash"] not in unresolved]
+        closed = [
+            issue for issue in previous_issues if issue["hash"] not in unresolved_hashes
+        ]
 
         return unresolved, closed
 
