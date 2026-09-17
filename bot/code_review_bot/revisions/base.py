@@ -275,7 +275,9 @@ class Revision(ABC):
         raise NotImplementedError
 
     @staticmethod
-    def from_try_task(try_task: dict, decision_task: dict, phabricator: PhabricatorAPI):
+    def from_try_decision_task(
+        decision_task: dict, build_target_phid: str, phabricator: PhabricatorAPI
+    ):
         """
         Load identifiers from Phabricator or Github, using the remote task description
         """
@@ -293,6 +295,6 @@ class Revision(ABC):
                 pull_number=int(task_env["GECKO_PULL_REQUEST_NUMBER"]),
             )
         else:
-            return PhabricatorRevision.from_try_task(
-                try_task["extra"]["code-review"], decision_task, phabricator
+            return PhabricatorRevision.from_try_decision_task(
+                decision_task, build_target_phid, phabricator
             )

@@ -382,14 +382,6 @@ def mock_github(mock_config):
 
 
 @pytest.fixture
-def mock_try_task():
-    """
-    Mock a remote Try task definition
-    """
-    return {"extra": {"code-review": {"phabricator-diff": "PHID-HMBT-test"}}}
-
-
-@pytest.fixture
 def mock_github_decision_task():
     """
     Mock a decision task definition from a github revision
@@ -446,14 +438,16 @@ def mock_autoland_task():
 
 
 @pytest.fixture
-def mock_revision(mock_phabricator, mock_try_task, mock_decision_task, mock_config):
+def mock_revision(mock_phabricator, mock_decision_task, mock_config):
     """
     Mock a mercurial revision
     """
     from code_review_bot.revisions import PhabricatorRevision, Revision
 
     with mock_phabricator as api:
-        revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+        revision = Revision.from_try_decision_task(
+            mock_decision_task, "PHID-HMBT-test", api
+        )
         assert isinstance(revision, PhabricatorRevision)
         return revision
 
@@ -470,15 +464,15 @@ def mock_revision_autoland(mock_phabricator, mock_autoland_task):
 
 
 @pytest.fixture
-def mock_github_revision(
-    mock_github, mock_try_task, mock_github_decision_task, mock_config
-):
+def mock_github_revision(mock_github, mock_github_decision_task, mock_config):
     """
     Mock a github revision
     """
     from code_review_bot.revisions import GithubRevision, Revision
 
-    revision = Revision.from_try_task(mock_try_task, mock_github_decision_task, None)
+    revision = Revision.from_try_decision_task(
+        mock_github_decision_task, "PHID-HMBT-test", None
+    )
     assert isinstance(revision, GithubRevision)
     return revision
 

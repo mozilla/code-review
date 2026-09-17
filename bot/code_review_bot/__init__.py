@@ -11,6 +11,9 @@ from functools import cached_property
 
 import requests
 import structlog
+
+# Workaround https://github.com/taskcluster/taskcluster/issues/9172
+import taskcluster.download
 from libmozdata.phabricator import LintResult, UnitResult, UnitResultState
 from taskcluster.helper import TaskclusterConfig
 
