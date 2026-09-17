@@ -171,6 +171,19 @@ def main():
     # We need Phabricator API to list black-listed users
     settings.load_user_blacklist(taskcluster.secrets["user_blacklist"], phabricator_api)
 
+    # Run workflow according to source
+    w = Workflow(
+        reporters,
+        index_service,
+        queue_service,
+        phabricator_api,
+        taskcluster.secrets["ZERO_COVERAGE_ENABLED"],
+        # Update build status only when phabricator reporting is enabled
+        update_build=phabricator_reporting_enabled,
+        task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
+    )
+
+    revision = None
     # Load unique revision
     try:
         if settings.generic_group_id:
@@ -178,6 +191,7 @@ def main():
             revision = PhabricatorRevision.from_decision_task(
                 queue_service.task(settings.generic_group_id), phabricator_api
             )
+            w.ingest_revision(revision, settings.generic_group_id)
         elif settings.phabricator_build_target:
             # Only Phabricator revisions is supported from build target
             revision = PhabricatorRevision.from_phabricator_trigger(
@@ -186,12 +200,14 @@ def main():
             )
             if revision is None:
                 return 0
+            w.start_analysis(revision)
         else:
             revision = Revision.from_try_task(
                 queue_service.task(settings.try_task_id),
                 queue_service.task(settings.try_group_id),
                 phabricator_api,
             )
+            w.run(revision)
 
     except InvalidTrigger as e:
         logger.info("Early stop analysis due to invalid trigger", error=str(e))
@@ -204,40 +220,22 @@ def main():
         # Stop cleanly as we just want to ignore that case, but report on sentry through warning
         return 0
     except Exception as e:
-        # Report revision loading failure on production only
-        # On testing or dev instances, we can use different Phabricator
-        # configuration that do not match all the pulse messages sent
-        if settings.on_production:
-            raise
+        if not revision:
+            # Report revision loading failure on production only
+            # On testing or dev instances, we can use different Phabricator
+            # configuration that do not match all the pulse messages sent
+            if settings.on_production:
+                raise
 
-        else:
-            logger.info(
-                "Failed to load revision",
-                task=settings.try_task_id,
-                error=str(e),
-                phabricator=phabricator["url"],
-            )
-            return 1
+            else:
+                logger.info(
+                    "Failed to load revision",
+                    task=settings.try_task_id,
+                    error=str(e),
+                    phabricator=phabricator["url"],
+                )
+                return 1
 
-    # Run workflow according to source
-    w = Workflow(
-        reporters,
-        index_service,
-        queue_service,
-        phabricator_api,
-        taskcluster.secrets["ZERO_COVERAGE_ENABLED"],
-        # Update build status only when phabricator reporting is enabled
-        update_build=phabricator_reporting_enabled,
-        task_failures_ignored=taskcluster.secrets["task_failures_ignored"],
-    )
-    try:
-        if settings.generic_group_id:
-            w.ingest_revision(revision, settings.generic_group_id)
-        elif settings.phabricator_build_target:
-            w.start_analysis(revision)
-        else:
-            w.run(revision)
-    except Exception as e:
         # Log errors to papertrail
         logger.error(
             "Static analysis failure", revision=revision, error=e, exc_info=True
