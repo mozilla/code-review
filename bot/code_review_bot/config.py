@@ -90,8 +90,9 @@ class Settings:
         taskcluster_parallel_requests=None,
     ):
         # Detect source from env
-        if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
+        if "TRY_TASK_ID" in os.environ:
             self.try_task_id = os.environ["TRY_TASK_ID"]
+        if "TRY_TASK_GROUP_ID" in os.environ:
             self.try_group_id = os.environ["TRY_TASK_GROUP_ID"]
         elif "GENERIC_TASK_GROUP_ID" in os.environ:
             self.generic_group_id = os.environ["GENERIC_TASK_GROUP_ID"]
