@@ -90,11 +90,19 @@ class Settings:
         taskcluster_parallel_requests=None,
     ):
         # Detect source from env
-        if "TRY_TASK_ID" in os.environ and "TRY_TASK_GROUP_ID" in os.environ:
+        # publication mode for linting (we need to look specifically at
+        # the `code-review` task)
+        if "TRY_TASK_ID" in os.environ:
             self.try_task_id = os.environ["TRY_TASK_ID"]
+        # publication mode for builds & tests (we're looking at an entire
+        # task group)
+        if "TRY_TASK_GROUP_ID" in os.environ:
             self.try_group_id = os.environ["TRY_TASK_GROUP_ID"]
+        # ingestion mode for production branches
         elif "GENERIC_TASK_GROUP_ID" in os.environ:
             self.generic_group_id = os.environ["GENERIC_TASK_GROUP_ID"]
+        # analysis mode; we're kicking off a new run from a phabricator diff
+        # update
         elif "PHABRICATOR_BUILD_TARGET" in os.environ:
             # Setup trigger mode using Phabricator information
             self.phabricator_build_target = os.environ["PHABRICATOR_BUILD_TARGET"]
