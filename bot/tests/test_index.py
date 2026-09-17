@@ -26,7 +26,7 @@ class MockPhabricatorRevision(PhabricatorRevision):
         return self._details
 
 
-def test_taskcluster_index(mock_config, mock_workflow, mock_try_task):
+def test_taskcluster_index(mock_config, mock_workflow):
     """
     Test the Taskcluster indexing API
     by mocking an online taskcluster state
@@ -188,7 +188,6 @@ def test_index_phabricator(
 def test_index_from_try(
     mock_phabricator,
     phab,
-    mock_try_task,
     mock_decision_task,
     mock_workflow,
     mock_config,
@@ -199,7 +198,9 @@ def test_index_from_try(
     """
 
     with mock_phabricator as api:
-        revision = Revision.from_try_task(mock_try_task, mock_decision_task, api)
+        revision = Revision.from_try_decision_task(
+            mock_decision_task, "PHID-HMBT-test", api
+        )
         assert isinstance(revision, PhabricatorRevision)
 
     mock_workflow.index_service = mock.Mock()

@@ -16,6 +16,7 @@ from libmozdata.phabricator import (
     UnitResult,
     UnitResultState,
 )
+from taskcluster.download import downloadArtifactToBuf
 
 from code_review_bot import (
     AnalysisException,
@@ -202,11 +203,19 @@ def main():
                 return 0
             w.start_analysis(revision)
         else:
-            revision = Revision.from_try_task(
-                queue_service.task(settings.try_task_id),
-                queue_service.task(settings.try_group_id),
+            decision_task = queue_service.task(settings.try_group_id)
+            rawParams, _ = downloadArtifactToBuf(
+                taskId=settings.try_group_id,
+                name="public/parameters.yml",
+                queueService=queue_service,
+            )
+            parameters = yaml.safe_load(bytes(rawParams))
+            revision = Revision.from_try_decision_task(
+                decision_task,
+                parameters["phabricator_diff"],
                 phabricator_api,
             )
+
             w.run(revision)
 
     except InvalidTrigger as e:

@@ -132,20 +132,18 @@ class PhabricatorRevision(Revision):
         return f"Phabricator #{self.diff_id} - {self.diff_phid}"
 
     @staticmethod
-    def from_try_task(
-        code_review: dict, decision_task: dict, phabricator: PhabricatorAPI
+    def from_try_decision_task(
+        decision_task: dict, build_target_phid: str, phabricator: PhabricatorAPI
     ):
         """
         Load identifiers from Phabricator, using the remote task description
         """
-        # Load build target phid from the task env
-        build_target_phid = code_review.get("phabricator-diff") or code_review.get(
-            "phabricator-build-target"
-        )
         assert (
             build_target_phid is not None
         ), "Missing phabricator-build-target or phabricator-diff declaration"
-        assert build_target_phid.startswith("PHID-HMBT-")
+        assert build_target_phid.startswith(
+            "PHID-HMBT-"
+        ), f"Build target PHID {build_target_phid} is invalid as it does not start with PHID-HMBT- prefix"
 
         # And get the diff from the phabricator api
         buildable = phabricator.find_target_buildable(build_target_phid)
