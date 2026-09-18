@@ -26,6 +26,9 @@ TESTING_EXCEPTION_UI_PHID = "PHID-PROJ-zjipshabawolpkllehvg"
 # Phabricator project tagging commits that come with their own tests
 TESTING_APPROVED_PHID = "PHID-PROJ-h7y4cs7m2o67iczw62pp"
 
+# Phabricator project flagging revisions still missing a testing policy tag
+NEEDS_TESTING_TAG_PHID = "PHID-PROJ-j3au2u2ypmko4ndmzmcu"
+
 # All the testing policy projects on Phabricator, a revision should only have one of them
 TESTING_POLICY_TAG_PHIDS = frozenset(
     [
@@ -254,10 +257,15 @@ def apply_testing_policy_tag(api, revision):
             )
             return None
 
-        api.edit_revision(
-            revision.phabricator_id,
-            [{"type": "projects.add", "value": [tag_phid]}],
-        )
+        transactions = [{"type": "projects.add", "value": [tag_phid]}]
+
+        # The revision is not missing a tag anymore
+        if NEEDS_TESTING_TAG_PHID in project_phids:
+            transactions.append(
+                {"type": "projects.remove", "value": [NEEDS_TESTING_TAG_PHID]}
+            )
+
+        api.edit_revision(revision.phabricator_id, transactions)
     except Exception as e:
         # Tagging is a best effort feature that should never block the publication
         logger.warning(
