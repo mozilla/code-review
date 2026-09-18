@@ -162,7 +162,7 @@ class BaseRepository:
             logger.info("Applying patch", phid=patch.phid, message=message)
             self.apply_patch(patch, message, commit)
 
-    def add_try_commit(self, build):
+    def add_try_commit(self, build, extra_parameters):
         """
         Build and commit the file configuring try
         with try_task_config.json and the code-review workflow parameters in JSON
@@ -171,11 +171,11 @@ class BaseRepository:
         config = {
             "version": 2,
             "parameters": {
-                "target_tasks_method": "codereview",
-                "optimize_target_tasks": True,
                 "phabricator_diff": build.target_phid,
             },
         }
+        config["parameters"].update(extra_parameters)
+
         diff_phid = build.stack[-1].phid
 
         if build.revision_url:
@@ -213,7 +213,7 @@ class BaseWorker:
     ):
         self.skippable_files = skippable_files
 
-    def run(self, repository, build):
+    def run(self, repository, build, extra_parameters):
         """
         Apply the stack of patches from the build, handling retries
         in case of try server errors
@@ -228,7 +228,7 @@ class BaseWorker:
                 )
 
             try:
-                return self.handle_build(repository, build)
+                return self.handle_build(repository, build, extra_parameters)
             except RetryNeeded:
                 build.retries += 1
 
@@ -289,7 +289,7 @@ class BaseWorker:
         """Extract a readable error log from a VCS exception"""
         raise NotImplementedError
 
-    def handle_build(self, repository, build):
+    def handle_build(self, repository, build, extra_parameters):
         """
         Try to load and apply a diff on local clone
         If successful, push to try and send a treeherder link
@@ -321,7 +321,7 @@ class BaseWorker:
                 )
 
             # Configure the try task
-            repository.add_try_commit(build)
+            repository.add_try_commit(build, extra_parameters)
 
             # Then push that stack on try
             tip = repository.push_to_try()
