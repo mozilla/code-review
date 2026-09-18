@@ -10,6 +10,7 @@ import urllib.parse
 from pathlib import Path
 
 import requests
+import sentry_sdk
 import structlog
 from libmozdata.phabricator import PhabricatorAPI
 
@@ -300,6 +301,13 @@ class PhabricatorRevision(Revision):
                 "Failed to load Harbormaster build, no more tries left. "
                 "The revision is probably not public, skipping it.",
                 build_target_phid=build_target_phid,
+            )
+            sentry_sdk.metrics.count(
+                "phabricator:harbormaster:no_access",
+                1,
+                attributes={
+                    "build_target_phid": build_target_phid,
+                },
             )
             return None
 
