@@ -52,44 +52,44 @@ UI_EXTENSIONS = frozenset(
         # Styling
         ".css",
         # Images
-        ".svg",
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".gif",
-        ".ico",
-        ".icns",
-        ".webp",
         ".avif",
+        ".gif",
+        ".icns",
+        ".ico",
+        ".jpeg",
+        ".jpg",
+        ".png",
+        ".svg",
+        ".webp",
         # Fonts
-        ".ttf",
         ".otf",
+        ".ttf",
         ".woff",
         ".woff2",
         # Localized strings
+        ".dtd",
         ".ftl",
         ".properties",
-        ".dtd",
     ]
 )
 
 # Test manifests and expectations, which do not add coverage by themselves
-TEST_MANIFEST_EXTENSIONS = frozenset([".toml", ".list", ".ini"])
+TEST_MANIFEST_EXTENSIONS = frozenset([".ini", ".list", ".toml"])
 
 # Test files or manifests recognized by their basename
 TEST_BASENAME_PATTERNS = (
-    "test_*",
+    "a11y*.toml",
+    "browser*.toml",
     "browser_*.js",
     "browser_*.mjs",
-    "mochitest*.toml",
-    "browser*.toml",
     "chrome*.toml",
-    "xpcshell*.toml",
-    "a11y*.toml",
-    "python*.toml",
-    "reftest*.list",
     "crashtests*.list",
     "jstests*.list",
+    "mochitest*.toml",
+    "python*.toml",
+    "reftest*.list",
+    "test_*",
+    "xpcshell*.toml",
 )
 
 
