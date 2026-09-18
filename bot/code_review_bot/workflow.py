@@ -16,6 +16,7 @@ from taskcluster.utils import stringDate
 
 from code_review_bot import Level, stats
 from code_review_bot.analysis import (
+    AnalysisMode,
     PhabricatorRevisionBuild,
     publish_analysis_lando,
     publish_analysis_phabricator,
@@ -273,7 +274,9 @@ class Workflow:
         # Publish issues in the backend
         self.backend_api.publish_issues(issues, revision)
 
-    def start_analysis(self, revision: PhabricatorRevision) -> None:
+    def start_analysis(
+        self, revision: PhabricatorRevision, analysis_mode: AnalysisMode
+    ):
         """
         Apply a patch on a local clone and push to try to trigger a new Code review analysis
         """
@@ -365,9 +368,18 @@ class Workflow:
         # We'll clone the required repository
         repository.clone()
 
+        parameters = {}
+        if analysis_mode == AnalysisMode.Lint:
+            parameters.update(
+                {
+                    "target_tasks_method": "codereview",
+                    "optimize_target_tasks": True,
+                }
+            )
+
         # Apply the stack of patches and push to try
         worker = MercurialWorker()
-        output = worker.run(repository, build)
+        output = worker.run(repository, build, parameters)
 
         # Cancel any in-progress tasks from an earlier update
         # This is done after pushing to try to avoid delaying runs of the

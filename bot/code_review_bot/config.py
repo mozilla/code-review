@@ -14,6 +14,8 @@ from pathlib import Path
 
 import structlog
 
+from code_review_bot.analysis import AnalysisMode
+
 REPO_MOZILLA_CENTRAL = "https://hg.mozilla.org/mozilla-central"
 REPO_AUTOLAND = "https://hg.mozilla.org/integration/autoland"
 
@@ -47,6 +49,7 @@ class Settings:
         self.try_group_id = None
         self.generic_group_id = None
         self.phabricator_build_target = None
+        self.analysis_mode = None
         self.repositories = []
         self.decision_env_prefixes = []
 
@@ -102,6 +105,10 @@ class Settings:
             assert self.phabricator_build_target.startswith(
                 "PHID-HMBT"
             ), f"Not a phabrication build target PHID: {self.phabricator_build_target}"
+            # TODO: remove the default after we can be certain it will always be
+            # present
+            mode = os.environ.get("ANALYSIS_MODE", "Lint")
+            self.analysis_mode = AnalysisMode[mode]
         else:
             raise Exception("Only TRY mode is supported")
 

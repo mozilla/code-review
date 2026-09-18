@@ -201,7 +201,7 @@ def main():
             )
             if revision is None:
                 return 0
-            w.start_analysis(revision)
+            w.start_analysis(revision, settings.analysis_mode)
         else:
             decision_task = queue_service.task(settings.try_group_id)
             rawParams, _ = downloadArtifactToBuf(
