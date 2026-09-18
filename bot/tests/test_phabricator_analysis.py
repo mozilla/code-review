@@ -12,6 +12,7 @@ from libmozdata.phabricator import ConduitError
 
 from code_review_bot import mercurial
 from code_review_bot.analysis import (
+    AnalysisMode,
     publish_analysis_phabricator,
 )
 from code_review_bot.config import RepositoryConf
@@ -116,7 +117,7 @@ def test_workflow_private_build(
             phabricator=api,
         )
 
-        assert mock_workflow.start_analysis(revision) is None
+        assert mock_workflow.start_analysis(revision, AnalysisMode.Lint) is None
 
     # No clone nor push happened
     assert hgrun_calls == []
@@ -172,7 +173,7 @@ def test_workflow(
             phabricator=api,
         )
 
-        mock_workflow.start_analysis(revision)
+        mock_workflow.start_analysis(revision, AnalysisMode.Lint)
 
     # Check hgrun initial call to clone mozilla central through robust checkout
     assert hgrun_calls == [

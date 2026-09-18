@@ -73,6 +73,13 @@ def test_robustcheckout(monkeypatch):
     ]
 
 
+LINT_EXTRA_PARAMS = {
+    "enable_always_target": False,
+    "optimize_target_tasks": True,
+    "target_tasks_method": "codereview",
+}
+
+
 def test_push_to_try(PhabricatorMock, mock_mc, responses):
     """
     Run mercurial worker on a single diff
@@ -108,7 +115,7 @@ def test_push_to_try(PhabricatorMock, mock_mc, responses):
     )
 
     worker = mercurial.MercurialWorker()
-    result = worker.run(mock_mc, build)
+    result = worker.run(mock_mc, build, LINT_EXTRA_PARAMS)
 
     # Check the treeherder link was generated
     tip = mock_mc.repo.tip()
@@ -210,7 +217,7 @@ def test_push_to_try_existing_rev(PhabricatorMock, mock_mc):
     assert not os.path.exists(config)
 
     worker = mercurial.MercurialWorker()
-    mode, out_build, details = worker.run(mock_mc, build)
+    mode, out_build, details = worker.run(mock_mc, build, LINT_EXTRA_PARAMS)
 
     # Check the treeherder link was queued
     tip = mock_mc.repo.tip()
@@ -317,7 +324,7 @@ def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
     worker = mercurial.MercurialWorker(
         skippable_files=["test.txt"],
     )
-    mode, out_build, details = worker.run(mock_mc, build)
+    mode, out_build, details = worker.run(mock_mc, build, LINT_EXTRA_PARAMS)
 
     # Check the treeherder link was queued
     tip = mock_mc.repo.tip()
@@ -388,7 +395,7 @@ def test_treeherder_link(PhabricatorMock, mock_mc):
     )
 
     worker = mercurial.MercurialWorker()
-    mode, out_build, details = worker.run(mock_mc, build)
+    mode, out_build, details = worker.run(mock_mc, build, LINT_EXTRA_PARAMS)
 
     # Check the treeherder link was queued
     tip = mock_mc.repo.tip()
@@ -438,7 +445,7 @@ def test_failure_general(PhabricatorMock, mock_mc):
     mock_mc.apply_build = boom
 
     worker = mercurial.MercurialWorker()
-    mode, out_build, details = worker.run(mock_mc, build)
+    mode, out_build, details = worker.run(mock_mc, build, LINT_EXTRA_PARAMS)
 
     # Check the unit result was published
 
@@ -487,7 +494,7 @@ def test_failure_mercurial(PhabricatorMock, mock_config, mock_mc):
     )
 
     worker = mercurial.MercurialWorker()
-    mode, out_build, details = worker.run(mock_mc, build)
+    mode, out_build, details = worker.run(mock_mc, build, LINT_EXTRA_PARAMS)
 
     # Check the treeherder link was queued
     assert mode == "fail:mercurial"
@@ -560,7 +567,7 @@ def test_push_to_try_nss(PhabricatorMock, mock_nss):
     )
 
     worker = mercurial.MercurialWorker()
-    mode, out_build, details = worker.run(mock_nss, build)
+    mode, out_build, details = worker.run(mock_nss, build, LINT_EXTRA_PARAMS)
 
     # Check the treeherder link was queued
     tip = mock_nss.repo.tip()
@@ -641,7 +648,7 @@ def test_crash_utf8_author(PhabricatorMock, mock_mc):
 
     # Run the mercurial worker on that patch only
     worker = mercurial.MercurialWorker()
-    mode, out_build, details = worker.run(mock_mc, build)
+    mode, out_build, details = worker.run(mock_mc, build, LINT_EXTRA_PARAMS)
 
     # Check we have the patch with utf-8 author properly applied
     assert [(c.author, c.desc) for c in mock_mc.repo.log()] == [
@@ -711,7 +718,7 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     repository_mock.retries = 0
 
     worker = mercurial.MercurialWorker()
-    mode, out_build, details = worker.run(repository_mock, build)
+    mode, out_build, details = worker.run(repository_mock, build, LINT_EXTRA_PARAMS)
 
     assert mode == "success"
     assert out_build == build
@@ -768,7 +775,7 @@ def test_push_failure_max_retries(PhabricatorMock, mock_mc, monkeypatch):
     )
 
     worker = mercurial.MercurialWorker()
-    mode, out_build, details = worker.run(repository_mock, build)
+    mode, out_build, details = worker.run(repository_mock, build, LINT_EXTRA_PARAMS)
 
     # Check the treeherder link was queued
     assert build.retries == 3
@@ -839,7 +846,7 @@ def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
 
     worker = mercurial.MercurialWorker()
 
-    mode, out_build, details = worker.run(repository_mock, build)
+    mode, out_build, details = worker.run(repository_mock, build, LINT_EXTRA_PARAMS)
     assert repository_mock.push_to_try.call_count == 2
 
     assert mode == "success"
