@@ -373,7 +373,7 @@ def test_api_failure_is_not_fatal(api, revision):
 
 
 def test_phabricator_reporter_sets_tag(
-    mock_phabricator, phab, mock_try_task, mock_decision_task, mock_backend_secret
+    mock_phabricator, phab, mock_decision_task, mock_backend_secret
 ):
     """
     The Phabricator reporter sets the tag on a documentation-only revision
@@ -383,7 +383,7 @@ def test_phabricator_reporter_sets_tag(
 
     with mock_phabricator as api:
         revision = Revision.from_try_decision_task(
-            mock_try_task, mock_decision_task, api
+            mock_decision_task, "PHID-HMBT-test", api
         )
         revision.lines = {"docs/index.rst": [1, 2], "dom/base/test/test_foo.html": [3]}
         revision.files = list(revision.lines.keys())
@@ -399,7 +399,7 @@ def test_phabricator_reporter_sets_tag(
 
 
 def test_phabricator_reporter_skips_code_changes(
-    mock_phabricator, phab, mock_try_task, mock_decision_task, mock_backend_secret
+    mock_phabricator, phab, mock_decision_task, mock_backend_secret
 ):
     """
     The Phabricator reporter does not tag a revision modifying code
@@ -409,7 +409,7 @@ def test_phabricator_reporter_skips_code_changes(
 
     with mock_phabricator as api:
         revision = Revision.from_try_decision_task(
-            mock_try_task, mock_decision_task, api
+            mock_decision_task, "PHID-HMBT-test", api
         )
         revision.lines = {"docs/index.rst": [1, 2], "dom/base/nsDocument.cpp": [3]}
         revision.files = list(revision.lines.keys())
