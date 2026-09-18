@@ -12,6 +12,7 @@ import pytest
 import responses
 from libmozdata.phabricator import ConduitError
 
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.config import Settings, TaskCluster
 from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
@@ -238,7 +239,7 @@ def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_re
     # Set backend ID as the publication is disabled for tests
     mock_revision.id = 1337
     assert mock_revision.before_after_feature is True
-    mock_workflow.run(mock_revision)
+    mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert mock_workflow.publish.call_args_list == [
         mock.call(
             mock_revision,
