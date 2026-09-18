@@ -7,9 +7,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from code_review_bot.testing_policy import (
+    TESTING_EXCEPTION_UI_PHID,
     TESTING_EXCEPTION_UNCHANGED_PHID,
     apply_testing_policy_tag,
     detect_testing_policy_tag,
+    is_ui_path,
     is_unchanged_path,
 )
 
@@ -74,6 +76,74 @@ def test_unchanged_paths(path):
 )
 def test_changed_paths(path):
     assert is_unchanged_path(path) is False
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "browser/themes/shared/urlbar.css",
+        "browser/themes/shared/icons/back.svg",
+        "browser/branding/official/default128.png",
+        "toolkit/themes/shared/fonts/FiraSans.woff2",
+        "browser/locales/en-US/browser/browser.ftl",
+        "toolkit/locales/en-US/chrome/global/commonDialogs.properties",
+        "browser/locales/en-US/chrome/browser/browser.dtd",
+        "browser/branding/official/firefox.ico",
+    ],
+)
+def test_ui_paths(path):
+    assert is_ui_path(path) is True
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "browser/components/urlbar/UrlbarInput.sys.mjs",
+        "browser/base/content/browser.xhtml",
+        "browser/base/content/browser.js",
+        "dom/base/nsDocument.cpp",
+        "browser/themes/shared/jar.mn",
+        "browser/locales/l10n.toml",
+    ],
+)
+def test_non_ui_paths(path):
+    assert is_ui_path(path) is False
+
+
+def test_detect_testing_exception_ui():
+    # Only UI files
+    assert (
+        detect_testing_policy_tag(
+            ["browser/themes/shared/urlbar.css", "browser/themes/shared/icons/back.svg"]
+        )
+        == TESTING_EXCEPTION_UI_PHID
+    )
+
+    # UI files along with documentation or tests
+    assert (
+        detect_testing_policy_tag(
+            [
+                "browser/locales/en-US/browser/browser.ftl",
+                "docs/index.rst",
+                "browser/components/tests/browser/browser_foo.js",
+            ]
+        )
+        == TESTING_EXCEPTION_UI_PHID
+    )
+
+    # A single code file is enough to disable the heuristic
+    assert (
+        detect_testing_policy_tag(
+            ["browser/themes/shared/urlbar.css", "browser/base/content/browser.js"]
+        )
+        is None
+    )
+
+    # UI files in a test directory are just tests
+    assert (
+        detect_testing_policy_tag(["browser/base/content/test/static/dummy.css"])
+        == TESTING_EXCEPTION_UNCHANGED_PHID
+    )
 
 
 def test_detect_testing_policy_tag():

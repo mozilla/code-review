@@ -20,12 +20,15 @@ logger = structlog.get_logger(__name__)
 # (documentation, test-only changes, ...)
 TESTING_EXCEPTION_UNCHANGED_PHID = "PHID-PROJ-cspmf33ku3kjaqtuvs7g"
 
+# Phabricator project tagging commits that only change UI styling, images or localized strings
+TESTING_EXCEPTION_UI_PHID = "PHID-PROJ-zjipshabawolpkllehvg"
+
 # All the testing policy projects on Phabricator, a revision should only have one of them
 TESTING_POLICY_TAG_PHIDS = frozenset(
     [
         "PHID-PROJ-h7y4cs7m2o67iczw62pp",  # testing-approved
         TESTING_EXCEPTION_UNCHANGED_PHID,  # testing-exception-unchanged
-        "PHID-PROJ-zjipshabawolpkllehvg",  # testing-exception-ui
+        TESTING_EXCEPTION_UI_PHID,  # testing-exception-ui
         "PHID-PROJ-e4fcjngxcws3egiecv3r",  # testing-exception-elsewhere
         "PHID-PROJ-iciyosoekrczpf2a4emw",  # testing-exception-other
     ]
@@ -38,6 +41,33 @@ DOC_EXTENSIONS = frozenset([".md", ".rst"])
 DOC_FILENAME_REGEX = re.compile(
     r"^(readme|license|licence|copying|changelog|authors|contributing)"
     r"(-[a-z0-9]+(\.[0-9]+)?)*(\.(txt|md|rst|html))?$"
+)
+
+# Files with these extensions only change UI styling, images or localized strings
+UI_EXTENSIONS = frozenset(
+    [
+        # Styling
+        ".css",
+        # Images
+        ".svg",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".ico",
+        ".icns",
+        ".webp",
+        ".avif",
+        # Fonts
+        ".ttf",
+        ".otf",
+        ".woff",
+        ".woff2",
+        # Localized strings
+        ".ftl",
+        ".properties",
+        ".dtd",
+    ]
 )
 
 # Test files or manifests recognized by their basename
@@ -113,6 +143,14 @@ def is_unchanged_path(path):
     return is_doc_path(path) or is_test_path(path)
 
 
+def is_ui_path(path):
+    """
+    Check if a path only holds UI styling, images or localized strings
+    """
+    _, ext = os.path.splitext(path)
+    return ext.lower() in UI_EXTENSIONS
+
+
 def detect_testing_policy_tag(files):
     """
     Detect the testing policy tag that applies to a patch, from its list of modified files.
@@ -122,8 +160,13 @@ def detect_testing_policy_tag(files):
     if not files:
         return None
 
+    # Only documentation or tests: nothing changes for end users
     if all(is_unchanged_path(path) for path in files):
         return TESTING_EXCEPTION_UNCHANGED_PHID
+
+    # Only UI styling, images or strings (possibly along with documentation or tests)
+    if all(is_unchanged_path(path) or is_ui_path(path) for path in files):
+        return TESTING_EXCEPTION_UI_PHID
 
     return None
 
