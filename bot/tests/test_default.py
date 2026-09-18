@@ -5,6 +5,7 @@
 import pytest
 
 from code_review_bot import Level
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.tasks.default import DefaultIssue, DefaultTask
 
 
@@ -65,7 +66,7 @@ def test_parser(mock_workflow, mock_revision, mock_hgmo, mock_backend):
     mock_workflow.backend_api.publish_revision = lambda rev: {}
     mock_revision.id = 1337
 
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 1
     issue = issues.pop()
 
