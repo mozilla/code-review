@@ -85,6 +85,8 @@ Configuration:
 
 This reporter will send detailed information about every **publishable** issue.
 
+It also sets the [testing policy](https://firefox-source-docs.mozilla.org/testing/testing-policy/index.html) tag on the revision when it can be deduced.
+
 ### Reporter: Github
 
 Key `reporter` is `github`

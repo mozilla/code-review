@@ -16,6 +16,7 @@ from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.a11y_frontend import handle_a11y_review_group
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyIssue
 from code_review_bot.tasks.coverage import CoverageIssue
+from code_review_bot.testing_policy import apply_testing_policy_tag
 from code_review_bot.tools import treeherder
 
 BUG_REPORT_URL = "https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__"
@@ -206,6 +207,9 @@ class PhabricatorReporter(Reporter):
 
         # Handle the accessibility-frontend-reviewers group workflow.
         handle_a11y_review_group(self.api, revision)
+
+        # Set the testing policy tag when it can be deduced from the modified files.
+        apply_testing_policy_tag(self.api, revision)
 
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
