@@ -262,7 +262,12 @@ def main():
         if isinstance(e, AnalysisException):
             extras["error_code"] = e.code
             extras["error_message"] = str(e)
-        w.index(revision, state="error", **extras)
+
+        namespace_suffix = ""
+        if settings.analysis_mode == AnalysisMode.BuildTest:
+            namespace_suffix = "build-test"
+
+        w.index(revision, namespace_suffix=namespace_suffix, state="error", **extras)
 
         # Update Phabricator
         failure = UnitResult(
