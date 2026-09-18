@@ -7,6 +7,7 @@ import responses
 from libmozdata.phabricator import BuildState
 
 from code_review_bot import stats
+from code_review_bot.analysis import AnalysisMode
 
 
 @pytest.fixture
@@ -52,7 +53,7 @@ def test_no_deps(
     )
 
     with pytest.raises(AssertionError) as e:
-        mock_workflow.run(mock_revision)
+        mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert str(e.value) == "No task dependencies to analyze"
 
 
@@ -114,7 +115,7 @@ def test_baseline(
             },
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
 
     assert len(issues) == 2
     issue = issues[0]
@@ -173,7 +174,7 @@ def test_no_failed(
             "extra-task": {},
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Pass
 
@@ -204,13 +205,13 @@ def test_no_issues(
             "extra-task": {},
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Fail
 
     # Now mark that task failure as ignorable
     mock_workflow.task_failures_ignored = ["source-test-mozlint-flake8"]
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Pass
 
@@ -259,7 +260,7 @@ def test_build_status_fail_on_error(
             },
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 2
     assert mock_revision._state == BuildState.Fail
 
@@ -308,7 +309,7 @@ def test_build_status_pass_on_warning(
             },
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 2
     assert mock_revision._state == BuildState.Pass
 
@@ -337,7 +338,7 @@ def test_unsupported_analyzer(
             "extra-task": {},
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Pass
 
@@ -377,7 +378,7 @@ def test_mozlint_task(
             },
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 1
     issue = issues[0]
     assert isinstance(issue, MozLintIssue)
@@ -451,7 +452,7 @@ def test_clang_tidy_task(
             },
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 2
     issue = issues[0]
     assert isinstance(issue, ClangTidyIssue)
@@ -535,7 +536,7 @@ def test_clang_format_task(
     }
     mock_workflow.setup_mock_tasks(tasks)
     assert len(mock_revision.improvement_patches) == 0
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 1
     issue = issues[0]
     assert isinstance(issue, ClangFormatIssue)
@@ -605,7 +606,7 @@ def test_no_tasks(
             },
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Pass
 
@@ -641,12 +642,12 @@ def test_zero_coverage_option(
     )
 
     mock_workflow.zero_coverage_enabled = False
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 0
     assert mock_revision._state == BuildState.Pass
 
     mock_workflow.zero_coverage_enabled = True
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 1
     assert isinstance(issues[0], CoverageIssue)
     assert mock_revision._state == BuildState.Pass
@@ -693,7 +694,7 @@ def test_external_tidy_task(
             },
         }
     )
-    issues = mock_workflow.run(mock_revision)
+    issues = mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert len(issues) == 1
     issue = issues[0]
     assert isinstance(issue, ExternalTidyIssue)

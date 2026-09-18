@@ -25,6 +25,7 @@ from code_review_bot import (
     stats,
     taskcluster,
 )
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import PhabricatorRevision, Revision
@@ -216,7 +217,14 @@ def main():
                 phabricator_api,
             )
 
-            w.run(revision)
+            analysis_mode = None
+            if parameters["target_tasks_method"] == "codereview":
+                analysis_mode = AnalysisMode.Lint
+
+            if not analysis_mode:
+                raise Exception("Cannot detect analysis mode; cannot proceed!")
+
+            w.run(revision, analysis_mode)
 
     except InvalidTrigger as e:
         logger.info("Early stop analysis due to invalid trigger", error=str(e))

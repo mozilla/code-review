@@ -105,10 +105,14 @@ class Workflow:
         # Is local clone already setup ?
         self.clone_available = False
 
-    def run(self, revision):
+    def run(self, revision, analysis_mode: AnalysisMode):
         """
         Find all issues on remote tasks and publish them
         """
+        if analysis_mode == AnalysisMode.Lint:
+            return self._run_lint(revision)
+
+    def _run_lint(self, revision):
         # Index ASAP Taskcluster task for this revision
         self.index(revision, state="started")
 
