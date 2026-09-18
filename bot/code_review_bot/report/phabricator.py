@@ -10,7 +10,7 @@ import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
 
 from code_review_bot import BaseIssue, IssueType, Level, stats
-from code_review_bot.analysis import AnalysisMode
+from code_review_bot.analysis import AnalysisMode, get_issue_type
 from code_review_bot.backend import BackendAPI
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import PhabricatorRevision
@@ -208,15 +208,9 @@ class PhabricatorReporter(Reporter):
                     ],
                 )
 
-        # Handle the accessibility-frontend-reviewers group workflow.
-        handle_a11y_review_group(self.api, revision)
-
-        # Set the testing policy tag when it can be deduced from the modified files.
-        apply_testing_policy_tag(self.api, revision)
-
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
-        issue_type = IssueType.Lint
+        issue_type = get_issue_type(analysis_mode)
         publishable_issues = [
             issue
             for issue in issues
@@ -231,7 +225,7 @@ class PhabricatorReporter(Reporter):
         ]
 
         if publishable_issues:
-            # Publish detected patch's issues on Harbormaster, all at once, as lint issues
+            # Publish detected patch's issues on Harbormaster, all at once
             self.publish_harbormaster(revision, publishable_issues)
 
         # Retrieve all diffs for the current revision
@@ -250,6 +244,12 @@ class PhabricatorReporter(Reporter):
         former_diff_id = sorted(older_diff_ids)[-1] if older_diff_ids else None
 
         if analysis_mode == AnalysisMode.Lint:
+            # Handle the accessibility-frontend-reviewers group workflow.
+            handle_a11y_review_group(self.api, revision)
+
+            # Set the testing policy tag when it can be deduced from the modified files.
+            apply_testing_policy_tag(self.api, revision)
+
             unresolved_issues, closed_issues = self.compare_issues(
                 former_diff_id, publishable_issues
             )
@@ -279,6 +279,18 @@ class PhabricatorReporter(Reporter):
                 unresolved_count=len(unresolved_issues),
                 closed_count=len(closed_issues),
             )
+        else:
+            if publishable_issues or task_failures:
+                self.publish_summary(
+                    revision,
+                    publishable_issues,
+                    [],
+                    task_failures,
+                    None,
+                    former_diff_id=None,
+                    unresolved_count=0,
+                    closed_count=0,
+                )
 
         # Publish statistics
         stats.add_metric("report.phabricator.issues", len(issues))
@@ -294,7 +306,7 @@ class PhabricatorReporter(Reporter):
         assert issues, "No issues to publish"
 
         lint_issues = [i for i in issues if i.type_ == IssueType.Lint]
-        unit_issues = []
+        unit_issues = [i for i in issues if i.type_ == IssueType.BuildTest]
 
         self.api.update_build_target(
             revision.build_target_phid,
@@ -379,9 +391,13 @@ class PhabricatorReporter(Reporter):
             if stat["nb_defects"] > 0:
                 defect_nb.append(self.pluralize("defect", stat["nb_defects"]))
 
+            analyzer_str = "[{name}]({log})".format(
+                name=stat["analyzer"], log=stat["log"]
+            )
+
             defects.append(
                 " - {nb} found by {analyzer}".format(
-                    analyzer=stat["analyzer"], nb=" and ".join(defect_nb)
+                    analyzer=analyzer_str, nb=" and ".join(defect_nb)
                 )
             )
         if defects:

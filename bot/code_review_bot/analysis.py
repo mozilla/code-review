@@ -30,6 +30,17 @@ def get_test_mode_string(analysis_mode: AnalysisMode):
         raise NotImplementedError
 
 
+def get_issue_type(analysis_mode: AnalysisMode):
+    from code_review_bot import IssueType
+
+    if analysis_mode == AnalysisMode.Lint:
+        return IssueType.Lint
+    elif analysis_mode == AnalysisMode.BuildTest:
+        return IssueType.BuildTest
+    else:
+        raise NotImplementedError
+
+
 class PhabricatorRevisionBuild(PhabricatorBuild):
     """
     Convert the bot revision into a libmozevent compatible build

@@ -65,6 +65,7 @@ class Reporter:
 
             return {
                 "analyzer": analyzer.display_name,
+                "log": analyzer.log,
                 "help": analyzer.build_help_message(paths),
                 "total": len(_items),
                 "publishable": publishable,

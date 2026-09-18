@@ -11,7 +11,7 @@ import structlog
 from github import Auth, GithubIntegration
 from github.PullRequest import ReviewComment
 
-from code_review_bot import Issue
+from code_review_bot import Issue, IssueType
 from code_review_bot.revisions import GithubRevision
 
 logger = structlog.get_logger(__name__)
@@ -130,7 +130,11 @@ class GithubClient:
 
         pull_request.create_review(
             commit=repo.get_commit(revision.head_changeset),
-            comments=[self._build_review_comment(issue) for issue in issues],
+            comments=[
+                self._build_review_comment(issue)
+                for issue in issues
+                if issue.type_ == IssueType.Lint
+            ],
             # https://docs.github.com/en/rest/pulls/reviews?apiVersion=2022-11-28#create-a-review-for-a-pull-request
             event=event.value,
             **attrs,

@@ -4,6 +4,7 @@
 
 import structlog
 
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import GithubRevision
 from code_review_bot.sources.github import GithubClient, ReviewEvent
@@ -56,58 +57,78 @@ class GithubReporter(Reporter):
             and issue.analyzer.name not in self.analyzers_skipped
         ]
 
-        # Remove any earlier review to get a clean state
-        nb_dismissed = self.github_client.cleanup_pr(revision)
+        if analysis_mode == AnalysisMode.Lint:
+            # Remove any earlier review to get a clean state; doesn't affect the BuildTest path
+            # because that only posts a comment, not inline reviews.
+            nb_dismissed = self.github_client.cleanup_pr(revision)
 
-        if publishable_issues:
-            messages = [
-                f"{len(publishable_issues)} issue{'s' if len(publishable_issues) > 1 else ''} "
-                f"{'have' if len(publishable_issues) > 1 else 'has'} "
-                "been found in this revision."
-            ]
+            if publishable_issues:
+                messages = [
+                    f"{len(publishable_issues)} issue{'s' if len(publishable_issues) > 1 else ''} "
+                    f"{'have' if len(publishable_issues) > 1 else 'has'} "
+                    "been found in this revision."
+                ]
 
-            # Issues that are not in patch cannot be published directly through a Github review
-            issues_in_patch_files = [
-                issue for issue in publishable_issues if issue.in_touched_files
-            ]
-            issues_outside_patch_files = [
-                issue for issue in publishable_issues if not issue.in_touched_files
-            ]
-            if issues_outside_patch_files:
-                # Mention issues outside of the patch in the review main comment, after a new line
-                messages.append("")
-                messages.append(
-                    f"{len(issues_outside_patch_files)} issue{'s' if len(issues_outside_patch_files) > 1 else ''} "
-                    f"{'are' if len(issues_outside_patch_files) > 1 else 'is'} located outside of the files "
-                    "touched by the patch:"
+                # Issues that are not in patch cannot be published directly through a Github review
+                issues_in_patch_files = [
+                    issue for issue in publishable_issues if issue.in_touched_files
+                ]
+                issues_outside_patch_files = [
+                    issue for issue in publishable_issues if not issue.in_touched_files
+                ]
+                if issues_outside_patch_files:
+                    # Mention issues outside of the patch in the review main comment, after a new line
+                    messages.append("")
+                    messages.append(
+                        f"{len(issues_outside_patch_files)} issue{'s' if len(issues_outside_patch_files) > 1 else ''} "
+                        f"{'are' if len(issues_outside_patch_files) > 1 else 'is'} located outside of the files "
+                        "touched by the patch:"
+                    )
+                    for issue in issues_outside_patch_files:
+                        if issue.line:
+                            messages.append(
+                                f"* `{issue.path}:{issue.line}` {issue.as_text()}"
+                            )
+                        else:
+                            messages.append(f"* `{issue.path}` {issue.as_text()}")
+
+                # Publish a review summarizing detected, unresolved and closed issues
+                self.github_client.publish_review(
+                    issues=issues_in_patch_files,
+                    revision=revision,
+                    message="\n".join(messages),
+                    event=ReviewEvent.RequestChanges,
                 )
-                for issue in issues_outside_patch_files:
-                    if issue.line:
-                        messages.append(
-                            f"* `{issue.path}:{issue.line}` {issue.as_text()}"
-                        )
-                    else:
-                        messages.append(f"* `{issue.path}` {issue.as_text()}")
-
-            # Publish a review summarizing detected, unresolved and closed issues
-            self.github_client.publish_review(
-                issues=issues_in_patch_files,
-                revision=revision,
-                message="\n".join(messages),
-                event=ReviewEvent.RequestChanges,
-            )
-        else:
-            # Publish a comment, mentioning if previous issues were cleared up
-            logger.info(
-                "No publishable issue, posting a standalone comment",
-                nb_dismissed=nb_dismissed,
-            )
-            if nb_dismissed > 0:
-                message = "Previous issues have been fixed. This pull request is :ok:"
             else:
-                message = "No new issues detected. This pull request is :ok:"
+                # Publish a comment, mentioning if previous issues were cleared up
+                logger.info(
+                    "No publishable issue, posting a standalone comment",
+                    nb_dismissed=nb_dismissed,
+                )
+                if nb_dismissed > 0:
+                    message = (
+                        "Previous issues have been fixed. This pull request is :ok:"
+                    )
+                else:
+                    message = "No new issues detected. This pull request is :ok:"
 
-            self.github_client.publish_comment(
-                revision=revision,
-                message=message,
-            )
+                self.github_client.publish_comment(
+                    revision=revision,
+                    message=message,
+                )
+        else:
+            if publishable_issues:
+                messages = [
+                    f"{len(publishable_issues)} build or test issue{'s' if len(publishable_issues) > 1 else ''} "
+                    f"{'have' if len(publishable_issues) > 1 else 'has'} "
+                    "been found in this revision."
+                ]
+                for issue in publishable_issues:
+                    errmsg = issue.as_error()
+                    messages.append(f"{errmsg}")
+                self.github_client.publish_review(
+                    issues=publishable_issues,
+                    revision=revision,
+                    message="\n".join(messages),
+                    event=ReviewEvent.RequestChanges,
+                )

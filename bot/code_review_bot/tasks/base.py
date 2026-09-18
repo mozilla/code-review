@@ -9,6 +9,9 @@ import yaml
 
 logger = structlog.get_logger(__name__)
 
+TASK_LINK = "{root_url}/tasks/{task_id}"
+LOG_LINK = "{root_url}/api/queue/v1/task/{task_id}/runs/{run_id}/artifacts/public/logs/live_backing.log"
+
 
 class BaseTask:
     artifacts = []
@@ -40,6 +43,14 @@ class BaseTask:
         By default fallback to short name
         """
         return self.name
+
+    @property
+    def log(self):
+        from code_review_bot import taskcluster as tc_config
+
+        return LOG_LINK.format(
+            root_url=tc_config.default_url, task_id=self.id, run_id=self.run_id
+        )
 
     @property
     def state(self):

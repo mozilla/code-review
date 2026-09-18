@@ -10,12 +10,14 @@ from urllib.parse import unquote_plus
 
 import pytest
 import responses
-from libmozdata.phabricator import ConduitError
+from libmozdata.phabricator import BuildState, ConduitError
 from structlog.testing import capture_logs
 
+from code_review_bot import Level
 from code_review_bot.analysis import AnalysisMode
 from code_review_bot.config import Settings, TaskCluster
 from code_review_bot.revisions import PhabricatorRevision
+from code_review_bot.tasks.build import BuildIssue, BuildTask
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
@@ -43,6 +45,10 @@ from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
         ("source-test-taskgraph-diff", TaskGraphDiffTask, True),
         ("source-test-unsupported", None, False),
         ("source-test-unsupported", None, True),
+        ("build-linux64/opt", BuildTask, False),
+        ("build-linux64/opt", BuildTask, True),
+        ("build-docker-image-debian12-base", None, False),
+        ("build-docker-image-debian12-base", None, True),
     ],
 )
 def test_build_task(task_name, result, on_autoland, mock_config, mock_workflow):
@@ -152,6 +158,196 @@ def test_find_issues_doc_upload_failure_reported_once(mock_workflow, mock_revisi
     assert issues == []
     assert notices == []
     assert len(task_failures) == 1
+
+
+def test_find_build_test_issues(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {
+            "failed-build": {"name": "build-linux64/opt", "state": "failed"},
+            "passed-build": {"name": "build-win64/debug", "state": "completed"},
+            "docker-image": {
+                "name": "build-docker-image-debian12-base",
+                "state": "failed",
+            },
+            "lint": {"name": "source-test-unsupported", "state": "failed"},
+        }
+    )
+
+    issues, _, notices, reviewers = mock_workflow.find_build_test_issues(
+        mock_revision, "remoteTryGroup"
+    )
+
+    assert len(issues) == 1
+    assert isinstance(issues[0], BuildIssue)
+    assert issues[0].task_id == "failed-build"
+    assert issues[0].revision is mock_revision
+    assert notices == []
+    assert reviewers == []
+
+
+def test_find_build_test_issues_exception(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {
+            "exception-build": {"name": "build-linux64/opt", "state": "exception"},
+            "canceled-build": {"name": "build-win64/debug", "state": "exception"},
+        }
+    )
+    mock_workflow.queue_service._status["canceled-build"]["status"]["runs"][0][
+        "reasonResolved"
+    ] = "canceled"
+
+    issues, task_failures, _, _ = mock_workflow.find_build_test_issues(
+        mock_revision, "remoteTryGroup"
+    )
+
+    assert issues == []
+    assert [task.id for task in task_failures] == ["exception-build"]
+
+
+def test_find_build_test_issues_all_pages(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {
+            f"failed-build-{i}": {"name": f"build-linux64-{i}/opt", "state": "failed"}
+            for i in range(3)
+        }
+    )
+
+    with mock.patch.object(
+        mock_workflow.queue_service,
+        "listTaskGroup",
+        wraps=mock_workflow.queue_service.listTaskGroup,
+    ) as list_task_group:
+        issues, _, _, _ = mock_workflow.find_build_test_issues(
+            mock_revision, "remoteTryGroup"
+        )
+
+    assert "paginationHandler" in list_task_group.call_args.kwargs
+    assert sorted(issue.task_id for issue in issues) == [
+        "failed-build-0",
+        "failed-build-1",
+        "failed-build-2",
+    ]
+
+
+def test_run_build_test(mock_workflow, mock_revision):
+    issues = [mock.Mock()]
+    mock_workflow.index = mock.Mock()
+    mock_workflow.publish = mock.Mock()
+    mock_workflow.find_build_test_issues = mock.Mock(return_value=(issues, [], [], []))
+
+    assert mock_workflow.run(mock_revision, AnalysisMode.BuildTest) == issues
+
+    mock_workflow.find_build_test_issues.assert_called_once_with(
+        mock_revision, "remoteTryGroup"
+    )
+    assert mock_workflow.index.call_args_list == [
+        mock.call(mock_revision, namespace_suffixes=["build-test"], state="started")
+    ]
+    assert mock_revision._state == BuildState.Work
+    mock_workflow.publish.assert_called_once_with(
+        mock_revision,
+        issues,
+        [],
+        [],
+        [],
+        AnalysisMode.BuildTest,
+        ["build-test"],
+        publish_to_backend=False,
+    )
+
+
+@pytest.mark.parametrize(
+    "tasks, expected_state",
+    [
+        ({"passed-build": {"name": "build-linux64/opt"}}, BuildState.Pass),
+        (
+            {
+                "passed-build": {"name": "build-linux64/opt"},
+                "failed-build": {"name": "build-win64/debug", "state": "failed"},
+            },
+            BuildState.Fail,
+        ),
+    ],
+)
+def test_run_build_test_state(mock_workflow, mock_revision, tasks, expected_state):
+    mock_workflow.setup_mock_tasks(tasks)
+
+    mock_workflow.run(mock_revision, AnalysisMode.BuildTest)
+
+    assert mock_revision._state == expected_state
+
+
+@pytest.mark.parametrize(
+    "analysis_mode, expected",
+    [(AnalysisMode.Lint, "lint"), (AnalysisMode.BuildTest, "build")],
+)
+def test_publish_filters_issues_by_analysis_mode(
+    mock_workflow, mock_revision, mock_task, analysis_mode, expected
+):
+    issues = {
+        "build": BuildIssue(
+            task_id="failed-build",
+            analyzer=mock_task(BuildTask, "build-linux64/opt"),
+            revision=mock_revision,
+            level=Level.Error,
+            message="build failed",
+        ),
+        "lint": MozLintIssue(
+            mock_task(MozLintTask, "source-test-mozlint-eslint"),
+            "dom/file.js",
+            column=1,
+            level="error",
+            lineno=42,
+            linter="eslint",
+            message="Some issue",
+            check="no-shadow",
+            revision=mock_revision,
+        ),
+    }
+    reporter = mock.Mock()
+    mock_workflow.reporters = {"mock": reporter}
+    mock_workflow.backend_api.publish_issues = mock.Mock()
+
+    mock_workflow.publish(
+        mock_revision, list(issues.values()), [], [], [], analysis_mode, [""]
+    )
+
+    reporter.publish.assert_called_once_with(
+        [issues[expected]], mock_revision, [], [], [], analysis_mode
+    )
+
+
+@pytest.mark.parametrize("publish_to_backend", [True, False])
+def test_publish_to_backend(
+    mock_workflow, mock_revision, mock_task, publish_to_backend
+):
+    issue = BuildIssue(
+        task_id="failed-build",
+        analyzer=mock_task(BuildTask, "build-linux64/opt"),
+        revision=mock_revision,
+        level=Level.Error,
+        message="build failed",
+    )
+    mock_workflow.backend_api.publish_issues = mock.Mock()
+
+    mock_workflow.publish(
+        mock_revision,
+        [issue],
+        [],
+        [],
+        [],
+        AnalysisMode.BuildTest,
+        ["build-test"],
+        publish_to_backend=publish_to_backend,
+    )
+
+    if publish_to_backend:
+        mock_workflow.backend_api.publish_issues.assert_called_once_with(
+            [issue], mock_revision
+        )
+    else:
+        mock_workflow.backend_api.publish_issues.assert_not_called()
+    assert mock_revision._state == BuildState.Fail
 
 
 def test_on_production(mock_config, mock_repositories):

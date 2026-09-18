@@ -10,9 +10,10 @@ from unittest import mock
 import pytest
 from libmozdata.phabricator import ConduitError
 
-from code_review_bot import mercurial
+from code_review_bot import IssueType, mercurial
 from code_review_bot.analysis import (
     AnalysisMode,
+    get_issue_type,
     get_test_mode_string,
     publish_analysis_phabricator,
 )
@@ -72,6 +73,17 @@ def test_revision(mock_phabricator):
 )
 def test_get_test_mode_string(analysis_mode, expected):
     assert get_test_mode_string(analysis_mode) == expected
+
+
+@pytest.mark.parametrize(
+    "analysis_mode, expected",
+    [
+        (AnalysisMode.Lint, IssueType.Lint),
+        (AnalysisMode.BuildTest, IssueType.BuildTest),
+    ],
+)
+def test_get_issue_type(analysis_mode, expected):
+    assert get_issue_type(analysis_mode) == expected
 
 
 def test_revision_not_public(mock_phabricator, monkeypatch):
@@ -149,7 +161,7 @@ def test_workflow_private_build(
 
 
 @pytest.mark.parametrize(
-    "analysis_mode, expected_parameters",
+    "analysis_mode, expected_parameters, expected_namespace_suffixes",
     [
         (
             AnalysisMode.Lint,
@@ -159,6 +171,7 @@ def test_workflow_private_build(
                 "phabricator_diff": "PHID-HMBT-test",
                 "target_tasks_method": "codereview",
             },
+            ["", "lint"],
         ),
         (
             AnalysisMode.BuildTest,
@@ -168,6 +181,7 @@ def test_workflow_private_build(
                 "phabricator_diff": "PHID-HMBT-test",
                 "target_tasks_method": "codereview-build-test",
             },
+            ["build-test"],
         ),
     ],
 )
@@ -180,6 +194,7 @@ def test_workflow(
     monkeypatch,
     analysis_mode,
     expected_parameters,
+    expected_namespace_suffixes,
 ):
     """
     Validate the creation of a Revision in analysis context
@@ -212,6 +227,7 @@ def test_workflow(
     # Run the analysis on fake revision
     with mock_phabricator as api:
         mock_workflow.phabricator = api
+        mock_workflow.index = mock.Mock()
 
         revision = PhabricatorRevision.from_phabricator_trigger(
             build_target_phid="PHID-HMBT-test",
@@ -219,6 +235,17 @@ def test_workflow(
         )
 
         mock_workflow.start_analysis(revision, analysis_mode)
+
+    assert mock_workflow.index.call_args_list == [
+        mock.call(
+            revision, state="analysis", namespace_suffixes=expected_namespace_suffixes
+        ),
+        mock.call(
+            revision,
+            state="pushed_to_try",
+            namespace_suffixes=expected_namespace_suffixes,
+        ),
+    ]
 
     # Check hgrun initial call to clone mozilla central through robust checkout
     assert hgrun_calls == [
