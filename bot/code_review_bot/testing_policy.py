@@ -23,10 +23,13 @@ TESTING_EXCEPTION_UNCHANGED_PHID = "PHID-PROJ-cspmf33ku3kjaqtuvs7g"
 # Phabricator project tagging commits that only change UI styling, images or localized strings
 TESTING_EXCEPTION_UI_PHID = "PHID-PROJ-zjipshabawolpkllehvg"
 
+# Phabricator project tagging commits that come with their own tests
+TESTING_APPROVED_PHID = "PHID-PROJ-h7y4cs7m2o67iczw62pp"
+
 # All the testing policy projects on Phabricator, a revision should only have one of them
 TESTING_POLICY_TAG_PHIDS = frozenset(
     [
-        "PHID-PROJ-h7y4cs7m2o67iczw62pp",  # testing-approved
+        TESTING_APPROVED_PHID,  # testing-approved
         TESTING_EXCEPTION_UNCHANGED_PHID,  # testing-exception-unchanged
         TESTING_EXCEPTION_UI_PHID,  # testing-exception-ui
         "PHID-PROJ-e4fcjngxcws3egiecv3r",  # testing-exception-elsewhere
@@ -69,6 +72,9 @@ UI_EXTENSIONS = frozenset(
         ".dtd",
     ]
 )
+
+# Test manifests and expectations, which do not add coverage by themselves
+TEST_MANIFEST_EXTENSIONS = frozenset([".toml", ".list", ".ini"])
 
 # Test files or manifests recognized by their basename
 TEST_BASENAME_PATTERNS = (
@@ -136,6 +142,14 @@ def is_test_path(path):
     )
 
 
+def is_test_file(path):
+    """
+    Check if a path is an actual test, not a manifest or expectation file
+    """
+    _, ext = os.path.splitext(path)
+    return is_test_path(path) and ext.lower() not in TEST_MANIFEST_EXTENSIONS
+
+
 def is_unchanged_path(path):
     """
     Check if a path modification cannot change behavior for end users
@@ -167,6 +181,10 @@ def detect_testing_policy_tag(files):
     # Only UI styling, images or strings (possibly along with documentation or tests)
     if all(is_unchanged_path(path) or is_ui_path(path) for path in files):
         return TESTING_EXCEPTION_UI_PHID
+
+    # Code changes coming along with test changes are covered
+    if any(is_test_file(path) for path in files):
+        return TESTING_APPROVED_PHID
 
     return None
 

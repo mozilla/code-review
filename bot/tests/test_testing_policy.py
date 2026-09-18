@@ -7,10 +7,12 @@ from unittest.mock import MagicMock
 import pytest
 
 from code_review_bot.testing_policy import (
+    TESTING_APPROVED_PHID,
     TESTING_EXCEPTION_UI_PHID,
     TESTING_EXCEPTION_UNCHANGED_PHID,
     apply_testing_policy_tag,
     detect_testing_policy_tag,
+    is_test_file,
     is_ui_path,
     is_unchanged_path,
 )
@@ -18,7 +20,6 @@ from code_review_bot.testing_policy import (
 REVISION_ID = 51
 REVISION_PHID = "PHID-DREV-test"
 OTHER_PROJECT_PHID = "PHID-PROJ-other"
-TESTING_APPROVED_PHID = "PHID-PROJ-h7y4cs7m2o67iczw62pp"
 
 
 @pytest.mark.parametrize(
@@ -146,6 +147,76 @@ def test_detect_testing_exception_ui():
     )
 
 
+@pytest.mark.parametrize(
+    "path, expected",
+    [
+        ("dom/base/test/test_anchor.html", True),
+        ("browser/components/tests/browser/browser_foo.js", True),
+        ("dom/base/test/gtest/TestSomething.cpp", True),
+        ("testing/web-platform/tests/css/css-grid/foo.html", True),
+        # Manifests and expectations
+        ("dom/base/test/mochitest.toml", False),
+        ("layout/reftests/bugs/reftest.list", False),
+        ("testing/web-platform/meta/css/css-grid/foo.html.ini", False),
+        # Not tests
+        ("dom/base/nsDocument.cpp", False),
+        ("docs/index.rst", False),
+    ],
+)
+def test_is_test_file(path, expected):
+    assert is_test_file(path) is expected
+
+
+def test_detect_testing_approved():
+    # Code changes along with test changes
+    assert (
+        detect_testing_policy_tag(
+            ["dom/base/nsDocument.cpp", "dom/base/test/test_anchor.html"]
+        )
+        == TESTING_APPROVED_PHID
+    )
+    assert (
+        detect_testing_policy_tag(
+            [
+                "browser/components/urlbar/UrlbarInput.sys.mjs",
+                "browser/themes/shared/urlbar.css",
+                "browser/components/urlbar/tests/browser/browser_foo.js",
+                "docs/index.rst",
+            ]
+        )
+        == TESTING_APPROVED_PHID
+    )
+
+    # Code changes without tests
+    assert detect_testing_policy_tag(["dom/base/nsDocument.cpp"]) is None
+    assert (
+        detect_testing_policy_tag(["dom/base/nsDocument.cpp", "docs/index.rst"]) is None
+    )
+
+    # Only touching a manifest or expectations is not adding tests
+    assert (
+        detect_testing_policy_tag(
+            ["dom/base/nsDocument.cpp", "dom/base/test/mochitest.toml"]
+        )
+        is None
+    )
+    assert (
+        detect_testing_policy_tag(
+            [
+                "layout/style/nsCSSValue.cpp",
+                "testing/web-platform/meta/css/css-grid/foo.html.ini",
+            ]
+        )
+        is None
+    )
+
+    # Tests only are unchanged, not approved
+    assert (
+        detect_testing_policy_tag(["dom/base/test/test_anchor.html"])
+        == TESTING_EXCEPTION_UNCHANGED_PHID
+    )
+
+
 def test_detect_testing_policy_tag():
     # All files are documentation or tests: unchanged
     assert (
@@ -157,10 +228,7 @@ def test_detect_testing_policy_tag():
 
     # A single code file is enough to disable the heuristic
     assert (
-        detect_testing_policy_tag(
-            ["docs/index.rst", "dom/base/test/test_foo.html", "dom/base/nsDocument.cpp"]
-        )
-        is None
+        detect_testing_policy_tag(["docs/index.rst", "dom/base/nsDocument.cpp"]) is None
     )
 
     # No files, no tag
