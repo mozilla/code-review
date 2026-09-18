@@ -1,4 +1,4 @@
-MozPhab==2.18.0
+MozPhab==2.19.0
 pyyaml==6.0.3
 structlog==26.1.0
 taskcluster==109.0.0
