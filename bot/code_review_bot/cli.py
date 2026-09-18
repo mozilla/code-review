@@ -205,6 +205,18 @@ def main():
             w.start_analysis(revision, settings.analysis_mode)
         else:
             decision_task = queue_service.task(settings.try_group_id)
+
+            if decision_task["tags"]["project"] != "try":
+                logger.info("Not a try task group; nothing to do.")
+                return 0
+
+            if (
+                decision_task["tags"]["createdForUser"]
+                != "reviewbot@noreply.mozilla.org"
+            ):
+                logger.info("Not a reviewbot revision; nothing to do.")
+                return 0
+
             rawParams, _ = downloadArtifactToBuf(
                 taskId=settings.try_group_id,
                 name="public/parameters.yml",
