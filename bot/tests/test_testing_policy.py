@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pytest
 
 from code_review_bot.testing_policy import (
+    NEEDS_TESTING_TAG_PHID,
     TESTING_APPROVED_PHID,
     TESTING_EXCEPTION_UI_PHID,
     TESTING_EXCEPTION_UNCHANGED_PHID,
@@ -287,6 +288,23 @@ def test_apply_tag_no_projects(api, revision):
         "transaction.search", objectIdentifier=REVISION_PHID
     )
     api.edit_revision.assert_called_once()
+
+
+def test_apply_tag_removes_needs_testing_tag(api, revision):
+    """The needs-testing-tag flag is removed along with adding the tag"""
+    api.load_revision.return_value = _revision_data(
+        [OTHER_PROJECT_PHID, NEEDS_TESTING_TAG_PHID]
+    )
+
+    assert apply_testing_policy_tag(api, revision) == TESTING_EXCEPTION_UNCHANGED_PHID
+
+    api.edit_revision.assert_called_once_with(
+        REVISION_ID,
+        [
+            {"type": "projects.add", "value": [TESTING_EXCEPTION_UNCHANGED_PHID]},
+            {"type": "projects.remove", "value": [NEEDS_TESTING_TAG_PHID]},
+        ],
+    )
 
 
 def test_no_tag_for_code_changes(api, revision):
