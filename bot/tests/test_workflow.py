@@ -219,6 +219,7 @@ def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_re
     mock_workflow.backend_api.password = "hunter2"
     for index, hash_val in enumerate(("aaaa", "bbbb")):
         issues[index].hash = hash_val
+    mock_revision.build_issues_hashes = mock.Mock()
 
     current_date = datetime.now().strftime("%Y-%m-%d")
     responses.add(

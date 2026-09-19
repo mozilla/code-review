@@ -45,6 +45,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
     assert issue.is_disabled_check()
     assert not issue.validates()
 
+    mock_revision.build_issues_hashes([issue])
     assert issue.as_dict() == {
         "analyzer": "mock-lint-flake8",
         "check": "Q000",
@@ -93,6 +94,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo, mock_task):
         "severity": "error",
     }
 
+    mock_revision.build_issues_hashes([issue])
     assert issue.as_dict() == {
         "analyzer": "mock-lint-flake8",
         "check": "dummy rule",
@@ -139,4 +141,5 @@ def test_licence_payload(mock_revision, mock_hgmo):
         == "source-test-mozlint-license issue source-test-mozlint-license@error intl/locale/rust/unic-langid-ffi/src/lib.rs full file"
     )
     assert issue.check == issue.analyzer.name == "source-test-mozlint-license"
+    mock_revision.build_issues_hashes([issue])
     assert issue.hash == "7142c536e10b31925b018c37b0e6f9f8"

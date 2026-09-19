@@ -129,6 +129,11 @@ class Workflow:
             revision, settings.try_group_id
         )
 
+        # Clone local repo when required, then build the issues hashes
+        # as they are needed to find previous issues and to publish
+        self.clone_repository(revision)
+        revision.build_issues_hashes(issues)
+
         # Analyze issues in case the before/after feature is enabled
         if revision.before_after_feature:
             logger.info("Running the before/after feature")
@@ -144,10 +149,6 @@ class Workflow:
                     task=settings.try_group_id,
                 )
 
-            # Clone local repo when required
-            # as find_previous_issues will build the hashes
-            self.clone_repository(revision)
-
             # Mark know issues to avoid publishing them on this patch
             self.find_previous_issues(revision, issues, base_rev_changeset)
             new_issues_count = sum(issue.new_issue for issue in issues)
@@ -155,10 +156,6 @@ class Workflow:
                 f"Found {new_issues_count} new issues (over {len(issues)} total detected issues)",
                 task=settings.try_group_id,
             )
-        else:
-            # Clone local repo when required
-            # as publication need the hashes
-            self.clone_repository(revision)
 
         if (
             all(issue.new_issue is False for issue in issues)
@@ -267,8 +264,9 @@ class Workflow:
             logger.info("No issues for that revision")
             return
 
-        # Clone local repo when required
+        # Clone local repo when required, then build the issues hashes
         self.clone_repository(revision)
+        revision.build_issues_hashes(issues)
 
         # Publish issues in the backend
         self.backend_api.publish_issues(issues, revision)

@@ -25,6 +25,7 @@ def test_coverage(
 
     # The list must have three elements
     assert len(issues) == 3
+    mock_revision.build_issues_hashes(issues)
 
     # Verify that each element has a sane value
     issue = issues[0]
