@@ -13,6 +13,7 @@ from libmozdata.phabricator import ConduitError
 from code_review_bot import mercurial
 from code_review_bot.analysis import (
     AnalysisMode,
+    get_test_mode_string,
     publish_analysis_phabricator,
 )
 from code_review_bot.config import PHABRICATOR_POLL_DELAYS, RepositoryConf
@@ -60,6 +61,17 @@ def test_revision(mock_phabricator):
         ssh_user="reviewbot@mozilla.com",
     )
     assert revision.repository_try_name == "try"
+
+
+@pytest.mark.parametrize(
+    "analysis_mode, expected",
+    [
+        (AnalysisMode.Lint, "Static analysis and linting"),
+        (AnalysisMode.BuildTest, "Builds and tests"),
+    ],
+)
+def test_get_test_mode_string(analysis_mode, expected):
+    assert get_test_mode_string(analysis_mode) == expected
 
 
 def test_revision_not_public(mock_phabricator, monkeypatch):
@@ -136,6 +148,29 @@ def test_workflow_private_build(
     mock_config.ssh_key = None
 
 
+@pytest.mark.parametrize(
+    "analysis_mode, expected_parameters",
+    [
+        (
+            AnalysisMode.Lint,
+            {
+                "enable_always_target": False,
+                "optimize_target_tasks": True,
+                "phabricator_diff": "PHID-HMBT-test",
+                "target_tasks_method": "codereview",
+            },
+        ),
+        (
+            AnalysisMode.BuildTest,
+            {
+                "enable_always_target": False,
+                "optimize_target_tasks": True,
+                "phabricator_diff": "PHID-HMBT-test",
+                "target_tasks_method": "codereview-build-test",
+            },
+        ),
+    ],
+)
 def test_workflow(
     mock_mercurial_repo,
     mock_phabricator,
@@ -143,6 +178,8 @@ def test_workflow(
     mock_config,
     tmpdir,
     monkeypatch,
+    analysis_mode,
+    expected_parameters,
 ):
     """
     Validate the creation of a Revision in analysis context
@@ -181,7 +218,7 @@ def test_workflow(
             phabricator=api,
         )
 
-        mock_workflow.start_analysis(revision, AnalysisMode.Lint)
+        mock_workflow.start_analysis(revision, analysis_mode)
 
     # Check hgrun initial call to clone mozilla central through robust checkout
     assert hgrun_calls == [
@@ -201,12 +238,7 @@ def test_workflow(
     try_task = tmpdir / "mozilla-central" / "try_task_config.json"
     assert try_task.exists()
     assert json.load(try_task.open()) == {
-        "parameters": {
-            "enable_always_target": False,
-            "optimize_target_tasks": True,
-            "phabricator_diff": "PHID-HMBT-test",
-            "target_tasks_method": "codereview",
-        },
+        "parameters": expected_parameters,
         "version": 2,
     }
 
