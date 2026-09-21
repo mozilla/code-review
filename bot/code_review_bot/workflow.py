@@ -750,7 +750,7 @@ class Workflow:
         except Exception as e:
             logger.warn("Failed to find a decision task", route=route, error=str(e))
 
-    def index(self, revision, **kwargs):
+    def index(self, revision, namespace_suffix="", **kwargs):
         """
         Index current task on Taskcluster index
         """
@@ -782,11 +782,18 @@ class Workflow:
             "error_code"
         ) in ("watchdog", "mercurial")
 
+        # Apply a namespace suffix if supplied
+        if namespace_suffix:
+            namespaces = [
+                f"{namespace}.{namespace_suffix}" for namespace in revision.namespaces
+            ]
+        else:
+            namespaces = revision.namespaces
+
         # Add a sub namespace with the task id to be able to list
         # tasks from the parent namespace
-        namespaces = revision.namespaces + [
-            f"{namespace}.{settings.taskcluster.task_id}"
-            for namespace in revision.namespaces
+        namespaces = namespaces + [
+            f"{namespace}.{settings.taskcluster.task_id}" for namespace in namespaces
         ]
 
         # Build complete namespaces list, with monitoring update
