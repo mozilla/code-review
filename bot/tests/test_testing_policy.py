@@ -84,6 +84,7 @@ def test_changed_paths(path):
     "path",
     [
         "browser/themes/shared/urlbar.css",
+        "browser/extensions/newtab/content-src/components/CustomizeMenu/_CustomizeMenu.scss",
         "browser/themes/shared/icons/back.svg",
         "browser/branding/official/default128.png",
         "toolkit/themes/shared/fonts/FiraSans.woff2",

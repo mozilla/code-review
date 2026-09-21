@@ -54,6 +54,8 @@ UI_EXTENSIONS = frozenset(
     [
         # Styling
         ".css",
+        ".sass",
+        ".scss",
         # Images
         ".avif",
         ".gif",
