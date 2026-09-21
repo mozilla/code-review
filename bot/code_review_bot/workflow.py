@@ -114,7 +114,7 @@ class Workflow:
 
     def _run_lint(self, revision):
         # Index ASAP Taskcluster task for this revision
-        self.index(revision, state="started")
+        self.index(revision, state="started", namespace_suffixes=["", "lint"])
 
         # Set the Phabricator build as running
         self.update_status(revision, state=BuildState.Work)
@@ -173,7 +173,7 @@ class Workflow:
             logger.info("No issues nor notices, stopping there.")
 
         # Publish all issues
-        self.publish(revision, issues, task_failures, notices, reviewers)
+        self.publish(revision, issues, task_failures, notices, reviewers, ["", "lint"])
 
         return issues
 
@@ -286,8 +286,9 @@ class Workflow:
         """
         logger.info("Starting revision analysis", revision=revision)
 
+        namespace_suffixes = ["", "lint"]
         # Index ASAP Taskcluster task for this revision
-        self.index(revision, state="analysis")
+        self.index(revision, state="analysis", namespace_suffixes=namespace_suffixes)
 
         # Do not process revisions from black-listed users
         if revision.is_blacklisted:
@@ -394,7 +395,9 @@ class Workflow:
         self.cancel_previous(revision)
 
         # Update index when the patch has been pushed to try
-        self.index(revision, state="pushed_to_try")
+        self.index(
+            revision, state="pushed_to_try", namespace_suffixes=namespace_suffixes
+        )
 
         # Update final state using worker output
         if self.update_build and isinstance(revision, PhabricatorRevision):
@@ -463,7 +466,9 @@ class Workflow:
 
         self.clone_available = True
 
-    def publish(self, revision, issues, task_failures, notices, reviewers):
+    def publish(
+        self, revision, issues, task_failures, notices, reviewers, namespace_suffixes
+    ):
         """
         Publish issues on selected reporters
         """
@@ -492,6 +497,7 @@ class Workflow:
             state="analyzed",
             issues=nb_issues,
             issues_publishable=nb_publishable,
+            namespace_suffixes=namespace_suffixes,
         )
         stats.add_metric("analysis.issues.publishable", nb_publishable)
 
@@ -501,7 +507,11 @@ class Workflow:
                 reporter.publish(issues, revision, task_failures, notices, reviewers)
 
         self.index(
-            revision, state="done", issues=nb_issues, issues_publishable=nb_publishable
+            revision,
+            state="done",
+            issues=nb_issues,
+            issues_publishable=nb_publishable,
+            namespace_suffixes=namespace_suffixes,
         )
 
         # Publish final HarborMaster state
@@ -750,7 +760,7 @@ class Workflow:
         except Exception as e:
             logger.warn("Failed to find a decision task", route=route, error=str(e))
 
-    def index(self, revision, **kwargs):
+    def index(self, revision, namespace_suffixes=None, **kwargs):
         """
         Index current task on Taskcluster index
         """
@@ -782,11 +792,23 @@ class Workflow:
             "error_code"
         ) in ("watchdog", "mercurial")
 
+        # Apply namespace suffixes if supplied
+        if namespace_suffixes:
+            namespaces = []
+            for suffix in namespace_suffixes:
+                if suffix != "":
+                    namespaces.extend(
+                        [f"{namespace}.{suffix}" for namespace in revision.namespaces]
+                    )
+                else:
+                    namespaces.extend(revision.namespaces)
+        else:
+            namespaces = revision.namespaces
+
         # Add a sub namespace with the task id to be able to list
         # tasks from the parent namespace
-        namespaces = revision.namespaces + [
-            f"{namespace}.{settings.taskcluster.task_id}"
-            for namespace in revision.namespaces
+        namespaces = namespaces + [
+            f"{namespace}.{settings.taskcluster.task_id}" for namespace in namespaces
         ]
 
         # Build complete namespaces list, with monitoring update
