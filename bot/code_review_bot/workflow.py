@@ -380,6 +380,15 @@ class Workflow:
                     "optimize_target_tasks": True,
                 }
             )
+        elif analysis_mode == AnalysisMode.BuildTest:
+            parameters.update(
+                {
+                    "target_tasks_method": "codereview-build-test",
+                    "optimize_target_tasks": True,
+                    # avoid firing unwanted tasks, eg: source-test
+                    "enable_always_target": False,
+                }
+            )
 
         # Apply the stack of patches and push to try
         worker = MercurialWorker()

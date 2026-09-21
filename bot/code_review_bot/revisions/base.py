@@ -105,6 +105,14 @@ class Revision(ABC):
         random.seed(os.urandom(128))
         return ret
 
+    @property
+    def build_test_feature(self):
+        random.seed(f"build-test-{self.persistent_id()}")
+        ret = random.random() < taskcluster.secrets.get("BUILD_TEST_ANALYSIS_RATIO", 0)
+        # Reset random module seed to prevent deterministic values after calling that function
+        random.seed(os.urandom(128))
+        return ret
+
     def __repr__(self):
         raise NotImplementedError
 
