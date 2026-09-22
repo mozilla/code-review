@@ -9,7 +9,7 @@ from urllib.parse import urljoin
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
 
-from code_review_bot import Issue, Level, stats
+from code_review_bot import BaseIssue, IssueType, Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import PhabricatorRevision
@@ -70,7 +70,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff {diff
 
 logger = structlog.get_logger(__name__)
 
-Issues = List[Issue]
+Issues = List[BaseIssue]
 
 
 class PhabricatorReporter(Reporter):
@@ -279,19 +279,20 @@ class PhabricatorReporter(Reporter):
 
         return publishable_issues, patches
 
-    def publish_harbormaster(
-        self, revision, lint_issues: Issues = [], unit_issues: Issues = []
-    ):
+    def publish_harbormaster(self, revision, issues: Issues = []):
         """
         Publish issues through HarborMaster
         either as lint results or unit tests results
         """
-        assert lint_issues or unit_issues, "No issues to publish"
+        assert issues, "No issues to publish"
+
+        lint_issues = [i for i in issues if i.type_ == IssueType.Lint]
+        unit_issues = []
 
         self.api.update_build_target(
             revision.build_target_phid,
             state=BuildState.Work,
-            lint=[issue.as_phabricator_lint() for issue in lint_issues],
+            lint=[issue.as_phabricator_issue() for issue in lint_issues],
             unit=[issue.as_phabricator_unitresult() for issue in unit_issues],
         )
         logger.info(

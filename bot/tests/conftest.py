@@ -22,7 +22,7 @@ import pytest
 import responses
 from libmozdata.phabricator import PhabricatorAPI
 
-from code_review_bot import Level, stats
+from code_review_bot import IssueType, Level, stats
 from code_review_bot.backend import BackendAPI
 from code_review_bot.config import GetAppUserAgent, settings
 from code_review_bot.mercurial import MercurialRepository
@@ -94,6 +94,8 @@ def mock_issues(mock_task):
     task = mock_task(DefaultTask, "mock-analyzer")
 
     class MockIssue:
+        type_ = IssueType.Lint
+
         def __init__(self, nb):
             self.nb = nb
             self.path = "/path/to/file"

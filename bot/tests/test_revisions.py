@@ -136,7 +136,7 @@ def test_analyze_patch(mock_revision):
         def validates():
             return True
 
-        def as_phabricator_lint():
+        def as_phabricator_issue():
             return {}
 
     issue_in_new_file = MyIssue("new.txt", 1)

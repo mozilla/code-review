@@ -561,7 +561,7 @@ def test_clang_format_task(
         "hash": "9a517e384b1dbbe92025c48ea6b7eab9",
         "fix": "Multi\nlines",
     }
-    assert issue.as_phabricator_lint() == {
+    assert issue.as_phabricator_issue() == {
         "code": "invalid-styling",
         "description": """WARNING: The change does not follow the C/C++ coding style, please reformat
 
