@@ -180,9 +180,19 @@ class MercurialRepository(BaseRepository):
     def clone(self):
         logger.info("Checking out default", repo=self.url, mode=self.checkout_mode)
         if self.checkout_mode == "batch":
-            batch_checkout(self.url, self.dir, b"default", self.batch_size)
+            batch_checkout(
+                self.url,
+                self.dir,
+                self.default_revision.encode("ascii"),
+                self.batch_size,
+            )
         elif self.checkout_mode == "robust":
-            robust_checkout(self.url, self.dir, self.share_base_dir, branch=b"default")
+            robust_checkout(
+                self.url,
+                self.dir,
+                self.share_base_dir,
+                branch=self.default_revision.encode("ascii"),
+            )
         else:
             hglib.clone(self.url, self.dir)
         logger.info("Full checkout finished")
@@ -244,7 +254,7 @@ class MercurialRepository(BaseRepository):
         """Return the base identifier to apply patches against."""
         if self.use_latest_revision:
             # Use `default` when `use_latest_revision` is `True`.
-            return "default"
+            return self.default_revision
 
         for revision in (
             needed_stack[0].base_revision,
