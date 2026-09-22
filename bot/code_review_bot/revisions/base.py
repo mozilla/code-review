@@ -83,6 +83,10 @@ class Revision(ABC):
         self.files = []
         self.lines = {}
 
+    def persistent_id(self):
+        """An identifier that is constant across all diffs for the same revision."""
+        raise NotImplementedError
+
     @property
     def namespaces(self):
         raise NotImplementedError
@@ -93,17 +97,13 @@ class Revision(ABC):
         Randomly run the before/after feature depending on a configured ratio.
         All the diffs of a revision must be analysed with or without the feature.
         """
-        if getattr(self, "id", None) is None:
-            logger.debug(
-                "Backend ID must be set to determine if using the before/after feature. Skipping."
-            )
-            return False
         # Set random module pseudo-random seed based on the revision ID to
         # ensure that successive calls to random.random will return deterministic values
-        random.seed(self.id)
-        return random.random() < taskcluster.secrets.get("BEFORE_AFTER_RATIO", 0)
+        random.seed(f"before-after-{self.persistent_id()}")
+        ret = random.random() < taskcluster.secrets.get("BEFORE_AFTER_RATIO", 0)
         # Reset random module seed to prevent deterministic values after calling that function
         random.seed(os.urandom(128))
+        return ret
 
     def __repr__(self):
         raise NotImplementedError

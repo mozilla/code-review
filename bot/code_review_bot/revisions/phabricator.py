@@ -82,6 +82,9 @@ class PhabricatorRevision(Revision):
         # Patch analysis
         self.patch = patch
 
+    def persistent_id(self):
+        return self.phabricator_id
+
     @property
     def namespaces(self):
         # Simplify repository names

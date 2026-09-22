@@ -45,6 +45,9 @@ class GithubRevision(Revision):
     def __repr__(self):
         return f"GithubRevision base_repo={self.base_repository} head_repo={self.head_repository} pull_number={self.pull_number} head={self.head_changeset}"
 
+    def persistent_id(self):
+        return self.pull_number
+
     @property
     def repo_name(self):
         """
