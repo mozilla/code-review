@@ -9,17 +9,22 @@ from code_review_bot.sources.phabricator import PhabricatorBuild, PhabricatorBui
 logger = structlog.get_logger(__name__)
 
 
-LANDO_WARNING_MESSAGE = "Static analysis and linting are still in progress."
-LANDO_FAILURE_MESSAGE = (
-    "Static analysis and linting did not run due to a generic failure."
-)
+LANDO_WARNING_MESSAGE = "{test_mode_string} are still in progress."
+LANDO_FAILURE_MESSAGE = "{test_mode_string} did not run due to a generic failure."
 LANDO_FAILURE_HG_MESSAGE = (
-    "Static analysis and linting did not run due to failure in applying the patch."
+    "{test_mode_string} did not run due to failure in applying the patch."
 )
 
 
 class AnalysisMode(enum.Enum):
     Lint = 1
+
+
+def get_test_mode_string(analysis_mode: AnalysisMode):
+    if analysis_mode == AnalysisMode.Lint:
+        return "Static analysis and linting"
+    else:
+        raise NotImplementedError
 
 
 class PhabricatorRevisionBuild(PhabricatorBuild):
@@ -175,13 +180,15 @@ def publish_analysis_phabricator(payload, phabricator_api):
         logger.warning("Unsupported publication", mode=mode, build=build)
 
 
-def publish_analysis_lando(payload, lando_warnings):
+def publish_analysis_lando(payload, lando_warnings, analysis_mode: AnalysisMode):
     """
     Publish result of patch application and push to try on Lando
     """
     mode, build, extras = payload
     assert isinstance(build, PhabricatorRevisionBuild), "Not a PhabricatorRevisionBuild"
     logger.debug("Publishing a Lando build update", mode=mode, build=str(build))
+
+    test_mode_string = get_test_mode_string(analysis_mode)
 
     if mode == "fail:general":
         # Send general failure message to Lando
@@ -192,7 +199,9 @@ def publish_analysis_lando(payload, lando_warnings):
         )
         try:
             lando_warnings.add_warning(
-                LANDO_FAILURE_MESSAGE, build.revision["id"], build.diff_id
+                LANDO_FAILURE_MESSAGE.format(test_mode_string=test_mode_string),
+                build.revision["id"],
+                build.diff_id,
             )
         except Exception as ex:
             logger.error(str(ex), exc_info=True)
@@ -206,7 +215,9 @@ def publish_analysis_lando(payload, lando_warnings):
         )
         try:
             lando_warnings.add_warning(
-                LANDO_FAILURE_HG_MESSAGE, build.revision["id"], build.diff_id
+                LANDO_FAILURE_HG_MESSAGE.format(test_mode_string=test_mode_string),
+                build.revision["id"],
+                build.diff_id,
             )
         except Exception as ex:
             logger.error(str(ex), exc_info=True)
@@ -219,7 +230,9 @@ def publish_analysis_lando(payload, lando_warnings):
         )
         try:
             lando_warnings.add_warning(
-                LANDO_WARNING_MESSAGE, build.revision["id"], build.diff_id
+                LANDO_WARNING_MESSAGE.format(test_mode_string=test_mode_string),
+                build.revision["id"],
+                build.diff_id,
             )
         except Exception as ex:
             logger.error(str(ex), exc_info=True)

@@ -173,7 +173,15 @@ class Workflow:
             logger.info("No issues nor notices, stopping there.")
 
         # Publish all issues
-        self.publish(revision, issues, task_failures, notices, reviewers, ["", "lint"])
+        self.publish(
+            revision,
+            issues,
+            task_failures,
+            notices,
+            reviewers,
+            AnalysisMode.Lint,
+            ["", "lint"],
+        )
 
         return issues
 
@@ -408,7 +416,7 @@ class Workflow:
         # Send Build in progress or errors to Lando
         lando_reporter = self.reporters.get("lando")
         if lando_reporter is not None:
-            publish_analysis_lando(output, lando_reporter.lando_api)
+            publish_analysis_lando(output, lando_reporter.lando_api, analysis_mode)
         else:
             logger.info("Skipping Lando publication")
 
@@ -467,7 +475,14 @@ class Workflow:
         self.clone_available = True
 
     def publish(
-        self, revision, issues, task_failures, notices, reviewers, namespace_suffixes
+        self,
+        revision,
+        issues,
+        task_failures,
+        notices,
+        reviewers,
+        analysis_mode: AnalysisMode,
+        namespace_suffixes,
     ):
         """
         Publish issues on selected reporters
@@ -504,7 +519,9 @@ class Workflow:
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
             for reporter in self.reporters.values():
-                reporter.publish(issues, revision, task_failures, notices, reviewers)
+                reporter.publish(
+                    issues, revision, task_failures, notices, reviewers, analysis_mode
+                )
 
         self.index(
             revision,
