@@ -11,6 +11,7 @@ import responses
 from conftest import FIXTURES_DIR
 
 from code_review_bot import Level
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.github import GithubReporter
 from code_review_bot.revisions import GithubRevision, Revision
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
@@ -110,7 +111,12 @@ def test_github_review(
     )
 
     reporter.publish(
-        [issue_clang_tidy, issue_on_touched_file, issue_coverage], revision, [], [], []
+        [issue_clang_tidy, issue_on_touched_file, issue_coverage],
+        revision,
+        [],
+        [],
+        [],
+        AnalysisMode.Lint,
     )
     assert [(call.request.method, call.request.url) for call in responses.calls] == [
         ("GET", "https://github.com/owner/repo-name/pull/1.diff"),
@@ -214,7 +220,7 @@ def test_github_review_cleanup(
         json={},
     )
 
-    reporter.publish([], revision, [], [], [])
+    reporter.publish([], revision, [], [], [], AnalysisMode.Lint)
     assert [(call.request.method, call.request.url) for call in responses.calls] == [
         ("GET", "https://github.com/owner/repo-name/pull/1.diff"),
         ("GET", "https://api.github.com:443/app/installations"),

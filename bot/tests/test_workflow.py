@@ -288,6 +288,7 @@ def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_re
             [],
             [],
             [],
+            AnalysisMode.Lint,
         )
     ]
     assert issues[0].new_issue is True
