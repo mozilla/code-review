@@ -208,7 +208,12 @@ def test_no_issues(
 
 
 def test_build_status_fail_on_error(
-    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+    mock_config,
+    mock_revision,
+    mock_workflow,
+    mock_backend,
+    mock_hgmo,
+    bypass_publication_check,
 ):
     """
     Test a remote workflow with an error causes the build to be reported as failing
@@ -254,7 +259,12 @@ def test_build_status_fail_on_error(
 
 
 def test_build_status_pass_on_warning(
-    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+    mock_config,
+    mock_revision,
+    mock_workflow,
+    mock_backend,
+    mock_hgmo,
+    bypass_publication_check,
 ):
     """
     Test a remote workflow with no errors causes the build to be reported as passing
@@ -326,7 +336,12 @@ def test_unsupported_analyzer(
 
 
 def test_mozlint_task(
-    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+    mock_config,
+    mock_revision,
+    mock_workflow,
+    mock_backend,
+    mock_hgmo,
+    bypass_publication_check,
 ):
     """
     Test a remote workflow with a mozlint analyzer
@@ -383,7 +398,12 @@ def test_mozlint_task(
 
 
 def test_clang_tidy_task(
-    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+    mock_config,
+    mock_revision,
+    mock_workflow,
+    mock_backend,
+    mock_hgmo,
+    bypass_publication_check,
 ):
     """
     Test a remote workflow with a clang-tidy analyzer
@@ -582,7 +602,12 @@ def test_no_tasks(
 
 
 def test_zero_coverage_option(
-    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+    mock_config,
+    mock_revision,
+    mock_workflow,
+    mock_backend,
+    mock_hgmo,
+    bypass_publication_check,
 ):
     """
     Test the zero coverage trigger on the workflow
@@ -624,7 +649,12 @@ def test_zero_coverage_option(
 
 
 def test_external_tidy_task(
-    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+    mock_config,
+    mock_revision,
+    mock_workflow,
+    mock_backend,
+    mock_hgmo,
+    bypass_publication_check,
 ):
     """
     Test a remote workflow with a clang-tidy-externak analyzer

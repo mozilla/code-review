@@ -92,6 +92,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task):
         Reliability.Low,
     )
 
+    mock_revision.build_issues_hashes([issue])
     assert issue.as_dict() == {
         "analyzer": "clang-tidy",
         "path": "test.cpp",
@@ -199,7 +200,7 @@ def test_missing_clang_format_diff(mock_task, mock_revision, capsys):
     )
 
 
-def test_real_patch(mock_revision, mock_task):
+def test_real_patch(mock_revision, mock_hgmo, mock_task):
     """
     Test clang format patch parsing with a real patch
     """
@@ -214,6 +215,7 @@ def test_real_patch(mock_revision, mock_task):
 
     assert len(issues) == 3
 
+    mock_revision.build_issues_hashes(issues)
     assert [i.as_dict() for i in issues] == [
         {
             "analyzer": "mock-clang-format",
@@ -227,7 +229,7 @@ def test_real_patch(mock_revision, mock_task):
                                       aUseFontSmoothing, aApplySyntheticBold);
 }
 #endif\n""",
-            "hash": None,
+            "hash": "115bec679bf3ef70239394c71389ac82",
             "in_patch": False,
             "level": "warning",
             "line": 616,
@@ -247,7 +249,7 @@ def test_real_patch(mock_revision, mock_task):
   }
   return true;
 }\n""",
-            "hash": None,
+            "hash": "3c077d8a49dca767f36e224ae6f97511",
             "in_patch": False,
             "level": "warning",
             "line": 118,
@@ -264,7 +266,7 @@ def test_real_patch(mock_revision, mock_task):
             "fix": """  if (false) return true;
   return eNameOK;
 }\n""",
-            "hash": None,
+            "hash": "13c464427ce2a73f26538b99b59f2e87",
             "in_patch": False,
             "level": "warning",
             "line": 36,

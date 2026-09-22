@@ -64,6 +64,7 @@ def test_publication(mock_clang_tidy_issues, mock_revision, mock_backend, mock_h
     assert len(issues) == 0
 
     # Let's publish them
+    mock_revision.build_issues_hashes(mock_clang_tidy_issues)
     published = r.publish_issues(mock_clang_tidy_issues, mock_revision)
     assert published == len(mock_clang_tidy_issues) == 2
 
@@ -217,6 +218,7 @@ def test_publication_failures(
     # Issues URL must be set when publishing issues on the backend
     mock_revision.issues_url = "http://code-review-backend.test/v1/revision/51/issues/"
 
+    mock_revision.build_issues_hashes(mock_clang_tidy_issues)
     published = r.publish_issues(mock_clang_tidy_issues, mock_revision)
     assert published == 1
 
@@ -272,6 +274,7 @@ def test_publish_issues(
         *mock_clang_tidy_issues,
     ]
 
+    mock_revision.build_issues_hashes(issues)
     published = r.publish_issues(issues, mock_revision)
     assert published == 2
 
@@ -360,9 +363,9 @@ def test_publication_skips_rustfmt_dot_path(
     # Issue URL is set when publishing the issue on the backend
     mock_revision.issues_url = "http://code-review-backend.test/v1/revision/51/issues/"
 
-    published = r.publish_issues(
-        [*mock_clang_tidy_issues, ignored_issue], mock_revision
-    )
+    all_issues = [*mock_clang_tidy_issues, ignored_issue]
+    mock_revision.build_issues_hashes(all_issues)
+    published = r.publish_issues(all_issues, mock_revision)
     assert published == 1
 
     assert list(issues.keys()) == ["b29184e6-4d35-5bbd-8a53-e00686e08407"]
