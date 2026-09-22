@@ -144,7 +144,7 @@ def test_as_markdown(mock_revision, mock_task):
 
 """
     )
-    assert issue.as_phabricator_lint() == {
+    assert issue.as_phabricator_issue() == {
         "char": 51,
         "code": "dummy-check",
         "line": 42,
