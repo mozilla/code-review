@@ -388,7 +388,7 @@ class PhabricatorRevision(Revision):
             response.raise_for_status()
         except requests.exceptions.HTTPError as e:
             if e.response.status_code == 404:
-                logger.warning("Failed to download file", path=self.path)
+                logger.warning("Failed to download file", path=path)
                 # Consider as empty content if the file is not found
                 return None
             else:

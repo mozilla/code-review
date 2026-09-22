@@ -5,6 +5,7 @@
 import hashlib
 
 import pytest
+import responses
 
 from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 
@@ -150,3 +151,19 @@ def test_incorrect_file_path_no_raise(mock_revision, path):
     a file with a path pointing outside the repository
     """
     assert mock_revision.load_file(path) is None
+
+
+@responses.activate
+def test_missing_remote_file(mock_revision):
+    """
+    Test that a file missing on HGMO is loaded as empty content
+    """
+    mock_revision.head_repository = "test-try"
+    mock_revision.head_changeset = "deadbeef1234"
+    responses.add(
+        responses.GET,
+        "https://hg.mozilla.org/test-try/raw-file/deadbeef1234/missing.cpp",
+        status=404,
+    )
+
+    assert mock_revision.load_file("missing.cpp") is None
