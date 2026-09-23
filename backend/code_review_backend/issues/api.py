@@ -21,6 +21,7 @@ from code_review_backend.issues.models import (
     LEVEL_ERROR,
     Diff,
     Issue,
+    IssueLink,
     Repository,
     Revision,
 )
@@ -31,8 +32,8 @@ from code_review_backend.issues.serializers import (
     IssueBulkSerializer,
     IssueCheckSerializer,
     IssueCheckStatsSerializer,
-    IssueHashSerializer,
     IssueSerializer,
+    RepositoryIssueSerializer,
     RepositorySerializer,
     RevisionSerializer,
 )
@@ -424,10 +425,12 @@ class IssueCheckHistory(CachedView, generics.ListAPIView):
 
 
 class IssueList(generics.ListAPIView):
-    serializer_class = IssueHashSerializer
+    serializer_class = RepositoryIssueSerializer
 
     def get_queryset(self):
-        qs = Issue.objects.all().only("id", "hash")
+        qs = Issue.objects.all().only(
+            "id", "hash", "analyzer", "path", "level", "analyzer_check", "message"
+        )
 
         errors = defaultdict(list)
         repo_slug = self.kwargs["repo_slug"]
@@ -473,19 +476,36 @@ class IssueList(generics.ListAPIView):
         if errors:
             raise ValidationError(errors)
 
+        # Positions of the issues are restricted to the selected revision, if any
+        links_filters = {"revision__head_repository": repo}
+
         # Only use the revision filter in case some issues are found
         if (
             rev_changeset
             and qs.filter(revisions__head_changeset=rev_changeset).exists()
         ):
             filters["revisions__head_changeset"] = rev_changeset
+            links_filters["revision__head_changeset"] = rev_changeset
         elif rev_changeset and not date_revision:
             qs = Issue.objects.none()
         # Defaults to filtering by the revision closest to the given date
         elif date_revision:
             filters["revisions"] = date_revision
+            links_filters["revision"] = date_revision
 
-        return qs.filter(**filters).order_by("created").distinct()
+        links = (
+            IssueLink.objects.filter(**links_filters)
+            .only("issue_id", "line", "nb_lines", "char")
+            .order_by("line", "nb_lines", "char")
+        )
+        return (
+            qs.filter(**filters)
+            .prefetch_related(
+                Prefetch("issue_links", queryset=links, to_attr="revision_links")
+            )
+            .order_by("created")
+            .distinct()
+        )
 
 
 # Build exposed urls for the API

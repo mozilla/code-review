@@ -66,6 +66,10 @@ class Settings:
         self.mercurial_cache = None
         self.git_cache = None
 
+        # Is the local clone setup at the analyzed revision ?
+        # Until then, the repositories caches may hold another revision
+        self.clone_available = False
+
         # SSH Key used to push on try
         self.ssh_key = None
 

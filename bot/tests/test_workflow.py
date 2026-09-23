@@ -6,7 +6,7 @@ import base64
 import os
 from datetime import datetime
 from unittest import mock
-from urllib.parse import unquote_plus
+from urllib.parse import quote_plus, unquote_plus
 
 import pytest
 import responses
@@ -17,6 +17,7 @@ from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
+from code_review_bot.tasks.default import DefaultIssue, DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
@@ -250,6 +251,195 @@ def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_re
     ]
     assert issues[0].new_issue is True
     assert issues[1].new_issue is False
+
+
+CLANG_FORMAT_MESSAGE = (
+    "The change does not follow the C/C++ coding style, please reformat"
+)
+
+
+def mock_known_issues(path, known_issues):
+    """
+    Mock the backend listing the known issues of a path on the base revision
+    """
+    current_date = datetime.now().strftime("%Y-%m-%d")
+    responses.add(
+        responses.GET,
+        f"https://backend.test/v1/issues/mozilla-central/?path={quote_plus(path)}&date={current_date}",
+        json={
+            "count": len(known_issues),
+            "previous": None,
+            "next": None,
+            "results": known_issues,
+        },
+    )
+
+
+def known_clang_format_issue(issue_hash, path, positions):
+    return {
+        "id": f"issue {issue_hash}",
+        "hash": issue_hash,
+        "analyzer": "source-test-clang-format",
+        "path": path,
+        "level": "warning",
+        "check": "invalid-styling",
+        "message": CLANG_FORMAT_MESSAGE,
+        "positions": [
+            {"line": line, "nb_lines": nb_lines, "char": None}
+            for line, nb_lines in positions
+        ],
+    }
+
+
+def setup_before_after_workflow(
+    mock_taskcluster_config, mock_workflow, mock_revision, issues
+):
+    mock_taskcluster_config.secrets = {"BEFORE_AFTER_RATIO": 1}
+    # Set backend ID as the publication is disabled for tests
+    mock_revision.id = 1337
+    mock_workflow.publish = mock.Mock()
+    mock_workflow.clone_repository = mock.Mock()
+    mock_workflow.find_issues = mock.Mock()
+    mock_workflow.find_issues.return_value = (issues, [], [], [])
+    mock_workflow.queue_service.task = lambda x: {}
+    mock_workflow.backend_api.url = "https://backend.test"
+    mock_workflow.backend_api.username = "root"
+    mock_workflow.backend_api.password = "hunter2"
+
+
+def test_before_after_match_without_hash(
+    mock_taskcluster_config, mock_workflow, mock_task, mock_revision
+):
+    """
+    Issues in files not modified by the patch are compared to known issues
+    using their fields, other issues are compared using their hash
+    """
+    task = mock_task(ClangFormatTask, "source-test-clang-format")
+    known = ClangFormatIssue(
+        task, "outside/of/the/patch.cpp", [(10, 10, b"Known")], mock_revision
+    )
+    moved = ClangFormatIssue(
+        task, "outside/of/the/patch.cpp", [(20, 20, b"Moved")], mock_revision
+    )
+    modified = ClangFormatIssue(task, "test.cpp", [(30, 30, b"Known")], mock_revision)
+    issues = [known, moved, modified]
+    setup_before_after_workflow(
+        mock_taskcluster_config, mock_workflow, mock_revision, issues
+    )
+    moved.hash = "aaaa"
+    modified.hash = "bbbb"
+
+    mock_known_issues(
+        "outside/of/the/patch.cpp",
+        [
+            known_clang_format_issue("xxxx", "outside/of/the/patch.cpp", [(10, 1)]),
+            known_clang_format_issue("yyyy", "outside/of/the/patch.cpp", [(21, 1)]),
+        ],
+    )
+    # Positions of an issue in a modified file are not relevant
+    mock_known_issues(
+        "test.cpp", [known_clang_format_issue("bbbb", "test.cpp", [(12, 1)])]
+    )
+
+    assert mock_revision.before_after_feature is True
+    mock_workflow.run(mock_revision)
+
+    assert known.new_issue is False
+    assert moved.new_issue is True
+    assert modified.new_issue is False
+
+    # The hash of the matched issue is never built
+    assert "hash" not in known.__dict__
+
+    # A clone is required to build the hashes of unmatched issues
+    assert mock_workflow.clone_repository.call_args_list == [mock.call(mock_revision)]
+    assert mock_workflow.publish.call_args_list == [
+        mock.call(mock_revision, issues, [], [], [])
+    ]
+
+
+def test_before_after_no_clone(
+    mock_taskcluster_config, mock_workflow, mock_task, mock_revision
+):
+    """
+    No clone is needed when all issues are matched without their hash
+    """
+    task = mock_task(ClangFormatTask, "source-test-clang-format")
+    issues = [
+        ClangFormatIssue(
+            task, "outside/of/the/patch.cpp", [(10, 10, b"Known")], mock_revision
+        ),
+        ClangFormatIssue(
+            task, "outside/of/the/patch.cpp", [(15, 16, b"Known")], mock_revision
+        ),
+    ]
+    setup_before_after_workflow(
+        mock_taskcluster_config, mock_workflow, mock_revision, issues
+    )
+
+    mock_known_issues(
+        "outside/of/the/patch.cpp",
+        [
+            # Older backends do not expose positions
+            {"id": "issue 1", "hash": "zzzz"},
+            known_clang_format_issue(
+                "xxxx", "outside/of/the/patch.cpp", [(10, 1), (15, 1)]
+            ),
+        ],
+    )
+
+    assert mock_revision.before_after_feature is True
+    mock_workflow.run(mock_revision)
+
+    assert [issue.new_issue for issue in issues] == [False, False]
+    assert not any("hash" in issue.__dict__ for issue in issues)
+    assert mock_workflow.clone_repository.call_count == 0
+    assert mock_workflow.publish.call_args_list == [
+        mock.call(mock_revision, issues, [], [], [])
+    ]
+
+
+@pytest.mark.parametrize(
+    "path, line, cloned",
+    [
+        # No issues at all
+        (None, None, False),
+        # Issue outside of the patch is not publishable
+        ("outside/of/the/patch.cpp", 42, False),
+        # Issue in the patch is publishable
+        ("test.cpp", 1, True),
+    ],
+)
+def test_clone_only_publishable(
+    mock_taskcluster_config, mock_workflow, mock_task, mock_revision, path, line, cloned
+):
+    """
+    Without the before/after feature, the local clone is only needed
+    to build the hashes of publishable issues
+    """
+    issues = []
+    if path is not None:
+        issues.append(
+            DefaultIssue(
+                mock_task(DefaultTask, "mock-analyzer"),
+                mock_revision,
+                path,
+                line,
+                nb_lines=1,
+                check="mock-check",
+                message="Some warning",
+            )
+        )
+    mock_workflow.publish = mock.Mock()
+    mock_workflow.clone_repository = mock.Mock()
+    mock_workflow.find_issues = mock.Mock()
+    mock_workflow.find_issues.return_value = (issues, [], [], [])
+
+    assert mock_revision.before_after_feature is False
+    mock_workflow.run(mock_revision)
+
+    assert mock_workflow.clone_repository.call_count == (1 if cloned else 0)
+    assert mock_workflow.publish.call_count == 1
 
 
 def test_publish_link_duplicate_harbormaster_uri(mock_workflow):

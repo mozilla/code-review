@@ -77,6 +77,7 @@ def mock_config(mock_repositories):
     os.environ["TRY_TASK_ID"] = "remoteTryTask"
     os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
     os.environ["BULK_ISSUE_CHUNKS"] = "10"
+    settings.clone_available = False
     settings.setup(
         "test",
         ["dom/*", "tests/*.py", "test/*.c"],
@@ -728,7 +729,7 @@ def mock_workflow(mock_config, mock_taskcluster_config):
             self.backend_api = BackendAPI()
             self.update_build = False
             self.task_failures_ignored = []
-            self.clone_available = True
+            settings.clone_available = True
 
         def setup_mock_tasks(self, tasks):
             """
