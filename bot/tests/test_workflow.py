@@ -18,7 +18,7 @@ from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
 from code_review_bot.tasks.docupload import DocUploadTask
-from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
 
 
@@ -678,3 +678,69 @@ def test_cancel_previous_ignores_later_buildables(mock_config, mock_workflow):
     assert abort_calls(mock_workflow.phabricator) == [
         {"receiver": "PHID-HMBB-old", "type": "abort"}
     ]
+
+
+def test_clone_repository_extracts_issues_files(
+    mock_config, mock_workflow, mock_task, mock_revision, tmp_path, monkeypatch
+):
+    """
+    Only the files with issues are extracted from the local repository,
+    outside of the persisted cache
+    """
+    from code_review_bot import workflow
+
+    mock_config.mercurial_cache = tmp_path
+    files_dir = mock_config.mercurial_cache_files
+    assert tmp_path not in files_dir.parents
+
+    checkouts = []
+    monkeypatch.setattr(
+        workflow, "robust_checkout", lambda **kwargs: checkouts.append(kwargs)
+    )
+
+    def _cat_files(repo_dir, revision, paths, output_dir):
+        for path in paths:
+            (output_dir / path).parent.mkdir(parents=True, exist_ok=True)
+            (output_dir / path).write_text("\n" * 41 + "content\n")
+
+    cat_files = mock.Mock(side_effect=_cat_files)
+    monkeypatch.setattr(workflow, "cat_files", cat_files)
+
+    issue = MozLintIssue(
+        mock_task(MozLintTask, "source-test-mozlint-eslint"),
+        "dom/file.js",
+        column=1,
+        level="warning",
+        lineno=42,
+        linter="eslint",
+        message="Some issue",
+        check="no-shadow",
+        revision=mock_revision,
+    )
+
+    try:
+        mock_workflow.clone_available = False
+        mock_workflow.clone_repository(mock_revision, [issue, issue])
+
+        assert checkouts == [
+            {
+                "repo_upstream_url": mock_revision.base_repository,
+                "repo_url": mock_revision.head_repository,
+                "revision": mock_revision.head_changeset,
+                "checkout_dir": tmp_path / "checkout",
+                "sharebase_dir": tmp_path / "shared",
+                "noupdate": True,
+            }
+        ]
+        cat_files.assert_called_once_with(
+            repo_dir=tmp_path / "checkout",
+            revision=mock_revision.head_changeset,
+            paths=["dom/file.js"],
+            output_dir=files_dir,
+        )
+
+        # The hash is built from the extracted file
+        assert issue.hash is not None
+        assert issue.file_exists is True
+    finally:
+        mock_config.mercurial_cache = None

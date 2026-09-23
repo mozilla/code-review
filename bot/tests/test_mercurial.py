@@ -3,10 +3,14 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import json
 import os.path
+import shutil
+import subprocess
 import time
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import hglib
+import pytest
 import responses
 from conftest import MockBuild
 from libmozdata.phabricator import PhabricatorPatch
@@ -71,6 +75,65 @@ def test_robustcheckout(monkeypatch):
         "https://hg.repo/try",
         "/tmp/checkout",
     ]
+
+
+@pytest.mark.skipif(shutil.which("hg") is None, reason="Mercurial is not installed")
+def test_cat_files(tmp_path, monkeypatch):
+    """
+    Extract some files at a given revision without updating the working directory
+    """
+    # Do not load user extensions
+    monkeypatch.setenv("HGRCPATH", "")
+
+    repo_dir = tmp_path / "repo"
+    subprocess.run(["hg", "init", str(repo_dir)], check=True)
+    (repo_dir / "dom" / "sub").mkdir(parents=True)
+    (repo_dir / "dom" / "sub" / "file.cpp").write_text("first version\n")
+    (repo_dir / "other.js").write_text("other\n")
+    subprocess.run(
+        ["hg", "-R", str(repo_dir), "commit", "-A", "-q", "-u", "test", "-m", "first"],
+        check=True,
+    )
+    first = subprocess.run(
+        ["hg", "-R", str(repo_dir), "log", "-r", ".", "-T", "{node}"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout
+    (repo_dir / "dom" / "sub" / "file.cpp").write_text("second version\n")
+    subprocess.run(
+        ["hg", "-R", str(repo_dir), "commit", "-q", "-u", "test", "-m", "second"],
+        check=True,
+    )
+
+    output_dir = tmp_path / "files"
+    mercurial.cat_files(
+        repo_dir=repo_dir,
+        revision=first,
+        # Directories and missing files are skipped
+        paths=["dom/sub/file.cpp", "dom", "missing.js"],
+        output_dir=output_dir,
+    )
+
+    assert sorted(
+        p.relative_to(output_dir) for p in output_dir.rglob("*") if p.is_file()
+    ) == [Path("dom/sub/file.cpp")]
+    assert (output_dir / "dom" / "sub" / "file.cpp").read_text() == "first version\n"
+
+    # No file found in that revision
+    mercurial.cat_files(
+        repo_dir=repo_dir,
+        revision=first,
+        paths=["missing.js"],
+        output_dir=tmp_path / "none",
+    )
+    assert not (tmp_path / "none").exists()
+
+    # Nothing to extract
+    mercurial.cat_files(
+        repo_dir=repo_dir, revision=first, paths=[], output_dir=tmp_path / "empty"
+    )
+    assert not (tmp_path / "empty").exists()
 
 
 def test_push_to_try(PhabricatorMock, mock_mc, responses):
