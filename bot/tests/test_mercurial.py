@@ -4,6 +4,7 @@
 import json
 import os.path
 import time
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import hglib
@@ -71,6 +72,51 @@ def test_robustcheckout(monkeypatch):
         "https://hg.repo/try",
         "/tmp/checkout",
     ]
+
+
+def test_cat_files(tmp_path):
+    """
+    Extract some files at a given revision without updating the working directory
+    """
+    repo_dir = tmp_path / "repo"
+    hglib.init(str(repo_dir))
+    repo = hglib.open(str(repo_dir))
+    (repo_dir / "dom" / "sub").mkdir(parents=True)
+    (repo_dir / "dom" / "sub" / "file.cpp").write_text("first version\n")
+    (repo_dir / "other.js").write_text("other\n")
+    _, first = repo.commit(message=b"first", user=b"test", addremove=True)
+    first = first.decode("utf-8")
+    (repo_dir / "dom" / "sub" / "file.cpp").write_text("second version\n")
+    repo.commit(message=b"second", user=b"test")
+
+    output_dir = tmp_path / "files"
+    mercurial.cat_files(
+        repo_dir=repo_dir,
+        revision=first,
+        # Directories and missing files are skipped
+        paths=["dom/sub/file.cpp", "dom", "missing.js"],
+        output_dir=output_dir,
+    )
+
+    assert sorted(
+        p.relative_to(output_dir) for p in output_dir.rglob("*") if p.is_file()
+    ) == [Path("dom/sub/file.cpp")]
+    assert (output_dir / "dom" / "sub" / "file.cpp").read_text() == "first version\n"
+
+    # No file found in that revision
+    mercurial.cat_files(
+        repo_dir=repo_dir,
+        revision=first,
+        paths=["missing.js"],
+        output_dir=tmp_path / "none",
+    )
+    assert not (tmp_path / "none").exists()
+
+    # Nothing to extract
+    mercurial.cat_files(
+        repo_dir=repo_dir, revision=first, paths=[], output_dir=tmp_path / "empty"
+    )
+    assert not (tmp_path / "empty").exists()
 
 
 def test_robust_clone_skips_update(monkeypatch, mock_mc):

@@ -26,6 +26,7 @@ from code_review_bot.git import git_clone
 from code_review_bot.mercurial import (
     MercurialRepository,
     MercurialWorker,
+    cat_files,
     robust_checkout,
 )
 from code_review_bot.report.debug import DebugReporter
@@ -151,7 +152,7 @@ class Workflow:
             # Clone local repo when required
             # as find_previous_issues will build the hashes
             if issues:
-                self.clone_repository(revision)
+                self.clone_repository(revision, issues)
 
             # Mark know issues to avoid publishing them on this patch
             self.find_previous_issues(revision, issues, base_rev_changeset)
@@ -163,7 +164,7 @@ class Workflow:
         elif issues:
             # Clone local repo when required
             # as publication need the hashes
-            self.clone_repository(revision)
+            self.clone_repository(revision, issues)
 
         if (
             all(issue.new_issue is False for issue in issues)
@@ -273,7 +274,7 @@ class Workflow:
             return
 
         # Clone local repo when required
-        self.clone_repository(revision)
+        self.clone_repository(revision, issues)
 
         # Publish issues in the backend
         self.backend_api.publish_issues(issues, revision)
@@ -396,10 +397,12 @@ class Workflow:
         else:
             logger.info("Skipping Lando publication")
 
-    def clone_repository(self, revision):
+    def clone_repository(self, revision, issues):
         """
         Clone the repo locally when configured
         On production this should use a Taskcluster cache
+        For Mercurial, only the files with issues are extracted from the repository,
+        as updating the whole working directory is slow
         """
         if self.clone_available:
             logger.debug("Local clone already setup")
@@ -428,6 +431,14 @@ class Workflow:
                 revision=revision.head_changeset,
                 checkout_dir=checkout_dir,
                 sharebase_dir=settings.mercurial_cache_sharebase,
+                noupdate=True,
+            )
+
+            cat_files(
+                repo_dir=checkout_dir,
+                revision=revision.head_changeset,
+                paths=sorted({issue.path for issue in issues}),
+                output_dir=settings.mercurial_cache_files,
             )
         elif isinstance(revision, GithubRevision):
             # Git clone
