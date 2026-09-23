@@ -250,18 +250,45 @@ class IssueSerializer(serializers.ModelSerializer):
         )
 
 
-class IssueHashSerializer(serializers.ModelSerializer):
+class IssuePositionSerializer(serializers.ModelSerializer):
     """
-    Serialize an Issue hash
+    Serialize the position of an Issue on a revision
     """
+
+    class Meta:
+        model = IssueLink
+        fields = (
+            "line",
+            "nb_lines",
+            "char",
+        )
+        read_only_fields = fields
+
+
+class RepositoryIssueSerializer(serializers.ModelSerializer):
+    """
+    Serialize an Issue known on a repository, along with its positions
+    on the selected revision, so it can be compared without its hash
+    """
+
+    check = serializers.CharField(source="analyzer_check", read_only=True)
+    positions = IssuePositionSerializer(
+        source="revision_links", many=True, read_only=True
+    )
 
     class Meta:
         model = Issue
         fields = (
             "id",
             "hash",
+            "analyzer",
+            "path",
+            "level",
+            "check",
+            "message",
+            "positions",
         )
-        read_only_fields = ("id", "hash")
+        read_only_fields = fields
 
 
 class SingleIssueBulkSerializer(IssueSerializer):

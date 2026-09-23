@@ -199,15 +199,18 @@ class Issue(abc.ABC):
 
         assert self.revision is not None, "Missing revision"
 
+        # The local repository is only used once cloned at the analyzed revision,
+        # otherwise the file content is retrieved remotely
         local_repository = None
         if isinstance(self.revision, PhabricatorRevision):
-            if settings.mercurial_cache_checkout:
+            if settings.mercurial_cache_checkout and settings.clone_available:
                 local_repository = settings.mercurial_cache_checkout
         elif isinstance(self.revision, GithubRevision):
             assert (
                 settings.git_cache
             ), "Github cache repository is mandatory to analyse a github revision"
-            local_repository = settings.git_cache / self.revision.repository_slug
+            if settings.clone_available:
+                local_repository = settings.git_cache / self.revision.repository_slug
         else:
             raise NotImplementedError(self.revision.__class__)
 
@@ -260,7 +263,7 @@ class Issue(abc.ABC):
         """
         Check if the file that generated the issue still exists after applying the patch.
         """
-        if settings.mercurial_cache_checkout:
+        if settings.mercurial_cache_checkout and settings.clone_available:
             logger.debug(
                 "Using the local repository to check if the file that caused the issue still exists."
             )
@@ -308,11 +311,17 @@ class Issue(abc.ABC):
         Build the serializable dict representation of the issue
         Used by debugging tools
         """
+        # When a local clone is configured but was skipped, do not build the hash
+        # (unless already built) to avoid downloading the file of every issue
         issue_hash = None
-        try:
-            issue_hash = self.hash
-        except Exception as e:
-            logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
+        clone_skipped = (
+            settings.mercurial_cache or settings.git_cache
+        ) and not settings.clone_available
+        if "hash" in self.__dict__ or not clone_skipped:
+            try:
+                issue_hash = self.hash
+            except Exception as e:
+                logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
 
         return {
             "analyzer": self.analyzer.name,

@@ -39,7 +39,12 @@ class IssueTestCase(TestCase):
             )
 
         self.err_issue = Issue.objects.create(
-            path="some/file", level=LEVEL_ERROR, hash="issue_err"
+            path="some/file",
+            level=LEVEL_ERROR,
+            hash="issue_err",
+            analyzer="analyzer-x",
+            analyzer_check="check-x",
+            message="Some error",
         )
         self.warn_issue = Issue.objects.create(
             path="some/other/file", level=LEVEL_WARNING, hash="issue_warn"
@@ -49,7 +54,11 @@ class IssueTestCase(TestCase):
         self.warn_link = self.revision.issue_links.create(
             issue=self.warn_issue, line=12
         )
-        self.old_revision.issue_links.create(issue=self.warn_issue, line=12)
+        # The same issue (i.e. the same content) is found at another position
+        self.revision.issue_links.create(
+            issue=self.warn_issue, line=42, nb_lines=2, char=3
+        )
+        self.old_revision.issue_links.create(issue=self.warn_issue, line=10)
 
     def serialize_issue(self, issue):
         return {
@@ -64,6 +73,21 @@ class IssueTestCase(TestCase):
             "hash": "",
             "message": None,
             "nb_lines": None,
+        }
+
+    def repository_issue(self, issue, positions):
+        return {
+            "id": str(issue.id),
+            "hash": issue.hash,
+            "analyzer": issue.analyzer,
+            "path": issue.path,
+            "level": issue.level,
+            "check": issue.analyzer_check,
+            "message": issue.message,
+            "positions": [
+                {"line": line, "nb_lines": nb_lines, "char": char}
+                for line, nb_lines, char in positions
+            ],
         }
 
     def test_publishable(self):
@@ -104,7 +128,7 @@ class IssueTestCase(TestCase):
         )
 
     def test_list_repository_issues(self):
-        with self.assertNumQueries(3):
+        with self.assertNumQueries(4):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
             )
@@ -116,8 +140,12 @@ class IssueTestCase(TestCase):
                 "next": None,
                 "previous": None,
                 "results": [
-                    {"id": str(self.err_issue.id), "hash": "issue_err"},
-                    {"id": str(self.warn_issue.id), "hash": "issue_warn"},
+                    self.repository_issue(self.err_issue, [(12, None, None)]),
+                    # Without a revision filter, positions of all the revisions are listed
+                    self.repository_issue(
+                        self.warn_issue,
+                        [(10, None, None), (12, None, None), (42, 2, 3)],
+                    ),
                 ],
             },
         )
@@ -126,7 +154,7 @@ class IssueTestCase(TestCase):
         """
         Primarily filter issues depending on an existing revision
         """
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
                 + "?date=1999-01-01&revision_changeset="
@@ -138,7 +166,8 @@ class IssueTestCase(TestCase):
         self.assertEqual(
             data["results"],
             [
-                {"id": str(self.warn_issue.id), "hash": "issue_warn"},
+                # Only positions on the selected revision are listed
+                self.repository_issue(self.warn_issue, [(10, None, None)]),
             ],
         )
 
@@ -146,7 +175,7 @@ class IssueTestCase(TestCase):
         """
         Fall back to the date when no issue match the given revision
         """
-        with self.assertNumQueries(5):
+        with self.assertNumQueries(6):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
                 + "?date=2000-01-02&revision_changeset="
@@ -158,12 +187,12 @@ class IssueTestCase(TestCase):
         self.assertEqual(
             data["results"],
             [
-                {"id": str(self.warn_issue.id), "hash": "issue_warn"},
+                self.repository_issue(self.warn_issue, [(10, None, None)]),
             ],
         )
 
     def test_list_repository_issues_date_only(self):
-        with self.assertNumQueries(4):
+        with self.assertNumQueries(5):
             response = self.client.get(
                 reverse("repository-issues", kwargs={"repo_slug": "repo_slug"})
                 + "?date=2010-01-01"
@@ -176,8 +205,10 @@ class IssueTestCase(TestCase):
                 "next": None,
                 "previous": None,
                 "results": [
-                    {"id": str(self.err_issue.id), "hash": "issue_err"},
-                    {"id": str(self.warn_issue.id), "hash": "issue_warn"},
+                    self.repository_issue(self.err_issue, [(12, None, None)]),
+                    self.repository_issue(
+                        self.warn_issue, [(12, None, None), (42, 2, 3)]
+                    ),
                 ],
             },
         )

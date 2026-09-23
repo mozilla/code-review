@@ -101,9 +101,6 @@ class Workflow:
         # Setup Backend API client
         self.backend_api = BackendAPI()
 
-        # Is local clone already setup ?
-        self.clone_available = False
-
     def run(self, revision):
         """
         Find all issues on remote tasks and publish them
@@ -144,10 +141,6 @@ class Workflow:
                     task=settings.try_group_id,
                 )
 
-            # Clone local repo when required
-            # as find_previous_issues will build the hashes
-            self.clone_repository(revision)
-
             # Mark know issues to avoid publishing them on this patch
             self.find_previous_issues(revision, issues, base_rev_changeset)
             new_issues_count = sum(issue.new_issue for issue in issues)
@@ -155,10 +148,13 @@ class Workflow:
                 f"Found {new_issues_count} new issues (over {len(issues)} total detected issues)",
                 task=settings.try_group_id,
             )
-        else:
-            # Clone local repo when required
-            # as publication need the hashes
+
+        # Clone local repo when required, as the publication needs
+        # the hashes of publishable issues
+        if any(issue.is_publishable() for issue in issues):
             self.clone_repository(revision)
+        else:
+            logger.info("No publishable issues, skipping local clone")
 
         if (
             all(issue.new_issue is False for issue in issues)
@@ -395,7 +391,7 @@ class Workflow:
         Clone the repo locally when configured
         On production this should use a Taskcluster cache
         """
-        if self.clone_available:
+        if settings.clone_available:
             logger.debug("Local clone already setup")
             return
 
@@ -441,7 +437,7 @@ class Workflow:
         else:
             raise NotImplementedError
 
-        self.clone_available = True
+        settings.clone_available = True
 
     def publish(self, revision, issues, task_failures, notices, reviewers):
         """
@@ -818,29 +814,80 @@ class Workflow:
         else:
             raise NotImplementedError
 
-        def _list_known_hashes(path):
-            known_issues = self.backend_api.list_repo_issues(
+        def _list_known_issues(path):
+            return self.backend_api.list_repo_issues(
                 repository_slug,
                 date=current_date,
                 revision_changeset=base_rev_changeset,
                 path=path,
             )
-            return {issue["hash"] for issue in known_issues}
 
         # Each path needs its own paginated request to the backend, and those
         # requests are independent, so run them in parallel
         with ThreadPoolExecutor(
             max_workers=settings.backend_parallel_requests
         ) as executor:
-            known_hashes = dict(
-                zip(issues_by_path, executor.map(_list_known_hashes, issues_by_path))
+            known_issues = dict(
+                zip(issues_by_path, executor.map(_list_known_issues, issues_by_path))
             )
 
         # Issues are updated from the main thread only
+        unmatched_issues = []
         for path, group_issues in issues_by_path.items():
-            hashes = known_hashes[path]
+            if revision.has_file(path):
+                # The file is modified by the patch, issues can only be compared by hash
+                unmatched_issues += group_issues
+                continue
+
+            # The file is not modified by the patch, so its content and the issues
+            # positions are the same as on the base revision: an issue matching
+            # a known one on all its fields would also match its hash, which
+            # can be built only from a local clone
+            known_keys = {
+                (
+                    known["analyzer"],
+                    known["level"],
+                    known["check"],
+                    known["message"],
+                    position["line"],
+                    position["nb_lines"],
+                )
+                # Positions are not exposed by older backends
+                for known in known_issues[path]
+                for position in known.get("positions", [])
+            }
             for issue in group_issues:
-                issue.new_issue = bool(issue.hash and issue.hash not in hashes)
+                key = (
+                    issue.analyzer.name,
+                    issue.level.value,
+                    issue.check,
+                    issue.message,
+                    issue.line,
+                    issue.nb_lines,
+                )
+                if key in known_keys:
+                    issue.new_issue = False
+                else:
+                    unmatched_issues.append(issue)
+
+        logger.info(
+            f"Matched {len(issues) - len(unmatched_issues)} known issues without their hash, "
+            f"{len(unmatched_issues)} issues need to be compared by hash"
+        )
+        if not unmatched_issues:
+            return
+
+        # Clone local repo when required, as remaining issues are compared by hash
+        self.clone_repository(revision)
+
+        known_hashes = {
+            path: {known["hash"] for known in path_issues}
+            for path, path_issues in known_issues.items()
+        }
+        for issue in unmatched_issues:
+            issue.new_issue = bool(
+                issue.hash and issue.hash not in known_hashes[issue.path]
+            )
 
     def find_issues(self, revision, group_id):
         """
