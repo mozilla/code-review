@@ -62,6 +62,9 @@ class Settings:
         # Cache to store file-by-file from HGMO Rest API
         self.hgmo_cache = tempfile.mkdtemp(suffix="hgmo")
 
+        # Files extracted from the local mercurial repository
+        self.mercurial_files = tempfile.mkdtemp(suffix="mercurial-files")
+
         # Cache to store whole repositories
         self.mercurial_cache = None
         self.git_cache = None
@@ -211,6 +214,17 @@ class Settings:
         return self.mercurial_cache / "checkout"
 
     @property
+    def mercurial_cache_files(self):
+        """
+        When local mercurial cache is enabled, path to the files extracted from the
+        repository (only those needed to build the issues hashes)
+        This is a temporary directory, as the cache is persisted across tasks
+        """
+        if self.mercurial_cache is None:
+            return
+        return Path(self.mercurial_files)
+
+    @property
     def mercurial_cache_sharebase(self):
         """
         When local mercurial cache is enabled, path to the shared folder for robust checkout
@@ -227,6 +241,7 @@ class Settings:
 
     def cleanup(self):
         shutil.rmtree(self.hgmo_cache)
+        shutil.rmtree(self.mercurial_files)
 
     @property
     def taskcluster_url(self):

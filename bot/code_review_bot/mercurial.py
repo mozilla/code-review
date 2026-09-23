@@ -114,6 +114,7 @@ def robust_checkout(
     revision=None,
     branch=None,
     repo_upstream_url=None,
+    noupdate=False,
 ):
     if not ((revision is not None) ^ (branch is not None)):
         raise Exception("Set revision XOR branch")
@@ -122,13 +123,55 @@ def robust_checkout(
         "robustcheckout",
         repo_url,
         checkout_dir,
-        purge=True,
+        # The working directory is left untouched when not updating
+        purge=not noupdate,
         sharebase=sharebase_dir,
         revision=revision,
         branch=branch,
         upstream=repo_upstream_url,
+        noupdate=noupdate,
     )
     hg_run(cmd)
+
+
+def cat_files(repo_dir, revision, paths, output_dir):
+    """
+    Write the content of some files at a given revision in an output directory,
+    keeping their relative path, without updating the working directory.
+    Paths that are not files in that revision are skipped.
+    """
+    # An empty list of patterns would match every file
+    if not paths:
+        return
+
+    with tempfile.NamedTemporaryFile(suffix=".txt") as list_file:
+        # Use exact file patterns, as `path:` would also match whole directories
+        list_file.write(b"\0".join(f"filepath:{path}".encode() for path in paths))
+        list_file.flush()
+
+        cmd = hglib.util.cmdbuilder(
+            "cat",
+            f"listfile0:{list_file.name}",
+            repository=repo_dir,
+            rev=revision,
+            output=os.path.join(output_dir, "%p"),
+        )
+        proc = hglib.util.popen([hglib.HGPATH] + cmd)
+        out, err = proc.communicate()
+
+    # Mercurial returns 1 when none of the paths are files in that revision
+    if proc.returncode not in (0, 1):
+        logger.error("Mercurial cat failure", out=out, err=err)
+        raise hglib.error.CommandError(cmd, proc.returncode, out, err)
+
+    logger.info(
+        "Extracted files from the repository",
+        revision=revision,
+        nb=len(paths),
+        missing=sum(
+            not os.path.isfile(os.path.join(output_dir, path)) for path in paths
+        ),
+    )
 
 
 class MercurialRepository(BaseRepository):
