@@ -1,3 +1,4 @@
+import enum
 from functools import cached_property
 
 import structlog
@@ -15,6 +16,10 @@ LANDO_FAILURE_MESSAGE = (
 LANDO_FAILURE_HG_MESSAGE = (
     "Static analysis and linting did not run due to failure in applying the patch."
 )
+
+
+class AnalysisMode(enum.Enum):
+    Lint = 1
 
 
 class PhabricatorRevisionBuild(PhabricatorBuild):
