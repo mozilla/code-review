@@ -935,3 +935,31 @@ def test_get_base_identifier_falls_back_to_default(mock_mc, monkeypatch):
     )
 
     assert mock_mc.get_base_identifier(stack) == "default"
+
+
+def test_clean_strips_drafts_without_backup(mock_mc, tmpdir):
+    """
+    Local drafts must be stripped without leaving a backup bundle behind
+    """
+    repo_dir = tmpdir.join("mozilla-central")
+
+    # Use a clone of the current state as remote, so local commits are outgoing
+    remote_dir = str(tmpdir.join("remote"))
+    hglib.clone(str(repo_dir).encode("utf-8"), remote_dir.encode("utf-8"))
+    repo_dir.join(".hg", "hgrc").write(
+        f"[paths]\ndefault = {remote_dir}\n[extensions]\nstrip =\n"
+    )
+    mock_mc._repo = hglib.open(str(repo_dir))
+    public = mock_mc.repo.tip().node
+
+    # Add a draft commit
+    draft = repo_dir.join("draft.txt")
+    draft.write("draft")
+    mock_mc.repo.add(str(draft).encode("utf-8"))
+    mock_mc.repo.commit(message=b"Draft", user="test")
+    assert mock_mc.repo.tip().node != public
+
+    mock_mc.clean()
+
+    assert mock_mc.repo.tip().node == public
+    assert not repo_dir.join(".hg", "strip-backup").exists()
