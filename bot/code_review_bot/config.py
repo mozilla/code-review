@@ -201,13 +201,21 @@ class Settings:
         """
         return self.app_channel == "production" and self.taskcluster.local is False
 
-    @property
-    def mercurial_cache_checkout(self):
+    def mercurial_cache_checkout(self, repository_url):
         """
-        When local mercurial cache is enabled, path to the checkout
+        When local mercurial cache is enabled, path to the checkout of a repository.
+        Configured repositories use the same directory as the analysis task
+        (named after the repository), so the working copy is shared between
+        analysis and publication tasks running on the same worker.
         """
         if self.mercurial_cache is None:
             return
+
+        if repository_url:
+            for repository in self.repositories:
+                if repository.url.rstrip("/") == repository_url.rstrip("/"):
+                    return self.mercurial_cache / repository.name
+
         return self.mercurial_cache / "checkout"
 
     @property

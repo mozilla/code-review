@@ -183,6 +183,36 @@ def test_on_production(mock_config, mock_repositories):
     )
 
 
+def test_mercurial_cache_checkout(mock_config, tmpdir):
+    """
+    Test the checkout used to build issues is shared with the analysis task
+    for configured repositories
+    """
+    mock_config.mercurial_cache = None
+    assert (
+        mock_config.mercurial_cache_checkout("https://hg.mozilla.org/mozilla-central")
+        is None
+    )
+
+    mock_config.mercurial_cache = tmpdir
+    # Same directory as the one used by the analysis task (named after the repository)
+    assert (
+        mock_config.mercurial_cache_checkout("https://hg.mozilla.org/mozilla-central")
+        == tmpdir / "mozilla-central"
+    )
+    assert (
+        mock_config.mercurial_cache_checkout("https://hg.mozilla.org/mozilla-central/")
+        == tmpdir / "mozilla-central"
+    )
+
+    # Fallback for unknown repositories
+    assert (
+        mock_config.mercurial_cache_checkout("https://hg.mozilla.org/unknown")
+        == tmpdir / "checkout"
+    )
+    assert mock_config.mercurial_cache_checkout(None) == tmpdir / "checkout"
+
+
 def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_revision):
     """
     Test the before/after feature running a try task workflow.
