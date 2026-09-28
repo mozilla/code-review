@@ -217,7 +217,7 @@ def test_workflow(
             "rawcommand",
             [
                 b"strip",
-                b"--rev=roots(outgoing())",
+                b"--rev=roots(outgoing() and draft())",
                 b"--force",
                 b"--no-backup",
             ],

@@ -390,7 +390,10 @@ class MercurialRepository(BaseRepository):
         logger.info("Remove all mercurial drafts")
         try:
             cmd = hglib.util.cmdbuilder(
-                b"strip", rev=b"roots(outgoing())", force=True, no_backup=True
+                b"strip",
+                rev=b"roots(outgoing() and draft())",
+                force=True,
+                no_backup=True,
             )
             self.repo.rawcommand(cmd)
         except hglib.error.CommandError as e:

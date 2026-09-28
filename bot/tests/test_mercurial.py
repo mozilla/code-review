@@ -944,27 +944,53 @@ def test_get_base_identifier_falls_back_to_default(mock_mc, monkeypatch):
     assert mock_mc.get_base_identifier(stack) == "default"
 
 
-def test_clean_strips_drafts_without_backup(mock_mc, tmpdir):
+def _setup_clean_repo(mock_mc, tmpdir):
     """
-    Local drafts must be stripped without leaving a backup bundle behind
+    Use a clone of the current state as remote, so local commits are outgoing
     """
     repo_dir = tmpdir.join("mozilla-central")
-
-    # Use a clone of the current state as remote, so local commits are outgoing
     remote_dir = str(tmpdir.join("remote"))
     hglib.clone(str(repo_dir).encode("utf-8"), remote_dir.encode("utf-8"))
     repo_dir.join(".hg", "hgrc").write(
         f"[paths]\ndefault = {remote_dir}\n[extensions]\nstrip =\n"
     )
     mock_mc._repo = hglib.open(str(repo_dir))
+    return repo_dir
+
+
+def _commit(repo, repo_dir, name):
+    path = repo_dir.join(name)
+    path.write(name)
+    repo.add(str(path).encode("utf-8"))
+    repo.commit(message=name.encode("utf-8"), user="test")
+    return repo.tip().node
+
+
+def test_clean_strips_drafts_without_backup(mock_mc, tmpdir):
+    """
+    Local drafts must be stripped without leaving a backup bundle behind
+    """
+    repo_dir = _setup_clean_repo(mock_mc, tmpdir)
     public = mock_mc.repo.tip().node
 
-    # Add a draft commit
-    draft = repo_dir.join("draft.txt")
-    draft.write("draft")
-    mock_mc.repo.add(str(draft).encode("utf-8"))
-    mock_mc.repo.commit(message=b"Draft", user="test")
-    assert mock_mc.repo.tip().node != public
+    assert _commit(mock_mc.repo, repo_dir, "draft.txt") != public
+
+    mock_mc.clean()
+
+    assert mock_mc.repo.tip().node == public
+    assert not repo_dir.join(".hg", "strip-backup").exists()
+
+
+def test_clean_keeps_public_outgoing_changesets(mock_mc, tmpdir):
+    """
+    Public changesets missing from the remote (e.g. pulled from another
+    repository sharing the same checkout) must not be stripped
+    """
+    repo_dir = _setup_clean_repo(mock_mc, tmpdir)
+
+    public = _commit(mock_mc.repo, repo_dir, "public.txt")
+    mock_mc.repo.phase(public, public=True)
+    _commit(mock_mc.repo, repo_dir, "draft.txt")
 
     mock_mc.clean()
 
