@@ -30,10 +30,13 @@ TaskCluster = collections.namedtuple(
 )
 RepositoryConf = collections.namedtuple(
     "RepositoryConf",
-    "name, try_name, url, try_url, decision_env_prefix, ssh_user, repo_type",
+    "name, try_name, url, try_url, decision_env_prefix, ssh_user, repo_type, head_branch",
     # repo_type is optional and defaults to Mercurial so existing repository
     # secrets keep working; set it to "git" to push to a Git remote instead.
-    defaults=("hg",),
+    # head_branch is optional and only used by Git repositories: a branch
+    # template rendered per build (e.g. "dev/code-review/D{revision_id}"),
+    # so each environment can pick its own branch naming pattern.
+    defaults=("hg", None),
 )
 
 
