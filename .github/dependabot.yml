@@ -4,6 +4,17 @@ updates:
     directory: "/tools"
     schedule:
       interval: weekly
+    groups:
+      patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
+    cooldown:
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 99
     labels:
       - tools
@@ -11,6 +22,17 @@ updates:
     directory: "/integration"
     schedule:
       interval: weekly
+    groups:
+      patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
+    cooldown:
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 99
     labels:
       - integration
@@ -18,6 +40,13 @@ updates:
     directory: "/bot/docker"
     schedule:
       interval: weekly
+    groups:
+      patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
     open-pull-requests-limit: 99
     labels:
       - bot
@@ -25,6 +54,13 @@ updates:
     directory: "/integration/docker"
     schedule:
       interval: weekly
+    groups:
+      patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
     open-pull-requests-limit: 99
   - package-ecosystem: docker
     directory: "/backend/docker"
@@ -35,6 +71,17 @@ updates:
     directory: "/frontend"
     schedule:
       interval: weekly
+    groups:
+      patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
+    cooldown:
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 99
     labels:
       - frontend
@@ -42,6 +89,17 @@ updates:
     directory: "/bot"
     schedule:
       interval: weekly
+    groups:
+      patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
+    cooldown:
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 99
     labels:
       - bot
@@ -49,6 +107,17 @@ updates:
     directory: "/backend"
     schedule:
       interval: weekly
+    groups:
+      patch:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - patch
+    cooldown:
+      semver-major-days: 14
+      semver-minor-days: 7
+      semver-patch-days: 3
     open-pull-requests-limit: 99
     labels:
       - backend
