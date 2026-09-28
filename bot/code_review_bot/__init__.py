@@ -262,7 +262,7 @@ class Issue(abc.ABC):
         Check if the file that generated the issue still exists after applying the patch.
         """
         local_repository = settings.mercurial_cache_checkout(
-            getattr(self.revision, "base_repository", None)
+            self.revision.base_repository
         )
         if local_repository:
             logger.debug(
