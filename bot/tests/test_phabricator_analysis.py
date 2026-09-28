@@ -287,6 +287,12 @@ def test_repository_conf_repo_type():
     )
     assert conf.repo_type == "hg"
     assert conf._replace(repo_type="git").repo_type == "git"
+    # head_branch is optional too: unset means the Git backend default
+    assert conf.head_branch is None
+    assert (
+        conf._replace(head_branch="dev/code-review/D{revision_id}").head_branch
+        == "dev/code-review/D{revision_id}"
+    )
 
 
 @pytest.mark.parametrize("repo_type, uses_git", [("git", True), ("hg", False)])
