@@ -65,6 +65,8 @@ class Settings:
         # Cache to store whole repositories
         self.mercurial_cache = None
         self.git_cache = None
+        # Repository URLs for which the fallback checkout path has been logged
+        self.mercurial_cache_fallback_logged = set()
 
         # SSH Key used to push on try
         self.ssh_key = None
@@ -215,6 +217,14 @@ class Settings:
             for repository in self.repositories:
                 if repository.url.rstrip("/") == repository_url.rstrip("/"):
                     return self.mercurial_cache / repository.name
+
+        # Log only once per URL, as this is called for every issue
+        if repository_url not in self.mercurial_cache_fallback_logged:
+            self.mercurial_cache_fallback_logged.add(repository_url)
+            logger.warning(
+                "Repository is not configured, not sharing its checkout with the analysis task",
+                url=repository_url,
+            )
 
         return self.mercurial_cache / "checkout"
 

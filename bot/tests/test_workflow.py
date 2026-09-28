@@ -11,6 +11,7 @@ from urllib.parse import unquote_plus
 import pytest
 import responses
 from libmozdata.phabricator import ConduitError
+from structlog.testing import capture_logs
 
 from code_review_bot.config import Settings, TaskCluster
 from code_review_bot.revisions import PhabricatorRevision
@@ -205,12 +206,16 @@ def test_mercurial_cache_checkout(mock_config, tmpdir):
         == tmpdir / "mozilla-central"
     )
 
-    # Fallback for unknown repositories
-    assert (
-        mock_config.mercurial_cache_checkout("https://hg.mozilla.org/unknown")
-        == tmpdir / "checkout"
-    )
-    assert mock_config.mercurial_cache_checkout(None) == tmpdir / "checkout"
+    # Fallback for unknown repositories, logged only once per URL
+    mock_config.mercurial_cache_fallback_logged.clear()
+    with capture_logs() as cap_logs:
+        for _ in range(2):
+            assert (
+                mock_config.mercurial_cache_checkout("https://hg.mozilla.org/unknown")
+                == tmpdir / "checkout"
+            )
+            assert mock_config.mercurial_cache_checkout(None) == tmpdir / "checkout"
+    assert [log["url"] for log in cap_logs] == ["https://hg.mozilla.org/unknown", None]
 
 
 def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_revision):
