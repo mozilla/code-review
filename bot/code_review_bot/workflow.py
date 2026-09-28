@@ -5,7 +5,6 @@
 import base64
 import json
 import re
-import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
@@ -339,22 +338,9 @@ class Workflow:
             cache_root=settings.mercurial_cache,
         )
 
-        # Try to update the state 5 consecutive time
-        for i in range(5):
-            # Update the internal build state using Phabricator infos
-            phabricator.update_state(build)
-
-            # Continue with workflow once the build is public
-            if build.state is PhabricatorBuildState.Public:
-                break
-
-            # Retry later if the build is not yet seen as public
-            logger.warning(
-                "Build is not public, retrying in 30s",
-                build=build,
-                retries_left=build.retries,
-            )
-            time.sleep(30)
+        # Update the internal build state using Phabricator infos
+        # No need to retry: the revision was already loaded when the build target was found
+        phabricator.update_state(build)
 
         # Make sure the build is now public, otherwise skip the analysis
         if build.state is not PhabricatorBuildState.Public:
