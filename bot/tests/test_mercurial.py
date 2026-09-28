@@ -218,6 +218,8 @@ def test_push_to_try_existing_rev(PhabricatorMock, mock_mc):
         with open(readme, "a") as f:
             f.write(content)
         _, rev = mock_mc.repo.commit(message=content.encode("utf-8"), user=b"test")
+        # Simulate an upstream revision, public like it would be after a pull
+        mock_mc.repo.phase(rev, public=True)
         return rev
 
     # Make two commits, the first one is our base
@@ -1018,6 +1020,22 @@ def test_clean_keeps_public_outgoing_changesets(mock_mc, tmpdir):
     public = _commit(mock_mc.repo, repo_dir, "public.txt")
     mock_mc.repo.phase(public, public=True)
     _commit(mock_mc.repo, repo_dir, "draft.txt")
+
+    mock_mc.clean()
+
+    assert mock_mc.repo.tip().node == public
+    assert not repo_dir.join(".hg", "strip-backup").exists()
+
+
+def test_clean_strips_secret_changesets(mock_mc, tmpdir):
+    """
+    Secret changesets are local-only too, and must be stripped
+    """
+    repo_dir = _setup_clean_repo(mock_mc, tmpdir)
+    public = mock_mc.repo.tip().node
+
+    secret = _commit(mock_mc.repo, repo_dir, "secret.txt")
+    mock_mc.repo.phase(secret, secret=True, force=True)
 
     mock_mc.clean()
 

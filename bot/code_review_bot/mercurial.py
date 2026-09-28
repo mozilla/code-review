@@ -401,11 +401,13 @@ class MercurialRepository(BaseRepository):
         logger.info("Remove uncommitted changes")
         self.repo.revert(self.dir.encode("utf-8"), all=True)
 
+        # Every non-public changeset is local-only (the remote is publishing),
+        # so there is no need for a round-trip to the remote using outgoing()
         logger.info("Remove all mercurial drafts")
         try:
             cmd = hglib.util.cmdbuilder(
                 b"strip",
-                rev=b"roots(outgoing() and draft())",
+                rev=b"roots(not public())",
                 force=True,
                 no_backup=True,
             )
