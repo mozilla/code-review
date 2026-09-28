@@ -201,8 +201,9 @@ class Issue(abc.ABC):
 
         local_repository = None
         if isinstance(self.revision, PhabricatorRevision):
-            if settings.mercurial_cache_checkout:
-                local_repository = settings.mercurial_cache_checkout
+            local_repository = settings.mercurial_cache_checkout(
+                self.revision.base_repository
+            )
         elif isinstance(self.revision, GithubRevision):
             assert (
                 settings.git_cache
@@ -260,11 +261,14 @@ class Issue(abc.ABC):
         """
         Check if the file that generated the issue still exists after applying the patch.
         """
-        if settings.mercurial_cache_checkout:
+        local_repository = settings.mercurial_cache_checkout(
+            self.revision.base_repository
+        )
+        if local_repository:
             logger.debug(
                 "Using the local repository to check if the file that caused the issue still exists."
             )
-            return (settings.mercurial_cache_checkout / self.path).exists()
+            return (local_repository / self.path).exists()
         else:
             # It is not possible to use revision.has_file directly because it returns files that have been modified
             try:

@@ -11,6 +11,7 @@ from urllib.parse import unquote_plus
 import pytest
 import responses
 from libmozdata.phabricator import ConduitError
+from structlog.testing import capture_logs
 
 from code_review_bot.config import Settings, TaskCluster
 from code_review_bot.revisions import PhabricatorRevision
@@ -181,6 +182,40 @@ def test_on_production(mock_config, mock_repositories):
         testing.taskcluster_url
         == "https://firefox-ci-tc.services.mozilla.com/tasks/prodTask"
     )
+
+
+def test_mercurial_cache_checkout(mock_config, tmpdir):
+    """
+    Test the checkout used to build issues is shared with the analysis task
+    for configured repositories
+    """
+    mock_config.mercurial_cache = None
+    assert (
+        mock_config.mercurial_cache_checkout("https://hg.mozilla.org/mozilla-central")
+        is None
+    )
+
+    mock_config.mercurial_cache = tmpdir
+    # Same directory as the one used by the analysis task (named after the repository)
+    assert (
+        mock_config.mercurial_cache_checkout("https://hg.mozilla.org/mozilla-central")
+        == tmpdir / "mozilla-central"
+    )
+    assert (
+        mock_config.mercurial_cache_checkout("https://hg.mozilla.org/mozilla-central/")
+        == tmpdir / "mozilla-central"
+    )
+
+    # Fallback for unknown repositories, logged only once per URL
+    mock_config.mercurial_cache_fallback_logged.clear()
+    with capture_logs() as cap_logs:
+        for _ in range(2):
+            assert (
+                mock_config.mercurial_cache_checkout("https://hg.mozilla.org/unknown")
+                == tmpdir / "checkout"
+            )
+            assert mock_config.mercurial_cache_checkout(None) == tmpdir / "checkout"
+    assert [log["url"] for log in cap_logs] == ["https://hg.mozilla.org/unknown", None]
 
 
 def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_revision):

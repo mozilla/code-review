@@ -409,17 +409,18 @@ class Workflow:
                 raise Exception(
                     "Mercurial cache directory is not configured, cannot clone"
                 )
+            checkout_dir = settings.mercurial_cache_checkout(revision.base_repository)
             logger.info(
                 "Cloning mercurial revision to build issues",
                 repo=revision.base_repository,
                 changeset=revision.head_changeset,
-                dest=settings.mercurial_cache_checkout,
+                dest=checkout_dir,
             )
             robust_checkout(
                 repo_upstream_url=revision.base_repository,
                 repo_url=revision.head_repository,
                 revision=revision.head_changeset,
-                checkout_dir=settings.mercurial_cache_checkout,
+                checkout_dir=checkout_dir,
                 sharebase_dir=settings.mercurial_cache_sharebase,
             )
         elif isinstance(revision, GithubRevision):
