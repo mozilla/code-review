@@ -114,6 +114,7 @@ def robust_checkout(
     revision=None,
     branch=None,
     repo_upstream_url=None,
+    noupdate=False,
 ):
     if not ((revision is not None) ^ (branch is not None)):
         raise Exception("Set revision XOR branch")
@@ -127,6 +128,7 @@ def robust_checkout(
         revision=revision,
         branch=branch,
         upstream=repo_upstream_url,
+        noupdate=noupdate,
     )
     hg_run(cmd)
 
@@ -192,6 +194,18 @@ class MercurialRepository(BaseRepository):
                 self.dir,
                 self.share_base_dir,
                 branch=self.default_revision.encode("ascii"),
+                # The working directory is updated to the base revision of
+                # the patches later on, avoid updating it twice.
+                noupdate=True,
+            )
+            # robustcheckout skips purging the working directory when
+            # --noupdate is used, so purge it here instead.
+            logger.info("Purging working directory")
+            start = time.monotonic()
+            self.repo.rawcommand([b"purge", b"--all", b"--no-confirm"])
+            logger.info(
+                "Purged working directory",
+                duration=round(time.monotonic() - start, 2),
             )
         else:
             hglib.clone(self.url, self.dir)

@@ -182,6 +182,7 @@ def test_workflow(
             b"--purge",
             f"--sharebase={tmpdir}/shared".encode(),
             b"--branch=default",
+            b"--noupdate",
             b"--",
             "https://hg.mozilla.org/mozilla-central",
             repo_path,
@@ -203,6 +204,8 @@ def test_workflow(
 
     # Check all calls made to mercurial repo
     assert mock_mercurial_repo._calls == [
+        # Purge after robustcheckout skipped the update
+        ("rawcommand", [b"purge", b"--all", b"--no-confirm"]),
         # Cleanup
         "cbout",
         "cberr",
