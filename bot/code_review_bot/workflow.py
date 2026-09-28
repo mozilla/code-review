@@ -345,6 +345,7 @@ class Workflow:
                     "try_name": base_conf.try_name,
                     "url": base_conf.url,
                     "try_url": base_conf.try_url,
+                    "head_branch": base_conf.head_branch,
                     # GitHub App credentials to generate short-lived push tokens
                     "github_app_id": settings.github.get("app_id"),
                     "github_app_privkey": settings.github.get("app_privkey"),

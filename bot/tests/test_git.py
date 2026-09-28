@@ -401,6 +401,18 @@ def test_head_branch_template(tmpdir, PhabricatorMock, mock_mc_git):
     assert repo.head_branch == "code-review/D{revision_id}"
     assert repo.render_push_branch(build) == "code-review/D5678"
 
+    # An unset repository head_branch reaches the config as None and still
+    # falls back to the default template
+    repo = GitRepository({**config, "head_branch": None}, str(tmpdir.realpath()))
+    assert repo.head_branch == "code-review/D{revision_id}"
+
+    # Environments pick their own pattern, e.g. the dev prefix
+    repo = GitRepository(
+        {**config, "head_branch": "dev/code-review/D{revision_id}"},
+        str(tmpdir.realpath()),
+    )
+    assert repo.render_push_branch(build) == "dev/code-review/D5678"
+
     # Static branch names are rendered unchanged
     assert mock_mc_git.render_push_branch(build) == "code-review"
 
