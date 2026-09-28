@@ -217,6 +217,7 @@ def test_workflow(
                 b"strip",
                 b"--rev=roots(outgoing())",
                 b"--force",
+                b"--no-backup",
             ],
         ),
         # Pull
