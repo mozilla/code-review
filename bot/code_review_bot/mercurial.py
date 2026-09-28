@@ -200,7 +200,13 @@ class MercurialRepository(BaseRepository):
             )
             # robustcheckout skips purging the working directory when
             # --noupdate is used, so purge it here instead.
+            logger.info("Purging working directory")
+            start = time.monotonic()
             self.repo.rawcommand([b"purge", b"--all", b"--no-confirm"])
+            logger.info(
+                "Purged working directory",
+                duration=round(time.monotonic() - start, 2),
+            )
         else:
             hglib.clone(self.url, self.dir)
         logger.info("Full checkout finished")
