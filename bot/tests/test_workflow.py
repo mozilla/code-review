@@ -13,6 +13,7 @@ import responses
 from libmozdata.phabricator import ConduitError
 from structlog.testing import capture_logs
 
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.config import Settings, TaskCluster
 from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
@@ -82,7 +83,10 @@ def test_find_issues_doc_upload_both_issues_and_notice(mock_workflow, mock_revis
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["doc-upload-task"]},
+            "remoteTryTask": {
+                "dependencies": ["doc-upload-task"],
+                "name": "code-review-issues",
+            },
             "doc-upload-task": {
                 "name": "source-test-doc-upload",
                 "artifacts": {
@@ -128,7 +132,10 @@ def test_find_issues_doc_upload_failure_reported_once(mock_workflow, mock_revisi
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["doc-upload-task"]},
+            "remoteTryTask": {
+                "dependencies": ["doc-upload-task"],
+                "name": "code-review-issues",
+            },
             "doc-upload-task": {
                 "name": "source-test-doc-upload",
                 "state": "failed",
@@ -273,7 +280,7 @@ def test_before_after(mock_taskcluster_config, mock_workflow, mock_task, mock_re
     # Set backend ID as the publication is disabled for tests
     mock_revision.id = 1337
     assert mock_revision.before_after_feature is True
-    mock_workflow.run(mock_revision)
+    mock_workflow.run(mock_revision, AnalysisMode.Lint)
     assert mock_workflow.publish.call_args_list == [
         mock.call(
             mock_revision,
