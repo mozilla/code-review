@@ -73,6 +73,33 @@ def test_robustcheckout(monkeypatch):
     ]
 
 
+def test_robust_clone_skips_update(monkeypatch, mock_mc):
+    """
+    The robust clone must not update the working directory, as it's
+    updated later on to the base revision of the patches, but it must
+    still purge untracked files left by a previous task
+    """
+    robust_checkout = MagicMock()
+    monkeypatch.setattr(mercurial, "robust_checkout", robust_checkout)
+
+    repo_dir = mock_mc.repo.root().decode("utf-8")
+    untracked = os.path.join(repo_dir, "untracked.txt")
+    with open(untracked, "w") as f:
+        f.write("leftover")
+
+    mock_mc.checkout_mode = "robust"
+    mercurial.MercurialRepository.clone(mock_mc)
+
+    robust_checkout.assert_called_once_with(
+        mock_mc.url,
+        mock_mc.dir,
+        mock_mc.share_base_dir,
+        branch=b"default",
+        noupdate=True,
+    )
+    assert not os.path.exists(untracked)
+
+
 LINT_EXTRA_PARAMS = {
     "enable_always_target": False,
     "optimize_target_tasks": True,
