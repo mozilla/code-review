@@ -81,7 +81,10 @@ def test_find_issues_doc_upload_both_issues_and_notice(mock_workflow, mock_revis
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["doc-upload-task"]},
+            "remoteTryTask": {
+                "dependencies": ["doc-upload-task"],
+                "name": "code-review-issues",
+            },
             "doc-upload-task": {
                 "name": "source-test-doc-upload",
                 "artifacts": {
@@ -127,7 +130,10 @@ def test_find_issues_doc_upload_failure_reported_once(mock_workflow, mock_revisi
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["doc-upload-task"]},
+            "remoteTryTask": {
+                "dependencies": ["doc-upload-task"],
+                "name": "code-review-issues",
+            },
             "doc-upload-task": {
                 "name": "source-test-doc-upload",
                 "state": "failed",

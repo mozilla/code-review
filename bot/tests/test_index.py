@@ -51,7 +51,6 @@ def test_taskcluster_index(mock_config, mock_workflow):
     assert args["data"]["test"] == "dummy"
     assert args["data"]["id"] == "1234"
     assert args["data"]["source"] == "try"
-    assert args["data"]["try_task_id"] == "remoteTryTask"
     assert args["data"]["try_group_id"] == "remoteTryGroup"
     assert args["data"]["repository"] == "test-repo"
     assert args["data"]["someData"] == "mock"
@@ -64,7 +63,6 @@ def test_taskcluster_index(mock_config, mock_workflow):
     assert args["data"]["test"] == "dummy"
     assert args["data"]["id"] == "1234"
     assert args["data"]["source"] == "try"
-    assert args["data"]["try_task_id"] == "remoteTryTask"
     assert args["data"]["try_group_id"] == "remoteTryGroup"
     assert args["data"]["repository"] == "test-repo"
     assert args["data"]["someData"] == "mock"
@@ -120,7 +118,6 @@ def test_index_autoland(
         "target_repository": "https://hg.mozilla.org/mozilla-unified",
         "title": "Changeset deadbeef123 (https://hg.mozilla.org/integration/autoland)",
         "try_group_id": "remoteTryGroup",
-        "try_task_id": "remoteTryTask",
         "url": None,
     }
     assert all([c[0][1]["data"] == payload for c in calls])
@@ -179,7 +176,6 @@ def test_index_phabricator(
         "target_repository": "https://hg.mozilla.org/mozilla-central",
         "title": "Static Analysis tests",
         "try_group_id": "remoteTryGroup",
-        "try_task_id": "remoteTryTask",
         "url": "https://phabricator.test/D51",
     }
     assert all([c[0][1]["data"] == payload for c in calls])
@@ -245,7 +241,6 @@ def test_index_from_try(
         "target_repository": "https://hg.mozilla.org/mozilla-central",
         "title": "Static Analysis tests",
         "try_group_id": "remoteTryGroup",
-        "try_task_id": "remoteTryTask",
         "url": "https://phabricator.test/D51",
     }
     assert all([c[0][1]["data"] == payload for c in calls])
@@ -287,7 +282,6 @@ def test_github_index(
         "state": "unit-test",
         "indexed": "2025-10-30T00:00:00.00Z",
         "source": "try",
-        "try_task_id": "remoteTryTask",
         "try_group_id": "remoteTryGroup",
         "monitoring_restart": False,
     }

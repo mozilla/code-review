@@ -750,7 +750,6 @@ class Workflow:
 
         # Always add the source and try config
         payload["source"] = "try"
-        payload["try_task_id"] = settings.try_task_id
         payload["try_group_id"] = settings.try_group_id
 
         # Add the repository we are working on for Phabricator revisions
@@ -859,9 +858,15 @@ class Workflow:
             rev is not None
         ), "Stopping early because revision could not be created nor retrieved from the backend"
 
+        task = None
+        for t in tasks.values():
+            if t["task"]["metadata"]["name"] == "code-review-issues":
+                task = t
+                break
+        else:
+            assert False, "No code-review-issues task"
+
         # Load task description
-        task = tasks.get(settings.try_task_id)
-        assert task is not None, f"Missing task {settings.try_task_id}"
         dependencies = task["task"]["dependencies"]
         assert len(dependencies) > 0, "No task dependencies to analyze"
 

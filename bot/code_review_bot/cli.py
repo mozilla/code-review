@@ -239,7 +239,7 @@ def main():
             else:
                 logger.info(
                     "Failed to load revision",
-                    task=settings.try_task_id,
+                    task=settings.try_group_id,
                     error=str(e),
                     phabricator=phabricator["url"],
                 )

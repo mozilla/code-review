@@ -43,7 +43,6 @@ class Settings:
         }
         self.app_channel = None
         self.taskcluster = None
-        self.try_task_id = None
         self.try_group_id = None
         self.generic_group_id = None
         self.phabricator_build_target = None
@@ -90,10 +89,6 @@ class Settings:
         taskcluster_parallel_requests=None,
     ):
         # Detect source from env
-        # publication mode for linting (we need to look specifically at
-        # the `code-review` task)
-        if "TRY_TASK_ID" in os.environ:
-            self.try_task_id = os.environ["TRY_TASK_ID"]
         # publication mode for builds & tests (we're looking at an entire
         # task group)
         if "TRY_TASK_GROUP_ID" in os.environ:
@@ -123,6 +118,7 @@ class Settings:
             self.taskcluster = TaskCluster(
                 tempfile.mkdtemp(), "local instance", 0, True
             )
+
         if not os.path.isdir(self.taskcluster.results_dir):
             os.makedirs(self.taskcluster.results_dir)
 

@@ -36,7 +36,10 @@ def test_parser(mock_workflow, mock_revision, mock_hgmo, mock_backend):
     """Test the default format parser"""
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
+            "remoteTryTask": {
+                "dependencies": ["analyzer-A", "analyzer-B"],
+                "name": "code-review-issues",
+            },
             "analyzer-A": {},
             "analyzer-B": {
                 "name": "any-analyzer-name",

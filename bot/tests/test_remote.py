@@ -46,7 +46,7 @@ def test_no_deps(
     """
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {},
+            "remoteTryTask": {"name": "code-review-issues"},
             "extra-task": {},
         }
     )
@@ -76,11 +76,13 @@ def test_baseline(
     # We run on a mock TC, with a try source
     if mock_config.taskcluster.local:
         assert mock_config.taskcluster.task_id == "local instance"
-        assert mock_config.try_task_id == "remoteTryTask"
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
+            "remoteTryTask": {
+                "dependencies": ["analyzer-A", "analyzer-B"],
+                "name": "code-review-issues",
+            },
             "analyzer-A": {
                 "name": "source-test-mozlint-flake8",
                 "state": "failed",
@@ -162,7 +164,10 @@ def test_no_failed(
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
+            "remoteTryTask": {
+                "dependencies": ["analyzer-A", "analyzer-B"],
+                "name": "code-review-issues",
+            },
             "analyzer-A": {},
             "analyzer-B": {},
             "extra-task": {},
@@ -182,7 +187,10 @@ def test_no_issues(
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["analyzer-A", "analyzer-B"]},
+            "remoteTryTask": {
+                "dependencies": ["analyzer-A", "analyzer-B"],
+                "name": "code-review-issues",
+            },
             "analyzer-A": {},
             "analyzer-B": {
                 "name": "source-test-mozlint-flake8",
@@ -215,7 +223,10 @@ def test_build_status_fail_on_error(
     """
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["mozlint"]},
+            "remoteTryTask": {
+                "dependencies": ["mozlint"],
+                "name": "code-review-issues",
+            },
             "mozlint": {
                 "name": "source-test-mozlint-dummy",
                 "state": "failed",
@@ -261,7 +272,10 @@ def test_build_status_pass_on_warning(
     """
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["mozlint"]},
+            "remoteTryTask": {
+                "dependencies": ["mozlint"],
+                "name": "code-review-issues",
+            },
             "mozlint": {
                 "name": "source-test-mozlint-dummy",
                 "state": "failed",
@@ -308,7 +322,10 @@ def test_unsupported_analyzer(
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["analyzer-X", "analyzer-Y"]},
+            "remoteTryTask": {
+                "dependencies": ["analyzer-X", "analyzer-Y"],
+                "name": "code-review-issues",
+            },
             "analyzer-X": {},
             "analyzer-Y": {
                 "name": "custom-analyzer-from-vendor",
@@ -335,7 +352,10 @@ def test_mozlint_task(
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["mozlint"]},
+            "remoteTryTask": {
+                "dependencies": ["mozlint"],
+                "name": "code-review-issues",
+            },
             "mozlint": {
                 "name": "source-test-mozlint-dummy",
                 "state": "failed",
@@ -393,7 +413,10 @@ def test_clang_tidy_task(
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["clang-tidy"]},
+            "remoteTryTask": {
+                "dependencies": ["clang-tidy"],
+                "name": "code-review-issues",
+            },
             "clang-tidy": {
                 "name": "source-test-clang-tidy",
                 "state": "completed",
@@ -500,7 +523,10 @@ def test_clang_format_task(
     )
 
     tasks = {
-        "remoteTryTask": {"dependencies": ["clang-format"]},
+        "remoteTryTask": {
+            "dependencies": ["clang-format"],
+            "name": "code-review-issues",
+        },
         "clang-format": {
             "name": "source-test-clang-format",
             "state": "completed",
@@ -573,7 +599,10 @@ def test_no_tasks(
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["decision", "someOtherDockerbuild"]},
+            "remoteTryTask": {
+                "dependencies": ["decision", "someOtherDockerbuild"],
+                "name": "code-review-issues",
+            },
         }
     )
     issues = mock_workflow.run(mock_revision)
@@ -599,7 +628,7 @@ def test_zero_coverage_option(
                     "GECKO_BASE_REV": "1234deadbeef",
                 },
             },
-            "remoteTryTask": {"dependencies": ["xxx"]},
+            "remoteTryTask": {"dependencies": ["xxx"], "name": "code-review-issues"},
             "zero-cov": {
                 "route": "project.relman.code-coverage.production.cron.latest",
                 "artifacts": {
@@ -634,7 +663,10 @@ def test_external_tidy_task(
 
     mock_workflow.setup_mock_tasks(
         {
-            "remoteTryTask": {"dependencies": ["clang-tidy-external"]},
+            "remoteTryTask": {
+                "dependencies": ["clang-tidy-external"],
+                "name": "code-review-issues",
+            },
             "clang-tidy-external": {
                 "name": "source-test-clang-external",
                 "state": "completed",
