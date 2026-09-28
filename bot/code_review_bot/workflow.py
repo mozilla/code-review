@@ -151,7 +151,8 @@ class Workflow:
 
             # Clone local repo when required
             # as find_previous_issues will build the hashes
-            self.clone_repository(revision)
+            if issues:
+                self.clone_repository(revision)
 
             # Mark know issues to avoid publishing them on this patch
             self.find_previous_issues(revision, issues, base_rev_changeset)
@@ -160,7 +161,7 @@ class Workflow:
                 f"Found {new_issues_count} new issues (over {len(issues)} total detected issues)",
                 task=settings.try_group_id,
             )
-        else:
+        elif issues:
             # Clone local repo when required
             # as publication need the hashes
             self.clone_repository(revision)
