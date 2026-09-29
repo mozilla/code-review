@@ -30,8 +30,8 @@ class PopenMock:
         return True
 
     def communicate(self):
-        out = self.stdout.content = "Hello world"
-        err = self.stderr.content = "An error occurred"
+        out = self.stdout.content = b"Hello world"
+        err = self.stderr.content = b"An error occurred"
         return out, err
 
     def __call__(self, command):
@@ -44,8 +44,8 @@ def test_hg_run(monkeypatch):
     monkeypatch.setattr("hglib.util.popen", popen_mock)
     mercurial.hg_run(["checkout", "https://hg.repo/", "--test"])
     assert popen_mock.command == ["hg", "checkout", "https://hg.repo/", "--test"]
-    assert popen_mock.stdout.content == "Hello world"
-    assert popen_mock.stderr.content == "An error occurred"
+    assert popen_mock.stdout.content == b"Hello world"
+    assert popen_mock.stderr.content == b"An error occurred"
 
 
 def test_robustcheckout(monkeypatch):
