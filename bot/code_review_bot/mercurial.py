@@ -403,7 +403,7 @@ class MercurialRepository(BaseRepository):
 
         # Every non-public changeset is local-only (the remote is publishing),
         # so there is no need for a round-trip to the remote using outgoing()
-        logger.info("Remove all mercurial drafts")
+        logger.info("Remove all non-public mercurial changesets")
         try:
             cmd = hglib.util.cmdbuilder(
                 b"strip",
