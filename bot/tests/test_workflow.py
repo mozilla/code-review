@@ -720,3 +720,48 @@ def test_cancel_previous_ignores_later_buildables(mock_config, mock_workflow):
     assert abort_calls(mock_workflow.phabricator) == [
         {"receiver": "PHID-HMBB-old", "type": "abort"}
     ]
+
+
+@pytest.mark.parametrize("before_after_ratio", [0, 1])
+@pytest.mark.parametrize("has_issues", [False, True])
+def test_clone_repository_skipped_without_issues(
+    mock_taskcluster_config,
+    mock_workflow,
+    mock_task,
+    mock_revision,
+    before_after_ratio,
+    has_issues,
+):
+    """
+    The local clone is only needed to build the issues hashes,
+    so it is skipped when there are no issues
+    """
+    mock_taskcluster_config.secrets = {"BEFORE_AFTER_RATIO": before_after_ratio}
+    issues = (
+        [
+            ClangFormatIssue(
+                mock_task(ClangFormatTask, "source-test-clang-format"),
+                "dom/file.cpp",
+                [(42, 42, b"This is a new warning.")],
+                mock_revision,
+            )
+        ]
+        if has_issues
+        else []
+    )
+    mock_workflow.publish = mock.Mock()
+    mock_workflow.find_issues = mock.Mock(return_value=(issues, [], [], []))
+    mock_workflow.find_previous_issues = mock.Mock()
+    mock_workflow.clone_repository = mock.Mock()
+    mock_workflow.queue_service.task = lambda x: {}
+    # Set backend ID as it is required by the before/after feature
+    mock_revision.id = 1337
+    assert mock_revision.before_after_feature is bool(before_after_ratio)
+
+    mock_workflow.run(mock_revision, AnalysisMode.Lint)
+
+    if has_issues:
+        mock_workflow.clone_repository.assert_called_once_with(mock_revision)
+    else:
+        mock_workflow.clone_repository.assert_not_called()
+    assert mock_workflow.find_previous_issues.called is bool(before_after_ratio)
