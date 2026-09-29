@@ -31,7 +31,7 @@ def hg_run(cmd):
     """
     Run a mercurial command without an hglib instance
     Useful for initial custom clones
-    Redirects stdout & stderr to python's logger
+    Caches stdout & stderr and only logs them if the command fails
 
     This code has been copied from the libmozevent library
     https://github.com/mozilla/libmozevent/blob/fd0b3689c50c3d14ac82302b31115d0046c6e7c8/libmozevent/utils.py#L77
@@ -44,8 +44,8 @@ def hg_run(cmd):
 
     # Start process
     main_cmd = cmd[0]
+    start = time.monotonic()
     proc = hglib.util.popen([hglib.HGPATH] + cmd)
-    memory_limit = 5 * 1024 * 102
     for output in (proc.stdout, proc.stderr):
         fcntl.fcntl(
             output.fileno(),
@@ -53,12 +53,8 @@ def hg_run(cmd):
             fcntl.fcntl(output, fcntl.F_GETFL) | os.O_NONBLOCK,
         )
     with (
-        tempfile.SpooledTemporaryFile(
-            max_size=memory_limit, mode="w+b"
-        ) as stdout_cache,
-        tempfile.SpooledTemporaryFile(
-            max_size=memory_limit, mode="w+b"
-        ) as stderr_cache,
+        tempfile.TemporaryFile(mode="w+b") as stdout_cache,
+        tempfile.TemporaryFile(mode="w+b") as stderr_cache,
     ):
         while proc.poll() is None:
             _cache_process_output(proc.stdout, stdout_cache)
@@ -73,6 +69,8 @@ def hg_run(cmd):
         if err:
             stderr_cache.write(err)
 
+        duration = round(time.monotonic() - start, 3)
+
         if proc.returncode != 0:
             stdout_cache.seek(0)
             stderr_cache.seek(0)
@@ -84,8 +82,11 @@ def hg_run(cmd):
                 f"Mercurial {main_cmd} failure",
                 out=out.decode("utf-8", errors="replace"),
                 err=err.decode("utf-8", errors="replace"),
+                duration=duration,
             )
             raise hglib.error.CommandError(cmd, proc.returncode, out, err)
+
+    logger.info(f"Mercurial {main_cmd} finished", duration=duration)
 
     return out
 
