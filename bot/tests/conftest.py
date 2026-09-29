@@ -1195,6 +1195,9 @@ def build_repository(tmpdir, name):
     repo.branch(name=b"default", force=True)
     repo.commit(message=b"Readme", user="test")
 
+    # Like a clone from a publishing remote, existing changesets are public
+    repo.phase(b".", public=True)
+
     # Mock push to avoid reaching try server
     repo.push = MagicMock(return_value=True)
     repo.rawcommand = MagicMock(wraps=repo.rawcommand)
