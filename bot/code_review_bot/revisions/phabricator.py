@@ -16,6 +16,7 @@ from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import InvalidRepository, InvalidTrigger
 from code_review_bot.config import (
+    PHABRICATOR_POLL_DELAYS,
     REPO_AUTOLAND,
     REPO_MOZILLA_CENTRAL,
     GetAppUserAgent,
@@ -284,16 +285,18 @@ class PhabricatorRevision(Revision):
         # This is the very first call on Phabricator API for that build, so we need to retry
         # a few times as the revision may not be immediately public
         buildable = None
-        for i in range(5):
+        tries = len(PHABRICATOR_POLL_DELAYS) + 1
+        for i, delay in enumerate((*PHABRICATOR_POLL_DELAYS, None)):
             try:
                 buildable = phabricator.find_target_buildable(build_target_phid)
                 break
             except Exception as e:
                 logger.info(
-                    f"Failed to load Harbormaster build on try {i+1}/5, will retry in 30 seconds",
+                    f"Failed to load Harbormaster build on try {i+1}/{tries}",
                     error=str(e),
                 )
-                time.sleep(30)
+                if delay is not None:
+                    time.sleep(delay)
         if buildable is None:
             logger.warning(
                 "Failed to load Harbormaster build, no more tries left. "

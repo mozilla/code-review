@@ -19,6 +19,10 @@ from code_review_bot.analysis import AnalysisMode
 REPO_MOZILLA_CENTRAL = "https://hg.mozilla.org/mozilla-central"
 REPO_AUTOLAND = "https://hg.mozilla.org/integration/autoland"
 
+# Delays (in seconds) between checks while waiting for a Phabricator build to be available.
+# Short at first as builds usually become available quickly, for a total of ~2.5 minutes.
+PHABRICATOR_POLL_DELAYS = (2, 3, 5, 10, 15, 25, 30, 30, 30)
+
 logger = structlog.get_logger(__name__)
 
 TaskCluster = collections.namedtuple(

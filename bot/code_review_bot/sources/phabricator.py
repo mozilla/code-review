@@ -2,9 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import collections
 import enum
-import time
 from datetime import datetime, timedelta
 
 import structlog
@@ -64,24 +62,9 @@ class PhabricatorActions:
     Common Phabricator actions shared across clients
     """
 
-    def __init__(
-        self, url, api_key, retries=5, sleep=10, build_expiry=timedelta(hours=24)
-    ):
+    def __init__(self, url, api_key, build_expiry=timedelta(hours=24)):
         self.api = PhabricatorAPI(url=url, api_key=api_key)
-
-        # Phabricator secure revision retries configuration
-        assert isinstance(retries, int)
-        assert isinstance(sleep, int)
-        self.max_retries = retries
-        self.retries = collections.defaultdict(lambda: (retries, None))
-        self.sleep = sleep
         self.build_expiry = build_expiry
-        logger.info(
-            "Will retry Phabricator secure revision queries",
-            retries=retries,
-            sleep=sleep,
-            build_expiry=build_expiry,
-        )
 
         # Load secure projects
         projects = self.api.search_projects(slugs=["secure-revision"])
@@ -90,33 +73,13 @@ class PhabricatorActions:
 
     def update_state(self, build):
         """
-        Check the visibility of the revision, by retrying N times with an exponential backoff time
-        This method is executed regularly by the client application to check on the status evolution
-        as the BMO daemon can take several minutes to update the status
+        Check the visibility of the revision and update the build state accordingly
         """
         assert isinstance(build, PhabricatorBuild)
 
         # Only when queued
         if build.state != PhabricatorBuildState.Queued:
             return
-
-        # Check this build has some retries left
-        retries_left, last_try = self.retries[build.target_phid]
-        if retries_left <= 0:
-            return
-
-        # Check this build has been awaited between tries
-        exp_backoff = (2 ** (self.max_retries - retries_left)) * self.sleep
-        now = time.time()
-        if last_try is not None and now - last_try < exp_backoff:
-            return
-
-        # Now we can check if this revision is public
-        retries_left -= 1
-        self.retries[build.target_phid] = (retries_left, now)
-        logger.info(
-            "Checking visibility status", build=str(build), retries_left=retries_left
-        )
 
         if self.is_visible(build):
             build.state = PhabricatorBuildState.Public
@@ -128,14 +91,9 @@ class PhabricatorActions:
                 build.state = PhabricatorBuildState.Expired
                 logger.info("Phabricator revision has expired", build=str(build))
 
-        elif retries_left <= 0:
-            # Mark as secured when no retries are left
+        else:
             build.state = PhabricatorBuildState.Secured
             logger.info("Phabricator revision is marked as secure", build=str(build))
-
-        else:
-            # Enqueue back to retry later
-            build.state = PhabricatorBuildState.Queued
 
     def is_visible(self, build):
         """

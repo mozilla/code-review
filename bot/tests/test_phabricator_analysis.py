@@ -15,7 +15,7 @@ from code_review_bot.analysis import (
     AnalysisMode,
     publish_analysis_phabricator,
 )
-from code_review_bot.config import RepositoryConf
+from code_review_bot.config import PHABRICATOR_POLL_DELAYS, RepositoryConf
 from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.sources.phabricator import PhabricatorActions
 
@@ -68,7 +68,8 @@ def test_revision_not_public(mock_phabricator, monkeypatch):
     must not raise, but return None so the caller can stop early
     """
     # Avoid waiting between retries
-    monkeypatch.setattr(time, "sleep", lambda _: None)
+    sleep_history = []
+    monkeypatch.setattr(time, "sleep", sleep_history.append)
 
     with mock_phabricator as api:
         api.find_target_buildable = mock.Mock(
@@ -81,7 +82,8 @@ def test_revision_not_public(mock_phabricator, monkeypatch):
         )
 
     assert revision is None
-    assert api.find_target_buildable.call_count == 5
+    assert api.find_target_buildable.call_count == len(PHABRICATOR_POLL_DELAYS) + 1
+    assert sleep_history == list(PHABRICATOR_POLL_DELAYS)
 
 
 def test_workflow_private_build(
@@ -103,11 +105,13 @@ def test_workflow_private_build(
     hgrun_calls = []
     monkeypatch.setattr(mercurial, "hg_run", lambda cmd: hgrun_calls.append(cmd))
 
-    # The build stays in its initial queued state
-    monkeypatch.setattr(PhabricatorActions, "update_state", lambda _, build: None)
+    # The revision is never visible
+    is_visible = mock.Mock(return_value=False)
+    monkeypatch.setattr(PhabricatorActions, "is_visible", is_visible)
 
     # Avoid waiting between retries
-    monkeypatch.setattr(time, "sleep", lambda _: None)
+    sleep_history = []
+    monkeypatch.setattr(time, "sleep", sleep_history.append)
 
     with mock_phabricator as api:
         mock_workflow.phabricator = api
@@ -118,6 +122,10 @@ def test_workflow_private_build(
         )
 
         assert mock_workflow.start_analysis(revision, AnalysisMode.Lint) is None
+
+    # The visibility was checked only once, without waiting
+    assert is_visible.call_count == 1
+    assert sleep_history == []
 
     # No clone nor push happened
     assert hgrun_calls == []
