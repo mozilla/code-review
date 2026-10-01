@@ -107,7 +107,7 @@ class BuildErrorsReporter(Reporter):
             }
         )
 
-    def publish(self, issues, revision, task_failures, links, reviewers):
+    def publish(self, issues, revision, task_failures, links, reviewers, analysis_mode):
         build_errors = [issue for issue in issues if issue.is_build_error()]
 
         if not build_errors:

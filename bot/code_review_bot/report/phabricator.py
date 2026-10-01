@@ -9,7 +9,8 @@ from urllib.parse import urljoin
 import structlog
 from libmozdata.phabricator import BuildState, PhabricatorAPI
 
-from code_review_bot import Issue, Level, stats
+from code_review_bot import BaseIssue, IssueType, Level, stats
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.backend import BackendAPI
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import PhabricatorRevision
@@ -70,7 +71,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff {diff
 
 logger = structlog.get_logger(__name__)
 
-Issues = List[Issue]
+Issues = List[BaseIssue]
 
 
 class PhabricatorReporter(Reporter):
@@ -163,7 +164,9 @@ class PhabricatorReporter(Reporter):
 
         return unresolved, closed
 
-    def publish(self, issues, revision, task_failures, notices, reviewers):
+    def publish(
+        self, issues, revision, task_failures, notices, reviewers, analysis_mode
+    ):
         """
         Publish issues on Phabricator:
         * publishable issues use lint results
@@ -213,11 +216,13 @@ class PhabricatorReporter(Reporter):
 
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
+        issue_type = IssueType.Lint
         publishable_issues = [
             issue
             for issue in issues
             if issue.is_publishable()
             and issue.analyzer.name not in self.analyzers_skipped
+            and issue.type_ == issue_type
         ]
         patches = [
             patch
@@ -243,35 +248,38 @@ class PhabricatorReporter(Reporter):
             diff["id"] for diff in rev_diffs if diff["id"] < revision.diff_id
         ]
         former_diff_id = sorted(older_diff_ids)[-1] if older_diff_ids else None
-        unresolved_issues, closed_issues = self.compare_issues(
-            former_diff_id, publishable_issues
-        )
 
-        if (
-            len(unresolved_issues) == len(publishable_issues)
-            and not closed_issues
-            and not task_failures
-            and not notices
-        ):
-            # Nothing changed, no issue have been opened or closed
-            logger.info(
-                "No new issues nor failures/notices were detected. "
-                "Skipping comment publication (some issues are unresolved)",
-                unresolved_count=len(unresolved_issues),
+        # Always publish a comment for build failures
+        if analysis_mode == AnalysisMode.Lint:
+            unresolved_issues, closed_issues = self.compare_issues(
+                former_diff_id, publishable_issues
             )
-            return publishable_issues, patches
 
-        # Publish comment summarizing detected, unresolved and closed issues
-        self.publish_summary(
-            revision,
-            publishable_issues,
-            patches,
-            task_failures,
-            notices,
-            former_diff_id=former_diff_id,
-            unresolved_count=len(unresolved_issues),
-            closed_count=len(closed_issues),
-        )
+            if (
+                len(unresolved_issues) == len(publishable_issues)
+                and not closed_issues
+                and not task_failures
+                and not notices
+            ):
+                # Nothing changed, no issue have been opened or closed
+                logger.info(
+                    "No new issues nor failures/notices were detected. "
+                    "Skipping comment publication (some issues are unresolved)",
+                    unresolved_count=len(unresolved_issues),
+                )
+                return publishable_issues, patches
+
+            # Publish comment summarizing detected, unresolved and closed issues
+            self.publish_summary(
+                revision,
+                publishable_issues,
+                patches,
+                task_failures,
+                notices,
+                former_diff_id=former_diff_id,
+                unresolved_count=len(unresolved_issues),
+                closed_count=len(closed_issues),
+            )
 
         # Publish statistics
         stats.add_metric("report.phabricator.issues", len(issues))
@@ -279,19 +287,20 @@ class PhabricatorReporter(Reporter):
 
         return publishable_issues, patches
 
-    def publish_harbormaster(
-        self, revision, lint_issues: Issues = [], unit_issues: Issues = []
-    ):
+    def publish_harbormaster(self, revision, issues: Issues = []):
         """
         Publish issues through HarborMaster
         either as lint results or unit tests results
         """
-        assert lint_issues or unit_issues, "No issues to publish"
+        assert issues, "No issues to publish"
+
+        lint_issues = [i for i in issues if i.type_ == IssueType.Lint]
+        unit_issues = []
 
         self.api.update_build_target(
             revision.build_target_phid,
             state=BuildState.Work,
-            lint=[issue.as_phabricator_lint() for issue in lint_issues],
+            lint=[issue.as_phabricator_issue() for issue in lint_issues],
             unit=[issue.as_phabricator_unitresult() for issue in unit_issues],
         )
         logger.info(

@@ -4,7 +4,7 @@
 
 import itertools
 
-from code_review_bot import Level
+from code_review_bot import IssueType, Level
 
 
 class Reporter:
@@ -52,7 +52,13 @@ class Reporter:
 
         def stats(analyzer, items):
             _items = list(items)
-            paths = list({i.path for i in _items if i.is_publishable()})
+            paths = list(
+                {
+                    i.path
+                    for i in _items
+                    if i.is_publishable() and i.type_ == IssueType.Lint
+                }
+            )
 
             publishable = sum(i.is_publishable() for i in _items)
             build_errors = sum(i.is_build_error() for i in _items)

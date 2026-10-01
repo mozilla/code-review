@@ -26,7 +26,9 @@ class GithubReporter(Reporter):
             self.analyzers_skipped, list
         ), "analyzers_skipped must be a list"
 
-    def publish(self, issues, revision, task_failures, notices, reviewers):
+    def publish(
+        self, issues, revision, task_failures, notices, reviewers, analysis_mode
+    ):
         """
         Publish issues on a Github pull request.
         """

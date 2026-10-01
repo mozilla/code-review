@@ -12,6 +12,7 @@ from requests.exceptions import HTTPError
 from structlog.testing import capture_logs
 
 from code_review_bot import Level
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.phabricator import PhabricatorReporter
 from code_review_bot.revisions import ImprovementPatch, PhabricatorRevision, Revision
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
@@ -291,7 +292,7 @@ def test_phabricator_clang_tidy(mock_phabricator, phab, mock_decision_task, mock
     )
     assert issue.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision, [], [], [])
+    issues, patches = reporter.publish([issue], revision, [], [], [], AnalysisMode.Lint)
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -333,7 +334,7 @@ def test_phabricator_clang_format(
     ]
     list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
-    issues, patches = reporter.publish([issue], revision, [], [], [])
+    issues, patches = reporter.publish([issue], revision, [], [], [], AnalysisMode.Lint)
     assert len(issues) == 1
     assert len(patches) == 1
 
@@ -393,7 +394,7 @@ def test_phabricator_mozlint(
     assert issue_eslint.is_publishable()
 
     issues, patches = reporter.publish(
-        [issue_flake, issue_eslint], revision, [], [], []
+        [issue_flake, issue_eslint], revision, [], [], [], AnalysisMode.Lint
     )
     assert len(issues) == 2
     assert len(patches) == 0
@@ -466,7 +467,7 @@ def test_phabricator_coverage(
     )
     assert issue.is_publishable()
 
-    issues, patches = reporter.publish([issue], revision, [], [], [])
+    issues, patches = reporter.publish([issue], revision, [], [], [], AnalysisMode.Lint)
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -585,7 +586,7 @@ def test_phabricator_clang_tidy_and_coverage(
     assert issue_coverage.is_publishable()
 
     issues, patches = reporter.publish(
-        [issue_clang_tidy, issue_coverage], revision, [], [], []
+        [issue_clang_tidy, issue_coverage], revision, [], [], [], AnalysisMode.Lint
     )
     assert len(issues) == 2
     assert len(patches) == 0
@@ -741,7 +742,7 @@ def test_phabricator_analyzers(
     ]
     list(map(lambda p: p.write(), revision.improvement_patches))  # trigger local write
 
-    issues, patches = reporter.publish(issues, revision, [], [], [])
+    issues, patches = reporter.publish(issues, revision, [], [], [], AnalysisMode.Lint)
 
     # Check issues & patches analyzers
     assert len(issues) == len(valid_issues)
@@ -787,7 +788,9 @@ def test_phabricator_clang_tidy_build_error(
 
         assert issue.is_publishable()
 
-        issues, patches = reporter.publish([issue], revision, [], [], [])
+        issues, patches = reporter.publish(
+            [issue], revision, [], [], [], AnalysisMode.Lint
+        )
         assert len(issues) == 1
         assert len(patches) == 0
 
@@ -848,7 +851,7 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_decision_task, mock
     assert revision.has_file(issue.path)
     assert revision.contains(issue)
 
-    issues, patches = reporter.publish([issue], revision, [], [], [])
+    issues, patches = reporter.publish([issue], revision, [], [], [], AnalysisMode.Lint)
     assert len(issues) == 1
     assert len(patches) == 0
 
@@ -896,7 +899,7 @@ def test_task_failures(mock_phabricator, phab, mock_decision_task):
         "status": {"runs": [{"runId": 0}]},
     }
     task = ClangTidyTask("ab3NrysvSZyEwsOHL2MZfw", status)
-    issues, patches = reporter.publish([], revision, [task], [], [])
+    issues, patches = reporter.publish([], revision, [task], [], [], AnalysisMode.Lint)
     assert len(issues) == 0
     assert len(patches) == 0
 
@@ -959,7 +962,9 @@ def test_extra_errors(mock_phabricator, mock_decision_task, phab, mock_task):
         ),
     ]
 
-    published_issues, patches = reporter.publish(all_issues, revision, [], [], [])
+    published_issues, patches = reporter.publish(
+        all_issues, revision, [], [], [], AnalysisMode.Lint
+    )
     assert len(published_issues) == 2
     assert len(patches) == 0
 
@@ -1023,6 +1028,7 @@ def test_phabricator_notices(mock_phabricator, phab, mock_decision_task):
         [],
         notices,
         [],
+        AnalysisMode.Lint,
     )
 
     # Check the comment has been posted
@@ -1041,6 +1047,7 @@ def test_phabricator_notices(mock_phabricator, phab, mock_decision_task):
         [],
         notices,
         [],
+        AnalysisMode.Lint,
     )
 
     # Check the comment has been posted
@@ -1075,6 +1082,7 @@ def test_phabricator_tgdiff(mock_phabricator, phab, mock_decision_task):
         [],
         [doc_notice],
         [],
+        AnalysisMode.Lint,
     )
 
     # Check the comment has been posted
@@ -1126,7 +1134,12 @@ def test_phabricator_external_tidy(
     assert not issue_clang_diagnostic.is_publishable()
 
     issues, patches = reporter.publish(
-        [issue_civet_warning, issue_clang_diagnostic], revision, [], [], []
+        [issue_civet_warning, issue_clang_diagnostic],
+        revision,
+        [],
+        [],
+        [],
+        AnalysisMode.Lint,
     )
     assert len(issues) == 1
     assert len(patches) == 0
@@ -1168,7 +1181,9 @@ def test_phabricator_newer_diff(
     with capture_logs() as cap_logs:
         os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
 
-        issues, patches = reporter.publish([issue], revision, [], [], [])
+        issues, patches = reporter.publish(
+            [issue], revision, [], [], [], AnalysisMode.Lint
+        )
 
         assert cap_logs == [
             # Log from PhabricatorReporter.publish_harbormaster(), it was still called
@@ -1302,7 +1317,9 @@ def test_phabricator_former_diff_comparison(
     os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
 
     with capture_logs() as cap_logs:
-        issues, patches = reporter.publish(issues, revision, [], [], [])
+        issues, patches = reporter.publish(
+            issues, revision, [], [], [], AnalysisMode.Lint
+        )
 
     assert cap_logs == [
         # Log from PhabricatorReporter.publish_harbormaster(), it was still called
@@ -1416,7 +1433,7 @@ def test_phabricator_before_after_comment(
 
     with capture_logs() as cap_logs:
         issues, patches = reporter.publish(
-            [cov_issue, clang_issue], revision, [], [], []
+            [cov_issue, clang_issue], revision, [], [], [], AnalysisMode.Lint
         )
 
     assert cap_logs == [

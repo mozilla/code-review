@@ -4,6 +4,7 @@
 import json
 import os.path
 
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 
 
@@ -21,7 +22,7 @@ def test_publication(tmpdir, mock_issues, mock_revision):
     task = ClangTidyTask("someTaskId", status)
 
     r = DebugReporter(report_dir)
-    r.publish(mock_issues, mock_revision, [task], [], [])
+    r.publish(mock_issues, mock_revision, [task], [], [], AnalysisMode.Lint)
 
     assert os.path.exists(report_path)
     with open(report_path) as f:

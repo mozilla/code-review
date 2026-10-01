@@ -5,13 +5,16 @@
 import structlog
 
 from code_review_bot import Level
+from code_review_bot.analysis import get_test_mode_string
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import PhabricatorRevision
 
 logger = structlog.get_logger(__name__)
 
-LANDO_MESSAGE = "The code review bot found {errors} {errors_noun} which should be fixed to avoid backout and {warnings} {warnings_noun}."
-LANDO_MESSAGE_WARNINGS_ONLY = "The code review bot found {warnings} {warnings_noun}."
+LANDO_MESSAGE = "{test_mode_string}: The code review bot found {errors} {errors_noun} which should be fixed to avoid backout and {warnings} {warnings_noun}."
+LANDO_MESSAGE_WARNINGS_ONLY = (
+    "{test_mode_string}: The code review bot found {warnings} {warnings_noun}."
+)
 
 
 class LandoReporter(Reporter):
@@ -26,7 +29,7 @@ class LandoReporter(Reporter):
         logger.info("Publishing warnings to lando is enabled by the bot!")
         self.lando_api = lando_api
 
-    def publish(self, issues, revision, task_failures, links, reviewers):
+    def publish(self, issues, revision, task_failures, links, reviewers, analysis_mode):
         """
         Send an email to administrators
         """
@@ -61,9 +64,15 @@ class LandoReporter(Reporter):
         try:
             # code-review.events sends an initial warning message to lando to specify that the analysis is in progress,
             # we should remove it
-            self.lando_api.del_all_warnings(
+            warnings = self.lando_api.get_warnings(
                 revision.phabricator_id, revision.diff["id"]
             )
+            test_mode_string = get_test_mode_string(analysis_mode)
+            to_delete = [
+                w for w in warnings if w["data"]["message"].startswith(test_mode_string)
+            ]
+            if to_delete:
+                self.lando_api.del_warnings(to_delete)
 
             if nb_publishable > 0:
                 if nb_publishable_errors >= 1:
@@ -77,6 +86,7 @@ class LandoReporter(Reporter):
                             warnings_noun="warning"
                             if nb_publishable_warnings == 1
                             else "warnings",
+                            test_mode_string=test_mode_string,
                         ),
                         revision.phabricator_id,
                         revision.diff["id"],
@@ -89,6 +99,7 @@ class LandoReporter(Reporter):
                             warnings_noun="warning"
                             if nb_publishable_warnings == 1
                             else "warnings",
+                            test_mode_string=test_mode_string,
                         ),
                         revision.phabricator_id,
                         revision.diff["id"],

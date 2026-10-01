@@ -52,7 +52,7 @@ def test_coverage(
         "hash": "c43a516d74b257b21495bc3183f0543e",
         "fix": None,
     }
-    assert issue.as_phabricator_lint() == {
+    assert issue.as_phabricator_issue() == {
         "code": "no-coverage",
         "line": 1,
         "name": "code coverage analysis",
@@ -101,7 +101,7 @@ This file is uncovered
         "hash": "79a322a555198ec03ccce3daf086ef81",
         "fix": None,
     }
-    assert issue.as_phabricator_lint() == {
+    assert issue.as_phabricator_issue() == {
         "code": "no-coverage",
         "line": 1,
         "name": "code coverage analysis",
@@ -147,7 +147,7 @@ This file is uncovered
         "hash": "db03e65242d5bf27abf532026f782d2d",
         "fix": None,
     }
-    assert issue.as_phabricator_lint() == {
+    assert issue.as_phabricator_issue() == {
         "code": "no-coverage",
         "line": 1,
         "name": "code coverage analysis",
