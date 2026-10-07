@@ -7,6 +7,7 @@ import json
 import pytest
 import responses
 
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 
@@ -108,7 +109,7 @@ def test_mail(
     list(
         map(lambda p: p.write(), mock_revision.improvement_patches)
     )  # trigger local write
-    r.publish(mock_issues, mock_revision, [], [], [])
+    r.publish(mock_issues, mock_revision, [], [], [], AnalysisMode.Lint)
 
     # Check stats
     assert r.calc_stats(mock_issues) == [

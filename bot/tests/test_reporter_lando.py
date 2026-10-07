@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.lando import LANDO_MESSAGE, LandoReporter
 
 MOCK_LANDO_API_URL = "http://api.lando.test"
@@ -17,17 +18,19 @@ class MockLandoWarnings:
         self.api_url = MOCK_LANDO_API_URL
         self.api_key = MOCK_LANDO_TOKEN
 
+    def get_warnings(self, revision_id, diff_id):
+        self.revision_id = revision_id
+        self.diff_id = diff_id
+
+        return []
+
     def del_warnings(self, warnings):
-        pass
+        self.warnings = warnings
 
     def add_warning(self, warning, revision_id, diff_id):
         self.revision_id = revision_id
         self.diff_id = diff_id
         self.warning = warning
-
-    def del_all_warnings(self, revision_id, diff_id):
-        self.revision_id = revision_id
-        self.diff_id = diff_id
 
 
 def test_lando(log, mock_clang_tidy_issues, mock_revision):
@@ -48,12 +51,16 @@ def test_lando(log, mock_clang_tidy_issues, mock_revision):
 
     assert log.has("Publishing warnings to lando is enabled by the bot!")
 
-    r.publish(mock_clang_tidy_issues, mock_revision, [], [], [])
+    r.publish(mock_clang_tidy_issues, mock_revision, [], [], [], AnalysisMode.Lint)
 
     assert lando_api.revision_id == mock_revision.revision["id"]
     assert lando_api.diff_id == mock_revision.diff_id
     assert lando_api.warning == LANDO_MESSAGE.format(
-        errors=1, errors_noun="error", warnings=0, warnings_noun="warnings"
+        errors=1,
+        errors_noun="error",
+        warnings=0,
+        warnings_noun="warnings",
+        test_mode_string="Static analysis and linting",
     )
 
     assert log.has("Publishing warnings to lando for 1 errors and 0 warnings")

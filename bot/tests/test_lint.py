@@ -83,7 +83,7 @@ def test_as_text(mock_config, mock_revision, mock_hgmo, mock_task):
         issue.as_text() == "Error: Dummy test withUppercaseChars [flake8: dummy rule]"
     )
 
-    assert issue.as_phabricator_lint() == {
+    assert issue.as_phabricator_issue() == {
         "char": 1,
         "code": "dummy rule",
         "line": 1,

@@ -10,6 +10,7 @@ import responses
 from conftest import FIXTURES_DIR
 from responses import matchers
 
+from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.builderrors import BuildErrorsReporter
 
 MAIL_CONTENT_BUILD_ERRORS = """
@@ -52,7 +53,7 @@ def test_builderrors_taskcluster(
     conf = {"emails": ["test@mozilla.com"]}
     r = BuildErrorsReporter(conf)
 
-    r.publish(mock_clang_tidy_issues, mock_revision, [], [], [])
+    r.publish(mock_clang_tidy_issues, mock_revision, [], [], [], AnalysisMode.Lint)
 
     assert log.has("Send build error email", to="test@mozilla.com")
 
@@ -96,4 +97,6 @@ def test_builderrors_github(
         ],
     )
     r = BuildErrorsReporter({})
-    r.publish(mock_clang_tidy_issues, mock_github_revision, [], [], [])
+    r.publish(
+        mock_clang_tidy_issues, mock_github_revision, [], [], [], AnalysisMode.Lint
+    )

@@ -25,7 +25,7 @@ from code_review_bot import (
     stats,
     taskcluster,
 )
-from code_review_bot.analysis import AnalysisMode
+from code_review_bot.analysis import AnalysisMode, get_test_mode_string
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import PhabricatorRevision, Revision
@@ -36,9 +36,7 @@ from code_review_bot.workflow import Workflow
 logger = structlog.get_logger(__name__)
 
 
-LANDO_FAILURE_MESSAGE = (
-    "Static analysis and linting did not run due to a generic failure."
-)
+LANDO_FAILURE_MESSAGE = "{test_mode_string} did not run due to a generic failure."
 
 
 def parse_cli():
@@ -186,6 +184,7 @@ def main():
     )
 
     revision = None
+    analysis_mode = None
     # Load unique revision
     try:
         if settings.generic_group_id:
@@ -217,7 +216,6 @@ def main():
                 phabricator_api,
             )
 
-            analysis_mode = None
             if parameters["target_tasks_method"] == "codereview":
                 analysis_mode = AnalysisMode.Lint
 
@@ -287,10 +285,22 @@ def main():
             )
         elif lando_publish_generic_failure:
             try:
-                lando_api.del_all_warnings(revision.id, revision.diff["id"])
-                lando_api.add_warning(
-                    LANDO_FAILURE_MESSAGE, revision.id, revision.diff["id"]
-                )
+                if analysis_mode:
+                    test_mode_string = get_test_mode_string(analysis_mode)
+                    warnings = lando_api.get_warnings(revision.id, revision.diff["id"])
+                    to_delete = [
+                        w
+                        for w in warnings
+                        if w["data"]["message"].startswith(test_mode_string)
+                    ]
+                    if to_delete:
+                        lando_api.del_warnings(to_delete)
+
+                    lando_api.add_warning(
+                        LANDO_FAILURE_MESSAGE.format(test_mode_string=test_mode_string),
+                        revision.id,
+                        revision.diff["id"],
+                    )
             except Exception as ex:
                 logger.error(str(ex), exc_info=True)
 
