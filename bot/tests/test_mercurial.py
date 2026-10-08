@@ -147,7 +147,6 @@ def test_robust_clone_skips_update(monkeypatch, mock_mc):
 
 
 LINT_EXTRA_PARAMS = {
-    "enable_always_target": False,
     "optimize_target_tasks": True,
     "target_tasks_method": "codereview",
 }
@@ -213,7 +212,6 @@ def test_push_to_try(PhabricatorMock, mock_mc, responses):
         "version": 2,
         "parameters": {
             "target_tasks_method": "codereview",
-            "enable_always_target": False,
             "optimize_target_tasks": True,
             "phabricator_diff": "PHID-HMBT-deadbeef",
         },
@@ -315,7 +313,6 @@ def test_push_to_try_existing_rev(PhabricatorMock, mock_mc):
         "version": 2,
         "parameters": {
             "target_tasks_method": "codereview",
-            "enable_always_target": False,
             "optimize_target_tasks": True,
             "phabricator_diff": "PHID-HMBT-deadbeef",
         },
@@ -664,7 +661,6 @@ def test_push_to_try_nss(PhabricatorMock, mock_nss):
     assert json.load(open(config)) == {
         "version": 2,
         "parameters": {
-            "enable_always_target": False,
             "optimize_target_tasks": True,
             "phabricator_diff": "PHID-HMBT-deadbeef",
             "target_tasks_method": "codereview",
