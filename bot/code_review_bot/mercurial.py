@@ -31,42 +31,62 @@ def hg_run(cmd):
     """
     Run a mercurial command without an hglib instance
     Useful for initial custom clones
-    Redirects stdout & stderr to python's logger
+    Caches stdout & stderr and only logs them if the command fails
 
     This code has been copied from the libmozevent library
     https://github.com/mozilla/libmozevent/blob/fd0b3689c50c3d14ac82302b31115d0046c6e7c8/libmozevent/utils.py#L77
     """
 
-    def _log_process(output, name):
-        # Read and display every line
-        out = output.read()
-        if out is None:
-            return
-        text = filter(None, out.decode("utf-8").splitlines())
-        for line in text:
-            logger.info(f"{name}: {line}")
+    def _cache_process_output(output, cache):
+        chunk = output.read()
+        if chunk:
+            cache.write(chunk)
 
     # Start process
     main_cmd = cmd[0]
+    start = time.monotonic()
     proc = hglib.util.popen([hglib.HGPATH] + cmd)
-
-    # Set process outputs as non blocking
     for output in (proc.stdout, proc.stderr):
         fcntl.fcntl(
             output.fileno(),
             fcntl.F_SETFL,
             fcntl.fcntl(output, fcntl.F_GETFL) | os.O_NONBLOCK,
         )
+    with (
+        tempfile.TemporaryFile(mode="w+b") as stdout_cache,
+        tempfile.TemporaryFile(mode="w+b") as stderr_cache,
+    ):
+        while proc.poll() is None:
+            _cache_process_output(proc.stdout, stdout_cache)
+            _cache_process_output(proc.stderr, stderr_cache)
+            time.sleep(2)
 
-    while proc.poll() is None:
-        _log_process(proc.stdout, main_cmd)
-        _log_process(proc.stderr, f"{main_cmd} (err)")
-        time.sleep(2)
+        out, err = proc.communicate()
 
-    out, err = proc.communicate()
-    if proc.returncode != 0:
-        logger.error(f"Mercurial {main_cmd} failure", out=out, err=err, exc_info=True)
-        raise hglib.error.CommandError(cmd, proc.returncode, out, err)
+        if out:
+            stdout_cache.write(out)
+
+        if err:
+            stderr_cache.write(err)
+
+        duration = round(time.monotonic() - start, 3)
+
+        if proc.returncode != 0:
+            stdout_cache.seek(0)
+            stderr_cache.seek(0)
+
+            out = stdout_cache.read()
+            err = stderr_cache.read()
+
+            logger.error(
+                f"Mercurial {main_cmd} failure",
+                out=out.decode("utf-8", errors="replace"),
+                err=err.decode("utf-8", errors="replace"),
+                duration=duration,
+            )
+            raise hglib.error.CommandError(cmd, proc.returncode, out, err)
+
+    logger.info(f"Mercurial {main_cmd} finished", duration=duration)
 
     return out
 
