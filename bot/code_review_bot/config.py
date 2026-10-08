@@ -105,6 +105,13 @@ class Settings:
         # task group)
         if "TRY_TASK_GROUP_ID" in os.environ:
             self.try_group_id = os.environ["TRY_TASK_GROUP_ID"]
+            mode = os.environ.get("ANALYSIS_MODE")
+            if mode is None:
+                raise Exception("ANALYSIS_MODE must be set in the env!")
+            try:
+                self.analysis_mode = AnalysisMode[mode]
+            except KeyError:
+                raise Exception(f"Invalid ANALYSIS_MODE: {mode}")
         # ingestion mode for production branches
         elif "GENERIC_TASK_GROUP_ID" in os.environ:
             self.generic_group_id = os.environ["GENERIC_TASK_GROUP_ID"]
@@ -116,9 +123,9 @@ class Settings:
             assert self.phabricator_build_target.startswith(
                 "PHID-HMBT"
             ), f"Not a phabrication build target PHID: {self.phabricator_build_target}"
-            # TODO: remove the default after we can be certain it will always be
-            # present
-            mode = os.environ.get("ANALYSIS_MODE", "Lint")
+            mode = os.environ.get("ANALYSIS_MODE")
+            if mode is None:
+                raise Exception("ANALYSIS_MODE must be set in the env!")
             try:
                 self.analysis_mode = AnalysisMode[mode]
             except KeyError:

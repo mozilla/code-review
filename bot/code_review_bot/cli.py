@@ -25,7 +25,7 @@ from code_review_bot import (
     stats,
     taskcluster,
 )
-from code_review_bot.analysis import AnalysisMode, get_test_mode_string
+from code_review_bot.analysis import get_test_mode_string
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import PhabricatorRevision, Revision
@@ -184,7 +184,6 @@ def main():
     )
 
     revision = None
-    analysis_mode = None
     # Load unique revision
     try:
         if settings.generic_group_id:
@@ -216,13 +215,7 @@ def main():
                 phabricator_api,
             )
 
-            if parameters["target_tasks_method"] == "codereview":
-                analysis_mode = AnalysisMode.Lint
-
-            if not analysis_mode:
-                raise Exception("Cannot detect analysis mode; cannot proceed!")
-
-            w.run(revision, analysis_mode)
+            w.run(revision, settings.analysis_mode)
 
     except InvalidTrigger as e:
         logger.info("Early stop analysis due to invalid trigger", error=str(e))
@@ -285,8 +278,8 @@ def main():
             )
         elif lando_publish_generic_failure:
             try:
-                if analysis_mode:
-                    test_mode_string = get_test_mode_string(analysis_mode)
+                if settings.analysis_mode:
+                    test_mode_string = get_test_mode_string(settings.analysis_mode)
                     warnings = lando_api.get_warnings(revision.id, revision.diff["id"])
                     to_delete = [
                         w

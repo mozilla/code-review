@@ -77,6 +77,7 @@ def mock_config(mock_repositories):
     os.environ["TRY_TASK_ID"] = "remoteTryTask"
     os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
     os.environ["BULK_ISSUE_CHUNKS"] = "10"
+    os.environ["ANALYSIS_MODE"] = "Lint"
     settings.setup(
         "test",
         ["dom/*", "tests/*.py", "test/*.c"],
