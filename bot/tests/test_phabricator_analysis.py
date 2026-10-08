@@ -202,7 +202,6 @@ def test_workflow(
     assert try_task.exists()
     assert json.load(try_task.open()) == {
         "parameters": {
-            "enable_always_target": False,
             "optimize_target_tasks": True,
             "phabricator_diff": "PHID-HMBT-test",
             "target_tasks_method": "codereview",

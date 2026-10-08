@@ -373,9 +373,6 @@ class Workflow:
         if analysis_mode == AnalysisMode.Lint:
             parameters.update(
                 {
-                    # The code review bot only consumes the results of the
-                    # code-review tasks, which the target tasks method already selects.
-                    "enable_always_target": False,
                     "target_tasks_method": "codereview",
                     "optimize_target_tasks": True,
                 }
