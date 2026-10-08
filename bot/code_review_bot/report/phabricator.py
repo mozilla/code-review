@@ -217,6 +217,8 @@ class PhabricatorReporter(Reporter):
         # Use only new and publishable issues and patches
         # Avoid publishing a patch from a de-activated analyzer
         issue_type = IssueType.Lint
+        if analysis_mode == AnalysisMode.BuildTest:
+            issue_type = IssueType.BuildTest
         publishable_issues = [
             issue
             for issue in issues
@@ -231,7 +233,7 @@ class PhabricatorReporter(Reporter):
         ]
 
         if publishable_issues:
-            # Publish detected patch's issues on Harbormaster, all at once, as lint issues
+            # Publish detected patch's issues on Harbormaster, all at once
             self.publish_harbormaster(revision, publishable_issues)
 
         # Retrieve all diffs for the current revision
@@ -279,6 +281,18 @@ class PhabricatorReporter(Reporter):
                 unresolved_count=len(unresolved_issues),
                 closed_count=len(closed_issues),
             )
+        else:
+            if publishable_issues:
+                self.publish_summary(
+                    revision,
+                    publishable_issues,
+                    [],
+                    [],
+                    None,
+                    former_diff_id=None,
+                    unresolved_count=0,
+                    closed_count=0,
+                )
 
         # Publish statistics
         stats.add_metric("report.phabricator.issues", len(issues))
@@ -294,7 +308,7 @@ class PhabricatorReporter(Reporter):
         assert issues, "No issues to publish"
 
         lint_issues = [i for i in issues if i.type_ == IssueType.Lint]
-        unit_issues = []
+        unit_issues = [i for i in issues if i.type_ == IssueType.BuildTest]
 
         self.api.update_build_target(
             revision.build_target_phid,
