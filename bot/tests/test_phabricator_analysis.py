@@ -12,8 +12,8 @@ from libmozdata.phabricator import BuildState, ConduitError
 
 from code_review_bot import mercurial
 from code_review_bot.analysis import (
-    AnalysisMode,
     LANDO_FAILURE_HG_MESSAGE,
+    AnalysisMode,
     PhabricatorRevisionBuild,
     publish_analysis_lando,
     publish_analysis_phabricator,
@@ -424,7 +424,7 @@ def test_start_analysis_selects_backend(
             build_target_phid="PHID-HMBT-test",
             phabricator=api,
         )
-        mock_workflow.start_analysis(revision)
+        mock_workflow.start_analysis(revision, AnalysisMode.Lint)
 
     if uses_git:
         assert git_repo.called and git_worker.called
@@ -477,6 +477,10 @@ def test_publish_analysis_lando_git_failure():
     build.diff_id = 42
 
     lando_api = mock.MagicMock()
-    publish_analysis_lando(("fail:git", build, {}), lando_api)
+    publish_analysis_lando(("fail:git", build, {}), lando_api, AnalysisMode.Lint)
 
-    lando_api.add_warning.assert_called_once_with(LANDO_FAILURE_HG_MESSAGE, 51, 42)
+    lando_api.add_warning.assert_called_once_with(
+        LANDO_FAILURE_HG_MESSAGE.format(test_mode_string="Static analysis and linting"),
+        51,
+        42,
+    )

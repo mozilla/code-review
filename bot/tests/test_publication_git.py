@@ -18,34 +18,38 @@ GIT_ENV = {
 }
 
 
-def test_from_try_task_git_pull_request(monkeypatch):
+def test_from_try_decision_task_git_pull_request(monkeypatch):
     """A git revision with a pull request number is a Github revision."""
     monkeypatch.setattr(GithubRevision, "load_patch", lambda self: "patch")
     decision_task = {
         "payload": {"env": {**GIT_ENV, "GECKO_PULL_REQUEST_NUMBER": "123"}}
     }
 
-    revision = Revision.from_try_task({"extra": {}}, decision_task, None)
+    revision = Revision.from_try_decision_task(decision_task, None, None)
 
     assert isinstance(revision, GithubRevision)
     assert revision.repository_type == "git"
     assert revision.pull_number == 123
 
 
-def test_from_try_task_git_push(monkeypatch):
+def test_from_try_decision_task_git_push(monkeypatch):
     """A git push without a pull request is handled as a Phabricator revision."""
     calls = []
     monkeypatch.setattr(
         PhabricatorRevision,
-        "from_try_task",
-        lambda code_review, decision_task, phabricator: calls.append(code_review)
+        "from_try_decision_task",
+        lambda decision_task, build_target_phid, phabricator: calls.append(
+            build_target_phid
+        )
         or "phab-revision",
     )
     decision_task = {"payload": {"env": dict(GIT_ENV)}}
-    try_task = {"extra": {"code-review": {"phabricator-diff": "PHID-HMBT-x"}}}
 
-    assert Revision.from_try_task(try_task, decision_task, None) == "phab-revision"
-    assert calls == [{"phabricator-diff": "PHID-HMBT-x"}]
+    assert (
+        Revision.from_try_decision_task(decision_task, "PHID-HMBT-x", None)
+        == "phab-revision"
+    )
+    assert calls == ["PHID-HMBT-x"]
 
 
 def test_phabricator_revision_repository_type(mock_config):
@@ -100,7 +104,7 @@ def test_clone_repository_follows_repository_type(mock_workflow, monkeypatch, tm
         head_changeset="b" * 40,
     )
     mock_workflow.clone_available = False
-    mock_workflow.clone_repository(revision)
+    mock_workflow.clone_repository(revision, [])
     assert git_clone.call_count == 1
     assert robust_checkout.call_count == 0
     assert git_clone.call_args.kwargs == {
@@ -112,6 +116,6 @@ def test_clone_repository_follows_repository_type(mock_workflow, monkeypatch, tm
 
     revision.repository_type = "hg"
     mock_workflow.clone_available = False
-    mock_workflow.clone_repository(revision)
+    mock_workflow.clone_repository(revision, [])
     assert git_clone.call_count == 1
     assert robust_checkout.call_count == 1

@@ -12,6 +12,11 @@ from git.exc import GitCommandError
 from code_review_bot.git import GitRepository, GitWorker
 from code_review_bot.vcs import MAX_PUSH_RETRIES, BaseWorker
 
+LINT_EXTRA_PARAMS = {
+    "optimize_target_tasks": True,
+    "target_tasks_method": "codereview",
+}
+
 # A diff whose base revision exists neither in Git nor Mercurial: patches will be
 # applied on the repository's default revision (mirrors the Mercurial tests).
 DIFF = {
@@ -107,7 +112,7 @@ def test_add_try_commit(PhabricatorMock, mock_mc_git):
     """try_task_config.json is written and committed by the bot author."""
     build = make_build(PhabricatorMock)
     mock_mc_git.apply_build(build)
-    mock_mc_git.add_try_commit(build)
+    mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS)
 
     config_path = os.path.join(mock_mc_git.dir, "try_task_config.json")
     assert os.path.exists(config_path)
@@ -135,7 +140,7 @@ def test_push_to_try(PhabricatorMock, mock_mc_git):
     """push_to_try pushes the prepared HEAD to the configured branch/remote."""
     build = make_build(PhabricatorMock)
     mock_mc_git.apply_build(build)
-    mock_mc_git.add_try_commit(build)
+    mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS)
 
     pushed = mock_mc_git.push_to_try()
 
@@ -174,7 +179,7 @@ def test_clean_drops_previous_build(PhabricatorMock, mock_mc_git):
     # First build: apply the stack and the try_task_config commit
     build = make_build(PhabricatorMock)
     mock_mc_git.apply_build(build)
-    mock_mc_git.add_try_commit(build)
+    mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS)
 
     # Those commits live on a detached HEAD; the branch has not moved
     assert mock_mc_git.repo.head.is_detached
@@ -242,7 +247,7 @@ def test_worker_failure_git(PhabricatorMock, mock_mc_git):
     mock_mc_git.apply_build = MagicMock(side_effect=error)
 
     worker = GitWorker()
-    mode, out_build, details = worker.run(mock_mc_git, build)
+    mode, out_build, details = worker.run(mock_mc_git, build, LINT_EXTRA_PARAMS)
 
     assert mode == "fail:git"
     assert out_build is build
@@ -308,7 +313,7 @@ def test_worker_run_success(PhabricatorMock, mock_mc_git):
     build = make_build(PhabricatorMock)
 
     worker = GitWorker()
-    result = worker.run(mock_mc_git, build)
+    result = worker.run(mock_mc_git, build, LINT_EXTRA_PARAMS)
 
     tip = mock_mc_git.repo.head.commit
     assert result == (
@@ -335,7 +340,7 @@ def test_worker_skippable(PhabricatorMock, mock_mc_git):
     build = make_build(PhabricatorMock)
 
     worker = GitWorker(skippable_files=["test.txt"])
-    mode, out_build, details = worker.run(mock_mc_git, build)
+    mode, out_build, details = worker.run(mock_mc_git, build, LINT_EXTRA_PARAMS)
 
     assert mode == "fail:ineligible"
     assert out_build is build
@@ -352,7 +357,7 @@ def test_worker_failure_general(PhabricatorMock, mock_mc_git):
     mock_mc_git.apply_build = MagicMock(side_effect=Exception("boom"))
 
     worker = GitWorker()
-    mode, out_build, details = worker.run(mock_mc_git, build)
+    mode, out_build, details = worker.run(mock_mc_git, build, LINT_EXTRA_PARAMS)
 
     assert mode == "fail:general"
     assert details["message"] == "boom"
@@ -379,7 +384,7 @@ def test_worker_retry_no_treestatus(PhabricatorMock, mock_mc_git, monkeypatch):
     # The Git worker keeps the default no-op hook: no treestatus gate
     assert GitWorker.wait_try_available is BaseWorker.wait_try_available
 
-    mode, out_build, details = worker.run(mock_mc_git, build)
+    mode, out_build, details = worker.run(mock_mc_git, build, LINT_EXTRA_PARAMS)
 
     assert mode == "fail:git"
     # Initial attempt + one per retry
@@ -434,7 +439,7 @@ def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):
     build = make_build(PhabricatorMock)
 
     worker = GitWorker()
-    mode, _, _ = worker.run(mock_mc_git, build)
+    mode, _, _ = worker.run(mock_mc_git, build, LINT_EXTRA_PARAMS)
     assert mode == "success"
 
     tip = mock_mc_git.repo.head.commit
