@@ -1,9 +1,9 @@
-Django==6.1.1
+Django==6.1.2
 django-cors-headers==4.9.0
 django-environ==0.14.0
 djangorestframework==3.18.1
 dockerflow==2026.3.4
-drf-yasg==1.21.15
+drf-yasg==1.21.17
 gunicorn==26.2.0
 parsepatch==0.1.3
 psycopg2-binary==2.9.13
