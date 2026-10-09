@@ -292,11 +292,11 @@ class GitRepository(BaseRepository):
                 f"Invalid head_branch template {self.head_branch!r}: {e}"
             ) from e
 
-    def add_try_commit(self, build):
+    def add_try_commit(self, build, extra_parameters):
         # Rendered before the try commit so a bad template fails ahead of any
         # remote interaction
         self.push_branch = self.render_push_branch(build)
-        super().add_try_commit(build)
+        super().add_try_commit(build, extra_parameters)
 
     def push_to_try(self):
         """Push the current HEAD to the remote try repository."""
