@@ -46,6 +46,9 @@ from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
+from code_review_bot.tools.taskcluster import (
+    load_task_group,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -959,9 +962,7 @@ class Workflow:
         Find all issues on remote Taskcluster task group
         """
         # Load all tasks in task group
-        tasks = self.queue_service.listTaskGroup(group_id)
-        assert "tasks" in tasks
-        tasks = {task["status"]["taskId"]: task for task in tasks["tasks"]}
+        tasks = load_task_group(self.queue_service, group_id)
         assert len(tasks) > 0
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
 
@@ -1077,13 +1078,7 @@ class Workflow:
         return issues, task_failures, notices, reviewers
 
     def find_build_test_issues(self, revision, group_id):
-        tasks = {}
-
-        def _load_tasks(page):
-            assert "tasks" in page
-            tasks.update({task["status"]["taskId"]: task for task in page["tasks"]})
-
-        self.queue_service.listTaskGroup(group_id, paginationHandler=_load_tasks)
+        tasks = load_task_group(self.queue_service, group_id)
         assert len(tasks) > 0
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
 
