@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import base64
+import copy
 import json
 import re
 from collections import defaultdict
@@ -32,6 +33,7 @@ from code_review_bot.mercurial import (
 )
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import GithubRevision, PhabricatorRevision, Revision
+from code_review_bot.revisions.phabricator import find_build_test_target
 from code_review_bot.sources.phabricator import (
     PhabricatorActions,
     PhabricatorBuildState,
@@ -326,17 +328,13 @@ class Workflow:
         # Publish issues in the backend
         self.backend_api.publish_issues(issues, revision)
 
-    def start_analysis(
-        self, revision: PhabricatorRevision, analysis_mode: AnalysisMode
-    ):
+    def start_analysis(self, revision: PhabricatorRevision):
         """
         Apply a patch on a local clone and push to try to trigger a new Code review analysis
         """
         logger.info("Starting revision analysis", revision=revision)
 
-        namespace_suffixes = ["", "lint"]
-        if analysis_mode == AnalysisMode.BuildTest:
-            namespace_suffixes = ["build-test"]
+        namespace_suffixes = ["", "lint", "build-test"]
 
         # Index ASAP Taskcluster task for this revision
         self.index(revision, state="analysis", namespace_suffixes=namespace_suffixes)
@@ -411,26 +409,18 @@ class Workflow:
         # We'll clone the required repository
         repository.clone()
 
-        parameters = {}
-        if analysis_mode == AnalysisMode.Lint:
-            parameters.update(
-                {
-                    # The code review bot only consumes the results of the
-                    # code-review tasks, which the target tasks method already selects.
-                    "enable_always_target": False,
-                    "target_tasks_method": "codereview",
-                    "optimize_target_tasks": True,
-                }
-            )
-        elif analysis_mode == AnalysisMode.BuildTest:
-            parameters.update(
-                {
-                    "target_tasks_method": "codereview-build-test",
-                    "optimize_target_tasks": True,
-                    # avoid firing unwanted tasks, eg: source-test
-                    "enable_always_target": False,
-                }
-            )
+        if revision.build_test_feature:
+            target_tasks_method = "codereview-lint-build-test"
+        else:
+            target_tasks_method = "codereview"
+
+        parameters = {
+            # The code review bot only consumes the results of the
+            # code-review tasks, which the target tasks method already selects.
+            "enable_always_target": False,
+            "target_tasks_method": target_tasks_method,
+            "optimize_target_tasks": True,
+        }
 
         # Apply the stack of patches and push to try
         worker = MercurialWorker()
@@ -449,13 +439,27 @@ class Workflow:
         # Update final state using worker output
         if self.update_build and isinstance(revision, PhabricatorRevision):
             publish_analysis_phabricator(output, self.phabricator)
+            build_test_target_phid = find_build_test_target(
+                self.phabricator, revision.build_target_phid
+            )
+            if revision.build_test_feature:
+                mode, output_build, extras = output
+                build_test_build = copy.copy(output_build)
+                build_test_build.target_phid = build_test_target_phid
+                publish_analysis_phabricator(
+                    (mode, build_test_build, extras), self.phabricator
+                )
         else:
             logger.info("Skipping Phabricator publication")
 
         # Send Build in progress or errors to Lando
         lando_reporter = self.reporters.get("lando")
         if lando_reporter is not None:
-            publish_analysis_lando(output, lando_reporter.lando_api, analysis_mode)
+            publish_analysis_lando(output, lando_reporter.lando_api, AnalysisMode.Lint)
+            if revision.build_test_feature:
+                publish_analysis_lando(
+                    output, lando_reporter.lando_api, AnalysisMode.BuildTest
+                )
         else:
             logger.info("Skipping Lando publication")
 
