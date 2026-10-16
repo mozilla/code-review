@@ -18,11 +18,25 @@ LANDO_FAILURE_HG_MESSAGE = (
 
 class AnalysisMode(enum.Enum):
     Lint = 1
+    BuildTest = 2
 
 
 def get_test_mode_string(analysis_mode: AnalysisMode):
     if analysis_mode == AnalysisMode.Lint:
         return "Static analysis and linting"
+    elif analysis_mode == AnalysisMode.BuildTest:
+        return "Builds and tests"
+    else:
+        raise NotImplementedError
+
+
+def get_issue_type(analysis_mode: AnalysisMode):
+    from code_review_bot import IssueType
+
+    if analysis_mode == AnalysisMode.Lint:
+        return IssueType.Lint
+    elif analysis_mode == AnalysisMode.BuildTest:
+        return IssueType.BuildTest
     else:
         raise NotImplementedError
 

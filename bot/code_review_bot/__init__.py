@@ -68,6 +68,7 @@ class Level(enum.Enum):
 
 class IssueType(enum.Enum):
     Lint = 1
+    BuildTest = 2
 
 
 class BaseIssue(abc.ABC):

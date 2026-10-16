@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import pytest
 import rs_parsepatch
 
 
@@ -229,3 +230,26 @@ def test_revision_before_after(mock_config, mock_revision, mock_taskcluster_conf
     assert mock_revision.before_after_feature is True
     mock_revision.phabricator_id = 42
     assert mock_revision.before_after_feature is False
+
+
+def test_revision_build_test(mock_config, mock_revision, mock_taskcluster_config):
+    mock_taskcluster_config.secrets["BUILD_TEST_ANALYSIS_RATIO"] = 0.5
+    mock_revision.phabricator_id = 1
+    assert mock_revision.build_test_feature is False
+    mock_revision.phabricator_id = 2
+    assert mock_revision.build_test_feature is True
+
+
+@pytest.mark.parametrize(
+    "secrets, expected",
+    [
+        ({}, False),
+        ({"BUILD_TEST_ANALYSIS_RATIO": 0}, False),
+        ({"BUILD_TEST_ANALYSIS_RATIO": 1}, True),
+    ],
+)
+def test_revision_build_test_ratio(
+    mock_config, mock_revision, mock_taskcluster_config, secrets, expected
+):
+    mock_taskcluster_config.secrets = secrets
+    assert mock_revision.build_test_feature is expected

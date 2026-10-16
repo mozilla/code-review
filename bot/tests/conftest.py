@@ -126,7 +126,13 @@ def mock_task():
     """Build configuration for any Analysis task"""
 
     def _build(cls, name):
-        return cls(f"{name}-ID", {"task": {"metadata": {"name": name}}, "status": {}})
+        return cls(
+            f"{name}-ID",
+            {
+                "task": {"metadata": {"name": name}},
+                "status": {"runs": [{"runId": 0}]},
+            },
+        )
 
     return _build
 
@@ -607,13 +613,16 @@ class MockQueue:
     def status(self, task_id):
         return self._status[task_id]
 
-    def listTaskGroup(self, group_id):
-        return {
-            "tasks": [
-                {"task": self.task(task_id), "status": self.status(task_id)["status"]}
-                for task_id in self._tasks.keys()
-            ]
-        }
+    def listTaskGroup(self, group_id, paginationHandler=None):
+        tasks = [
+            {"task": self.task(task_id), "status": self.status(task_id)["status"]}
+            for task_id in self._tasks.keys()
+        ]
+        if paginationHandler is None:
+            return {"tasks": tasks}
+
+        for task in tasks:
+            paginationHandler({"tasks": [task]})
 
     def listArtifacts(self, task_id, run_id):
         return self._artifacts.get(task_id, {})

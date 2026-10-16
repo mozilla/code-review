@@ -115,6 +115,7 @@ def test_mail(
     assert r.calc_stats(mock_issues) == [
         {
             "analyzer": "mock-analyzer",
+            "log": "https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/mock-analyzer-ID/runs/0/artifacts/public/logs/live_backing.log",
             "help": None,
             "total": 5,
             "publishable": 3,

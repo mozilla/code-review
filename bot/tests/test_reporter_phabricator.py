@@ -15,6 +15,7 @@ from code_review_bot import Level
 from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.phabricator import PhabricatorReporter
 from code_review_bot.revisions import ImprovementPatch, PhabricatorRevision, Revision
+from code_review_bot.tasks.build import BuildIssue, BuildTask
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import (
@@ -27,9 +28,23 @@ from code_review_bot.tasks.docupload import COMMENT_LINK_TO_DOC
 from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
 
+VALID_BUILD_TEST_MESSAGE = """
+Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+ - 1 build error found by [build-linux64/opt](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/build-linux64/opt-ID/runs/0/artifacts/public/logs/live_backing.log)
+
+IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
+
+
+---
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+"""
+
 VALID_CLANG_TIDY_MESSAGE = """
 Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 defect found by clang-tidy
+ - 1 defect found by [clang-tidy](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-tidy-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
 
@@ -46,7 +61,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 
 VALID_BUILD_ERROR_MESSAGE = """
 Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 build error found by clang-tidy
+ - 1 build error found by [clang-tidy](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/mock-clang-tidy-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
 
@@ -63,7 +78,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 
 VALID_CLANG_FORMAT_MESSAGE = """
 Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 defect found by clang-format
+ - 1 defect found by [clang-format](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-format-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
 
@@ -82,8 +97,8 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 
 VALID_FLAKE8_MESSAGE = """
 Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 defect found by eslint (Mozlint)
- - 1 defect found by py-flake8 (Mozlint)
+ - 1 defect found by [eslint (Mozlint)](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-mozlint-eslint-ID/runs/0/artifacts/public/logs/live_backing.log)
+ - 1 defect found by [py-flake8 (Mozlint)](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-mozlint-py-flake8-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
 
@@ -102,7 +117,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 
 VALID_COVERAGE_MESSAGE = """
 Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 defect found by code coverage analysis
+ - 1 defect found by [code coverage analysis](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/coverage-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
 
@@ -122,7 +137,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 
 VALID_DEFAULT_MESSAGE = """
 Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 defect found by full-file-analyzer
+ - 1 defect found by [full-file-analyzer](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/full-file-analyzer-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
 
@@ -146,7 +161,7 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_MOZLINT_MESSAGE = """
 Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 2 defects found by dummy (Mozlint)
+ - 2 defects found by [dummy (Mozlint)](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-mozlint-dummy-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
 
@@ -165,8 +180,8 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 
 VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
 Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 defect found by clang-tidy
- - 1 defect found by code coverage analysis
+ - 1 defect found by [clang-tidy](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-tidy-ID/runs/0/artifacts/public/logs/live_backing.log)
+ - 1 defect found by [code coverage analysis](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/coverage-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 2 defects (warning level) that can be dismissed.
 
@@ -198,7 +213,7 @@ If you see a problem in this automated review, [please report it here](https://b
 
 VALID_EXTERNAL_TIDY_MESSAGE = """
 Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 defect found by private static analysis
+ - 1 defect found by [private static analysis](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-external-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
 
@@ -223,8 +238,8 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 
 FOLLOW_UP_DIFF_MESSAGE = """
 Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 defect found by clang-format
- - 1 defect found by code coverage analysis
+ - 1 defect found by [clang-format](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-format-ID/runs/0/artifacts/public/logs/live_backing.log)
+ - 1 defect found by [code coverage analysis](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/coverage-ID/runs/0/artifacts/public/logs/live_backing.log)
 1 defect unresolved and 1 defect closed compared to the previous diff [41](https://phabricator.services.mozilla.com/differential/diff/41/).
 
 WARNING: Found 2 defects (warning level) that can be dismissed.
@@ -247,7 +262,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 
 VALID_CLANG_BEFORE_AFTER_MESSAGE = """
 Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
- - 1 defect found by clang-format
+ - 1 defect found by [clang-format](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-format-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
 
@@ -1474,3 +1489,146 @@ def test_phabricator_before_after_comment(
     ]
 
     assert phab.comments[51] == [VALID_CLANG_BEFORE_AFTER_MESSAGE]
+
+
+def test_phabricator_build_test(
+    mock_config,
+    mock_phabricator,
+    mock_taskcluster_config,
+    phab,
+    mock_decision_task,
+    mock_task,
+):
+    mock_taskcluster_config.secrets = {}
+    with mock_phabricator as api:
+        revision = Revision.from_try_decision_task(
+            mock_decision_task, "PHID-HMBT-test", api
+        )
+        assert isinstance(revision, PhabricatorRevision)
+        revision.lines = {"python/test.py": [41, 42, 43]}
+        revision.files = revision.lines.keys()
+        revision.id = 52
+        reporter = PhabricatorReporter({}, api=api)
+
+    build_issue = BuildIssue(
+        task_id="failedBuildId",
+        analyzer=mock_task(BuildTask, "build-linux64/opt"),
+        revision=revision,
+        level=Level.Error,
+        message="build failed: build-linux64/opt ",
+    )
+    lint_issue = MozLintIssue(
+        analyzer=mock_task(MozLintTask, "source-test-mozlint-py-flake8"),
+        path="python/test.py",
+        lineno=42,
+        column=1,
+        message="A bad bad error",
+        level="error",
+        revision=revision,
+        linter="flake8",
+        check="EXXX",
+    )
+    assert lint_issue.is_publishable()
+
+    issues, patches = reporter.publish(
+        [build_issue, lint_issue], revision, [], [], [], AnalysisMode.BuildTest
+    )
+    assert issues == [build_issue]
+    assert patches == []
+
+    assert phab.build_messages["PHID-HMBT-test"] == [
+        {
+            "receiver": "PHID-HMBT-test",
+            "lint": [],
+            "type": "work",
+            "unit": [build_issue.as_phabricator_issue()],
+        }
+    ]
+    assert phab.comments[51] == [VALID_BUILD_TEST_MESSAGE]
+
+
+def test_phabricator_build_test_without_issues(
+    mock_config,
+    mock_phabricator,
+    mock_taskcluster_config,
+    phab,
+    mock_decision_task,
+):
+    mock_taskcluster_config.secrets = {}
+    with mock_phabricator as api:
+        revision = Revision.from_try_decision_task(
+            mock_decision_task, "PHID-HMBT-test", api
+        )
+        revision.id = 52
+        reporter = PhabricatorReporter({}, api=api)
+
+    issues, patches = reporter.publish([], revision, [], [], [], AnalysisMode.BuildTest)
+    assert issues == []
+    assert patches == []
+
+    assert phab.build_messages["PHID-HMBT-test"] == []
+    assert phab.comments[51] == []
+
+
+def test_phabricator_build_test_task_failure(
+    mock_config,
+    mock_phabricator,
+    mock_taskcluster_config,
+    phab,
+    mock_decision_task,
+    mock_task,
+):
+    mock_taskcluster_config.secrets = {}
+    with mock_phabricator as api:
+        revision = Revision.from_try_decision_task(
+            mock_decision_task, "PHID-HMBT-test", api
+        )
+        revision.id = 52
+        reporter = PhabricatorReporter({}, api=api)
+
+    task = mock_task(BuildTask, "build-linux64/opt")
+    issues, patches = reporter.publish(
+        [], revision, [task], [], [], AnalysisMode.BuildTest
+    )
+    assert issues == []
+    assert patches == []
+
+    assert phab.build_messages["PHID-HMBT-test"] == []
+    assert len(phab.comments[51]) == 1
+    assert (
+        "The analysis task [build-linux64/opt](https://treeherder.mozilla.org/"
+        in phab.comments[51][0]
+    )
+
+
+def test_phabricator_lint_skips_build_issues(
+    mock_config,
+    mock_phabricator,
+    mock_taskcluster_config,
+    phab,
+    mock_decision_task,
+    mock_task,
+):
+    mock_taskcluster_config.secrets = {}
+    with mock_phabricator as api:
+        revision = Revision.from_try_decision_task(
+            mock_decision_task, "PHID-HMBT-test", api
+        )
+        revision.id = 52
+        reporter = PhabricatorReporter({}, api=api)
+
+    build_issue = BuildIssue(
+        task_id="failedBuildId",
+        analyzer=mock_task(BuildTask, "build-linux64/opt"),
+        revision=revision,
+        level=Level.Error,
+        message="build failed: build-linux64/opt ",
+    )
+
+    issues, patches = reporter.publish(
+        [build_issue], revision, [], [], [], AnalysisMode.Lint
+    )
+    assert issues == []
+    assert patches == []
+
+    assert phab.build_messages["PHID-HMBT-test"] == []
