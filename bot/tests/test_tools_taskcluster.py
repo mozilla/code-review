@@ -143,6 +143,34 @@ def test_find_blocked_external_dependency():
     assert find_blocked(tasks, statuses, ["code-review"]) == {"build"}
 
 
+def test_find_ancestors():
+    tasks = {
+        "code-review": _task("completed", ["test", "external"]),
+        "other-code-review": _task("completed", ["lint"]),
+        "toolchain": _task("failed"),
+        "build": _task("exception", ["toolchain", "fetch"], reason="canceled"),
+        "fetch": _task("completed"),
+        "test": _task("exception", ["build"], reason="canceled"),
+        "lint": _task("exception", ["docker-image"], reason="canceled"),
+        "docker-image": _task("failed"),
+    }
+
+    assert find_ancestors(tasks, ["code-review"]) == {
+        "test",
+        "build",
+        "toolchain",
+        "fetch",
+    }
+    assert find_ancestors(tasks, ["code-review", "other-code-review"]) == {
+        "test",
+        "build",
+        "toolchain",
+        "fetch",
+        "lint",
+        "docker-image",
+    }
+
+
 class FakeQueue:
     def __init__(self, statuses):
         self.statuses = statuses
