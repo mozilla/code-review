@@ -572,6 +572,8 @@ class MockQueue:
                     "image": desc.get("image", "alpine"),
                     "env": desc.get("env", {}),
                 },
+                "routes": desc.get("routes", []),
+                **({"requires": desc["requires"]} if "requires" in desc else {}),
             }
             for task_id, desc in relations.items()
         }
@@ -581,8 +583,9 @@ class MockQueue:
             task_id: {
                 "status": {
                     "taskId": task_id,
+                    "taskGroupId": desc.get("group", "remoteTryGroup"),
                     "state": desc.get("state", "completed"),
-                    "runs": [{"runId": 0}],
+                    "runs": [{"runId": 0, **desc.get("run", {})}],
                 }
             }
             for task_id, desc in relations.items()
@@ -670,8 +673,23 @@ class MockQueue:
 
 
 class MockIndex:
+    def __init__(self):
+        self.tasks = {}
+        self.task_groups = []
+
     def configure(self, tasks):
         self.tasks = tasks
+
+    def listTasks(self, namespace, paginationHandler=None):
+        tasks = [
+            {"namespace": f"{namespace}.rev-{task_id}", "taskId": task_id}
+            for task_id in self.task_groups
+        ]
+        if paginationHandler is None:
+            return {"namespace": namespace, "tasks": tasks}
+
+        for task in tasks:
+            paginationHandler({"namespace": namespace, "tasks": [task]})
 
     def insertTask(self, route, payload):
         self.tasks[route] = payload
