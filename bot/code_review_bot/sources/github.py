@@ -126,6 +126,8 @@ class GithubClient:
                 event == ReviewEvent.Approved
             ), "Body can be left null only when approving a pull request"
         else:
+            if len(message) > GITHUB_COMMENT_LIMIT:
+                message = message[: GITHUB_COMMENT_LIMIT - 1] + "…"
             attrs["body"] = message
 
         pull_request.create_review(
