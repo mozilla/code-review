@@ -163,7 +163,19 @@ def test_find_issues_doc_upload_failure_reported_once(mock_workflow, mock_revisi
 def test_find_build_test_issues(mock_workflow, mock_revision):
     mock_workflow.setup_mock_tasks(
         {
-            "failed-build": {"name": "build-linux64/opt", "state": "failed"},
+            "failed-build": {
+                "name": "build-linux64/opt",
+                "state": "failed",
+                "artifacts": {
+                    "public/logs/live_backing.log": "\n".join(
+                        [
+                            "[taskcluster 2026-10-14T13:02:11.310Z] Worker Type settings:",
+                            "[task 2026-10-14T13:10:45.004Z] 13:10:45     INFO -  foo.cpp:18:1: error: broken",
+                            "[task 2026-10-14T13:10:46.004Z] 13:10:46     INFO -  compiling bar.cpp",
+                        ]
+                    )
+                },
+            },
             "passed-build": {"name": "build-win64/debug", "state": "completed"},
             "docker-image": {
                 "name": "build-docker-image-debian12-base",
@@ -181,8 +193,24 @@ def test_find_build_test_issues(mock_workflow, mock_revision):
     assert isinstance(issues[0], BuildIssue)
     assert issues[0].task_id == "failed-build"
     assert issues[0].revision is mock_revision
+    assert issues[0].error_lines == ["foo.cpp:18:1: error: broken"]
     assert notices == []
     assert reviewers == []
+
+
+def test_find_build_test_issues_task_error(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {
+            "failed-build": {"name": "build-linux64/opt", "state": "failed"},
+            "mozlint": {"name": "source-test-mozlint-eslint", "state": "failed"},
+        }
+    )
+
+    with mock.patch.object(
+        MozLintTask, "parse_issues", side_effect=Exception("broken artifact")
+    ):
+        with pytest.raises(Exception, match="broken artifact"):
+            mock_workflow.find_build_test_issues(mock_revision, "remoteTryGroup")
 
 
 def test_find_build_test_issues_exception(mock_workflow, mock_revision):

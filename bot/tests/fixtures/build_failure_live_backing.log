@@ -1,0 +1,16 @@
+[taskcluster 2026-10-14T13:02:11.310Z] Worker Type (gecko-3/b-linux-docker-amd) settings:
+[taskcluster 2026-10-14T13:02:11.311Z]   "workerGroup": "us-east1"
+[vcs 2026-10-14T13:02:30.120Z] executing ['hg', 'robustcheckout']
+[task 2026-10-14T13:10:40.001Z] 13:10:40     INFO - Running command: ['./mach', '--log-no-times', 'build', '-v']
+[task 2026-10-14T13:10:41.002Z] 13:10:41     INFO - TEST-INFO | checking for a working error handler
+[task 2026-10-14T13:10:42.003Z] 13:10:42     INFO - warning: this is a non-fatal error from configure
+[task 2026-10-14T13:10:45.004Z] 13:10:45     INFO -  /builds/worker/checkouts/gecko/dom/media/webaudio/AudioSinkInfo.h:18:1: error: final class 'AudioSinkInfo' uses NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+[task 2026-10-14T13:10:45.005Z] 13:10:45     INFO -  gmake[4]: *** [/builds/worker/checkouts/gecko/config/rules.mk:669: Unified_cpp_webaudio0.o] Error 1
+[task 2026-10-14T13:10:46.006Z] 13:10:46     INFO -  /builds/worker/checkouts/gecko/dom/media/webaudio/AudioSinkInfo.h:18:1: error: final class 'AudioSinkInfo' uses NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+[task 2026-10-14T13:10:46.007Z] 13:10:46     INFO -  gmake[4]: *** [/builds/worker/checkouts/gecko/config/rules.mk:669: Unified_cpp_webaudio1.o] Error 1
+[task 2026-10-14T13:10:47.008Z] 13:10:47     INFO -  compiling some/other/file.cpp
+[task 2026-10-14T13:10:48.009Z] 13:10:48     INFO -  /builds/worker/checkouts/gecko/dom/media/webaudio/AudioContext.cpp:899:21: error: arguments must all be strong refs
+[task 2026-10-14T13:10:49.010Z] 13:10:49     INFO -  gmake[3]: *** [/builds/worker/checkouts/gecko/config/recurse.mk:72: dom/media/webaudio/target-objects] Error 2
+[task 2026-10-14T13:10:50.011Z] 13:10:50    ERROR - 'mach build -v' did not run successfully. Please check log for errors.
+[taskcluster 2026-10-14T13:10:51.012Z] === Task Finished ===
+[taskcluster:error] exit status 255
