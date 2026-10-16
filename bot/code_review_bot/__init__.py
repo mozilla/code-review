@@ -176,6 +176,9 @@ class BaseIssue(abc.ABC):
         """
         raise NotImplementedError
 
+    def as_error_details(self, collapsible=False):
+        return ""
+
     @abc.abstractmethod
     def is_build_error(self) -> bool:
         """
