@@ -284,7 +284,9 @@ class Revision(ABC):
 
     @staticmethod
     def from_try_decision_task(
-        decision_task: dict, build_target_phid: str, phabricator: PhabricatorAPI
+        decision_task: dict,
+        build_target_phid: str,
+        phabricator: PhabricatorAPI,
     ):
         """
         Load identifiers from Phabricator or Github, using the remote task description

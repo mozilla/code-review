@@ -145,7 +145,7 @@ def test_workflow_private_build(
             phabricator=api,
         )
 
-        assert mock_workflow.start_analysis(revision, AnalysisMode.Lint) is None
+        assert mock_workflow.start_analysis(revision) is None
 
     # The visibility was checked only once, without waiting
     assert is_visible.call_count == 1
@@ -161,27 +161,27 @@ def test_workflow_private_build(
 
 
 @pytest.mark.parametrize(
-    "analysis_mode, expected_parameters, expected_namespace_suffixes",
+    "build_test_feature, expected_parameters, expected_namespace_suffixes",
     [
         (
-            AnalysisMode.Lint,
+            False,
             {
                 "enable_always_target": False,
                 "optimize_target_tasks": True,
                 "phabricator_diff": "PHID-HMBT-test",
                 "target_tasks_method": "codereview",
             },
-            ["", "lint"],
+            ["", "lint", "build-test"],
         ),
         (
-            AnalysisMode.BuildTest,
+            True,
             {
                 "enable_always_target": False,
                 "optimize_target_tasks": True,
                 "phabricator_diff": "PHID-HMBT-test",
-                "target_tasks_method": "codereview-build-test",
+                "target_tasks_method": "codereview-lint-build-test",
             },
-            ["build-test"],
+            ["", "lint", "build-test"],
         ),
     ],
 )
@@ -192,7 +192,7 @@ def test_workflow(
     mock_config,
     tmpdir,
     monkeypatch,
-    analysis_mode,
+    build_test_feature,
     expected_parameters,
     expected_namespace_suffixes,
 ):
@@ -216,6 +216,12 @@ def test_workflow(
     # Build never expires otherwise the analysis stops early
     monkeypatch.setattr(PhabricatorActions, "is_expired_build", lambda _, build: False)
 
+    monkeypatch.setattr(
+        PhabricatorRevision,
+        "build_test_feature",
+        property(lambda _: build_test_feature),
+    )
+
     # Control ssh key destination
     ssh_key_path = tmpdir / "ssh.key"
     monkeypatch.setattr(tempfile, "mkstemp", lambda suffix: (None, ssh_key_path))
@@ -234,7 +240,7 @@ def test_workflow(
             phabricator=api,
         )
 
-        mock_workflow.start_analysis(revision, analysis_mode)
+        mock_workflow.start_analysis(revision)
 
     assert mock_workflow.index.call_args_list == [
         mock.call(
@@ -365,6 +371,100 @@ def test_workflow(
     ]
 
     # Reset settings for following tests
+    mock_config.mercurial_cache = None
+    mock_config.ssh_key = None
+
+
+@pytest.mark.parametrize(
+    "build_test_feature, build_test_target, expected_targets, expected_lando_modes",
+    [
+        (False, "PHID-HMBT-buildtest", ["PHID-HMBT-test"], [AnalysisMode.Lint]),
+        (
+            True,
+            "PHID-HMBT-buildtest",
+            ["PHID-HMBT-test", "PHID-HMBT-buildtest"],
+            [AnalysisMode.Lint, AnalysisMode.BuildTest],
+        ),
+    ],
+)
+def test_start_analysis_publication(
+    mock_phabricator,
+    mock_workflow,
+    mock_config,
+    tmpdir,
+    monkeypatch,
+    build_test_feature,
+    build_test_target,
+    expected_targets,
+    expected_lando_modes,
+):
+    from code_review_bot import workflow
+
+    mock_config.mercurial_cache = tmpdir
+    mock_config.ssh_key = "Dummy Private SSH Key"
+
+    monkeypatch.setattr(
+        PhabricatorRevision,
+        "build_test_feature",
+        property(lambda _: build_test_feature),
+    )
+    monkeypatch.setattr(workflow, "MercurialRepository", mock.Mock())
+
+    def _update_state(build):
+        build.state = workflow.PhabricatorBuildState.Public
+
+    actions = mock.Mock()
+    actions.return_value.update_state.side_effect = _update_state
+    monkeypatch.setattr(workflow, "PhabricatorActions", actions)
+
+    def _run(repository, build, parameters):
+        return ("fail:mercurial", build, {"message": "boom"})
+
+    worker = mock.Mock()
+    worker.return_value.run.side_effect = _run
+    monkeypatch.setattr(workflow, "MercurialWorker", worker)
+
+    published_phabricator = []
+    monkeypatch.setattr(
+        workflow,
+        "publish_analysis_phabricator",
+        lambda payload, api: published_phabricator.append(
+            (payload[0], payload[1].target_phid, payload[2])
+        ),
+    )
+    published_lando = []
+    monkeypatch.setattr(
+        workflow,
+        "publish_analysis_lando",
+        lambda payload, lando_api, mode: published_lando.append((payload[0], mode)),
+    )
+
+    with mock_phabricator as api:
+        revision = PhabricatorRevision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-test",
+            phabricator=api,
+        )
+
+    mock_workflow.phabricator = mock.Mock()
+    mock_workflow.update_build = True
+    mock_workflow.index = mock.Mock()
+    mock_workflow.cancel_previous = mock.Mock()
+    mock_workflow.publish_link = mock.Mock()
+    monkeypatch.setattr(
+        workflow, "find_build_test_target", mock.Mock(return_value=build_test_target)
+    )
+    mock_workflow.reporters = {"lando": mock.Mock()}
+
+    mock_workflow.start_analysis(revision)
+
+    assert published_phabricator == [
+        ("fail:mercurial", target, {"message": "boom"}) for target in expected_targets
+    ]
+    assert published_lando == [
+        ("fail:mercurial", mode) for mode in expected_lando_modes
+    ]
+    assert revision.build_target_phid == "PHID-HMBT-test"
+
     mock_config.mercurial_cache = None
     mock_config.ssh_key = None
 
