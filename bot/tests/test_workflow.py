@@ -257,6 +257,22 @@ def test_find_build_test_issues_all_pages(mock_workflow, mock_revision):
     ]
 
 
+def test_start_analysis_early_stop_leaves_build_test_target_alone(
+    mock_workflow, mock_revision, monkeypatch
+):
+    monkeypatch.setattr(PhabricatorRevision, "is_blacklisted", property(lambda _: True))
+    find = mock.Mock(return_value="PHID-HMBT-buildtest")
+    monkeypatch.setattr("code_review_bot.workflow.find_build_test_target", find)
+    mock_workflow.update_build = True
+    mock_workflow.phabricator = mock.Mock()
+    mock_workflow.index = mock.Mock()
+
+    assert mock_workflow.start_analysis(mock_revision) is None
+
+    assert mock_workflow.phabricator.method_calls == []
+    find.assert_not_called()
+
+
 def test_run_build_test(mock_workflow, mock_revision):
     issues = [mock.Mock()]
     mock_workflow.index = mock.Mock()

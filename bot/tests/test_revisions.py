@@ -1,7 +1,12 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+from unittest import mock
+
+import pytest
 import rs_parsepatch
+
+from code_review_bot.revisions import phabricator as phabricator_revisions
 
 
 def test_phabricator(mock_config, mock_revision):
@@ -229,3 +234,66 @@ def test_revision_before_after(mock_config, mock_revision, mock_taskcluster_conf
     assert mock_revision.before_after_feature is True
     mock_revision.phabricator_id = 42
     assert mock_revision.before_after_feature is False
+
+
+@pytest.mark.parametrize(
+    "secrets, find_diff_build, expected",
+    [
+        (
+            {"BUILD_TEST_PLAN_PHID": "PHID-HMCP-buildtest"},
+            {
+                "return_value": (
+                    {"phid": "PHID-HBLD-1"},
+                    [
+                        {"id": 1, "phid": "PHID-HMBT-old"},
+                        {"id": 3, "phid": "PHID-HMBT-new"},
+                        {"id": 2, "phid": "PHID-HMBT-middle"},
+                    ],
+                )
+            },
+            "PHID-HMBT-new",
+        ),
+        (
+            {},
+            {"return_value": ({}, [{"id": 1, "phid": "PHID-HMBT-x"}])},
+            "Cannot find build/test build target",
+        ),
+        (
+            {"BUILD_TEST_PLAN_PHID": "PHID-HMCP-buildtest"},
+            {"side_effect": IndexError("list index out of range")},
+            "list index out of range",
+        ),
+        (
+            {"BUILD_TEST_PLAN_PHID": "PHID-HMCP-buildtest"},
+            {"return_value": ({"phid": "PHID-HBLD-1"}, [])},
+            "No build/test build target found",
+        ),
+    ],
+)
+def test_find_build_test_target(
+    mock_taskcluster_config, secrets, find_diff_build, expected
+):
+    mock_taskcluster_config.secrets = secrets
+    phabricator = mock.Mock()
+    phabricator.find_target_buildable.return_value = {
+        "fields": {"objectPHID": "PHID-DIFF-test"}
+    }
+    phabricator.find_diff_build = mock.Mock(**find_diff_build)
+
+    if expected.startswith("PHID-"):
+        assert (
+            phabricator_revisions.find_build_test_target(phabricator, "PHID-HMBT-lint")
+            == expected
+        )
+    else:
+        with pytest.raises(Exception, match=expected):
+            phabricator_revisions.find_build_test_target(phabricator, "PHID-HMBT-lint")
+
+    if secrets:
+        phabricator.find_target_buildable.assert_called_once_with("PHID-HMBT-lint")
+        phabricator.find_diff_build.assert_called_once_with(
+            "PHID-DIFF-test", "PHID-HMCP-buildtest"
+        )
+    else:
+        phabricator.find_target_buildable.assert_not_called()
+        phabricator.find_diff_build.assert_not_called()
