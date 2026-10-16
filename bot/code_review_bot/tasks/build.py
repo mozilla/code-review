@@ -69,7 +69,7 @@ class BuildIssue(BaseIssue):
             namespace="code-review",
             name=self.display_name,
             result=UnitResultState.Fail,
-            details=f"Code review bot found a **build error**: \n{self.as_error()}",
+            details=f"Code review bot found a **build error**: \n{self.as_error()}{self.as_error_details()}",
             format="remarkup",
         )
 

@@ -42,6 +42,30 @@ If you see a problem in this automated review, [please report it here](https://b
 You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
 """
 
+VALID_BUILD_TEST_WITH_ERRORS_MESSAGE = """
+Code analysis found 3 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+ - 1 build error found by [build-linux64/opt](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/build-linux64/opt-ID/runs/0/artifacts/public/logs/live_backing.log)
+ - 1 build error found by [build-macosx64/opt](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/build-macosx64/opt-ID/runs/0/artifacts/public/logs/live_backing.log)
+ - 1 build error found by [build-win64/opt](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/build-win64/opt-ID/runs/0/artifacts/public/logs/live_backing.log)
+
+IMPORTANT: Found 3 defects (error level) that must be fixed before landing.
+
+Errors found in the log of [build-linux64/opt](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/build-linux64/opt-ID/runs/0/artifacts/public/logs/live_backing.log):
+
+```
+foo.cpp:1:1: error: linux is broken
+```
+
+Errors for the 1 other failed task are available in their unit test results.
+
+
+---
+
+If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
+
+You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+"""
+
 VALID_CLANG_TIDY_MESSAGE = """
 Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
  - 1 defect found by [clang-tidy](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-tidy-ID/runs/0/artifacts/public/logs/live_backing.log)
@@ -1545,6 +1569,61 @@ def test_phabricator_build_test(
         }
     ]
     assert phab.comments[51] == [VALID_BUILD_TEST_MESSAGE]
+
+
+def test_phabricator_build_test_with_error_lines(
+    mock_config,
+    mock_phabricator,
+    mock_taskcluster_config,
+    phab,
+    mock_decision_task,
+    mock_task,
+):
+    mock_taskcluster_config.secrets = {}
+    with mock_phabricator as api:
+        revision = Revision.from_try_decision_task(
+            mock_decision_task, "PHID-HMBT-test", api
+        )
+        revision.id = 52
+        reporter = PhabricatorReporter({}, api=api)
+
+    def _build_issue(name, error_lines):
+        return BuildIssue(
+            task_id=f"{name}-ID",
+            analyzer=mock_task(BuildTask, name),
+            revision=revision,
+            level=Level.Error,
+            message=f"build failed: {name} ",
+            error_lines=error_lines,
+        )
+
+    win_issue = _build_issue("build-win64/opt", ["foo.cpp:1:1: error: win is broken"])
+    linux_issue = _build_issue(
+        "build-linux64/opt", ["foo.cpp:1:1: error: linux is broken"]
+    )
+    mac_issue = _build_issue("build-macosx64/opt", [])
+
+    issues, _ = reporter.publish(
+        [win_issue, linux_issue, mac_issue],
+        revision,
+        [],
+        [],
+        [],
+        AnalysisMode.BuildTest,
+    )
+    assert issues == [win_issue, linux_issue, mac_issue]
+
+    units = phab.build_messages["PHID-HMBT-test"][0]["unit"]
+    assert [unit["name"] for unit in units] == [
+        "build-win64/opt",
+        "build-linux64/opt",
+        "build-macosx64/opt",
+    ]
+    assert "foo.cpp:1:1: error: win is broken" in units[0]["details"]
+    assert "foo.cpp:1:1: error: linux is broken" in units[1]["details"]
+    assert "```" not in units[2]["details"]
+
+    assert phab.comments[51] == [VALID_BUILD_TEST_WITH_ERRORS_MESSAGE]
 
 
 def test_phabricator_build_test_without_issues(

@@ -64,6 +64,14 @@ The analysis task [{name}]({url}) failed, but we could not detect any defect.
 Please check this task manually.
 """
 
+COMMENT_ERROR_DETAILS = """
+Errors found in the log of [{name}]({log}):
+{details}"""
+
+COMMENT_OTHER_ERROR_DETAILS = """
+Errors for the {others} are available in their unit test results.
+"""
+
 FRONTEND_LINKS = """
 You can view these defects in the Diff Detail section of [Phabricator diff {diff_id}]({phabricator_diff_url}).
 """
@@ -449,6 +457,22 @@ class PhabricatorReporter(Reporter):
             lambda i: isinstance(i, ExternalTidyIssue), issues
         ):
             comment += tidy_external_issue.as_markdown_for_phab()
+
+        detailed_issues = sorted(
+            (issue for issue in issues if issue.as_error_details()),
+            key=lambda issue: issue.display_name,
+        )
+        if detailed_issues:
+            first = detailed_issues[0]
+            comment += COMMENT_ERROR_DETAILS.format(
+                name=first.display_name,
+                log=first.analyzer.log,
+                details=first.as_error_details(),
+            )
+            if (nb_others := len(detailed_issues) - 1) > 0:
+                comment += COMMENT_OTHER_ERROR_DETAILS.format(
+                    others=self.pluralize("other failed task", nb_others)
+                )
 
         for patch in patches:
             comment += COMMENT_DIFF_DOWNLOAD.format(

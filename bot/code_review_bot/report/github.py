@@ -126,6 +126,8 @@ class GithubReporter(Reporter):
                 for issue in publishable_issues:
                     errmsg = issue.as_error()
                     messages.append(f"{errmsg}")
+                    if details := issue.as_error_details(collapsible=True):
+                        messages.append(details)
                 self.github_client.publish_review(
                     issues=publishable_issues,
                     revision=revision,

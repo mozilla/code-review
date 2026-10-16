@@ -50,6 +50,8 @@ class BuildErrorsReporter(Reporter):
         )
         for issue in build_errors:
             messages.append(issue.as_error())
+            if details := issue.as_error_details(collapsible=True):
+                messages.append(details)
 
         content = "\n".join(messages)
         self.github_client.publish_comment(revision, content)
@@ -79,7 +81,9 @@ class BuildErrorsReporter(Reporter):
             build_errors=len(build_errors),
             phabricator_id=revision.phabricator_id,
             review_url=revision.url,
-            content="\n".join([i.as_error() for i in build_errors]),
+            content="\n".join(
+                [i.as_error() + i.as_error_details() for i in build_errors]
+            ),
         )
 
         if len(content) > 102400:
