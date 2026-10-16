@@ -72,6 +72,10 @@ COMMENT_OTHER_ERROR_DETAILS = """
 Errors for the {others} are available in their unit test results.
 """
 
+COMMENT_TASKS_SUMMARY = """
+{message}
+"""
+
 FRONTEND_LINKS = """
 You can view these defects in the Diff Detail section of [Phabricator diff {diff_id}]({phabricator_diff_url}).
 """
@@ -479,14 +483,21 @@ class PhabricatorReporter(Reporter):
                 analyzer=patch.analyzer.display_name, url=patch.url or patch.path
             )
 
-        for task in task_failures:
-            treeherder_url = treeherder.get_job_url(
+        def _treeherder_url(task):
+            return treeherder.get_job_url(
                 revision.repository_try_name,
                 revision.head_changeset,
                 task.id,
                 task.run_id,
             )
-            comment += COMMENT_TASK_FAILURE.format(name=task.name, url=treeherder_url)
+
+        failed_tasks, _, _ = self.split_task_failures(task_failures)
+        for task in failed_tasks:
+            comment += COMMENT_TASK_FAILURE.format(
+                name=task.name, url=_treeherder_url(task)
+            )
+        for message in self.task_failure_summaries(task_failures, _treeherder_url):
+            comment += COMMENT_TASKS_SUMMARY.format(message=message)
 
         # Add coverage reporting details when a coverage issue is published
         issue_classes = {issue.__class__ for issue in issues}

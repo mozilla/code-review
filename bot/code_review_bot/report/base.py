@@ -5,6 +5,12 @@
 import itertools
 
 from code_review_bot import IssueType, Level
+from code_review_bot.tasks.base import BlockedTask
+
+TASKS_BLOCKED = "{count} did not run because of upstream failures: {tasks}"
+TASKS_NOT_ANALYSED = (
+    "{count} could not be analysed, please check {pronoun} manually: {tasks}"
+)
 
 OMITTED_ERROR_DETAILS = (
     "Error details for {count} failed task{plural} were omitted to keep this "
@@ -70,6 +76,35 @@ class Reporter:
             out.append(configuration[key])
 
         return out
+
+    def split_task_failures(self, task_failures):
+        exceptions = sorted(
+            (task for task in task_failures if task.status.get("state") == "exception"),
+            key=lambda task: task.name,
+        )
+        failed = [
+            task for task in task_failures if task.status.get("state") != "exception"
+        ]
+        blocked = [task for task in exceptions if isinstance(task, BlockedTask)]
+        not_analysed = [
+            task for task in exceptions if not isinstance(task, BlockedTask)
+        ]
+        return failed, blocked, not_analysed
+
+    def task_failure_summaries(self, task_failures, task_url):
+        _, blocked, not_analysed = self.split_task_failures(task_failures)
+        return [
+            template.format(
+                count=f"{len(tasks)} task{'s' if len(tasks) > 1 else ''}",
+                pronoun="them" if len(tasks) > 1 else "it",
+                tasks=", ".join(f"[{task.name}]({task_url(task)})" for task in tasks),
+            )
+            for template, tasks in (
+                (TASKS_BLOCKED, blocked),
+                (TASKS_NOT_ANALYSED, not_analysed),
+            )
+            if tasks
+        ]
 
     def calc_stats(self, issues):
         """

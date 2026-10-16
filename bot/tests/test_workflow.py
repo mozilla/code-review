@@ -19,6 +19,7 @@ from code_review_bot import Level
 from code_review_bot.analysis import AnalysisMode
 from code_review_bot.config import Settings, TaskCluster, settings
 from code_review_bot.revisions import PhabricatorRevision
+from code_review_bot.tasks.base import BaseTask, BlockedTask
 from code_review_bot.tasks.build import BuildIssue, BuildTask
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
@@ -165,6 +166,9 @@ def test_find_issues_doc_upload_failure_reported_once(mock_workflow, mock_revisi
 def test_find_build_test_issues(mock_workflow, mock_revision):
     mock_workflow.setup_mock_tasks(
         {
+            "code-review": build_test_code_review(
+                "failed-build", "passed-build", "docker-image", "lint"
+            ),
             "failed-build": {
                 "name": "build-linux64/opt",
                 "state": "failed",
@@ -203,6 +207,7 @@ def test_find_build_test_issues(mock_workflow, mock_revision):
 def test_find_build_test_issues_task_error(mock_workflow, mock_revision):
     mock_workflow.setup_mock_tasks(
         {
+            "code-review": build_test_code_review("failed-build", "mozlint"),
             "failed-build": {"name": "build-linux64/opt", "state": "failed"},
             "mozlint": {"name": "source-test-mozlint-eslint", "state": "failed"},
         }
@@ -218,8 +223,10 @@ def test_find_build_test_issues_task_error(mock_workflow, mock_revision):
 def test_find_build_test_issues_exception(mock_workflow, mock_revision):
     mock_workflow.setup_mock_tasks(
         {
+            "code-review": build_test_code_review("exception-build", "canceled-build"),
             "exception-build": {"name": "build-linux64/opt", "state": "exception"},
             "canceled-build": {"name": "build-win64/debug", "state": "exception"},
+            "unrelated-build": {"name": "build-macosx64/opt", "state": "exception"},
         }
     )
     mock_workflow.queue_service._status["canceled-build"]["status"]["runs"][0][
@@ -231,14 +238,53 @@ def test_find_build_test_issues_exception(mock_workflow, mock_revision):
     )
 
     assert issues == []
-    assert [task.id for task in task_failures] == ["exception-build"]
+    assert [task.id for task in task_failures] == ["canceled-build", "exception-build"]
+
+
+def test_find_build_test_issues_only_code_review_dependencies(
+    mock_workflow, mock_revision
+):
+    mock_workflow.setup_mock_tasks(
+        {
+            "code-review": build_test_code_review("build"),
+            "build": {"name": "build-linux64/opt", "state": "failed"},
+            "lint-code-review": {
+                "name": "code-review-issues",
+                "state": "unscheduled",
+                "dependencies": ["lint-task"],
+                "requires": "all-resolved",
+                "routes": LINT_ROUTES,
+            },
+            "lint-task": {"name": "source-test-mozlint-eslint", "state": "running"},
+        }
+    )
+
+    with mock.patch.object(
+        mock_workflow, "build_task", wraps=mock_workflow.build_task
+    ) as build_task:
+        issues, _, _, _ = mock_workflow.find_build_test_issues(
+            mock_revision, "remoteTryGroup"
+        )
+
+    assert [call.args[0]["status"]["taskId"] for call in build_task.call_args_list] == [
+        "build"
+    ]
+    assert [issue.task_id for issue in issues] == ["build"]
 
 
 def test_find_build_test_issues_all_pages(mock_workflow, mock_revision):
     mock_workflow.setup_mock_tasks(
         {
-            f"failed-build-{i}": {"name": f"build-linux64-{i}/opt", "state": "failed"}
-            for i in range(3)
+            "code-review": build_test_code_review(
+                *(f"failed-build-{i}" for i in range(3))
+            ),
+            **{
+                f"failed-build-{i}": {
+                    "name": f"build-linux64-{i}/opt",
+                    "state": "failed",
+                }
+                for i in range(3)
+            },
         }
     )
 
@@ -300,7 +346,9 @@ def test_run_build_test(mock_workflow, mock_revision):
     ],
 )
 def test_run_build_test_state(mock_workflow, mock_revision, tasks, expected_state):
-    mock_workflow.setup_mock_tasks(tasks)
+    mock_workflow.setup_mock_tasks(
+        {"code-review": build_test_code_review(*tasks), **tasks}
+    )
 
     mock_workflow.run(mock_revision, AnalysisMode.BuildTest)
 
@@ -1220,6 +1268,219 @@ def test_reap_blocked_tasks_cancel_failure(mock_workflow):
     assert mock_workflow.reap_blocked_tasks() == ["test"]
 
 
+def build_test_code_review(*dependencies):
+    return {
+        "name": "code-review-build-test-issues",
+        "dependencies": list(dependencies),
+        "requires": "all-resolved",
+        "routes": BUILD_TEST_ROUTES,
+    }
+
+
+def test_find_build_test_issues_blocked(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {
+            "code-review": build_test_code_review(
+                "failed-build",
+                "build",
+                "test",
+                "win-test",
+                "user-canceled",
+                "canceled-while-running",
+            ),
+            "toolchain": {"name": "toolchain-linux64-clang", "state": "failed"},
+            "failed-build": {"name": "build-win64/debug", "state": "failed"},
+            "build": {
+                "name": "build-linux64/opt",
+                "state": "exception",
+                "dependencies": ["toolchain"],
+                "run": CANCELED,
+            },
+            "test": {
+                "name": "test-linux64/opt-mochitest",
+                "state": "exception",
+                "dependencies": ["build"],
+                "run": CANCELED,
+            },
+            "win-test": {
+                "name": "test-win64/debug-xpcshell",
+                "state": "exception",
+                "dependencies": ["failed-build"],
+                "run": CANCELED,
+            },
+            "user-canceled": {
+                "name": "build-macosx64/opt",
+                "state": "exception",
+                "run": CANCELED,
+            },
+            "canceled-while-running": {
+                "name": "test-linux64/opt-xpcshell",
+                "state": "exception",
+                "dependencies": ["toolchain"],
+                "run": {**CANCELED, "started": "2026-10-20T20:25:48.857Z"},
+            },
+        }
+    )
+
+    issues, task_failures, notices, _ = mock_workflow.find_build_test_issues(
+        mock_revision, "remoteTryGroup"
+    )
+
+    assert [issue.task_id for issue in issues] == ["failed-build"]
+    assert [(task.id, type(task)) for task in task_failures] == [
+        ("build", BlockedTask),
+        ("canceled-while-running", BaseTask),
+        ("test", BlockedTask),
+        ("toolchain", BaseTask),
+        ("user-canceled", BaseTask),
+        ("win-test", BlockedTask),
+    ]
+    assert notices == []
+
+
+def test_find_build_test_issues_blocked_by_external_task(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {
+            "code-review": build_test_code_review("build"),
+            "build": {
+                "name": "build-linux64/opt",
+                "state": "exception",
+                "dependencies": ["toolchain"],
+                "run": CANCELED,
+            },
+        }
+    )
+    mock_workflow.queue_service._status["toolchain"] = {
+        "status": {"taskId": "toolchain", "state": "failed", "runs": [{"runId": 0}]}
+    }
+
+    _, task_failures, notices, _ = mock_workflow.find_build_test_issues(
+        mock_revision, "remoteTryGroup"
+    )
+
+    assert [task.id for task in task_failures] == ["build"]
+    assert notices == []
+
+
+def test_find_build_test_issues_blocked_ignores_lint(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {
+            "code-review": build_test_code_review("build"),
+            "lint-code-review": {
+                "name": "code-review-issues",
+                "dependencies": ["lint-task"],
+                "requires": "all-resolved",
+                "routes": LINT_ROUTES,
+            },
+            "toolchain": {"name": "toolchain-linux64-clang", "state": "failed"},
+            "docker-image": {"name": "build-docker-image-lint", "state": "failed"},
+            "build": {
+                "name": "build-linux64/opt",
+                "state": "exception",
+                "dependencies": ["toolchain"],
+                "run": CANCELED,
+            },
+            "lint-task": {
+                "name": "source-test-mozlint-eslint",
+                "state": "exception",
+                "dependencies": ["docker-image"],
+                "run": CANCELED,
+            },
+        }
+    )
+
+    _, task_failures, notices, _ = mock_workflow.find_build_test_issues(
+        mock_revision, "remoteTryGroup"
+    )
+
+    assert [task.id for task in task_failures] == ["build", "toolchain"]
+    assert notices == []
+
+
+def test_find_issues_blocked(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {
+            "remoteTryTask": {
+                "name": "code-review-issues",
+                "dependencies": ["lint-task", "other-lint-task", "clang-tidy"],
+                "requires": "all-resolved",
+                "routes": LINT_ROUTES,
+            },
+            "docker-image": {"name": "build-docker-image-lint", "state": "failed"},
+            "lint-task": {
+                "name": "source-test-mozlint-eslint",
+                "state": "exception",
+                "dependencies": ["docker-image"],
+                "run": CANCELED,
+            },
+            "toolchain": {"name": "toolchain-linux64-sysroot", "state": "failed"},
+            "clang": {
+                "name": "toolchain-linux64-clang",
+                "state": "exception",
+                "dependencies": ["toolchain"],
+                "run": CANCELED,
+            },
+            "clang-tidy": {
+                "name": "source-test-clang-tidy",
+                "state": "exception",
+                "dependencies": ["clang"],
+                "run": CANCELED,
+            },
+            "other-lint-task": {"name": "source-test-mozlint-flake8"},
+            "blocked-non-dependency": {
+                "name": "toolchain-linux64-node",
+                "state": "exception",
+                "dependencies": ["docker-image"],
+                "run": CANCELED,
+            },
+        }
+    )
+    mock_workflow.backend_api.publish_revision = lambda rev: {}
+
+    issues, task_failures, notices, _ = mock_workflow.find_issues(
+        mock_revision, "remoteTryTask"
+    )
+
+    assert issues == []
+    assert [task.id for task in task_failures] == [
+        "clang",
+        "clang-tidy",
+        "docker-image",
+        "lint-task",
+        "toolchain",
+    ]
+    assert notices == []
+
+
+def test_find_issues_ignored_task_failures(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {
+            "remoteTryTask": {
+                "name": "code-review-issues",
+                "dependencies": ["lint-task", "other-lint-task"],
+                "requires": "all-resolved",
+                "routes": LINT_ROUTES,
+            },
+            "lint-task": {
+                "name": "source-test-mozlint-eslint",
+                "state": "exception",
+                "run": CANCELED,
+            },
+            "other-lint-task": {
+                "name": "source-test-mozlint-flake8",
+                "state": "exception",
+                "run": CANCELED,
+            },
+        }
+    )
+    mock_workflow.backend_api.publish_revision = lambda rev: {}
+    mock_workflow.task_failures_ignored = ["source-test-mozlint-flake8"]
+
+    _, task_failures, _, _ = mock_workflow.find_issues(mock_revision, "remoteTryTask")
+
+    assert [task.id for task in task_failures] == ["lint-task"]
+
+
 def test_reap_mode(mock_repositories, monkeypatch):
     monkeypatch.setenv("CODE_REVIEW_REAP", "1")
     reap = Settings()
@@ -1238,6 +1499,55 @@ def test_reap_blocked_tasks_canceled_dependency(mock_workflow):
     mock_workflow.index_service.task_groups = ["task-group"]
 
     assert mock_workflow.reap_blocked_tasks() == ["build"]
+
+
+def test_find_build_test_issues_deadline_exceeded(mock_workflow, mock_revision):
+    deadline_exceeded = {"reasonResolved": "deadline-exceeded"}
+    mock_workflow.setup_mock_tasks(
+        {
+            "code-review": build_test_code_review("build", "slow-build"),
+            "sysroot": {
+                "name": "toolchain-sysroot-aarch64-linux-gnu",
+                "state": "failed",
+            },
+            "clang": {
+                "name": "toolchain-linux64-clang-22",
+                "state": "exception",
+                "dependencies": ["sysroot"],
+                "run": deadline_exceeded,
+            },
+            "build": {
+                "name": "build-linux64/opt",
+                "state": "exception",
+                "dependencies": ["clang", "pkgconf"],
+                "run": deadline_exceeded,
+            },
+            "slow-build": {
+                "name": "build-win64/opt",
+                "state": "exception",
+                "run": deadline_exceeded,
+            },
+        }
+    )
+    mock_workflow.queue_service._status["pkgconf"] = {
+        "status": {
+            "taskId": "pkgconf",
+            "state": "exception",
+            "runs": [{"runId": 0, **deadline_exceeded}],
+        }
+    }
+    issues, task_failures, notices, _ = mock_workflow.find_build_test_issues(
+        mock_revision, "remoteTryGroup"
+    )
+
+    assert issues == []
+    assert [task.id for task in task_failures] == [
+        "build",
+        "clang",
+        "slow-build",
+        "sysroot",
+    ]
+    assert notices == []
 
 
 def two_blocked_groups(mock_workflow, list_task_group):
