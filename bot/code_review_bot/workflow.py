@@ -47,6 +47,9 @@ from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
 from code_review_bot.tools.taskcluster import (
+    find_blocked,
+    is_code_review_task,
+    load_statuses,
     load_task_group,
 )
 
@@ -54,6 +57,7 @@ logger = structlog.get_logger(__name__)
 
 TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
+TASK_GROUP_NAMESPACE = "project.relman.codereview.v1.task_groups"
 
 DECISION_TASK_ROUTE = "gecko.v2.{repo}.revision.{revision}.taskgraph.decision"
 PUBLICATION_LOG_ARTIFACT = "public/logs/live_backing.log"
@@ -833,6 +837,79 @@ class Workflow:
             return self.index_service.findTask(route)["taskId"]
         except Exception as e:
             logger.warn("Failed to find a decision task", route=route, error=str(e))
+
+    def reap_blocked_tasks(self):
+        entries = []
+
+        def _load_entries(page):
+            entries.extend(page["tasks"])
+
+        self.index_service.listTasks(
+            TASK_GROUP_NAMESPACE, paginationHandler=_load_entries
+        )
+        logger.info(
+            "Loaded task groups", namespace=TASK_GROUP_NAMESPACE, nb=len(entries)
+        )
+
+        with ThreadPoolExecutor(
+            max_workers=settings.taskcluster_parallel_requests
+        ) as executor:
+            cancelled = executor.map(self.reap_task_group, entries)
+            return [task_id for group in cancelled for task_id in group]
+
+    def reap_task_group(self, task_group_entry):
+        try:
+            status = self.queue_service.status(task_group_entry["taskId"])["status"]
+            group_id = status["taskGroupId"]
+            tasks = load_task_group(self.queue_service, group_id)
+        except Exception as e:
+            logger.warn(
+                "Failed to load a task group",
+                namespace=task_group_entry["namespace"],
+                error=str(e),
+            )
+            return []
+
+        code_review_ids = [
+            task_id
+            for task_id, task in tasks.items()
+            if is_code_review_task(task["task"])
+            and task["status"]["state"] == "unscheduled"
+        ]
+        if not code_review_ids:
+            return []
+
+        statuses = {task_id: task["status"] for task_id, task in tasks.items()}
+        external_ids = {
+            dep_id
+            for task in tasks.values()
+            if task["status"]["state"] == "unscheduled"
+            for dep_id in task["task"].get("dependencies", [])
+            if dep_id not in tasks
+        }
+        statuses.update(load_statuses(self.queue_service, external_ids))
+        cancelled = []
+        blocked = find_blocked(tasks, statuses, code_review_ids)
+        for task_id in sorted(blocked):
+            try:
+                self.queue_service.cancelTask(task_id)
+            except Exception as e:
+                logger.warn(
+                    "Failed to cancel a blocked task",
+                    task=task_id,
+                    task_group_id=group_id,
+                    error=str(e),
+                )
+                continue
+
+            logger.info(
+                "Cancelled a task blocked by a dependency",
+                task=task_id,
+                task_group_id=group_id,
+            )
+            cancelled.append(task_id)
+
+        return cancelled
 
     def index(self, revision, namespace_suffixes=None, **kwargs):
         """

@@ -186,7 +186,9 @@ def main():
     revision = None
     # Load unique revision
     try:
-        if settings.generic_group_id:
+        if settings.reap:
+            w.reap_blocked_tasks()
+        elif settings.generic_group_id:
             # Only Phabricator revisions is supported from decision task
             revision = PhabricatorRevision.from_decision_task(
                 queue_service.task(settings.generic_group_id), phabricator_api

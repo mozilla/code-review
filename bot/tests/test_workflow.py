@@ -4,6 +4,8 @@
 
 import base64
 import os
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from unittest import mock
 from urllib.parse import unquote_plus
@@ -15,7 +17,7 @@ from structlog.testing import capture_logs
 
 from code_review_bot import Level
 from code_review_bot.analysis import AnalysisMode
-from code_review_bot.config import Settings, TaskCluster
+from code_review_bot.config import Settings, TaskCluster, settings
 from code_review_bot.revisions import PhabricatorRevision
 from code_review_bot.tasks.build import BuildIssue, BuildTask
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
@@ -1028,3 +1030,264 @@ def test_clone_repository_extracts_issues_files(
         assert issue.file_exists is True
     finally:
         mock_config.mercurial_cache = None
+
+
+LINT_ROUTES = ["project.relman.codereview.v1.try_ending"]
+TASK_GROUP_ROUTES = ["index.project.relman.codereview.v1.task_groups.abcdef"]
+BUILD_TEST_ROUTES = ["project.relman.codereview-build-test.v1.try_ending"]
+CANCELED = {"reasonResolved": "canceled"}
+
+
+def build_test_group(code_review_state="unscheduled"):
+    return {
+        "task-group": {"name": "code-review-watch", "routes": TASK_GROUP_ROUTES},
+        "code-review": {
+            "name": "code-review-build-test-issues",
+            "state": code_review_state,
+            "dependencies": ["build", "other-build"],
+            "requires": "all-resolved",
+            "routes": BUILD_TEST_ROUTES,
+        },
+        "toolchain": {
+            "name": "toolchain-linux64-clang",
+            "state": "failed",
+        },
+        "build": {
+            "name": "build-linux64/opt",
+            "state": "unscheduled",
+            "dependencies": ["toolchain"],
+        },
+        "other-build": {"name": "build-win64/opt", "state": "running"},
+    }
+
+
+def test_reap_blocked_tasks(mock_workflow):
+    mock_workflow.setup_mock_tasks(build_test_group())
+    mock_workflow.index_service.task_groups = ["task-group"]
+
+    assert mock_workflow.reap_blocked_tasks() == ["build"]
+    assert mock_workflow.queue_service.cancelled_tasks == ["build"]
+
+
+def test_reap_blocked_tasks_lists_task_groups_namespace(mock_workflow):
+    mock_workflow.setup_mock_tasks(build_test_group())
+    mock_workflow.index_service.task_groups = ["task-group"]
+
+    with mock.patch.object(
+        mock_workflow.index_service,
+        "listTasks",
+        wraps=mock_workflow.index_service.listTasks,
+    ) as list_tasks:
+        mock_workflow.reap_blocked_tasks()
+
+    assert list_tasks.call_args.args == ("project.relman.codereview.v1.task_groups",)
+    assert "paginationHandler" in list_tasks.call_args.kwargs
+
+
+@pytest.mark.parametrize("state", ["completed", "exception", "pending"])
+def test_reap_blocked_tasks_skips_resolved_code_review(mock_workflow, state):
+    mock_workflow.setup_mock_tasks(build_test_group(code_review_state=state))
+    mock_workflow.index_service.task_groups = ["task-group"]
+
+    assert mock_workflow.reap_blocked_tasks() == []
+    assert mock_workflow.queue_service.cancelled_tasks == []
+
+
+def test_reap_blocked_tasks_unknown_task_group(mock_workflow):
+    mock_workflow.setup_mock_tasks(build_test_group())
+    mock_workflow.index_service.task_groups = ["missing", "task-group"]
+
+    assert mock_workflow.reap_blocked_tasks() == ["build"]
+
+
+def test_reap_blocked_tasks_any_code_review_unscheduled(mock_workflow):
+    tasks = build_test_group()
+    tasks["lint-code-review"] = {
+        "name": "code-review-issues",
+        "state": "completed",
+        "requires": "all-resolved",
+        "routes": LINT_ROUTES,
+    }
+    mock_workflow.setup_mock_tasks(tasks)
+    mock_workflow.index_service.task_groups = ["task-group"]
+
+    assert mock_workflow.reap_blocked_tasks() == ["build"]
+
+
+def test_reap_blocked_tasks_without_code_review(mock_workflow):
+    tasks = build_test_group()
+    del tasks["code-review"]
+    mock_workflow.setup_mock_tasks(tasks)
+    mock_workflow.index_service.task_groups = ["task-group"]
+
+    assert mock_workflow.reap_blocked_tasks() == []
+
+
+def test_reap_blocked_tasks_external_dependency(mock_workflow):
+    tasks = build_test_group()
+    del tasks["toolchain"]
+    mock_workflow.setup_mock_tasks(tasks)
+    mock_workflow.queue_service._status["toolchain"] = {
+        "status": {
+            "taskId": "toolchain",
+            "taskGroupId": "otherGroup",
+            "state": "exception",
+            "runs": [
+                {
+                    "runId": 0,
+                    "reasonResolved": "worker-shutdown",
+                }
+            ],
+        }
+    }
+    mock_workflow.index_service.task_groups = ["task-group"]
+
+    assert mock_workflow.reap_blocked_tasks() == ["build"]
+
+
+def test_reap_blocked_tasks_only_loads_external_dependencies_of_unscheduled(
+    mock_workflow,
+):
+    tasks = build_test_group()
+    del tasks["toolchain"]
+    tasks["lint"] = {
+        "name": "source-test-mozlint-eslint",
+        "dependencies": ["docker-image"],
+    }
+    mock_workflow.setup_mock_tasks(tasks)
+    queue = mock_workflow.queue_service
+    queue._status["toolchain"] = {
+        "status": {"taskId": "toolchain", "state": "failed", "runs": [{"runId": 0}]}
+    }
+    mock_workflow.index_service.task_groups = ["task-group"]
+
+    with mock.patch.object(queue, "status", wraps=queue.status) as status:
+        assert mock_workflow.reap_blocked_tasks() == ["build"]
+
+    assert [
+        call.args[0] for call in status.call_args_list if call.args[0] not in tasks
+    ] == ["toolchain"]
+
+
+def test_reap_blocked_tasks_cancel_failure(mock_workflow):
+    tasks = build_test_group()
+    tasks["test"] = {
+        "name": "test-linux64/opt-mochitest",
+        "state": "unscheduled",
+        "dependencies": ["build"],
+    }
+    tasks["code-review"]["dependencies"].append("test")
+    mock_workflow.setup_mock_tasks(tasks)
+    mock_workflow.index_service.task_groups = ["task-group"]
+
+    cancel_task = mock_workflow.queue_service.cancelTask
+
+    def _cancel(task_id):
+        if task_id == "build":
+            raise Exception("Nope")
+        return cancel_task(task_id)
+
+    mock_workflow.queue_service.cancelTask = _cancel
+
+    assert mock_workflow.reap_blocked_tasks() == ["test"]
+
+
+def test_reap_mode(mock_repositories, monkeypatch):
+    monkeypatch.setenv("CODE_REVIEW_REAP", "1")
+    reap = Settings()
+    reap.setup("test", [], mock_repositories)
+
+    assert reap.reap is True
+    assert reap.try_group_id is None
+    assert reap.analysis_mode is None
+
+
+def test_reap_blocked_tasks_canceled_dependency(mock_workflow):
+    tasks = build_test_group()
+    tasks["toolchain"]["state"] = "exception"
+    tasks["toolchain"]["run"] = CANCELED
+    mock_workflow.setup_mock_tasks(tasks)
+    mock_workflow.index_service.task_groups = ["task-group"]
+
+    assert mock_workflow.reap_blocked_tasks() == ["build"]
+
+
+def two_blocked_groups(mock_workflow, list_task_group):
+    groups = {}
+    for group_id in ("group-a", "group-b"):
+        groups[group_id] = {
+            f"{group_id}-{task_id}": {
+                **desc,
+                "group": group_id,
+                "dependencies": [
+                    f"{group_id}-{dep}" for dep in desc.get("dependencies", [])
+                ],
+            }
+            for task_id, desc in build_test_group().items()
+        }
+    mock_workflow.setup_mock_tasks({**groups["group-a"], **groups["group-b"]})
+    mock_workflow.index_service.task_groups = [
+        "group-a-task-group",
+        "group-b-task-group",
+    ]
+
+    queue = mock_workflow.queue_service
+
+    def _list_task_group(group_id, paginationHandler):
+        list_task_group(group_id)
+        paginationHandler(
+            {
+                "tasks": [
+                    {
+                        "task": queue.task(task_id),
+                        "status": queue.status(task_id)["status"],
+                    }
+                    for task_id in groups[group_id]
+                ]
+            }
+        )
+
+    queue.listTaskGroup = _list_task_group
+
+
+def test_reap_blocked_tasks_shared_external_dependency(mock_workflow):
+    two_blocked_groups(mock_workflow, lambda group_id: None)
+    queue = mock_workflow.queue_service
+    for group_id in ("group-a", "group-b"):
+        queue._tasks[f"{group_id}-build"]["dependencies"] = ["toolchain"]
+    queue._status["toolchain"] = {
+        "status": {"taskId": "toolchain", "state": "failed", "runs": [{"runId": 0}]}
+    }
+
+    with mock.patch.object(queue, "status", wraps=queue.status) as status:
+        assert mock_workflow.reap_blocked_tasks() == ["group-a-build", "group-b-build"]
+
+    assert [call.args[0] for call in status.call_args_list].count("toolchain") == 2
+
+
+def test_reap_blocked_tasks_multiple_groups(mock_workflow):
+    two_blocked_groups(mock_workflow, lambda group_id: None)
+
+    assert mock_workflow.reap_blocked_tasks() == ["group-a-build", "group-b-build"]
+
+
+def test_reap_blocked_tasks_in_parallel(mock_workflow):
+    barrier = threading.Barrier(2, timeout=5)
+    two_blocked_groups(mock_workflow, lambda group_id: barrier.wait())
+
+    assert sorted(mock_workflow.reap_blocked_tasks()) == [
+        "group-a-build",
+        "group-b-build",
+    ]
+
+
+def test_reap_blocked_tasks_parallel_requests(mock_workflow, monkeypatch):
+    two_blocked_groups(mock_workflow, lambda group_id: None)
+    monkeypatch.setattr(settings, "taskcluster_parallel_requests", 3)
+
+    with mock.patch(
+        "code_review_bot.workflow.ThreadPoolExecutor", wraps=ThreadPoolExecutor
+    ) as executor:
+        mock_workflow.reap_blocked_tasks()
+
+    executor.assert_called_once_with(max_workers=3)

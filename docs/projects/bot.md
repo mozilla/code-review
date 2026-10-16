@@ -13,6 +13,11 @@ Two hooks are available and configured through [ci-configuration](https://github
 - [project-relman/code-review-production](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-production)
 - [project-relman/code-review-testing](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-testing)
 
+The reaper unblocking stuck task groups (see [architecture](/docs/architecture.md#blocked-tasks)) uses its own hooks, running the same bot with `CODE_REVIEW_REAP` set:
+
+- [project-relman/code-review-reaper-production](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-reaper-production)
+- [project-relman/code-review-reaper-testing](https://firefox-ci-tc.services.mozilla.com/hooks/project-relman/code-review-reaper-testing)
+
 ## Workflow
 
 The overall workflow of the publication task is relatively simple:
