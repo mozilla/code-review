@@ -582,7 +582,7 @@ class Workflow:
 
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
-            for name, reporter in self.reporters.keys():
+            for name, reporter in self.reporters.items():
                 with self.profiler.record(f"{name}_publication"):
                     reporter.publish(
                         issues,
