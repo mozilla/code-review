@@ -11,6 +11,7 @@ logger = structlog.get_logger(__name__)
 
 TASK_LINK = "{root_url}/tasks/{task_id}"
 LOG_LINK = "{root_url}/api/queue/v1/task/{task_id}/runs/{run_id}/artifacts/public/logs/live_backing.log"
+ARTIFACT_DOWNLOAD_TIMEOUT = 60
 
 
 class BaseTask:
@@ -85,11 +86,25 @@ class BaseTask:
 
     def load_artifact(self, queue_service, artifact_name):
         url = queue_service.buildUrl("getArtifact", self.id, self.run_id, artifact_name)
-        # Allows HTTP_30x redirections retrieving the artifact
-        response = queue_service.session.get(url, stream=True, allow_redirects=True)
 
         try:
+            # Allows HTTP_30x redirections retrieving the artifact
+            response = queue_service.session.get(
+                url,
+                stream=True,
+                allow_redirects=True,
+                timeout=ARTIFACT_DOWNLOAD_TIMEOUT,
+            )
             response.raise_for_status()
+
+            # Load artifact's data, either as JSON or YAML
+            if artifact_name.endswith(".json"):
+                content = response.json()
+            elif artifact_name.endswith(".yml") or artifact_name.endswith(".yaml"):
+                content = yaml.load_stream(response.text)
+            else:
+                # Json responses are automatically parsed into Python structures
+                content = response.content or None
         except Exception as e:
             logger.warn(
                 "Failed to read artifact",
@@ -100,14 +115,6 @@ class BaseTask:
             )
             return None, True
 
-        # Load artifact's data, either as JSON or YAML
-        if artifact_name.endswith(".json"):
-            content = response.json()
-        elif artifact_name.endswith(".yml") or artifact_name.endswith(".yaml"):
-            content = yaml.load_stream(response.text)
-        else:
-            # Json responses are automatically parsed into Python structures
-            content = response.content or None
         return content, False
 
     def load_artifacts(self, queue_service):
