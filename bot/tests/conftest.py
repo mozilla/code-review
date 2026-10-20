@@ -33,6 +33,7 @@ from code_review_bot.sources.phabricator import (
 )
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from code_review_bot.tasks.default import DefaultTask
+from code_review_bot.tools.profiler import ProfilerFile
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -710,7 +711,7 @@ def mock_backend_secret(mock_taskcluster_config):
 
 
 @pytest.fixture(scope="function")
-def mock_workflow(mock_config, mock_taskcluster_config):
+def mock_workflow(mock_config, mock_taskcluster_config, tmp_path):
     """
     Mock the workflow along with Taskcluster mocks
     No phabricator output here
@@ -735,6 +736,7 @@ def mock_workflow(mock_config, mock_taskcluster_config):
             self.update_build = False
             self.task_failures_ignored = []
             self.clone_available = True
+            self.profiler = ProfilerFile(tmp_path / "profiler.txt")
 
         def setup_mock_tasks(self, tasks):
             """
