@@ -8,6 +8,7 @@ import re
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from pathlib import Path
 
 import structlog
 from libmozdata.phabricator import BuildState, ConduitError, PhabricatorAPI
@@ -46,6 +47,7 @@ from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
+from code_review_bot.tools.profiler import ProfilerFile
 
 logger = structlog.get_logger(__name__)
 
@@ -106,6 +108,11 @@ class Workflow:
 
         # Is local clone already setup ?
         self.clone_available = False
+
+        # Setup a profiler output file in artifacts
+        self.profiler = ProfilerFile(
+            Path(settings.taskcluster.results_dir) / "profiler.log"
+        )
 
     def run(self, revision, analysis_mode: AnalysisMode):
         """
@@ -487,21 +494,22 @@ class Workflow:
                 changeset=revision.head_changeset,
                 dest=checkout_dir,
             )
-            robust_checkout(
-                repo_upstream_url=revision.base_repository,
-                repo_url=revision.head_repository,
-                revision=revision.head_changeset,
-                checkout_dir=checkout_dir,
-                sharebase_dir=settings.mercurial_cache_sharebase,
-                noupdate=True,
-            )
+            with self.profiler.record("hg_clone"):
+                robust_checkout(
+                    repo_upstream_url=revision.base_repository,
+                    repo_url=revision.head_repository,
+                    revision=revision.head_changeset,
+                    checkout_dir=checkout_dir,
+                    sharebase_dir=settings.mercurial_cache_sharebase,
+                    noupdate=True,
+                )
 
-            cat_files(
-                repo_dir=checkout_dir,
-                revision=revision.head_changeset,
-                paths=sorted({issue.path for issue in issues}),
-                output_dir=settings.mercurial_cache_files,
-            )
+                cat_files(
+                    repo_dir=checkout_dir,
+                    revision=revision.head_changeset,
+                    paths=sorted({issue.path for issue in issues}),
+                    output_dir=settings.mercurial_cache_files,
+                )
         elif isinstance(revision, GithubRevision):
             # Git clone
             if not settings.git_cache:
@@ -512,12 +520,13 @@ class Workflow:
                 changeset=revision.head_changeset,
                 dest=settings.git_cache,
             )
-            git_clone(
-                base_repository=revision.base_repository,
-                head_repository=revision.head_repository,
-                revision=revision.head_changeset,
-                destination=settings.git_cache,
-            )
+            with self.profiler.record("git_clone"):
+                git_clone(
+                    base_repository=revision.base_repository,
+                    head_repository=revision.head_repository,
+                    revision=revision.head_changeset,
+                    destination=settings.git_cache,
+                )
         else:
             raise NotImplementedError
 
@@ -552,7 +561,8 @@ class Workflow:
         publishable_issues = [i for i in issues if i.is_publishable()]
 
         if publish_to_backend:
-            self.backend_api.publish_issues(publishable_issues, revision)
+            with self.profiler.record("backend_publication"):
+                self.backend_api.publish_issues(publishable_issues, revision)
 
         # Report issues publication stats
         nb_issues = len(issues)
@@ -572,10 +582,16 @@ class Workflow:
 
         # Publish reports about these issues
         with stats.timer("runtime.reports"):
-            for reporter in self.reporters.values():
-                reporter.publish(
-                    issues, revision, task_failures, notices, reviewers, analysis_mode
-                )
+            for name, reporter in self.reporters.keys():
+                with self.profiler.record(f"{name}_publication"):
+                    reporter.publish(
+                        issues,
+                        revision,
+                        task_failures,
+                        notices,
+                        reviewers,
+                        analysis_mode,
+                    )
 
         self.index(
             revision,
