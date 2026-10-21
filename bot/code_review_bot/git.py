@@ -126,6 +126,10 @@ class GitRepository(BaseRepository):
         self.github_app_privkey = config.get("github_app_privkey")
         self._github_token = None
 
+        # Hash of the commit the current build's patches are applied on,
+        # recorded by checkout_base() and handed to the decision task
+        self.base_commit = None
+
     @property
     def repo(self):
         """Lazily open the local Git repository."""
@@ -216,6 +220,7 @@ class GitRepository(BaseRepository):
         """
         logger.info(f"Updating repo to revision {base}")
         self.repo.git.checkout(base, force=True, detach=True)
+        self.base_commit = self.repo.head.commit.hexsha
 
     @staticmethod
     def get_author(commit):
@@ -296,7 +301,16 @@ class GitRepository(BaseRepository):
         # Rendered before the try commit so a bad template fails ahead of any
         # remote interaction
         self.push_branch = self.render_push_branch(build)
-        super().add_try_commit(build, extra_parameters)
+
+        # GitHub reports no base for a push that creates the branch and the
+        # previous tip for a force push, so the decision task could not tell
+        # what the stack changed. Record the real base the same way `mach try`
+        # does; the decision task applies these parameters before computing
+        # files_changed and the taskgraph diff base.
+        assert self.base_commit, "add_try_commit() called before checkout_base()"
+        parameters = dict(extra_parameters)
+        parameters["base_rev"] = self.base_commit
+        super().add_try_commit(build, parameters)
 
     def push_to_try(self):
         """Push the current HEAD to the remote try repository."""
