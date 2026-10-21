@@ -109,9 +109,12 @@ def test_apply_patches(PhabricatorMock, mock_mc_git):
 
 
 def test_add_try_commit(PhabricatorMock, mock_mc_git):
-    """try_task_config.json is written and committed by the bot author."""
+    """try_task_config.json is written and committed by the bot author, and
+    records the commit the stack was applied on as the push's base revision."""
+    base = mock_mc_git.repo.commit(mock_mc_git.default_revision).hexsha
     build = make_build(PhabricatorMock)
     mock_mc_git.apply_build(build)
+    assert mock_mc_git.base_commit == base
     mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS)
 
     config_path = os.path.join(mock_mc_git.dir, "try_task_config.json")
@@ -122,8 +125,11 @@ def test_add_try_commit(PhabricatorMock, mock_mc_git):
             "target_tasks_method": "codereview",
             "optimize_target_tasks": True,
             "phabricator_diff": "PHID-HMBT-deadbeef",
+            "base_rev": base,
         },
     }
+    # The caller's parameters are left untouched
+    assert "base_rev" not in LINT_EXTRA_PARAMS
 
     head = next(mock_mc_git.repo.iter_commits())
     assert (
