@@ -5,6 +5,9 @@ from libmozdata.phabricator import UnitResult, UnitResultState
 from code_review_bot import BaseIssue, IssueType, Level
 from code_review_bot import taskcluster as tc_config
 from code_review_bot.tasks.base import TASK_LINK, AnalysisTask
+from code_review_bot.tasks.log_errors import extract_error_lines, format_error_lines
+
+LOG_ARTIFACT = "public/logs/live_backing.log"
 
 ISSUE_MARKDOWN = """
 ## build failure
@@ -22,9 +25,10 @@ ERROR_MARKDOWN = "* [{display_name}]({task_link}) ([log link]({log_link}))"
 class BuildIssue(BaseIssue):
     type_ = IssueType.BuildTest
 
-    def __init__(self, task_id, *args, **kwargs):
+    def __init__(self, task_id, *args, error_lines=None, **kwargs):
         super().__init__(*args, **kwargs)
         self.task_id = task_id
+        self.error_lines = error_lines or []
 
     @cached_property
     def hash(self):
@@ -54,6 +58,9 @@ class BuildIssue(BaseIssue):
             log_link=self.analyzer.log,
         )
 
+    def as_error_details(self, collapsible=False):
+        return format_error_lines(self.error_lines, collapsible)
+
     def is_build_error(self):
         return True
 
@@ -62,22 +69,27 @@ class BuildIssue(BaseIssue):
             namespace="code-review",
             name=self.display_name,
             result=UnitResultState.Fail,
-            details=f"Code review bot found a **build error**: \n{self.as_error()}",
+            details=f"Code review bot found a **build error**: \n{self.as_error()}{self.as_error_details()}",
             format="remarkup",
         )
 
     def as_dict(self):
         dict_repr = super().as_dict()
         dict_repr["task_id"] = self.task_id
+        dict_repr["error_lines"] = self.error_lines
 
         return dict_repr
 
 
 class BuildTask(AnalysisTask):
+    artifacts = [LOG_ARTIFACT]
+    skipped_states = ("completed",)
+
     def parse_issues(self, artifacts, revision):
         issues = []
 
         if self.state == "failed":
+            log = (artifacts or {}).get(LOG_ARTIFACT)
             issues.append(
                 BuildIssue(
                     task_id=self.id,
@@ -85,6 +97,7 @@ class BuildTask(AnalysisTask):
                     revision=revision,
                     level=Level.Error,
                     message=f"build failed: {self.display_name} ",
+                    error_lines=extract_error_lines(log.splitlines()) if log else [],
                 )
             )
 

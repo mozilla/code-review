@@ -1091,9 +1091,13 @@ class Workflow:
         task_failures = []
         notices = []
         reviewers = []
+        analysis_tasks = []
 
-        for taskId, status in tasks.items():
-            try:
+        try:
+            for taskId, status in tasks.items():
+                if not status["status"]["runs"]:
+                    continue
+
                 task = self.build_task(status)
                 if task is None:
                     continue
@@ -1103,23 +1107,42 @@ class Workflow:
                         task_failures.append(task)
                     continue
 
-                artifacts = task.load_artifacts(self.queue_service)
                 if isinstance(task, AnalysisTask):
+                    analysis_tasks.append(task)
+
+            def _analyze_task(task):
+                try:
+                    artifacts = task.load_artifacts(self.queue_service)
                     task_issues = task.parse_issues(artifacts, revision)
-                    logger.info(
-                        f"Found {len(task_issues)} issues",
+                except Exception as e:
+                    logger.warning(
+                        "Failed to analyze task",
                         task=task.name,
                         id=task.id,
+                        error=str(e),
                     )
+                    return []
+
+                logger.info(
+                    f"Found {len(task_issues)} issues",
+                    task=task.name,
+                    id=task.id,
+                )
+                return task_issues
+
+            with ThreadPoolExecutor(
+                max_workers=settings.taskcluster_parallel_requests
+            ) as executor:
+                for task_issues in executor.map(_analyze_task, analysis_tasks):
                     issues += task_issues
 
-            except Exception as e:
-                logger.warn(
-                    "Failure during build test analysis",
-                    task=settings.try_group_id,
-                    error=e,
-                )
-                raise
+        except Exception as e:
+            logger.warn(
+                "Failure during build test analysis",
+                task=settings.try_group_id,
+                error=e,
+            )
+            raise
 
         return issues, task_failures, notices, reviewers
 
