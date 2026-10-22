@@ -4,12 +4,16 @@
 
 import structlog
 
+from code_review_bot import taskcluster as tc_config
 from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.base import Reporter
 from code_review_bot.revisions import GithubRevision
 from code_review_bot.sources.github import GithubClient, ReviewEvent
+from code_review_bot.tasks.base import TASK_LINK
 
 logger = structlog.get_logger(__name__)
+
+TASK_FAILURE_MESSAGE = "* The task [{name}]({url}) failed, please check it manually."
 
 
 class GithubReporter(Reporter):
@@ -26,6 +30,23 @@ class GithubReporter(Reporter):
         assert isinstance(
             self.analyzers_skipped, list
         ), "analyzers_skipped must be a list"
+
+    def task_url(self, task):
+        return TASK_LINK.format(root_url=tc_config.default_url, task_id=task.id)
+
+    def task_failure_messages(self, task_failures):
+        failed_tasks, _, _ = self.split_task_failures(task_failures)
+        messages = [
+            TASK_FAILURE_MESSAGE.format(name=task.name, url=self.task_url(task))
+            for task in failed_tasks
+        ]
+        messages += [
+            f"* {message}"
+            for message in self.task_failure_summaries(task_failures, self.task_url)
+        ]
+        if not messages:
+            return []
+        return [""] + messages
 
     def publish(
         self, issues, revision, task_failures, notices, reviewers, analysis_mode
@@ -92,6 +113,8 @@ class GithubReporter(Reporter):
                         else:
                             messages.append(f"* `{issue.path}` {issue.as_text()}")
 
+                messages += self.task_failure_messages(task_failures)
+
                 # Publish a review summarizing detected, unresolved and closed issues
                 self.github_client.publish_review(
                     issues=issues_in_patch_files,
@@ -105,7 +128,9 @@ class GithubReporter(Reporter):
                     "No publishable issue, posting a standalone comment",
                     nb_dismissed=nb_dismissed,
                 )
-                if nb_dismissed > 0:
+                if task_failures:
+                    message = "No new issues detected, but some tasks failed."
+                elif nb_dismissed > 0:
                     message = (
                         "Previous issues have been fixed. This pull request is :ok:"
                     )
@@ -114,7 +139,9 @@ class GithubReporter(Reporter):
 
                 self.github_client.publish_comment(
                     revision=revision,
-                    message=message,
+                    message="\n".join(
+                        [message] + self.task_failure_messages(task_failures)
+                    ),
                 )
         else:
             if publishable_issues:
@@ -126,9 +153,18 @@ class GithubReporter(Reporter):
                 for issue in publishable_issues:
                     errmsg = issue.as_error()
                     messages.append(f"{errmsg}")
+                messages += self.task_failure_messages(task_failures)
                 self.github_client.publish_review(
                     issues=publishable_issues,
                     revision=revision,
                     message="\n".join(messages),
                     event=ReviewEvent.RequestChanges,
+                )
+            elif task_failures:
+                self.github_client.publish_comment(
+                    revision=revision,
+                    message="\n".join(
+                        ["Builds and tests did not complete for this revision."]
+                        + self.task_failure_messages(task_failures)
+                    ),
                 )

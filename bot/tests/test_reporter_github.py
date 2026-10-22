@@ -14,6 +14,7 @@ from code_review_bot import Level
 from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.github import GithubReporter
 from code_review_bot.revisions import GithubRevision, Revision
+from code_review_bot.tasks.base import BaseTask, BlockedTask
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from code_review_bot.tasks.coverage import CoverageIssue, ZeroCoverageTask
 
@@ -244,4 +245,147 @@ def test_github_review_cleanup(
     # Check published comment
     assert json.loads(responses.calls[-1].request.body) == {
         "body": "Previous issues have been fixed. This pull request is :ok:"
+    }
+
+
+def _github_reporter():
+    return GithubReporter(
+        {
+            "client_id": "client_id",
+            "private_key_pem": (Path(FIXTURES_DIR) / "private_key.pem").read_text(),
+            "installation_id": 123456789,
+        }
+    )
+
+
+def _exception_task(task_id, name, task_class=BaseTask):
+    return task_class(
+        task_id,
+        {
+            "task": {"metadata": {"name": name}},
+            "status": {
+                "state": "exception",
+                "runs": [{"runId": 0, "reasonResolved": "canceled"}],
+            },
+        },
+    )
+
+
+def test_github_build_test_task_failures(
+    mock_github,
+    mock_config,
+    phab,
+    mock_github_decision_task,
+    mock_task,
+    mock_backend_secret,
+):
+    revision = Revision.from_try_decision_task(
+        mock_github_decision_task, "PHID-HMBT-test", None
+    )
+    revision.id = 52
+
+    responses.add(
+        responses.POST,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments",
+        json={},
+    )
+
+    _github_reporter().publish(
+        [],
+        revision,
+        [
+            mock_task(BaseTask, "toolchain-linux64-clang"),
+            _exception_task("test-ID", "test-linux64/opt-mochitest", BlockedTask),
+            _exception_task("xpcshell-ID", "test-linux64/opt-xpcshell"),
+            _exception_task("build-ID", "build-linux64/opt", BlockedTask),
+        ],
+        [],
+        [],
+        AnalysisMode.BuildTest,
+    )
+
+    assert responses.calls[-1].request.method == "POST"
+    assert json.loads(responses.calls[-1].request.body) == {
+        "body": "\n".join(
+            [
+                "Builds and tests did not complete for this revision.",
+                "",
+                "* The task [toolchain-linux64-clang](https://firefox-ci-tc.services.mozilla.com/tasks/toolchain-linux64-clang-ID) "
+                "failed, please check it manually.",
+                "* 2 tasks did not run because of upstream failures: "
+                "[build-linux64/opt](https://firefox-ci-tc.services.mozilla.com/tasks/build-ID), "
+                "[test-linux64/opt-mochitest](https://firefox-ci-tc.services.mozilla.com/tasks/test-ID)",
+                "* 1 task could not be analysed, please check it manually: "
+                "[test-linux64/opt-xpcshell](https://firefox-ci-tc.services.mozilla.com/tasks/xpcshell-ID)",
+            ]
+        )
+    }
+
+
+def test_github_build_test_nothing_to_report(
+    mock_github,
+    mock_config,
+    phab,
+    mock_github_decision_task,
+    mock_backend_secret,
+):
+    revision = Revision.from_try_decision_task(
+        mock_github_decision_task, "PHID-HMBT-test", None
+    )
+    revision.id = 52
+
+    _github_reporter().publish([], revision, [], [], [], AnalysisMode.BuildTest)
+
+    assert all(call.request.method == "GET" for call in responses.calls)
+
+
+def test_github_lint_task_failures(
+    mock_github,
+    mock_config,
+    phab,
+    mock_github_decision_task,
+    mock_task,
+    mock_backend_secret,
+):
+    revision = Revision.from_try_decision_task(
+        mock_github_decision_task, "PHID-HMBT-test", None
+    )
+    revision.lines = {}
+    revision.files = []
+    revision.id = 52
+
+    responses.add(
+        responses.GET,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
+        json=[],
+    )
+    responses.add(
+        responses.POST,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments",
+        json={},
+    )
+
+    _github_reporter().publish(
+        [],
+        revision,
+        [
+            mock_task(BaseTask, "build-docker-image-lint"),
+            _exception_task("lint-ID", "source-test-mozlint-eslint"),
+        ],
+        [],
+        [],
+        AnalysisMode.Lint,
+    )
+
+    assert json.loads(responses.calls[-1].request.body) == {
+        "body": "\n".join(
+            [
+                "No new issues detected, but some tasks failed.",
+                "",
+                "* The task [build-docker-image-lint](https://firefox-ci-tc.services.mozilla.com/tasks/build-docker-image-lint-ID) "
+                "failed, please check it manually.",
+                "* 1 task could not be analysed, please check it manually: "
+                "[source-test-mozlint-eslint](https://firefox-ci-tc.services.mozilla.com/tasks/lint-ID)",
+            ]
+        )
     }
