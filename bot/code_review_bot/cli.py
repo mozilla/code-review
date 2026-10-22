@@ -116,7 +116,9 @@ def main():
     # Setup libmozdata configuration
     setup_libmozdata("code-review-bot")
 
-    os.environ["PHABRICATOR_EDGE_KEY"] = taskcluster.secrets.get("PHABRICATOR_EDGE_KEY")
+    os.environ["PHABRICATOR_EDGE_KEY"] = taskcluster.secrets.get(
+        "PHABRICATOR_EDGE_KEY", ""
+    )
 
     # Setup settings before stats
     settings.setup(
