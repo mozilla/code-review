@@ -29,6 +29,7 @@ from code_review_bot.analysis import AnalysisMode, get_test_mode_string
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import PhabricatorRevision, Revision
+from code_review_bot.tools.gcp import access_secret_with_keyfile
 from code_review_bot.tools.libmozdata import setup as setup_libmozdata
 from code_review_bot.tools.log import init_logger
 from code_review_bot.workflow import Workflow
@@ -116,7 +117,11 @@ def main():
     # Setup libmozdata configuration
     setup_libmozdata("code-review-bot")
 
-    os.environ["PHABRICATOR_EDGE_KEY"] = taskcluster.secrets.get("PHABRICATOR_EDGE_KEY")
+    # Read the Phabricator edge key from GCP Secret Manager
+    os.environ["PHABRICATOR_EDGE_KEY"] = access_secret_with_keyfile(
+        taskcluster.secrets["PHABRICATOR_EDGE_KEY_SECRET"],
+        taskcluster.secrets["GCP_SERVICE_ACCOUNT_KEY"],
+    )
 
     # Setup settings before stats
     settings.setup(
