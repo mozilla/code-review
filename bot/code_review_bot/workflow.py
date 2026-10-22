@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import base64
+import copy
 import json
 import re
 from collections import defaultdict
@@ -32,6 +33,7 @@ from code_review_bot.mercurial import (
 )
 from code_review_bot.report.debug import DebugReporter
 from code_review_bot.revisions import GithubRevision, PhabricatorRevision, Revision
+from code_review_bot.revisions.phabricator import find_build_test_target
 from code_review_bot.sources.phabricator import (
     PhabricatorActions,
     PhabricatorBuildState,
@@ -133,9 +135,19 @@ class Workflow:
         # Analyze revision patch to get files/lines data
         revision.analyze_patch()
 
+        dependencies = self.load_ending_task_dependencies(
+            settings.try_group_id, "code-review-issues"
+        )
+
+        # Store the revision in the backend (or retrieve an existing one)
+        rev = self.backend_api.publish_revision(revision)
+        assert (
+            rev is not None
+        ), "Stopping early because revision could not be created nor retrieved from the backend"
+
         # Find issues on remote tasks
         issues, task_failures, notices, reviewers = self.find_issues(
-            revision, settings.try_group_id
+            revision, dependencies
         )
 
         # Analyze issues in case the before/after feature is enabled
@@ -207,8 +219,11 @@ class Workflow:
                 url=settings.taskcluster_url,
             )
 
+        dependencies = self.load_ending_task_dependencies(
+            settings.try_group_id, "code-review-build-test-issues"
+        )
         issues, task_failures, notices, reviewers = self.find_build_test_issues(
-            revision, settings.try_group_id
+            revision, dependencies
         )
 
         # Publish all issues
@@ -326,17 +341,13 @@ class Workflow:
         # Publish issues in the backend
         self.backend_api.publish_issues(issues, revision)
 
-    def start_analysis(
-        self, revision: PhabricatorRevision, analysis_mode: AnalysisMode
-    ):
+    def start_analysis(self, revision: PhabricatorRevision):
         """
         Apply a patch on a local clone and push to try to trigger a new Code review analysis
         """
         logger.info("Starting revision analysis", revision=revision)
 
-        namespace_suffixes = ["", "lint"]
-        if analysis_mode == AnalysisMode.BuildTest:
-            namespace_suffixes = ["build-test"]
+        namespace_suffixes = ["", "lint", "build-test"]
 
         # Index ASAP Taskcluster task for this revision
         self.index(revision, state="analysis", namespace_suffixes=namespace_suffixes)
@@ -411,26 +422,18 @@ class Workflow:
         # We'll clone the required repository
         repository.clone()
 
-        parameters = {}
-        if analysis_mode == AnalysisMode.Lint:
-            parameters.update(
-                {
-                    # The code review bot only consumes the results of the
-                    # code-review tasks, which the target tasks method already selects.
-                    "enable_always_target": False,
-                    "target_tasks_method": "codereview",
-                    "optimize_target_tasks": True,
-                }
-            )
-        elif analysis_mode == AnalysisMode.BuildTest:
-            parameters.update(
-                {
-                    "target_tasks_method": "codereview-build-test",
-                    "optimize_target_tasks": True,
-                    # avoid firing unwanted tasks, eg: source-test
-                    "enable_always_target": False,
-                }
-            )
+        if revision.build_test_feature:
+            target_tasks_method = "codereview-lint-build-test"
+        else:
+            target_tasks_method = "codereview"
+
+        parameters = {
+            # The code review bot only consumes the results of the
+            # code-review tasks, which the target tasks method already selects.
+            "enable_always_target": False,
+            "target_tasks_method": target_tasks_method,
+            "optimize_target_tasks": True,
+        }
 
         # Apply the stack of patches and push to try
         worker = MercurialWorker()
@@ -449,13 +452,27 @@ class Workflow:
         # Update final state using worker output
         if self.update_build and isinstance(revision, PhabricatorRevision):
             publish_analysis_phabricator(output, self.phabricator)
+            build_test_target_phid = find_build_test_target(
+                self.phabricator, revision.build_target_phid
+            )
+            if revision.build_test_feature:
+                mode, output_build, extras = output
+                build_test_build = copy.copy(output_build)
+                build_test_build.target_phid = build_test_target_phid
+                publish_analysis_phabricator(
+                    (mode, build_test_build, extras), self.phabricator
+                )
         else:
             logger.info("Skipping Phabricator publication")
 
         # Send Build in progress or errors to Lando
         lando_reporter = self.reporters.get("lando")
         if lando_reporter is not None:
-            publish_analysis_lando(output, lando_reporter.lando_api, analysis_mode)
+            publish_analysis_lando(output, lando_reporter.lando_api, AnalysisMode.Lint)
+            if revision.build_test_feature:
+                publish_analysis_lando(
+                    output, lando_reporter.lando_api, AnalysisMode.BuildTest
+                )
         else:
             logger.info("Skipping Lando publication")
 
@@ -954,65 +971,30 @@ class Workflow:
             for issue in group_issues:
                 issue.new_issue = bool(issue.hash and issue.hash not in hashes)
 
-    def find_issues(self, revision, group_id):
+    def find_issues(self, revision, dependencies):
         """
-        Find all issues on remote Taskcluster task group
+        Find all issues on the dependencies of the code-review-issues task
         """
-        # Load all tasks in task group
-        tasks = self.queue_service.listTaskGroup(group_id)
-        assert "tasks" in tasks
-        tasks = {task["status"]["taskId"]: task for task in tasks["tasks"]}
-        assert len(tasks) > 0
-        logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
-
-        # Store the revision in the backend (or retrieve an existing one)
-        rev = self.backend_api.publish_revision(revision)
-        assert (
-            rev is not None
-        ), "Stopping early because revision could not be created nor retrieved from the backend"
-
-        task = None
-        for t in tasks.values():
-            if t["task"]["metadata"]["name"] == "code-review-issues":
-                task = t
-                break
-        else:
-            assert False, "No code-review-issues task"
-
-        # Load task description
-        dependencies = task["task"]["dependencies"]
-        assert len(dependencies) > 0, "No task dependencies to analyze"
-
-        # Skip dependencies not in group
-        # But log all skipped tasks
-        def _in_group(dep_id):
-            if dep_id not in tasks:
-                # Used for docker images produced in tree
-                # and other artifacts
-                logger.info("Skip dependency not in group", task_id=dep_id)
-                return False
-            return True
-
-        dependencies = [dep_id for dep_id in dependencies if _in_group(dep_id)]
-
         # Do not run parsers when we only have a gecko decision task
         # That means no analyzer were triggered by the taskgraph decision task
         # This can happen if the patch only touches file types for which we have no analyzer defined
         # See issue https://github.com/mozilla/release-services/issues/2055
-        if len(dependencies) == 1:
-            task = tasks[dependencies[0]]
-            if task["task"]["metadata"]["name"] == "Gecko Decision Task":
-                logger.warn("Only dependency is a Decision Task, skipping analysis")
-                return [], [], [], []
+        if (
+            len(dependencies) == 1
+            and dependencies[0]["task"]["metadata"]["name"] == "Gecko Decision Task"
+        ):
+            logger.warn("Only dependency is a Decision Task, skipping analysis")
+            return [], [], [], []
 
         # Add zero-coverage task
         if self.zero_coverage_enabled:
-            dependencies.append(ZeroCoverageTask)
+            dependencies = dependencies + [ZeroCoverageTask]
 
         # Find issues and patches in dependencies
         issues = []
         task_failures = []
         notices = []
+        task = None
         for dep in dependencies:
             try:
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
@@ -1020,7 +1002,7 @@ class Workflow:
                     task = dep.build_from_route(self.index_service, self.queue_service)
                 else:
                     # Use a task from its id & description
-                    task = self.build_task(tasks[dep])
+                    task = self.build_task(dep)
                 if task is None:
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
@@ -1076,7 +1058,7 @@ class Workflow:
         )
         return issues, task_failures, notices, reviewers
 
-    def find_build_test_issues(self, revision, group_id):
+    def load_task_group(self, group_id):
         tasks = {}
 
         def _load_tasks(page):
@@ -1086,15 +1068,45 @@ class Workflow:
         self.queue_service.listTaskGroup(group_id, paginationHandler=_load_tasks)
         assert len(tasks) > 0
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
+        return tasks
 
+    def load_ending_task_dependencies(self, group_id, ending_task_name):
+        tasks = self.load_task_group(group_id)
+
+        ending_task = next(
+            (
+                task
+                for task in tasks.values()
+                if task["task"]["metadata"]["name"] == ending_task_name
+            ),
+            None,
+        )
+        assert ending_task is not None, f"No {ending_task_name} task"
+
+        dependencies = ending_task["task"]["dependencies"]
+        assert len(dependencies) > 0, "No task dependencies to analyze"
+
+        # Skip dependencies not in group
+        # But log all skipped tasks
+        def _in_group(dep_id):
+            if dep_id not in tasks:
+                # Used for docker images produced in tree
+                # and other artifacts
+                logger.info("Skip dependency not in group", task_id=dep_id)
+                return False
+            return True
+
+        return [tasks[dep_id] for dep_id in dependencies if _in_group(dep_id)]
+
+    def find_build_test_issues(self, revision, dependencies):
         issues = []
         task_failures = []
         notices = []
         reviewers = []
 
-        for taskId, status in tasks.items():
+        for dep in dependencies:
             try:
-                task = self.build_task(status)
+                task = self.build_task(dep)
                 if task is None:
                     continue
 

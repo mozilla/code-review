@@ -29,6 +29,7 @@ from code_review_bot.analysis import AnalysisMode, get_test_mode_string
 from code_review_bot.config import settings
 from code_review_bot.report import get_reporters
 from code_review_bot.revisions import PhabricatorRevision, Revision
+from code_review_bot.revisions.phabricator import find_build_test_target
 from code_review_bot.tools.libmozdata import setup as setup_libmozdata
 from code_review_bot.tools.log import init_logger
 from code_review_bot.workflow import Workflow
@@ -197,6 +198,14 @@ def main():
             )
             w.ingest_revision(revision, settings.generic_group_id)
         elif settings.phabricator_build_target:
+            # TODO: remove this block once the phabricator build plan
+            # no longer fires the analysis task for build/test
+            if settings.analysis_mode == AnalysisMode.BuildTest:
+                logger.info(
+                    "Build/test analysis is started by the Lint analysis, nothing to do"
+                )
+                return 0
+
             # Only Phabricator revisions is supported from build target
             revision = PhabricatorRevision.from_phabricator_trigger(
                 settings.phabricator_build_target,
@@ -205,14 +214,17 @@ def main():
             if revision is None:
                 return 0
 
-            if settings.analysis_mode == AnalysisMode.BuildTest:
-                # Allow for this feature to be turned on gradually
-                if not revision.build_test_feature:
-                    # Make sure we don't leave a hanging Build on Phabricator!
-                    w.update_status(revision, state=BuildState.Pass)
-                    return 0
+            if not revision.build_test_feature and phabricator_reporting_enabled:
+                build_test_target_phid = find_build_test_target(
+                    phabricator_api, revision.build_target_phid
+                )
+                # build/test feature is not enabled for this revision; just
+                # pass the build
+                phabricator_api.update_build_target(
+                    build_test_target_phid, BuildState.Pass
+                )
 
-            w.start_analysis(revision, settings.analysis_mode)
+            w.start_analysis(revision)
         else:
             decision_task = queue_service.task(settings.try_group_id)
             rawParams, _ = downloadArtifactToBuf(
@@ -221,9 +233,22 @@ def main():
                 queueService=queue_service,
             )
             parameters = yaml.safe_load(bytes(rawParams))
+
+            build_target_phid = parameters["phabricator_diff"]
+
+            # for phabricator-driven analysis, we only get the linting
+            # build target in the parameters. if we're running publication
+            # for the build/test tasks, we need to find and set this to the
+            # correct target to make sure the right Build on phabricator is
+            # updated
+            if build_target_phid and settings.analysis_mode == AnalysisMode.BuildTest:
+                build_target_phid = find_build_test_target(
+                    phabricator_api, build_target_phid
+                )
+
             revision = Revision.from_try_decision_task(
                 decision_task,
-                parameters["phabricator_diff"],
+                build_target_phid,
                 phabricator_api,
             )
 
@@ -267,9 +292,23 @@ def main():
             extras["error_code"] = e.code
             extras["error_message"] = str(e)
 
-        namespace_suffixes = ["", "lint"]
-        if settings.analysis_mode == AnalysisMode.BuildTest:
+        if settings.phabricator_build_target:
+            # analysis task: we have one task, and must always deal with
+            # both analysis modes
+            analysis_modes = [AnalysisMode.Lint, AnalysisMode.BuildTest]
+            namespace_suffixes = ["", "lint", "build-test"]
+        elif settings.analysis_mode == AnalysisMode.BuildTest:
+            # publication task for build-test checks
+            analysis_modes = [AnalysisMode.BuildTest]
             namespace_suffixes = ["build-test"]
+        elif settings.analysis_mode == AnalysisMode.Lint:
+            # publication task for lint checks
+            analysis_modes = [AnalysisMode.Lint]
+            namespace_suffixes = ["", "lint"]
+        else:
+            # ingestion mode; linting and build/test are irrelevant
+            analysis_modes = []
+            namespace_suffixes = [""]
 
         w.index(
             revision, namespace_suffixes=namespace_suffixes, state="error", **extras
@@ -285,10 +324,32 @@ def main():
             duration=0,
         )
 
-        if phabricator_reporting_enabled and isinstance(revision, PhabricatorRevision):
+        # only run when phabricator reporting is enabled, and we're running in
+        # a mode that sets a build target (analysis or publication)
+        if (
+            phabricator_reporting_enabled
+            and isinstance(revision, PhabricatorRevision)
+            and revision.build_target_phid
+        ):
+            # in the analysis task, this will always be set to the lint build target,
+            # because that's the only one that fires an analysis task
+            # in the publication task, this will be either the lint or build/test
+            # build target
             w.phabricator.update_build_target(
                 revision.build_target_phid, BuildState.Fail, unit=[failure]
             )
+            if settings.phabricator_build_target:
+                # in the analysis task, we need to additionally append the
+                # build/test build target, to make sure we fail it, too
+                try:
+                    build_test_build_target = find_build_test_target(
+                        phabricator_api, revision.build_target_phid
+                    )
+                    w.phabricator.update_build_target(
+                        build_test_build_target, BuildState.Fail, unit=[failure]
+                    )
+                except Exception:
+                    logger.exception("Failed to set build/test build target to Fail")
 
         # Also update lando
         if not hasattr(revision, "id") or not hasattr(revision, "diff"):
@@ -296,9 +357,9 @@ def main():
                 "Skipping lando generic failure publication as the revision is incomplete"
             )
         elif lando_publish_generic_failure:
-            try:
-                if settings.analysis_mode:
-                    test_mode_string = get_test_mode_string(settings.analysis_mode)
+            for analysis_mode in analysis_modes:
+                try:
+                    test_mode_string = get_test_mode_string(analysis_mode)
                     warnings = lando_api.get_warnings(revision.id, revision.diff["id"])
                     to_delete = [
                         w
@@ -313,8 +374,8 @@ def main():
                         revision.id,
                         revision.diff["id"],
                     )
-            except Exception as ex:
-                logger.error(str(ex), exc_info=True)
+                except Exception as ex:
+                    logger.error(str(ex), exc_info=True)
 
         # Then raise to mark task as erroneous
         raise

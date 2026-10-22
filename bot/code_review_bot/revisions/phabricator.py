@@ -14,7 +14,7 @@ import sentry_sdk
 import structlog
 from libmozdata.phabricator import PhabricatorAPI
 
-from code_review_bot import InvalidRepository, InvalidTrigger
+from code_review_bot import InvalidRepository, InvalidTrigger, taskcluster
 from code_review_bot.config import (
     PHABRICATOR_POLL_DELAYS,
     REPO_AUTOLAND,
@@ -25,6 +25,52 @@ from code_review_bot.config import (
 from code_review_bot.revisions.base import Revision
 
 logger = structlog.get_logger(__name__)
+
+
+def find_build_test_target(
+    phabricator: PhabricatorAPI, lint_build_target_phid: str
+) -> str:
+    plan_phid = taskcluster.secrets.get("BUILD_TEST_PLAN_PHID")
+    if not plan_phid:
+        logger.error(
+            "No build/test build plan configured, cannot find its build target",
+            lint_build_target_phid=lint_build_target_phid,
+        )
+        raise Exception("Cannot find build/test build target")
+
+    buildable = phabricator.find_target_buildable(lint_build_target_phid)
+    diff_phid = buildable["fields"]["objectPHID"]
+    assert diff_phid.startswith("PHID-DIFF-")
+
+    try:
+        _, targets = phabricator.find_diff_build(diff_phid, plan_phid)
+    except Exception as e:
+        logger.error(
+            "Failed to find the build/test build target",
+            lint_build_target_phid=lint_build_target_phid,
+            diff_phid=diff_phid,
+            plan=plan_phid,
+            error=str(e),
+        )
+        raise
+
+    if not targets:
+        logger.warning(
+            "No build/test build target found",
+            lint_build_target_phid=lint_build_target_phid,
+            diff_phid=diff_phid,
+            plan=plan_phid,
+        )
+        raise Exception("No build/test build target found")
+
+    target_phid = max(targets, key=lambda target: target["id"])["phid"]
+    logger.info(
+        "Found build/test build target",
+        lint_build_target_phid=lint_build_target_phid,
+        diff_phid=diff_phid,
+        target=target_phid,
+    )
+    return target_phid
 
 
 class PhabricatorRevision(Revision):
@@ -138,7 +184,9 @@ class PhabricatorRevision(Revision):
 
     @staticmethod
     def from_try_decision_task(
-        decision_task: dict, build_target_phid: str, phabricator: PhabricatorAPI
+        decision_task: dict,
+        build_target_phid: str,
+        phabricator: PhabricatorAPI,
     ):
         """
         Load identifiers from Phabricator, using the remote task description
