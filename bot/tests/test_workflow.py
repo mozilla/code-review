@@ -160,17 +160,29 @@ def test_find_issues_doc_upload_failure_reported_once(mock_workflow, mock_revisi
     assert len(task_failures) == 1
 
 
+def with_build_test_ending(tasks, dependencies=None):
+    return {
+        **tasks,
+        "build-test-ending": {
+            "name": "code-review-build-test-issues",
+            "dependencies": list(tasks) if dependencies is None else dependencies,
+        },
+    }
+
+
 def test_find_build_test_issues(mock_workflow, mock_revision):
     mock_workflow.setup_mock_tasks(
-        {
-            "failed-build": {"name": "build-linux64/opt", "state": "failed"},
-            "passed-build": {"name": "build-win64/debug", "state": "completed"},
-            "docker-image": {
-                "name": "build-docker-image-debian12-base",
-                "state": "failed",
-            },
-            "lint": {"name": "source-test-unsupported", "state": "failed"},
-        }
+        with_build_test_ending(
+            {
+                "failed-build": {"name": "build-linux64/opt", "state": "failed"},
+                "passed-build": {"name": "build-win64/debug", "state": "completed"},
+                "docker-image": {
+                    "name": "build-docker-image-debian12-base",
+                    "state": "failed",
+                },
+                "lint": {"name": "source-test-unsupported", "state": "failed"},
+            }
+        )
     )
 
     issues, _, notices, reviewers = mock_workflow.find_build_test_issues(
@@ -187,10 +199,12 @@ def test_find_build_test_issues(mock_workflow, mock_revision):
 
 def test_find_build_test_issues_exception(mock_workflow, mock_revision):
     mock_workflow.setup_mock_tasks(
-        {
-            "exception-build": {"name": "build-linux64/opt", "state": "exception"},
-            "canceled-build": {"name": "build-win64/debug", "state": "exception"},
-        }
+        with_build_test_ending(
+            {
+                "exception-build": {"name": "build-linux64/opt", "state": "exception"},
+                "canceled-build": {"name": "build-win64/debug", "state": "exception"},
+            }
+        )
     )
     mock_workflow.queue_service._status["canceled-build"]["status"]["runs"][0][
         "reasonResolved"
@@ -206,10 +220,15 @@ def test_find_build_test_issues_exception(mock_workflow, mock_revision):
 
 def test_find_build_test_issues_all_pages(mock_workflow, mock_revision):
     mock_workflow.setup_mock_tasks(
-        {
-            f"failed-build-{i}": {"name": f"build-linux64-{i}/opt", "state": "failed"}
-            for i in range(3)
-        }
+        with_build_test_ending(
+            {
+                f"failed-build-{i}": {
+                    "name": f"build-linux64-{i}/opt",
+                    "state": "failed",
+                }
+                for i in range(3)
+            }
+        )
     )
 
     with mock.patch.object(
@@ -227,6 +246,44 @@ def test_find_build_test_issues_all_pages(mock_workflow, mock_revision):
         "failed-build-1",
         "failed-build-2",
     ]
+
+
+def test_find_build_test_issues_only_ending_task_dependencies(
+    mock_workflow, mock_revision
+):
+    mock_workflow.setup_mock_tasks(
+        with_build_test_ending(
+            {
+                "failed-build": {"name": "build-linux64/opt", "state": "failed"},
+                "other-build": {"name": "build-win64/debug", "state": "failed"},
+                "exception-lint": {
+                    "name": "source-test-mozlint-eslint",
+                    "state": "exception",
+                },
+                "lint-ending": {
+                    "name": "code-review-issues",
+                    "dependencies": ["exception-lint"],
+                },
+            },
+            dependencies=["failed-build", "docker-image-not-in-group"],
+        )
+    )
+
+    issues, task_failures, _, _ = mock_workflow.find_build_test_issues(
+        mock_revision, "remoteTryGroup"
+    )
+
+    assert [issue.task_id for issue in issues] == ["failed-build"]
+    assert task_failures == []
+
+
+def test_find_build_test_issues_without_ending_task(mock_workflow, mock_revision):
+    mock_workflow.setup_mock_tasks(
+        {"failed-build": {"name": "build-linux64/opt", "state": "failed"}}
+    )
+
+    with pytest.raises(AssertionError, match="No code-review-build-test-issues task"):
+        mock_workflow.find_build_test_issues(mock_revision, "remoteTryGroup")
 
 
 @pytest.mark.parametrize("build_test_feature", [False, True])
@@ -292,7 +349,7 @@ def test_run_build_test(mock_workflow, mock_revision):
     ],
 )
 def test_run_build_test_state(mock_workflow, mock_revision, tasks, expected_state):
-    mock_workflow.setup_mock_tasks(tasks)
+    mock_workflow.setup_mock_tasks(with_build_test_ending(tasks))
 
     mock_workflow.run(mock_revision, AnalysisMode.BuildTest)
 
