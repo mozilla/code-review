@@ -135,9 +135,19 @@ class Workflow:
         # Analyze revision patch to get files/lines data
         revision.analyze_patch()
 
+        dependencies = self.load_ending_task_dependencies(
+            settings.try_group_id, "code-review-issues"
+        )
+
+        # Store the revision in the backend (or retrieve an existing one)
+        rev = self.backend_api.publish_revision(revision)
+        assert (
+            rev is not None
+        ), "Stopping early because revision could not be created nor retrieved from the backend"
+
         # Find issues on remote tasks
         issues, task_failures, notices, reviewers = self.find_issues(
-            revision, settings.try_group_id
+            revision, dependencies
         )
 
         # Analyze issues in case the before/after feature is enabled
@@ -209,8 +219,11 @@ class Workflow:
                 url=settings.taskcluster_url,
             )
 
+        dependencies = self.load_ending_task_dependencies(
+            settings.try_group_id, "code-review-build-test-issues"
+        )
         issues, task_failures, notices, reviewers = self.find_build_test_issues(
-            revision, settings.try_group_id
+            revision, dependencies
         )
 
         # Publish all issues
@@ -958,65 +971,30 @@ class Workflow:
             for issue in group_issues:
                 issue.new_issue = bool(issue.hash and issue.hash not in hashes)
 
-    def find_issues(self, revision, group_id):
+    def find_issues(self, revision, dependencies):
         """
-        Find all issues on remote Taskcluster task group
+        Find all issues on the dependencies of the code-review-issues task
         """
-        # Load all tasks in task group
-        tasks = self.queue_service.listTaskGroup(group_id)
-        assert "tasks" in tasks
-        tasks = {task["status"]["taskId"]: task for task in tasks["tasks"]}
-        assert len(tasks) > 0
-        logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
-
-        # Store the revision in the backend (or retrieve an existing one)
-        rev = self.backend_api.publish_revision(revision)
-        assert (
-            rev is not None
-        ), "Stopping early because revision could not be created nor retrieved from the backend"
-
-        task = None
-        for t in tasks.values():
-            if t["task"]["metadata"]["name"] == "code-review-issues":
-                task = t
-                break
-        else:
-            assert False, "No code-review-issues task"
-
-        # Load task description
-        dependencies = task["task"]["dependencies"]
-        assert len(dependencies) > 0, "No task dependencies to analyze"
-
-        # Skip dependencies not in group
-        # But log all skipped tasks
-        def _in_group(dep_id):
-            if dep_id not in tasks:
-                # Used for docker images produced in tree
-                # and other artifacts
-                logger.info("Skip dependency not in group", task_id=dep_id)
-                return False
-            return True
-
-        dependencies = [dep_id for dep_id in dependencies if _in_group(dep_id)]
-
         # Do not run parsers when we only have a gecko decision task
         # That means no analyzer were triggered by the taskgraph decision task
         # This can happen if the patch only touches file types for which we have no analyzer defined
         # See issue https://github.com/mozilla/release-services/issues/2055
-        if len(dependencies) == 1:
-            task = tasks[dependencies[0]]
-            if task["task"]["metadata"]["name"] == "Gecko Decision Task":
-                logger.warn("Only dependency is a Decision Task, skipping analysis")
-                return [], [], [], []
+        if (
+            len(dependencies) == 1
+            and dependencies[0]["task"]["metadata"]["name"] == "Gecko Decision Task"
+        ):
+            logger.warn("Only dependency is a Decision Task, skipping analysis")
+            return [], [], [], []
 
         # Add zero-coverage task
         if self.zero_coverage_enabled:
-            dependencies.append(ZeroCoverageTask)
+            dependencies = dependencies + [ZeroCoverageTask]
 
         # Find issues and patches in dependencies
         issues = []
         task_failures = []
         notices = []
+        task = None
         for dep in dependencies:
             try:
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
@@ -1024,7 +1002,7 @@ class Workflow:
                     task = dep.build_from_route(self.index_service, self.queue_service)
                 else:
                     # Use a task from its id & description
-                    task = self.build_task(tasks[dep])
+                    task = self.build_task(dep)
                 if task is None:
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
@@ -1080,7 +1058,7 @@ class Workflow:
         )
         return issues, task_failures, notices, reviewers
 
-    def find_build_test_issues(self, revision, group_id):
+    def load_task_group(self, group_id):
         tasks = {}
 
         def _load_tasks(page):
@@ -1090,29 +1068,45 @@ class Workflow:
         self.queue_service.listTaskGroup(group_id, paginationHandler=_load_tasks)
         assert len(tasks) > 0
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
+        return tasks
+
+    def load_ending_task_dependencies(self, group_id, ending_task_name):
+        tasks = self.load_task_group(group_id)
 
         ending_task = next(
             (
                 task
                 for task in tasks.values()
-                if task["task"]["metadata"]["name"] == "code-review-build-test-issues"
+                if task["task"]["metadata"]["name"] == ending_task_name
             ),
             None,
         )
-        assert ending_task is not None, "No code-review-build-test-issues task"
+        assert ending_task is not None, f"No {ending_task_name} task"
 
-        dependencies = [
-            dep_id for dep_id in ending_task["task"]["dependencies"] if dep_id in tasks
-        ]
+        dependencies = ending_task["task"]["dependencies"]
+        assert len(dependencies) > 0, "No task dependencies to analyze"
 
+        # Skip dependencies not in group
+        # But log all skipped tasks
+        def _in_group(dep_id):
+            if dep_id not in tasks:
+                # Used for docker images produced in tree
+                # and other artifacts
+                logger.info("Skip dependency not in group", task_id=dep_id)
+                return False
+            return True
+
+        return [tasks[dep_id] for dep_id in dependencies if _in_group(dep_id)]
+
+    def find_build_test_issues(self, revision, dependencies):
         issues = []
         task_failures = []
         notices = []
         reviewers = []
 
-        for dep_id in dependencies:
+        for dep in dependencies:
             try:
-                task = self.build_task(tasks[dep_id])
+                task = self.build_task(dep)
                 if task is None:
                     continue
 
