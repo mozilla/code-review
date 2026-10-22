@@ -1091,6 +1091,20 @@ class Workflow:
         assert len(tasks) > 0
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
 
+        ending_task = next(
+            (
+                task
+                for task in tasks.values()
+                if task["task"]["metadata"]["name"] == "code-review-build-test-issues"
+            ),
+            None,
+        )
+        assert ending_task is not None, "No code-review-build-test-issues task"
+
+        dependencies = [
+            dep_id for dep_id in ending_task["task"]["dependencies"] if dep_id in tasks
+        ]
+
         issues = []
         task_failures = []
         notices = []
@@ -1098,7 +1112,8 @@ class Workflow:
         analysis_tasks = []
 
         try:
-            for taskId, status in tasks.items():
+            for dep_id in dependencies:
+                status = tasks[dep_id]
                 if not status["status"]["runs"]:
                     continue
 
