@@ -172,11 +172,12 @@ def test_is_test_file(path, expected):
 
 def test_detect_testing_approved():
     # Code changes along with test changes
+    # XXX: testing-approved detection is disabled for now.
     assert (
         detect_testing_policy_tag(
             ["dom/base/nsDocument.cpp", "dom/base/test/test_anchor.html"]
         )
-        == TESTING_APPROVED_PHID
+        is None
     )
     assert (
         detect_testing_policy_tag(
@@ -187,7 +188,7 @@ def test_detect_testing_approved():
                 "docs/index.rst",
             ]
         )
-        == TESTING_APPROVED_PHID
+        is None
     )
 
     # Code changes without tests
