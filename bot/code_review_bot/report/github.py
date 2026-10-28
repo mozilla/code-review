@@ -5,9 +5,13 @@
 import structlog
 
 from code_review_bot.analysis import AnalysisMode
-from code_review_bot.report.base import Reporter
+from code_review_bot.report.base import Reporter, format_build_errors
 from code_review_bot.revisions import GithubRevision
-from code_review_bot.sources.github import GithubClient, ReviewEvent
+from code_review_bot.sources.github import (
+    GITHUB_COMMENT_LIMIT,
+    GithubClient,
+    ReviewEvent,
+)
 
 logger = structlog.get_logger(__name__)
 
@@ -118,17 +122,19 @@ class GithubReporter(Reporter):
                 )
         else:
             if publishable_issues:
-                messages = [
+                header = (
                     f"{len(publishable_issues)} build or test issue{'s' if len(publishable_issues) > 1 else ''} "
                     f"{'have' if len(publishable_issues) > 1 else 'has'} "
                     "been found in this revision."
-                ]
-                for issue in publishable_issues:
-                    errmsg = issue.as_error()
-                    messages.append(f"{errmsg}")
+                )
+                errors = format_build_errors(
+                    publishable_issues,
+                    GITHUB_COMMENT_LIMIT - len(header) - 1,
+                    collapsible=True,
+                )
                 self.github_client.publish_review(
                     issues=publishable_issues,
                     revision=revision,
-                    message="\n".join(messages),
+                    message=f"{header}\n{errors}",
                     event=ReviewEvent.RequestChanges,
                 )

@@ -511,6 +511,10 @@ class Response:
     def content(self):
         return self.body.encode()
 
+    def iter_lines(self):
+        for line in self.body.splitlines():
+            yield line.encode()
+
     def json(self):
         return self.body
 

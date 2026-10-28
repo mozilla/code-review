@@ -14,6 +14,8 @@ from code_review_bot import Level
 from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.github import GithubReporter
 from code_review_bot.revisions import GithubRevision, Revision
+from code_review_bot.sources.github import GITHUB_COMMENT_LIMIT
+from code_review_bot.tasks.build import BuildIssue, BuildTask
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from code_review_bot.tasks.coverage import CoverageIssue, ZeroCoverageTask
 
@@ -245,3 +247,114 @@ def test_github_review_cleanup(
     assert json.loads(responses.calls[-1].request.body) == {
         "body": "Previous issues have been fixed. This pull request is :ok:"
     }
+
+
+def _build_test_reporter_and_revision(mock_github_decision_task):
+    revision = Revision.from_try_decision_task(
+        mock_github_decision_task, "PHID-HMBT-test", None
+    )
+    revision.id = 52
+    reporter = GithubReporter(
+        {
+            "client_id": "client_id",
+            "private_key_pem": (Path(FIXTURES_DIR) / "private_key.pem").read_text(),
+            "installation_id": 123456789,
+        }
+    )
+    responses.add(
+        responses.POST,
+        "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews",
+        json={},
+    )
+    return reporter, revision
+
+
+def test_github_build_test_review(
+    mock_github,
+    mock_config,
+    phab,
+    mock_github_decision_task,
+    mock_task,
+    mock_backend_secret,
+):
+    reporter, revision = _build_test_reporter_and_revision(mock_github_decision_task)
+
+    issues = [
+        BuildIssue(
+            task_id="build-linux64/opt-ID",
+            analyzer=mock_task(BuildTask, "build-linux64/opt"),
+            revision=revision,
+            level=Level.Error,
+            message="build failed: build-linux64/opt ",
+            error_lines=[
+                "foo.cpp:1:1: error: broken",
+                "bar.cpp:2:2: error: also broken",
+            ],
+        ),
+        BuildIssue(
+            task_id="build-win64/opt-ID",
+            analyzer=mock_task(BuildTask, "build-win64/opt"),
+            revision=revision,
+            level=Level.Error,
+            message="build failed: build-win64/opt ",
+        ),
+    ]
+
+    reporter.publish(issues, revision, [], [], [], AnalysisMode.BuildTest)
+
+    review_creation = responses.calls[-1]
+    assert review_creation.request.method == "POST"
+    assert (
+        review_creation.request.url
+        == "https://api.github.com:443/repos/owner/repo-name/pulls/1/reviews"
+    )
+    assert json.loads(review_creation.request.body) == {
+        "body": "\n".join(
+            [
+                "2 build or test issues have been found in this revision.",
+                "* [build-linux64/opt](https://firefox-ci-tc.services.mozilla.com/tasks/build-linux64/opt-ID) ([log link](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/build-linux64/opt-ID/runs/0/artifacts/public/logs/live_backing.log))",
+                "\n<details>\n<summary>2 error lines from the log</summary>\n\n"
+                "```\nfoo.cpp:1:1: error: broken\nbar.cpp:2:2: error: also broken\n```\n\n</details>\n",
+                "* [build-win64/opt](https://firefox-ci-tc.services.mozilla.com/tasks/build-win64/opt-ID) ([log link](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/build-win64/opt-ID/runs/0/artifacts/public/logs/live_backing.log))",
+            ]
+        ),
+        "comments": [],
+        "commit_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "event": "REQUEST_CHANGES",
+    }
+
+
+def test_github_build_test_review_truncated(
+    mock_github,
+    mock_config,
+    phab,
+    mock_github_decision_task,
+    mock_task,
+    mock_backend_secret,
+):
+    reporter, revision = _build_test_reporter_and_revision(mock_github_decision_task)
+
+    issues = [
+        BuildIssue(
+            task_id=f"build-{i}/opt-ID",
+            analyzer=mock_task(BuildTask, f"build-{i}/opt"),
+            revision=revision,
+            level=Level.Error,
+            message=f"build failed: build-{i}/opt ",
+            error_lines=[f"foo.cpp:{j}:1: error: {'x' * 450}" for j in range(20)],
+        )
+        for i in range(10)
+    ]
+
+    reporter.publish(issues, revision, [], [], [], AnalysisMode.BuildTest)
+
+    body = json.loads(responses.calls[-1].request.body)["body"]
+    assert len(body) <= GITHUB_COMMENT_LIMIT
+    for issue in issues:
+        assert issue.as_error() in body
+    assert body.count("<details>") == body.count("</details>") == 6
+    assert body.count("```") == 12
+    assert body.endswith(
+        "Error details for 4 failed tasks were omitted to keep this message "
+        "under its size limit; see the linked logs."
+    )
