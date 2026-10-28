@@ -5,9 +5,10 @@
 import json
 import os
 
+import pytest
 from conftest import FIXTURES_DIR
 
-from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
+from code_review_bot.tasks.lint import MozLintIssue, MozLintTask, parse_line_range
 
 
 def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
@@ -140,3 +141,63 @@ def test_licence_payload(mock_revision, mock_hgmo):
     )
     assert issue.check == issue.analyzer.name == "source-test-mozlint-license"
     assert issue.hash == "7142c536e10b31925b018c37b0e6f9f8"
+
+
+@pytest.mark.parametrize(
+    "lineno, lineoffset, expected",
+    [
+        (10, None, (10, 1)),
+        ("10", None, (10, 1)),
+        (None, 3, (0, 1)),
+        # Flat integer, as used by ruff, clippy, compare-locales
+        (10, 0, (10, 1)),
+        (10, 3, (10, 4)),
+        (10, "3", (10, 4)),
+        # Tuple as documented by mozlint: (<lineno offset>, <num lines>)
+        (10, [0, 4], (10, 4)),
+        (10, (2, 3), (10, 5)),
+        (10, [-2, 3], (8, 3)),
+        # Invalid values fall back to a single line
+        (10, "invalid", (10, 1)),
+        (10, [1, 2, 3], (10, 1)),
+    ],
+)
+def test_parse_line_range(lineno, lineoffset, expected):
+    assert parse_line_range(lineno, lineoffset) == expected
+
+
+def test_lineoffset(mock_config, mock_revision, mock_hgmo, mock_task):
+    """
+    Check that multi-line mozlint issues are matched against the patch
+    on their whole range, not only on the first line
+    """
+    task_status = {
+        "task": {"metadata": {"name": "source-test-mozlint-l10n"}},
+        "status": {},
+    }
+    task = MozLintTask("lintTaskId", task_status)
+    issue_payload = {
+        "path": "/builds/worker/checkouts/gecko/test.ftl",
+        "relpath": "test.ftl",
+        "column": 1,
+        "level": "warning",
+        "lineno": 10,
+        "lineoffset": 3,
+        "linter": "l10n",
+        "message": "Dummy multiline warning",
+        "rule": "dummy",
+    }
+    issues = task.parse_issues(
+        {"public/code-review/mozlint.json": {"test.ftl": [issue_payload]}},
+        mock_revision,
+    )
+    assert len(issues) == 1
+    issue = issues[0]
+    assert issue.line == 10
+    assert issue.nb_lines == 4
+
+    # Only the last line of the entity is modified
+    mock_revision.lines = {"test.ftl": [13]}
+    assert mock_revision.contains(issue)
+    mock_revision.lines = {"test.ftl": [14]}
+    assert not mock_revision.contains(issue)
