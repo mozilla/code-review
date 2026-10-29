@@ -5,11 +5,13 @@
 import structlog
 
 from code_review_bot import Issue, taskcluster
-from code_review_bot.report.base import Reporter
+from code_review_bot.report.base import Reporter, format_build_errors
 from code_review_bot.revisions import GithubRevision, PhabricatorRevision
-from code_review_bot.sources.github import GithubClient
+from code_review_bot.sources.github import GITHUB_COMMENT_LIMIT, GithubClient
 
 logger = structlog.get_logger(__name__)
+
+EMAIL_CONTENT_LIMIT = 102400
 
 EMAIL_SUBJECT = (
     """Code Review bot found {build_errors} build errors on D{phabricator_id}"""
@@ -48,11 +50,11 @@ class BuildErrorsReporter(Reporter):
         messages.append(
             f"[Code Review bot](https://github.com/mozilla/code-review) detected {len(build_errors)} build errors when analyzing this Pull Request:"
         )
-        for issue in build_errors:
-            messages.append(issue.as_error())
-
-        content = "\n".join(messages)
-        self.github_client.publish_comment(revision, content)
+        header = "\n".join(messages)
+        errors = format_build_errors(
+            build_errors, GITHUB_COMMENT_LIMIT - len(header) - 1, collapsible=True
+        )
+        self.github_client.publish_comment(revision, f"{header}\n{errors}")
 
     def publish_phabricator(
         self, revision: PhabricatorRevision, build_errors: list[Issue]
@@ -75,14 +77,17 @@ class BuildErrorsReporter(Reporter):
             )
             return
 
-        content = EMAIL_HEADER.format(
+        header = EMAIL_HEADER.format(
             build_errors=len(build_errors),
             phabricator_id=revision.phabricator_id,
             review_url=revision.url,
-            content="\n".join([i.as_error() for i in build_errors]),
+            content="",
+        )
+        content = header + format_build_errors(
+            build_errors, EMAIL_CONTENT_LIMIT - len(header)
         )
 
-        if len(content) > 102400:
+        if len(content) > EMAIL_CONTENT_LIMIT:
             # Content is 102400 chars max
             content = content[:102000] + "\n\n... Content max limit reached!"
 

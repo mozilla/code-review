@@ -188,8 +188,9 @@ def detect_testing_policy_tag(files):
         return TESTING_EXCEPTION_UI_PHID
 
     # Code changes coming along with test changes are covered
-    if any(is_test_file(path) for path in files):
-        return TESTING_APPROVED_PHID
+    # XXX: Disabled for now until we make changes to the testing-policy process.
+    # if any(is_test_file(path) for path in files):
+    #     return TESTING_APPROVED_PHID
 
     return None
 

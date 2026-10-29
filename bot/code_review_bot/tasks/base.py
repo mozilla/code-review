@@ -10,11 +10,16 @@ import yaml
 logger = structlog.get_logger(__name__)
 
 TASK_LINK = "{root_url}/tasks/{task_id}"
-LOG_LINK = "{root_url}/api/queue/v1/task/{task_id}/runs/{run_id}/artifacts/public/logs/live_backing.log"
+LOG_ARTIFACT = "public/logs/live_backing.log"
+LOG_LINK = (
+    "{root_url}/api/queue/v1/task/{task_id}/runs/{run_id}/artifacts/" + LOG_ARTIFACT
+)
+ARTIFACT_DOWNLOAD_TIMEOUT = 60
 
 
 class BaseTask:
     artifacts = []
+    streamed_artifacts = []
     route = None
     valid_states = ("completed", "failed")
     skipped_states = ()
@@ -86,7 +91,12 @@ class BaseTask:
     def load_artifact(self, queue_service, artifact_name):
         url = queue_service.buildUrl("getArtifact", self.id, self.run_id, artifact_name)
         # Allows HTTP_30x redirections retrieving the artifact
-        response = queue_service.session.get(url, stream=True, allow_redirects=True)
+        response = queue_service.session.get(
+            url,
+            stream=True,
+            allow_redirects=True,
+            timeout=ARTIFACT_DOWNLOAD_TIMEOUT,
+        )
 
         try:
             response.raise_for_status()
@@ -101,7 +111,9 @@ class BaseTask:
             return None, True
 
         # Load artifact's data, either as JSON or YAML
-        if artifact_name.endswith(".json"):
+        if artifact_name in self.streamed_artifacts:
+            content = response.iter_lines()
+        elif artifact_name.endswith(".json"):
             content = response.json()
         elif artifact_name.endswith(".yml") or artifact_name.endswith(".yaml"):
             content = yaml.load_stream(response.text)

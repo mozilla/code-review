@@ -22,6 +22,12 @@ logger = structlog.get_logger(__name__)
 GITHUB_COMMENT_LIMIT = 65536
 
 
+def truncate_comment(message: str) -> str:
+    if len(message) > GITHUB_COMMENT_LIMIT:
+        return message[: GITHUB_COMMENT_LIMIT - 1] + "…"
+    return message
+
+
 class ReviewEvent(enum.Enum):
     """
     Review action you want to perform.
@@ -78,14 +84,10 @@ class GithubClient:
         return repo.get_pull(revision.pull_number)
 
     def _build_review_comment(self, issue):
-        message = issue.message
-        if len(message) > GITHUB_COMMENT_LIMIT:
-            message = message[: GITHUB_COMMENT_LIMIT - 1] + "…"
-
         return ReviewComment(
             path=issue.path,
             line=issue.line,
-            body=message,
+            body=truncate_comment(issue.message),
         )
 
     def publish_comment(
@@ -99,11 +101,7 @@ class GithubClient:
         assert isinstance(revision, GithubRevision), "Only for github revisions"
 
         pull_request = self.get_pull_request(revision)
-
-        if len(message) > GITHUB_COMMENT_LIMIT:
-            message = message[: GITHUB_COMMENT_LIMIT - 1] + "…"
-
-        pull_request.create_issue_comment(body=message)
+        pull_request.create_issue_comment(body=truncate_comment(message))
 
     def publish_review(
         self,
@@ -126,7 +124,7 @@ class GithubClient:
                 event == ReviewEvent.Approved
             ), "Body can be left null only when approving a pull request"
         else:
-            attrs["body"] = message
+            attrs["body"] = truncate_comment(message)
 
         pull_request.create_review(
             commit=repo.get_commit(revision.head_changeset),
