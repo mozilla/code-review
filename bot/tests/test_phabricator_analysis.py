@@ -263,11 +263,21 @@ def test_workflow(
 
     # Check try task config has been written with code-review trigger
     try_task = tmpdir / "mozilla-central" / "try_task_config.json"
-    assert try_task.exists()
-    assert json.load(try_task.open()) == {
-        "parameters": expected_parameters,
-        "version": 2,
-    }
+    assert not try_task.exists()
+    try_task_lines = json.dumps(
+        {"parameters": expected_parameters, "version": 2},
+        sort_keys=True,
+        indent=4,
+    ).splitlines(keepends=True)
+    try_task_patch = (
+        "diff --git a/try_task_config.json b/try_task_config.json\n"
+        "new file mode 100644\n"
+        "--- /dev/null\n"
+        "+++ b/try_task_config.json\n"
+        f"@@ -0,0 +1,{len(try_task_lines)} @@\n"
+        + "".join(f"+{line}" for line in try_task_lines)
+        + "\n\\ No newline at end of file\n"
+    ).encode()
 
     # Check all calls made to mercurial repo
     assert mock_mercurial_repo._calls == [
@@ -306,24 +316,12 @@ def test_workflow(
             "identify",
             "coffeedeadbeef123456789",
         ),
-        # Checkout revision
-        (
-            "update",
-            {
-                "clean": True,
-                "rev": "coffeedeadbeef123456789",
-            },
-        ),
-        (
-            "status",
-            {
-                "added": True,
-                "deleted": True,
-                "modified": True,
-                "removed": True,
-            },
-        ),
         # Apply patch
+        "parents",
+        (
+            "rawcommand",
+            [b"debugsetparents", b"--", b"coffeedeadbeef123456789"],
+        ),
         (
             "import",
             b"diff --git a/test.txt b/test.txt\nindex 557db03..5eb0bec 100644\n-"
@@ -333,26 +331,27 @@ def test_workflow(
             b" @@\n+Hello World\n",
             {
                 "message": b"Random commit message\nDifferential Diff: PHID-DIFF-testABcd12",
-                "similarity": 95,
                 "user": b"test <test@mozilla.com>",
+                "bypass": True,
             },
         ),
-        # Add try_task_config
-        (
-            "add",
-            str(try_task).encode(),
-        ),
-        # Commit try_task_config
-        (
-            "commit",
-            {
-                "message": "try_task_config for https://phabricator.test/D51\n"
-                "Differential Diff: PHID-DIFF-testABcd12",
-                "user": "code review bot <release-mgmt-analysis@mozilla.com>",
-            },
-        ),
-        # Push to try
+        ("rawcommand", [b"debugsetparents", b"--", b"null"]),
         "tip",
+        "parents",
+        ("rawcommand", [b"debugsetparents", b"--", b"test_tip"]),
+        (
+            "import",
+            try_task_patch,
+            {
+                "message": b"try_task_config for https://phabricator.test/D51\n"
+                b"Differential Diff: PHID-DIFF-testABcd12",
+                "user": b"code review bot <release-mgmt-analysis@mozilla.com>",
+                "bypass": True,
+            },
+        ),
+        ("rawcommand", [b"debugsetparents", b"--", b"null"]),
+        "tip",
+        # Push to try
         (
             "push",
             {

@@ -1136,6 +1136,9 @@ def mock_mercurial_repo(monkeypatch):
         def identify(self, rev):
             self._calls.append(("identify", rev))
 
+        def parents(self):
+            self._calls.append("parents")
+
         def update(self, **kwargs):
             self._calls.append(("update", kwargs))
 
