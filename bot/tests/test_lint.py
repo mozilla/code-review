@@ -46,6 +46,7 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
     assert issue.is_disabled_check()
     assert not issue.validates()
 
+    assert issue.hash == "d8deb1271c70950549ec8cf49a4623ac"
     assert issue.as_dict() == {
         "analyzer": "mock-lint-flake8",
         "check": "Q000",
@@ -96,6 +97,7 @@ def test_as_text(
         "severity": "error",
     }
 
+    assert issue.hash == "15cf70b31f0a6cd0a3a6914f0e4b8900"
     assert issue.as_dict() == {
         "analyzer": "mock-lint-flake8",
         "check": "dummy rule",

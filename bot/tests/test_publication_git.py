@@ -163,3 +163,78 @@ def test_git_issue_reads_the_local_clone(mock_config, mock_task, monkeypatch, tm
     missing = issue("dom/missing.cpp")
     assert missing.file_exists is False
     assert missing.hash is None
+
+
+def test_lint_publication_git_reads_only_needed_files(
+    mock_workflow, mock_revision, mock_task, monkeypatch, tmpdir
+):
+    from pathlib import Path
+
+    from conftest import build_git_repository
+    from git import Actor
+
+    from code_review_bot.analysis import AnalysisMode
+    from code_review_bot.git import GitFiles
+    from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
+    from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
+
+    repo = build_git_repository(tmpdir, "mozilla-releng_staging-firefox")
+    paths = ["dom/file.cpp", "dom/other.js"]
+    for path in paths:
+        full_path = Path(repo.working_dir) / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text("\n" * 41 + "content\n")
+    repo.index.add(paths)
+    actor = Actor("test", "test")
+    repo.index.commit("Files with issues", author=actor, committer=actor)
+
+    monkeypatch.setattr(settings, "git_cache", Path(str(tmpdir)))
+    mock_revision.repository_type = "git"
+    mock_revision.base_repository = "https://github.com/mozilla-releng/staging-firefox"
+    mock_revision.head_repository = "https://github.com/mozilla-releng/staging-firefox"
+    mock_revision.head_changeset = repo.head.commit.hexsha
+
+    git_clone = MagicMock()
+    monkeypatch.setattr("code_review_bot.workflow.git_clone", git_clone)
+
+    reads = []
+    original_read = GitFiles.read
+
+    def _read(self, path):
+        reads.append(path)
+        return original_read(self, path)
+
+    monkeypatch.setattr(GitFiles, "read", _read)
+
+    silent = ClangFormatIssue(
+        mock_task(ClangFormatTask, "source-test-clang-format"),
+        "dom/file.cpp",
+        [(42, 42, b"This is a new warning.")],
+        mock_revision,
+    )
+    error = MozLintIssue(
+        mock_task(MozLintTask, "source-test-mozlint-eslint"),
+        "dom/other.js",
+        column=1,
+        level="error",
+        lineno=42,
+        linter="eslint",
+        message="Some error",
+        check="no-undef",
+        revision=mock_revision,
+    )
+    mock_workflow.publish = MagicMock()
+    mock_workflow.load_task_group = MagicMock(return_value={})
+    mock_workflow.ending_task_dependencies = MagicMock(return_value=[])
+    mock_workflow.backend_api.publish_revision = lambda rev: {}
+    mock_workflow.find_issues = MagicMock(return_value=([silent, error], [], [], []))
+    mock_workflow.clone_available = False
+
+    mock_workflow.run(mock_revision, AnalysisMode.Lint)
+
+    assert git_clone.call_count == 1
+    assert git_clone.call_args.kwargs["paths"] == ["dom/other.js"]
+    assert error.hash is not None
+    assert silent.as_dict()["hash"] is None
+    assert error.as_dict()["hash"] == error.hash
+    assert reads == ["dom/other.js"]

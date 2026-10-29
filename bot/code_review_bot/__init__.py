@@ -144,16 +144,26 @@ class BaseIssue(abc.ABC):
         """
         raise NotImplementedError
 
+    def needs_file_content(self) -> bool:
+        return False
+
+    def include_hash_in_dict(self) -> bool:
+        """Whether to include the hash of this Issue in the dictionary
+        serialization of the Issue. Subclasses may return False here in
+        cases where calculating the hash may be prohibitively expensive."""
+        return True
+
     def as_dict(self):
         """
         Build the serializable dict representation of the issue
         Used by debugging tools
         """
         issue_hash = None
-        try:
-            issue_hash = self.hash
-        except Exception as e:
-            logger.warn("Failed to build issue hash", error=str(e), issue=str(self))
+        if self.include_hash_in_dict():
+            try:
+                issue_hash = self.hash
+            except Exception as e:
+                logger.warn("Failed to get issue hash", error=str(e), issue=str(self))
 
         return {
             "analyzer": self.analyzer.name,
@@ -280,6 +290,13 @@ class Issue(BaseIssue):
 
         # Fallback to in_patch detection
         return self.in_patch
+
+    def needs_file_content(self):
+        return self.is_publishable()
+
+    def include_hash_in_dict(self):
+        # Only include the hash in the dictionary if it's already cached
+        return "hash" in self.__dict__
 
     @cached_property
     def hash(self):

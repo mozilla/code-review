@@ -2,7 +2,27 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import responses
+
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
+
+
+def test_dict_does_not_build_hash(
+    mock_config, mock_revision, mock_hgmo, mock_task, mock_taskcluster_config
+):
+    issue = ClangFormatIssue(
+        mock_task(ClangFormatTask, "mock-clang-format"),
+        "dom/file.cpp",
+        [(42, 42, b"This is a warning.")],
+        mock_revision,
+    )
+
+    assert issue.as_dict()["hash"] is None
+    assert "hash" not in issue.__dict__
+    assert not [call for call in responses.calls if "raw-file" in call.request.url]
+
+    assert issue.hash is not None
+    assert issue.as_dict()["hash"] == issue.hash
 
 
 def test_allowed_paths(mock_config, mock_revision, mock_task):
