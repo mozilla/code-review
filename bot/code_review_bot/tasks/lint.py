@@ -20,6 +20,36 @@ ISSUE_MARKDOWN = """
 """
 
 
+def parse_line_range(lineno, lineoffset=None):
+    """
+    Compute the first line and number of lines covered by a mozlint issue.
+
+    mozlint documents `lineoffset` as a `(<lineno offset>, <num lines>)` tuple,
+    but most linters (ruff, clippy, compare-locales, ...) provide a flat integer,
+    i.e. the number of extra lines spanned after `lineno`. Support both.
+    """
+    # mozlint sometimes produce strings here
+    line = lineno and int(lineno) or 0
+    if not line or lineoffset is None:
+        return line, 1
+
+    try:
+        if isinstance(lineoffset, list | tuple):
+            offset, count = (int(v) for v in lineoffset)
+            start = line + offset
+            end = start + max(count, 1) - 1
+        else:
+            start = line
+            end = line + int(lineoffset)
+    except (TypeError, ValueError):
+        logger.warning("Invalid mozlint lineoffset", lineoffset=lineoffset)
+        return line, 1
+
+    # Always include the reported line in the range
+    start, end = max(min(start, line), 1), max(end, line)
+    return start, end - start + 1
+
+
 class MozLintIssue(Issue):
     def __init__(
         self,
@@ -32,20 +62,20 @@ class MozLintIssue(Issue):
         message,
         check,
         revision,
+        lineoffset=None,
         **kwargs,
     ):
         # Use analyzer name when check is not provided
         # This happens for analyzers who only have one rule
         if check is None:
             check = analyzer.name
+        line, nb_lines = parse_line_range(lineno, lineoffset)
         super().__init__(
             analyzer,
             revision,
             path,
-            line=(
-                lineno and int(lineno) or 0
-            ),  # mozlint sometimes produce strings here
-            nb_lines=1,
+            line=line,
+            nb_lines=nb_lines,
             check=check,
             column=column,
             level=Level(level),
@@ -135,6 +165,7 @@ class MozLintTask(AnalysisTask):
                 column=issue["column"],
                 level=issue["level"],
                 lineno=issue["lineno"],
+                lineoffset=issue.get("lineoffset"),
                 linter=issue["linter"],
                 message=issue["message"],
                 check=issue["rule"],
