@@ -71,25 +71,21 @@ class BaseRepository:
         applied against"""
         raise NotImplementedError
 
-    def checkout_base(self, base):
-        """Update the local checkout to the base revision"""
-        raise NotImplementedError
-
-    def apply_patch(self, patch: PhabricatorPatch, message, commit):
+    def apply_patch(self, patch: PhabricatorPatch, message, commit, parent):
         """Apply a single patch on the local checkout and commit it,
         using the author from the Phabricator commit data"""
         raise NotImplementedError
 
-    def commit_try_task_config(self, path, message):
+    def commit_try_task_config(self, path, message, parent):
         """Commit the try_task_config.json file as the bot"""
         raise NotImplementedError
 
-    def push_to_try(self):
+    def push_to_try(self, revision):
         """Push the locally applied stack to the remote try repository and
         return the pushed tip, in the format accepted by revision_id()"""
         raise NotImplementedError
 
-    def revision_id(self, tip):
+    def revision_id(self, revision):
         """Extract the revision identifier from a push_to_try result"""
         raise NotImplementedError
 
@@ -127,7 +123,7 @@ class BaseRepository:
 
         if not needed_stack:
             logger.info("All the patches are already applied")
-            return
+            return self.default_revision
 
         base = self.get_base_identifier(needed_stack)
 
@@ -144,9 +140,9 @@ class BaseRepository:
 
         # Store the actual base revision we used
         build.actual_base_revision = base
+        logger.info("Applying patches on base revision", revision=base)
 
-        self.checkout_base(base)
-
+        parent = base
         for patch in needed_stack:
             if patch.commits:
                 # Use the first commit only
@@ -160,9 +156,11 @@ class BaseRepository:
             message += f"Differential Diff: {patch.phid}"
 
             logger.info("Applying patch", phid=patch.phid, message=message)
-            self.apply_patch(patch, message, commit)
+            parent = self.apply_patch(patch, message, commit, parent)
 
-    def add_try_commit(self, build, extra_parameters):
+        return parent
+
+    def add_try_commit(self, build, extra_parameters, parent):
         """
         Build and commit the file configuring try
         with try_task_config.json and the code-review workflow parameters in JSON
@@ -187,7 +185,7 @@ class BaseRepository:
         # Write content as json and commit it
         with open(path, "w") as f:
             json.dump(config, f, sort_keys=True, indent=4)
-        self.commit_try_task_config(path, message)
+        return self.commit_try_task_config(path, message, parent)
 
 
 class BaseWorker:
@@ -306,7 +304,7 @@ class BaseWorker:
             repository.clean()
 
             # First apply patches on local repo
-            repository.apply_build(build)
+            parent = repository.apply_build(build)
 
             # Check Eligibility: some commits don't need to be pushed to try.
             if self.is_commit_skippable(build):
@@ -321,15 +319,15 @@ class BaseWorker:
                 )
 
             # Configure the try task
-            repository.add_try_commit(build, extra_parameters)
+            commit = repository.add_try_commit(build, extra_parameters, parent)
 
             # Then push that stack on try
-            tip = repository.push_to_try()
+            pushed = repository.push_to_try(commit)
             logger.info("Diff has been pushed !")
 
             # Publish Treeherder link
             uri = TREEHERDER_URL.format(
-                repository.try_name, repository.revision_id(tip)
+                repository.try_name, repository.revision_id(pushed)
             )
         except self.VCS_ERROR as e:
             error_log = self.format_error(e)
@@ -360,5 +358,5 @@ class BaseWorker:
         return (
             "success",
             build,
-            {"treeherder_url": uri, "revision": repository.revision_id(tip)},
+            {"treeherder_url": uri, "revision": repository.revision_id(pushed)},
         )
