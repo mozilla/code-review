@@ -1,0 +1,35 @@
+loader: taskgraph.loader.transform:loader
+
+transforms:
+  - taskgraph.transforms.task_context
+  - taskgraph.transforms.run
+  - taskgraph.transforms.task
+
+kind-dependencies:
+  - docker-image
+
+tasks:
+  build:
+    description: Build frontend SPA
+    worker-type: b-linux
+    worker:
+      docker-image: { in-tree: node }
+      max-run-time: 3600
+      env:
+        BACKEND_URL: "{backend_url}"
+      artifacts:
+        - type: directory
+          name: public/frontend
+          path: /builds/worker/artifacts/frontend
+    run:
+      using: run-task
+      cwd: "{checkout}/frontend"
+      command: >-
+        npm install &&
+        npm run build &&
+        cp -r build /builds/worker/artifacts/frontend
+    task-context:
+      from-parameters:
+        backend_url: backend_url
+      substitution-fields:
+        - worker.env
