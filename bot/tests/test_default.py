@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import json
+
 import pytest
 
 from code_review_bot import Level
@@ -116,3 +118,17 @@ A random issue happened here
         "validates": True,
         "fix": None,
     }
+
+    # Check profiler usage
+    payload = json.load(mock_workflow.profiler.path.open())
+    assert len(payload) == 6
+    assert isinstance(payload[2], float)
+    assert isinstance(payload[3], float)
+    del payload[2]  # remove start & end
+    del payload[2]
+    assert payload == [
+        "marker",
+        "code-review-bot",
+        {"type": "Text", "text": "backend_publication"},
+        2,
+    ]
