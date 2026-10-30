@@ -148,13 +148,16 @@ tasks:
                     path: /bot.tar.zst
                     type: file
               routes:
-                $if: 'tasks_for[:19] == "github-pull-request"'
-                then:
-                  - "index.code-analysis.v2.code-review-pr.revision.${head_rev}"
-                  - "index.code-analysis.v2.code-review-pr.branch.${head_branch}"
+                $if: 'tasks_for == "github-pull-request-untrusted"'
+                then: []
                 else:
-                  - "index.code-analysis.v2.code-review.revision.${head_rev}"
-                  - "index.code-analysis.v2.code-review.branch.${head_branch}"
+                  $if: 'tasks_for[:19] == "github-pull-request"'
+                  then:
+                    - "index.code-analysis.v2.code-review-pr.revision.${head_rev}"
+                    - "index.code-analysis.v2.code-review-pr.branch.${head_branch}"
+                  else:
+                    - "index.code-analysis.v2.code-review.revision.${head_rev}"
+                    - "index.code-analysis.v2.code-review.branch.${head_branch}"
               metadata:
                 name: Code Review Bot docker image build
                 description: Build docker image of code review bot
