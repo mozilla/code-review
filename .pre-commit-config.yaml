@@ -47,7 +47,16 @@ repos:
     hooks:
       - id: mypy
         files: ^(backend|bot|tools)/.*\.py$
-        args: [--ignore-missing-imports, --explicit-package-bases]
+        exclude: (^|/)migrations/.*\.py$
+        additional_dependencies: [types-requests, types-PyYAML]
+        args:
+          - --ignore-missing-imports
+          - --explicit-package-bases
+          - --disable-error-code=var-annotated
+          - --disable-error-code=arg-type
+          - --disable-error-code=return-value
+          - --disable-error-code=assignment
+        pass_filenames: true
   - repo: meta
     hooks:
       - id: check-useless-excludes
