@@ -46,7 +46,6 @@ repos:
     rev: v1.18.2
     hooks:
       - id: mypy
-        files: ^(backend|bot|tools)/.*\.py$
         exclude: (^|/)migrations/.*\.py$
         additional_dependencies: [types-requests, types-PyYAML]
         args:
