@@ -47,7 +47,7 @@ repos:
     hooks:
       - id: mypy
         files: ^(backend|bot|tools)/.*\.py$
-        args: [--ignore-missing-imports]
+        args: [--ignore-missing-imports, --explicit-package-bases]
   - repo: meta
     hooks:
       - id: check-useless-excludes
