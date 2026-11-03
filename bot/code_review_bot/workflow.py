@@ -45,6 +45,7 @@ from code_review_bot.tasks.coverage import ZeroCoverageTask
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.screenshot import ScreenshotTestTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
 
 logger = structlog.get_logger(__name__)
@@ -1162,6 +1163,8 @@ class Workflow:
             return ExternalTidyTask(task_id, task_status)
         elif name == "source-test-taskgraph-diff":
             return TaskGraphDiffTask(task_id, task_status)
+        elif name.startswith("screenshot-test-"):
+            return ScreenshotTestTask(task_id, task_status)
         elif name.startswith("build-") and not name.startswith("build-docker-image-"):
             return BuildTask(task_id, task_status)
         elif DefaultTask.matches(task_id):
