@@ -1026,7 +1026,7 @@ class Workflow:
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
-                    task_issues, task_patches = [], []
+                    task_issues, task_patches, notice = [], [], ""
                     if isinstance(task, AnalysisTask):
                         task_issues = task.parse_issues(artifacts, revision)
                         logger.info(
@@ -1048,7 +1048,12 @@ class Workflow:
 
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
-                    if task.state == "failed" and not task_issues and not task_patches:
+                    if (
+                        task.state == "failed"
+                        and not task_issues
+                        and not task_patches
+                        and not (notice and task.notice_replaces_failure)
+                    ):
                         # Skip task that are listed as ignorable (we try to avoid unnecessary spam)
                         if task.name in self.task_failures_ignored:
                             logger.warning(

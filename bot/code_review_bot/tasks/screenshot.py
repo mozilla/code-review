@@ -15,7 +15,7 @@ REPORT_LINK = (
 )
 
 COMMENT_SCREENSHOT_REPORT = """
-Note: Screenshot tests report changes in diff {diff_id} ({name}).
+NOTE: Screenshot tests report changes in diff {diff_id} ({name}).
 
 The screenshot differences against the recorded baseline can be reviewed in the [test report]({url}).
 """
@@ -31,6 +31,9 @@ class ScreenshotTestTask(NoticeTask):
     # Only a failed run has a report worth showing
     valid_states = ("failed",)
     skipped_states = ("completed",)
+
+    # The report link already explains the failure
+    notice_replaces_failure = True
 
     def build_notice(self, artifacts, revision):
         if REPORT_ARTIFACT not in artifacts:

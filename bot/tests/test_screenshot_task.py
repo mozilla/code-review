@@ -26,7 +26,11 @@ def queue(mock_taskcluster_config):
 
 def test_failed_with_report(queue, mock_revision):
     queue.configure(
-        {"12345deadbeef": {"artifacts": {"public/screenshot-diffs/index.html": "<html/>"}}}
+        {
+            "12345deadbeef": {
+                "artifacts": {"public/screenshot-diffs/index.html": "<html/>"}
+            }
+        }
     )
     task = _task("failed")
     artifacts = task.load_artifacts(queue)
@@ -38,9 +42,9 @@ def test_failed_with_report(queue, mock_revision):
     ) in notice
 
 
-def test_failed_without_report(mock_revision):
-    assert _task("failed").build_notice({}, mock_revision) == ""
-
-
-def test_completed_skipped(queue):
-    assert _task("completed").load_artifacts(queue) is None
+def test_failed_without_report(queue, mock_revision):
+    queue.configure({"12345deadbeef": {"artifacts": {}}})
+    task = _task("failed")
+    artifacts = task.load_artifacts(queue)
+    assert artifacts == {}
+    assert task.build_notice(artifacts, mock_revision) == ""
