@@ -45,6 +45,7 @@ from code_review_bot.tasks.coverage import ZeroCoverageTask
 from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintTask
+from code_review_bot.tasks.screenshot import ScreenshotTestTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
 
 logger = structlog.get_logger(__name__)
@@ -1025,7 +1026,7 @@ class Workflow:
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
-                    task_issues, task_patches = [], []
+                    task_issues, task_patches, notice = [], [], ""
                     if isinstance(task, AnalysisTask):
                         task_issues = task.parse_issues(artifacts, revision)
                         logger.info(
@@ -1047,7 +1048,12 @@ class Workflow:
 
                     # Report a problem when tasks in erroneous state are found
                     # but no issue or patch has been processed by the bot
-                    if task.state == "failed" and not task_issues and not task_patches:
+                    if (
+                        task.state == "failed"
+                        and not task_issues
+                        and not task_patches
+                        and not (notice and task.notice_replaces_failure)
+                    ):
                         # Skip task that are listed as ignorable (we try to avoid unnecessary spam)
                         if task.name in self.task_failures_ignored:
                             logger.warning(
@@ -1162,6 +1168,8 @@ class Workflow:
             return ExternalTidyTask(task_id, task_status)
         elif name == "source-test-taskgraph-diff":
             return TaskGraphDiffTask(task_id, task_status)
+        elif name.startswith("screenshot-test-"):
+            return ScreenshotTestTask(task_id, task_status)
         elif name.startswith("build-") and not name.startswith("build-docker-image-"):
             return BuildTask(task_id, task_status)
         elif DefaultTask.matches(task_id):
