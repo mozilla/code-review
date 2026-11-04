@@ -7,7 +7,16 @@ from datetime import date, datetime, timedelta
 
 from django.conf import settings
 from django.core.exceptions import BadRequest
-from django.db.models import BooleanField, Count, ExpressionWrapper, Prefetch, Q
+from django.db.models import (
+    BooleanField,
+    Case,
+    Count,
+    ExpressionWrapper,
+    Prefetch,
+    Q,
+    Value,
+    When,
+)
 from django.db.models.functions import TruncDate
 from django.shortcuts import get_object_or_404
 from django.urls import path
@@ -35,6 +44,14 @@ from code_review_backend.issues.serializers import (
     IssueSerializer,
     RepositorySerializer,
     RevisionSerializer,
+)
+
+# An issue is publishable when it is in the patch or is an error,
+# matching IssueLink.publishable
+PUBLISHABLE = Case(
+    When(Q(issue_links__in_patch=True) | Q(level=LEVEL_ERROR), then=Value(True)),
+    default=Value(False),
+    output_field=BooleanField(),
 )
 
 
@@ -206,7 +223,7 @@ class IssueViewSet(
         diff = get_object_or_404(Diff, provider_id=self.kwargs["diff_provider_id"])
         return (
             Issue.objects.filter(issue_links__diff=diff)
-            .annotate(publishable=Q(issue_links__in_patch=True) & Q(level=LEVEL_ERROR))
+            .annotate(publishable=PUBLISHABLE)
             .values(
                 "id",
                 "hash",
@@ -256,7 +273,7 @@ class IssueCheckDetails(generics.ListAPIView):
             Issue.objects.filter(issue_links__revision__head_repository__slug=repo)
             .filter(analyzer=self.kwargs["analyzer"])
             .filter(analyzer_check=self.kwargs["check"])
-            .annotate(publishable=Q(issue_links__in_patch=True) & Q(level=LEVEL_ERROR))
+            .annotate(publishable=PUBLISHABLE)
             .prefetch_related(
                 "issue_links__diff__repository",
                 Prefetch(
