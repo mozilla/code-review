@@ -11,6 +11,7 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 from code_review_backend.issues import api
+from code_review_backend.issues.v2 import api as api_v2
 
 # Build Swagger schema view
 schema_view = get_schema_view(
@@ -28,6 +29,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path("", lambda request: redirect("docs/", permanent=False)),
     path("v1/", include(api.urls)),
+    path("v2/", include(api_v2.urls)),
     path("admin/", admin.site.urls),
     path(
         r"docs<format>\.json|\.yaml)",
