@@ -43,18 +43,11 @@ repos:
     hooks:
       - id: yesqa
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v1.18.2
+    rev: v2.4.1
     hooks:
       - id: mypy
         exclude: (^|/)migrations/.*\.py$
         additional_dependencies: [types-requests, types-PyYAML]
-        args:
-          - --ignore-missing-imports
-          - --explicit-package-bases
-          - --disable-error-code=var-annotated
-          - --disable-error-code=arg-type
-          - --disable-error-code=return-value
-          - --disable-error-code=assignment
         pass_filenames: true
   - repo: meta
     hooks:

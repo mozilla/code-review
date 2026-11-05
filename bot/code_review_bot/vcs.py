@@ -205,7 +205,7 @@ class BaseWorker:
     # Repository class handled by this worker
     REPOSITORY_CLASS = BaseRepository
     # Lowercase error messages elligible for a push retry
-    ELIGIBLE_RETRY_ERRORS = []
+    ELIGIBLE_RETRY_ERRORS: list[str] = []
 
     def __init__(
         self,

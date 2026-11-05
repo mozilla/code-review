@@ -208,11 +208,11 @@ class Issue(BaseIssue):
         line: int,
         nb_lines: int,
         check: str,
-        column: int = None,
+        column: int | None = None,
         message: str = "",
         level: Level = Level.Warning,
-        fix: str = None,
-        language: str = None,
+        fix: str | None = None,
+        language: str | None = None,
     ):
         super().__init__(analyzer, revision, level, message)
 
