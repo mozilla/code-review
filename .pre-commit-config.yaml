@@ -11,6 +11,7 @@ repos:
     rev: v2.7.1
     hooks:
       - id: prettier
+        language_version: system
         exclude: fixtures|mocks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -46,6 +47,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: mypy
+        args: [--explicit-package-bases]
         exclude: (^|/)migrations/.*\.py$
         additional_dependencies: [types-requests, types-PyYAML]
         pass_filenames: true
