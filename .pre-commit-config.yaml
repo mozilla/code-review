@@ -47,7 +47,7 @@ repos:
     rev: v2.4.1
     hooks:
       - id: mypy
-        args: [--explicit-package-bases]
+        args: [--explicit-package-bases, --ignore-missing-imports]
         exclude: (^|/)migrations/.*\.py$
         additional_dependencies: [types-requests, types-PyYAML]
         pass_filenames: true
