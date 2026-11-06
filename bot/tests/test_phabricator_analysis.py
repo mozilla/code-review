@@ -516,7 +516,7 @@ GIT_ROLLOUT_REPOSITORIES = [
         "ssh_user": "reviewbot@mozilla.com",
         "git_rollout": {
             "repository": "firefox",
-            "usernames": ["crasher"],
+            "usernames": ["someone"],
             "percentage": 0,
         },
     },
@@ -531,6 +531,15 @@ GIT_ROLLOUT_REPOSITORIES = [
         "head_branch": "code-review/D{revision_id}",
     },
 ]
+
+
+def mock_author_phid(api):
+    """Phabricator id of the author of the mocked revision"""
+    revision = PhabricatorRevision.from_phabricator_trigger(
+        build_target_phid="PHID-HMBT-test",
+        phabricator=api,
+    )
+    return revision.revision["fields"]["authorPHID"]
 
 
 def test_git_rollout_configuration(mock_config):
@@ -555,7 +564,7 @@ def test_git_rollout_configuration(mock_config):
     with pytest.raises(AssertionError, match="between 0 and 100"):
         mock_config.setup("test", [], with_rollout(percentage=101))
     with pytest.raises(AssertionError, match="list of strings"):
-        mock_config.setup("test", [], with_rollout(usernames="crasher"))
+        mock_config.setup("test", [], with_rollout(usernames="someone"))
     with pytest.raises(AssertionError, match="only applies to Mercurial"):
         mock_config.setup(
             "test",
@@ -569,12 +578,12 @@ def test_git_rollout_users(mock_config):
     mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES)
     api = mock.MagicMock()
     api.search_users.return_value = [
-        {"phid": "PHID-USER-crasher", "fields": {"username": "crasher"}}
+        {"phid": "PHID-USER-someone", "fields": {"username": "someone"}}
     ]
     mock_config.load_git_rollout_users(api)
-    api.search_users.assert_called_once_with(constraints={"usernames": ["crasher"]})
+    api.search_users.assert_called_once_with(constraints={"usernames": ["someone"]})
     assert mock_config.git_rollout_users == {
-        "mozilla-central": {"PHID-USER-crasher": "crasher"}
+        "mozilla-central": {"PHID-USER-someone": "someone"}
     }
 
     # Repositories without a rollout do not query Phabricator
@@ -591,7 +600,7 @@ def test_git_rollout_users(mock_config):
         # No rollout user and no percentage: Mercurial
         ({}, 0, 51, False),
         # Listed author: Git
-        ({"PHID-USER-crasher": "crasher"}, 0, 51, True),
+        ({"PHID-USER-someone": "someone"}, 0, 51, True),
         # Other author: Mercurial
         ({"PHID-USER-other": "other"}, 0, 51, False),
         # Percentage applied on the revision id, 51 % 100 = 51
@@ -617,22 +626,23 @@ def test_git_rollout_repository(mock_config, users, percentage, revision_id, rou
     mock_config.git_rollout_users = {"mozilla-central": users}
     hg, git = mock_config.repositories
 
-    target = mock_config.git_rollout_repository(hg, "PHID-USER-crasher", revision_id)
+    target = mock_config.git_rollout_repository(hg, "PHID-USER-someone", revision_id)
     assert target == (git if routed else None)
 
     # A Git repository is never routed
-    assert mock_config.git_rollout_repository(git, "PHID-USER-crasher", 51) is None
+    assert mock_config.git_rollout_repository(git, "PHID-USER-someone", 51) is None
 
 
 @pytest.mark.parametrize("routed", [True, False])
 def test_revision_git_rollout(mock_phabricator, mock_config, routed):
     """The revision carries the Git repository configuration when routed."""
     mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES)
-    mock_config.git_rollout_users = {
-        "mozilla-central": {"PHID-USER-crasher": "crasher"} if routed else {}
-    }
 
     with mock_phabricator as api:
+        author = mock_author_phid(api)
+        mock_config.git_rollout_users = {
+            "mozilla-central": {author: "someone"} if routed else {}
+        }
         revision = PhabricatorRevision.from_phabricator_trigger(
             build_target_phid="PHID-HMBT-test",
             phabricator=api,
@@ -657,9 +667,6 @@ def test_start_analysis_git_rollout(
     from code_review_bot import workflow as workflow_module
 
     mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES)
-    mock_config.git_rollout_users = {
-        "mozilla-central": {"PHID-USER-crasher": "crasher"}
-    }
     mock_config.mercurial_cache = tmpdir
     mock_config.git_cache = tmpdir
     mock_config.github = {"app_id": 12345, "app_privkey": "AppPrivateKey"}
@@ -676,6 +683,9 @@ def test_start_analysis_git_rollout(
 
     with mock_phabricator as api:
         mock_workflow.phabricator = api
+        mock_config.git_rollout_users = {
+            "mozilla-central": {mock_author_phid(api): "someone"}
+        }
         revision = PhabricatorRevision.from_phabricator_trigger(
             build_target_phid="PHID-HMBT-test",
             phabricator=api,
