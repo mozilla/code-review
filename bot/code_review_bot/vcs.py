@@ -38,7 +38,7 @@ class BaseRepository:
     """
 
     # Revision to apply patches on when the base revision is unknown
-    DEFAULT_REVISION = None
+    DEFAULT_REVISION: str | None = None
 
     def __init__(self, config, cache_root):
         assert isinstance(config, dict)
@@ -199,9 +199,9 @@ class BaseWorker:
     # Exception raised by the VCS layer on a failing command
     VCS_ERROR = ()
     # Human readable VCS name, used in logs
-    VCS_NAME = None
+    VCS_NAME: str | None = None
     # Worker output mode on a VCS failure
-    FAILURE_MODE = None
+    FAILURE_MODE: str | None = None
     # Repository class handled by this worker
     REPOSITORY_CLASS = BaseRepository
     # Lowercase error messages elligible for a push retry

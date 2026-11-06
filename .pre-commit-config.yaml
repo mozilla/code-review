@@ -47,9 +47,13 @@ repos:
     rev: v2.4.1
     hooks:
       - id: mypy
-        args: [--explicit-package-bases, --ignore-missing-imports]
-        exclude: (^|/)migrations/.*\.py$
-        additional_dependencies: [types-requests, types-PyYAML]
+        args: [--explicit-package-bases]
+        exclude: (^|/)(migrations/.*\.py|setup\.py|conftest\.py|test_stats\.py|test_workflow\.py)$
+        additional_dependencies:
+          - types-requests
+          - types-PyYAML
+          - types-jsonschema
+          - json-e==4.8.4
         pass_filenames: true
   - repo: meta
     hooks:

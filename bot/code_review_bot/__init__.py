@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 import requests
 import structlog
@@ -22,6 +23,9 @@ from code_review_bot.stats import InfluxDb
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
+
+if TYPE_CHECKING:
+    from code_review_bot.revisions import Revision
 
 
 def positive_int(name, x):
@@ -73,6 +77,7 @@ class IssueType(enum.Enum):
 
 class BaseIssue(abc.ABC):
     type_: IssueType
+    revision: Revision | None
 
     def __init__(
         self, analyzer, revision, level: Level = Level.Warning, message: str = ""
