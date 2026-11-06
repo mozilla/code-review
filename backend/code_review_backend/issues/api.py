@@ -48,8 +48,9 @@ from code_review_backend.issues.serializers import (
 
 # An issue is publishable when it is in the patch or is an error,
 # matching IssueLink.publishable
+PUBLISHABLE_FILTER = Q(issue_links__in_patch=True) | Q(level=LEVEL_ERROR)
 PUBLISHABLE = Case(
-    When(Q(issue_links__in_patch=True) | Q(level=LEVEL_ERROR), then=Value(True)),
+    When(PUBLISHABLE_FILTER, then=Value(True)),
     default=Value(False),
     output_field=BooleanField(),
 )
@@ -290,11 +291,10 @@ class IssueCheckDetails(generics.ListAPIView):
 
         # Display only publishable issues by default
         publishable = self.request.query_params.get("publishable", "true").lower()
-        _filter = Q(issue_links__in_patch=True) | Q(level=LEVEL_ERROR)
         if publishable == "true":
-            queryset = queryset.filter(_filter)
+            queryset = queryset.filter(PUBLISHABLE_FILTER)
         elif publishable == "false":
-            queryset = queryset.exclude(_filter)
+            queryset = queryset.exclude(PUBLISHABLE_FILTER)
         elif publishable != "all":
             raise APIException(detail="publishable can only be true, false or all")
 
@@ -332,11 +332,7 @@ class IssueCheckStats(CachedView, generics.ListAPIView):
                     Q(analyzer_check__isnull=True), output_field=BooleanField()
                 )
             )
-            .annotate(
-                publishable=Count(
-                    "id", filter=Q(issue_links__in_patch=True) | Q(level=LEVEL_ERROR)
-                )
-            )
+            .annotate(publishable=Count("id", filter=PUBLISHABLE_FILTER))
             .distinct(
                 "issue_links__revision__head_repository__slug",
                 "analyzer",
