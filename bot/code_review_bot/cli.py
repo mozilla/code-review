@@ -177,6 +177,9 @@ def main():
     # We need Phabricator API to list black-listed users
     settings.load_user_blacklist(taskcluster.secrets["user_blacklist"], phabricator_api)
 
+    # And the users routed to Git by a repository rollout
+    settings.load_git_rollout_users(phabricator_api)
+
     # Run workflow according to source
     w = Workflow(
         reporters,

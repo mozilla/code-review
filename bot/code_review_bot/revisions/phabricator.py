@@ -372,6 +372,14 @@ class PhabricatorRevision(Revision):
             )
         logger.info("Found repository", name=repo_name, phid=repo_phid)
 
+        # A Mercurial repository can route some of its revisions to a Git
+        # repository while migrating (see git_rollout in the configuration)
+        git_repository = settings.git_rollout_repository(
+            repository, revision["fields"]["authorPHID"], revision["id"]
+        )
+        if git_repository is not None:
+            repository = git_repository
+
         return PhabricatorRevision(
             phabricator_id=revision["id"],
             phabricator_phid=revision_phid,

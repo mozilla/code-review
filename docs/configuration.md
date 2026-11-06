@@ -102,6 +102,23 @@ common:
       # instead of the base revision specified by Phabricator
       use_latest_revision: true
 
+      # (Optional, hg only) Gradual migration to a Git repository of this list:
+      # the revisions selected below are analyzed through the named Git repository
+      # (its clone, try push and links) instead of this one, the others keep
+      # using Mercurial. Growing the selection only needs a secret update.
+      git_rollout:
+        # Name of a repository of this list with repo_type git
+        repository: firefox
+
+        # Phabricator usernames whose revisions always use the Git repository
+        usernames:
+          - someone
+
+        # (Optional) Share of the other revisions using the Git repository, from
+        # 0 (default) to 100, picked from the revision id so a revision keeps
+        # the same backend for all its diffs
+        percentage: 0
+
 # This main section is only used by the bot project
 bot:
   # The list of reporter classes used to publish issues
