@@ -507,6 +507,194 @@ def test_start_analysis_selects_backend(
     mock_config.github = {}
 
 
+GIT_ROLLOUT_REPOSITORIES = [
+    {
+        "name": "mozilla-central",
+        "url": "https://hg.mozilla.org/mozilla-central",
+        "try_url": "ssh://hg.mozilla.org/try",
+        "try_name": "try",
+        "decision_env_prefix": "GECKO",
+        "ssh_user": "reviewbot@mozilla.com",
+        "git_rollout": {
+            "repository": "firefox",
+            "usernames": ["crasher"],
+            "percentage": 0,
+        },
+    },
+    {
+        "name": "firefox",
+        "url": "https://github.com/mozilla-firefox/firefox",
+        "try_url": "https://github.com/mozilla-firefox/firefox-crb",
+        "try_name": "firefox-crb",
+        "decision_env_prefix": "GECKO",
+        "ssh_user": None,
+        "repo_type": "git",
+        "head_branch": "code-review/D{revision_id}",
+    },
+]
+
+
+def test_git_rollout_configuration(mock_config):
+    """A rollout is optional and must name a Git repository of the configuration."""
+    assert all(conf.git_rollout is None for conf in mock_config.repositories)
+
+    mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES)
+    hg, git = mock_config.repositories
+    assert hg.git_rollout["repository"] == "firefox"
+    assert git.git_rollout is None
+    assert mock_config.git_rollout_users == {}
+
+    def with_rollout(**rollout):
+        repositories = json.loads(json.dumps(GIT_ROLLOUT_REPOSITORIES))
+        repositories[0]["git_rollout"].update(rollout)
+        return repositories
+
+    with pytest.raises(AssertionError, match="must name a known Git repository"):
+        mock_config.setup("test", [], with_rollout(repository="nss"))
+    with pytest.raises(AssertionError, match="must name a known Git repository"):
+        mock_config.setup("test", [], with_rollout(repository="mozilla-central"))
+    with pytest.raises(AssertionError, match="between 0 and 100"):
+        mock_config.setup("test", [], with_rollout(percentage=101))
+    with pytest.raises(AssertionError, match="list of strings"):
+        mock_config.setup("test", [], with_rollout(usernames="crasher"))
+    with pytest.raises(AssertionError, match="only applies to Mercurial"):
+        mock_config.setup(
+            "test",
+            [],
+            [dict(GIT_ROLLOUT_REPOSITORIES[1], git_rollout={"repository": "firefox"})],
+        )
+
+
+def test_git_rollout_users(mock_config):
+    """The rollout usernames are resolved to Phabricator ids per repository."""
+    mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES)
+    api = mock.MagicMock()
+    api.search_users.return_value = [
+        {"phid": "PHID-USER-crasher", "fields": {"username": "crasher"}}
+    ]
+    mock_config.load_git_rollout_users(api)
+    api.search_users.assert_called_once_with(constraints={"usernames": ["crasher"]})
+    assert mock_config.git_rollout_users == {
+        "mozilla-central": {"PHID-USER-crasher": "crasher"}
+    }
+
+    # Repositories without a rollout do not query Phabricator
+    mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES[1:])
+    api.search_users.reset_mock()
+    mock_config.load_git_rollout_users(api)
+    assert not api.search_users.called
+    assert mock_config.git_rollout_users == {}
+
+
+@pytest.mark.parametrize(
+    "users, percentage, revision_id, routed",
+    [
+        # No rollout user and no percentage: Mercurial
+        ({}, 0, 51, False),
+        # Listed author: Git
+        ({"PHID-USER-crasher": "crasher"}, 0, 51, True),
+        # Other author: Mercurial
+        ({"PHID-USER-other": "other"}, 0, 51, False),
+        # Percentage applied on the revision id, 51 % 100 = 51
+        ({}, 51, 51, False),
+        ({}, 52, 51, True),
+        ({}, 100, 51, True),
+        ({}, 1, 100, True),
+    ],
+)
+def test_git_rollout_repository(mock_config, users, percentage, revision_id, routed):
+    """A revision is routed to Git by its author or by the percentage."""
+    mock_config.setup(
+        "test",
+        [],
+        [
+            dict(
+                GIT_ROLLOUT_REPOSITORIES[0],
+                git_rollout={"repository": "firefox", "percentage": percentage},
+            ),
+            GIT_ROLLOUT_REPOSITORIES[1],
+        ],
+    )
+    mock_config.git_rollout_users = {"mozilla-central": users}
+    hg, git = mock_config.repositories
+
+    target = mock_config.git_rollout_repository(hg, "PHID-USER-crasher", revision_id)
+    assert target == (git if routed else None)
+
+    # A Git repository is never routed
+    assert mock_config.git_rollout_repository(git, "PHID-USER-crasher", 51) is None
+
+
+@pytest.mark.parametrize("routed", [True, False])
+def test_revision_git_rollout(mock_phabricator, mock_config, routed):
+    """The revision carries the Git repository configuration when routed."""
+    mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES)
+    mock_config.git_rollout_users = {
+        "mozilla-central": {"PHID-USER-crasher": "crasher"} if routed else {}
+    }
+
+    with mock_phabricator as api:
+        revision = PhabricatorRevision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-test",
+            phabricator=api,
+        )
+
+    if routed:
+        assert revision.base_repository_conf.name == "firefox"
+        assert revision.base_repository == "https://github.com/mozilla-firefox/firefox"
+        assert revision.repository_try_name == "firefox-crb"
+        assert revision.repository_type == "git"
+    else:
+        assert revision.base_repository_conf.name == "mozilla-central"
+        assert revision.base_repository == "https://hg.mozilla.org/mozilla-central"
+        assert revision.repository_try_name == "try"
+        assert revision.repository_type == "hg"
+
+
+def test_start_analysis_git_rollout(
+    mock_phabricator, mock_workflow, mock_config, tmpdir, monkeypatch
+):
+    """A routed revision is pushed with the Git backend of the rollout repository."""
+    from code_review_bot import workflow as workflow_module
+
+    mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES)
+    mock_config.git_rollout_users = {
+        "mozilla-central": {"PHID-USER-crasher": "crasher"}
+    }
+    mock_config.mercurial_cache = tmpdir
+    mock_config.git_cache = tmpdir
+    mock_config.github = {"app_id": 12345, "app_privkey": "AppPrivateKey"}
+    monkeypatch.setattr(PhabricatorActions, "is_expired_build", lambda _, build: False)
+
+    git_repo, git_worker = mock.MagicMock(), mock.MagicMock()
+    hg_repo, hg_worker = mock.MagicMock(), mock.MagicMock()
+    monkeypatch.setattr(workflow_module, "GitRepository", git_repo)
+    monkeypatch.setattr(workflow_module, "GitWorker", git_worker)
+    monkeypatch.setattr(workflow_module, "MercurialRepository", hg_repo)
+    monkeypatch.setattr(workflow_module, "MercurialWorker", hg_worker)
+    git_worker.return_value.run.return_value = ("success", mock.MagicMock(), {})
+    mock_workflow.update_build = False
+
+    with mock_phabricator as api:
+        mock_workflow.phabricator = api
+        revision = PhabricatorRevision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-test",
+            phabricator=api,
+        )
+        mock_workflow.start_analysis(revision, AnalysisMode.Lint)
+
+    assert git_repo.called and git_worker.called
+    assert not hg_repo.called and not hg_worker.called
+    conf = git_repo.call_args.kwargs["config"]
+    assert conf["name"] == "firefox"
+    assert conf["try_url"] == "https://github.com/mozilla-firefox/firefox-crb"
+    assert conf["head_branch"] == "code-review/D{revision_id}"
+
+    mock_config.mercurial_cache = None
+    mock_config.git_cache = None
+    mock_config.github = {}
+
+
 @pytest.mark.parametrize("missing_base", [False, True])
 def test_publish_analysis_phabricator_git_failure(missing_base):
     """A fail:git worker output marks the Phabricator build as failed."""
