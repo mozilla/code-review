@@ -59,7 +59,7 @@ class GithubClient:
         # setup API
         self.api = self.installation.get_github_for_installation()
 
-        self.review_comments = []
+        self.review_comments: list[ReviewComment] = []
 
     @classmethod
     def from_configuration(cls, configuration: dict):
@@ -99,6 +99,7 @@ class GithubClient:
         Publish a comment on a pull request
         """
         assert isinstance(revision, GithubRevision), "Only for github revisions"
+        assert message is not None, "Comment message cannot be None"
 
         pull_request = self.get_pull_request(revision)
         pull_request.create_issue_comment(body=truncate_comment(message))

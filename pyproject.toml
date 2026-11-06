@@ -3,6 +3,34 @@ requires = ["setuptools==74.1.2", "setuptools-scm==8.1.0"]
 
 [tool.ruff]
 
+[tool.mypy]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/bot,$MYPY_CONFIG_FILE_DIR/backend,$MYPY_CONFIG_FILE_DIR/integration,$MYPY_CONFIG_FILE_DIR/tools"
+
+[[tool.mypy.overrides]]
+module = [
+    "debug_toolbar.*",
+    "conftest",
+    "django.*",
+    "django_extensions.*",
+    "drf_yasg.*",
+    "environ.*",
+    "github.*",
+    "git.*",
+    "hglib.*",
+    "influxdb.*",
+    "jsone.*",
+    "libmozdata.*",
+    "parsepatch.*",
+    "pytest.*",
+    "responses.*",
+    "rs_parsepatch.*",
+    "sentry_sdk.*",
+    "structlog.*",
+    "taskcluster.*",
+    "rest_framework.*",
+]
+ignore_missing_imports = true
+
 [tool.ruff.lint]
 select = ["W", "E", "F", "I", "T10", "UP"]
 ignore = [
