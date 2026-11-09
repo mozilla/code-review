@@ -234,8 +234,6 @@ class MercurialRepository(BaseRepository):
                 self.dir,
                 self.share_base_dir,
                 branch=self.default_revision.encode("ascii"),
-                # The working directory is updated to the base revision of
-                # the patches later on, avoid updating it twice.
                 noupdate=True,
             )
             # robustcheckout skips purging the working directory when
@@ -327,29 +325,47 @@ class MercurialRepository(BaseRepository):
 
         return self.default_revision
 
-    def checkout_base(self, base):
-        """Update the local checkout to the base revision"""
+    def working_copy_parent(self):
+        parents = self.repo.parents()
+        return parents[0].node if parents else b"null"
+
+    def set_working_copy_parent(self, revision):
+        if isinstance(revision, str):
+            revision = revision.encode("ascii")
+        self.repo.rawcommand(hglib.util.cmdbuilder(b"debugsetparents", revision))
+
+    def import_without_working_copy(self, patches, message, user, parent):
+        # Keep track of the current working copy parent, so it can be reset
+        # when we're done.
+        working_copy_parent = self.working_copy_parent()
+        # Point the working copy parent at the revision this import should apply
+        # on top of. If this is the first patch being applied, this will be the
+        # base revision. Otherwise, it will be the commit created by the previous
+        # import.
+        self.set_working_copy_parent(parent)
         try:
-            logger.info(f"Updating repo to revision {base}")
-            self.repo.update(rev=base, clean=True)
-
-            # See if the repo is clean
-            repo_status = self.repo.status(
-                modified=True, added=True, removed=True, deleted=True
+            self.repo.import_(
+                patches=patches,
+                message=message,
+                user=user,
+                bypass=True,
             )
-            if len(repo_status) != 0:
-                logger.warn(
-                    "Repo is dirty!",
-                    revision=base,
-                    repo=self.name,
-                    repo_status=repo_status,
-                )
+        finally:
+            # Ensure the working copy parent is reset to its original
+            # value.
+            self.set_working_copy_parent(working_copy_parent)
+        return self.repo.tip().node
 
-        except hglib.error.CommandError:
-            raise Exception(f"Failed to update to revision {base}")
-
-        # In this case revision is `base`
-        logger.info("Updated repo", revision=base, repo=self.name)
+    def update_working_copy(self, revision):
+        logger.info("Updating working copy", revision=revision, repo=self.name)
+        start = time.monotonic()
+        self.repo.update(rev=revision, clean=True)
+        logger.info(
+            "Updated working copy",
+            revision=revision,
+            repo=self.name,
+            duration=round(time.monotonic() - start, 2),
+        )
 
     @staticmethod
     def get_author(commit):
@@ -362,17 +378,13 @@ class MercurialRepository(BaseRepository):
             return f"{author['name']} <{author['email']}>"
         return author["raw"]
 
-    def apply_patch(self, patch, message, commit):
-        """Apply a single patch on the local checkout and commit it"""
+    def apply_patch(self, patch, message, commit, parent):
         user = self.get_author(commit) if commit else DEFAULT_AUTHOR
 
         patches = io.BytesIO(patch.patch.encode("utf-8"))
         try:
-            self.repo.import_(
-                patches=patches,
-                message=message.encode("utf-8"),
-                user=user.encode("utf-8"),
-                similarity=95,
+            return self.import_without_working_copy(
+                patches, message.encode("utf-8"), user.encode("utf-8"), parent
             )
         except hglib.error.CommandError as e:
             logger.warning(
@@ -383,6 +395,7 @@ class MercurialRepository(BaseRepository):
                 phid=patch.phid,
                 exc_info=True,
             )
+            self.update_working_copy(parent)
             patches.seek(0)
             # Same method as repo.import_() but with the extra argument "--config ui.patch=patch".
             # https://repo.mercurial-scm.org/python-hglib/file/484b56ac4aec/hglib/client.py#l959
@@ -403,6 +416,7 @@ class MercurialRepository(BaseRepository):
                     similarity=95,
                 )
             )
+            return self.repo.tip().node
         except Exception as e:
             logger.info(
                 f"Failed to apply patch: {e}",
@@ -411,28 +425,44 @@ class MercurialRepository(BaseRepository):
             )
             raise
 
-    def commit_try_task_config(self, path, message):
+    def commit_try_task_config(self, path, message, parent):
         """Commit the try_task_config.json file as the bot"""
-        self.repo.add(path.encode("utf-8"))
-        self.repo.commit(message=message, user=DEFAULT_AUTHOR)
+        name = os.path.relpath(path, self.dir)
+        with open(path) as f:
+            content = f.read()
+        os.unlink(path)
 
-    def push_to_try(self):
-        """
-        Push the current tip on remote try repository
-        """
-        tip = self.repo.tip()
-        logger.info("Pushing patches to try", rev=tip.node)
+        lines = content.splitlines(keepends=True)
+        patch = (
+            f"diff --git a/{name} b/{name}\n"
+            "new file mode 100644\n"
+            "--- /dev/null\n"
+            f"+++ b/{name}\n"
+            f"@@ -0,0 +1,{len(lines)} @@\n"
+        ) + "".join(f"+{line}" for line in lines)
+        if not content.endswith("\n"):
+            patch += "\n\\ No newline at end of file\n"
+
+        return self.import_without_working_copy(
+            io.BytesIO(patch.encode("utf-8")),
+            message.encode("utf-8"),
+            DEFAULT_AUTHOR.encode("utf-8"),
+            parent,
+        )
+
+    def push_to_try(self, revision):
+        logger.info("Pushing patches to try", rev=revision)
         self.repo.push(
             dest=self.try_url.encode("utf-8"),
-            rev=tip.node,
+            rev=revision,
             ssh=self.ssh_conf,
             force=True,
         )
-        return tip
+        return revision
 
-    def revision_id(self, tip):
+    def revision_id(self, revision):
         """Extract the revision identifier from a push_to_try result"""
-        return tip.node.decode("utf-8")
+        return revision.decode("utf-8")
 
     def clean(self):
         """

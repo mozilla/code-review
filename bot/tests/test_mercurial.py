@@ -8,6 +8,7 @@ from pathlib import Path
 from unittest.mock import MagicMock
 
 import hglib
+import pytest
 import responses
 from conftest import MockBuild
 from libmozdata.phabricator import PhabricatorPatch
@@ -203,13 +204,17 @@ def test_push_to_try(PhabricatorMock, mock_mc, responses):
         },
     )
 
+    assert not os.path.exists(target)
+    assert not os.path.exists(config)
+    assert mock_mc.repo.parents()[0].node == initial.node
+
     # The target should have content now
-    assert os.path.exists(target)
-    assert open(target).read() == "First Line\nSecond Line\n"
+    assert mock_mc.repo.cat([target.encode()], rev=tip.node) == (
+        b"First Line\nSecond Line\n"
+    )
 
     # Check the try_task_config file
-    assert os.path.exists(config)
-    assert json.load(open(config)) == {
+    assert json.loads(mock_mc.repo.cat([config.encode()], rev=tip.node)) == {
         "version": 2,
         "parameters": {
             "target_tasks_method": "codereview",
@@ -305,13 +310,14 @@ def test_push_to_try_existing_rev(PhabricatorMock, mock_mc):
     )
     assert details["revision"] == tip.node.decode("utf-8")
 
+    assert not os.path.exists(target)
+    assert not os.path.exists(config)
+
     # The target should have content now
-    assert os.path.exists(target)
-    assert open(target).read() == "Solo PATCH\n"
+    assert mock_mc.repo.cat([target.encode()], rev=tip.node) == b"Solo PATCH\n"
 
     # Check the try_task_config file
-    assert os.path.exists(config)
-    assert json.load(open(config)) == {
+    assert json.loads(mock_mc.repo.cat([config.encode()], rev=tip.node)) == {
         "version": 2,
         "parameters": {
             "target_tasks_method": "codereview",
@@ -358,7 +364,8 @@ Differential Diff: PHID-DIFF-solo"""
     # Extra commit should not appear
     assert parent.node != extra
     assert great_parent.node != extra
-    assert "EXTRA" not in open(os.path.join(repo_dir, "README.md")).read()
+    readme = os.path.join(repo_dir, "README.md").encode()
+    assert b"EXTRA" not in mock_mc.repo.cat([readme], rev=tip.node)
 
 
 def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
@@ -410,9 +417,12 @@ def test_dont_push_skippable_files_to_try(PhabricatorMock, mock_mc):
         == "Modified files match skippable internal configuration files"
     )
 
+    assert not os.path.exists(target)
+
     # The target should have content now
-    assert os.path.exists(target)
-    assert open(target).read() == "First Line\nSecond Line\n"
+    assert mock_mc.repo.cat([target.encode()], rev=tip.node) == (
+        b"First Line\nSecond Line\n"
+    )
 
     # Get tip commit in repo
     # It should be different from the initial one (patches + config have applied)
@@ -573,16 +583,18 @@ def test_failure_mercurial(PhabricatorMock, mock_config, mock_mc):
 
     # Check the treeherder link was queued
     assert mode == "fail:mercurial"
-    import_calls = mock_mc.repo.rawcommand.call_args_list[-2:]
-    assert len(import_calls) == 2
-    assert [c.args[0] for c in import_calls] == [
+    calls = mock_mc.repo.rawcommand.call_args_list[-5:]
+    assert [c.args[0] for c in calls] == [
+        [b"debugsetparents", b"--", b"default"],
         [
             b"import",
+            b"--bypass",
             b"--message=This patch has no real base and will crash libmozevent\nDifferential Diff: PHID-DIFF-666",
             b"--user=code review bot <release-mgmt-analysis@mozilla.com>",
-            b"--similarity=95",
             b"-",
         ],
+        [b"debugsetparents", b"--", initial.node],
+        [b"update", b"-rdefault", b"-C"],
         [
             b"import",
             b"--message=This patch has no real base and will crash libmozevent\nDifferential Diff: PHID-DIFF-666",
@@ -606,6 +618,68 @@ def test_failure_mercurial(PhabricatorMock, mock_config, mock_mc):
     # Clone should not be modified
     tip = mock_mc.repo.tip()
     assert tip.node == initial.node
+
+
+def test_fallback_updates_working_copy_to_patch_parent(mock_mc):
+    repo_dir = mock_mc.repo.root().decode("utf-8")
+    good_file = os.path.join(repo_dir, "good.txt")
+    initial = mock_mc.repo.tip()
+
+    good = PhabricatorPatch(
+        1,
+        "PHID-DIFF-good",
+        "diff --git a/good.txt b/good.txt\n"
+        "new file mode 100644\n"
+        "--- /dev/null\n"
+        "+++ b/good.txt\n"
+        "@@ -0,0 +1,1 @@\n"
+        "+good\n",
+        None,
+        None,
+        False,
+    )
+    bad = PhabricatorPatch(
+        2,
+        "PHID-DIFF-bad",
+        "diff --git a/missing.txt b/missing.txt\n"
+        "--- a/missing.txt\n"
+        "+++ b/missing.txt\n"
+        "@@ -1,1 +1,1 @@\n"
+        "-a\n"
+        "+b\n",
+        None,
+        None,
+        False,
+    )
+
+    parent = mock_mc.apply_patch(good, "Good patch", None, "default")
+
+    assert parent == mock_mc.repo.tip().node
+    assert mock_mc.repo.tip().desc == b"Good patch"
+    assert mock_mc.repo.parents()[0].node == initial.node
+    assert not os.path.exists(good_file)
+
+    with pytest.raises(hglib.error.CommandError):
+        mock_mc.apply_patch(bad, "Bad patch", None, parent)
+
+    assert mock_mc.repo.parents()[0].desc == b"Good patch"
+    assert open(good_file).read() == "good\n"
+
+
+def test_try_commit_on_default_when_all_patches_merged(mock_mc):
+    build = MockBuild(1234, "PHID-REPO-mc", 5678, "PHID-HMBT-merged", {})
+    build.stack = [PhabricatorPatch(1, "PHID-DIFF-merged", "", "abc", None, True)]
+
+    parent = mock_mc.apply_build(build)
+    assert parent == "default"
+
+    mock_mc.add_try_commit(build, LINT_EXTRA_PARAMS, parent)
+
+    tip = mock_mc.repo.tip()
+    assert tip.desc == (
+        b"try_task_config for code-review\nDifferential Diff: PHID-DIFF-merged"
+    )
+    assert mock_mc.repo.parents(tip.node)[0].desc == b"Readme"
 
 
 def test_push_to_try_nss(PhabricatorMock, mock_nss):
@@ -655,13 +729,16 @@ def test_push_to_try_nss(PhabricatorMock, mock_nss):
     )
     assert details["revision"] == tip.node.decode("utf-8")
 
+    assert not os.path.exists(target)
+    assert not os.path.exists(config)
+
     # The target should have content now
-    assert os.path.exists(target)
-    assert open(target).read() == "First Line\nSecond Line\n"
+    assert mock_nss.repo.cat([target.encode()], rev=tip.node) == (
+        b"First Line\nSecond Line\n"
+    )
 
     # The config should have content now
-    assert os.path.exists(config)
-    assert json.load(open(config)) == {
+    assert json.loads(mock_nss.repo.cat([config.encode()], rev=tip.node)) == {
         "version": 2,
         "parameters": {
             "enable_always_target": False,
@@ -786,9 +863,9 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
             err="abort: push failed on remote",
             out="",
         ),
-        mock_mc.repo.tip(),
+        mock_mc.repo.tip().node,
     ]
-    repository_mock.revision_id.side_effect = lambda tip: tip.node.decode("utf-8")
+    repository_mock.revision_id.side_effect = lambda revision: revision.decode("utf-8")
     repository_mock.try_name = "try"
     repository_mock.retries = 0
 
@@ -913,9 +990,9 @@ def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
             err="abort: push failed on remote",
             out="",
         ),
-        mock_mc.repo.tip(),
+        mock_mc.repo.tip().node,
     ]
-    repository_mock.revision_id.side_effect = lambda tip: tip.node.decode("utf-8")
+    repository_mock.revision_id.side_effect = lambda revision: revision.decode("utf-8")
     repository_mock.try_name = "try"
     repository_mock.retries = 0
 
