@@ -127,7 +127,7 @@ class GitRepository(BaseRepository):
         self._github_token = None
 
         # Hash of the commit the current build's patches are applied on,
-        # recorded by checkout_base() and handed to the decision task
+        # recorded by apply_build() and handed to the decision task
         self.base_commit = None
 
     @property
@@ -211,16 +211,28 @@ class GitRepository(BaseRepository):
             return self.default_revision
         return needed_stack[0].base_revision
 
-    def checkout_base(self, base):
-        """Move the working tree to the base revision.
+    def update_working_copy(self, revision):
+        """Move the working tree to a revision, unless it is there already.
 
         HEAD is detached so the patches committed on top stay throwaway drafts
         and never advance a branch; clean() then discards them by returning to
         the base.
         """
-        logger.info(f"Updating repo to revision {base}")
-        self.repo.git.checkout(base, force=True, detach=True)
-        self.base_commit = self.repo.head.commit.hexsha
+        if (
+            self.repo.head.is_detached
+            and self.repo.head.commit.hexsha == self.repo.commit(revision).hexsha
+        ):
+            return
+        logger.info(f"Updating repo to revision {revision}")
+        self.repo.git.checkout(revision, force=True, detach=True)
+
+    def apply_build(self, build):
+        parent = super().apply_build(build)
+        # Resolved to a hash so the try_task_config.json can carry it even when
+        # the base is a symbolic revision such as HEAD
+        base = getattr(build, "actual_base_revision", None) or parent
+        self.base_commit = self.repo.commit(base).hexsha
+        return parent
 
     @staticmethod
     def get_author(commit):
@@ -251,9 +263,11 @@ class GitRepository(BaseRepository):
             lines.append(line)
         return "\n".join(lines) + "\n"
 
-    def apply_patch(self, patch, message, commit):
-        """Apply a single unified diff to the index and commit it."""
+    def apply_patch(self, patch, message, commit, parent):
+        """Apply a single unified diff on top of `parent`, commit it and
+        return the new commit hash."""
         name, email = self.get_author(commit)
+        self.update_working_copy(parent)
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".diff", delete=False
@@ -273,9 +287,12 @@ class GitRepository(BaseRepository):
                 self.repo.git.commit("--no-verify", "-m", message)
         finally:
             os.unlink(patch_path)
+        return self.repo.head.commit.hexsha
 
-    def commit_try_task_config(self, path, message):
-        """Commit the try_task_config.json file as the bot"""
+    def commit_try_task_config(self, path, message, parent):
+        """Commit the try_task_config.json file as the bot on top of `parent`
+        and return the new commit hash"""
+        self.update_working_copy(parent)
         self.repo.git.add(path)
         env = {
             "GIT_AUTHOR_NAME": DEFAULT_AUTHOR_NAME,
@@ -285,6 +302,7 @@ class GitRepository(BaseRepository):
         }
         with self.repo.git.custom_environment(**env):
             self.repo.git.commit("--no-verify", "-m", message)
+        return self.repo.head.commit.hexsha
 
     def render_push_branch(self, build):
         """Render the head_branch template for a specific build."""
@@ -297,7 +315,7 @@ class GitRepository(BaseRepository):
                 f"Invalid head_branch template {self.head_branch!r}: {e}"
             ) from e
 
-    def add_try_commit(self, build, extra_parameters):
+    def add_try_commit(self, build, extra_parameters, parent):
         # Rendered before the try commit so a bad template fails ahead of any
         # remote interaction
         self.push_branch = self.render_push_branch(build)
@@ -307,26 +325,25 @@ class GitRepository(BaseRepository):
         # what the stack changed. Record the real base the same way `mach try`
         # does; the decision task applies these parameters before computing
         # files_changed and the taskgraph diff base.
-        assert self.base_commit, "add_try_commit() called before checkout_base()"
+        assert self.base_commit, "add_try_commit() called before apply_build()"
         parameters = dict(extra_parameters)
         parameters["base_rev"] = self.base_commit
-        super().add_try_commit(build, parameters)
+        return super().add_try_commit(build, parameters, parent)
 
-    def push_to_try(self):
-        """Push the current HEAD to the remote try repository."""
-        head = self.repo.head.commit
+    def push_to_try(self, revision):
+        """Push a commit to the remote try repository."""
         branch = self.push_branch or self.head_branch
-        logger.info("Pushing patches to try", rev=head.hexsha, branch=branch)
+        logger.info("Pushing patches to try", rev=revision, branch=branch)
         self.repo.git.push(
             self.authenticated_url(self.try_url),
-            f"HEAD:refs/heads/{branch}",
+            f"{revision}:refs/heads/{branch}",
             force=True,
         )
-        return head
+        return revision
 
-    def revision_id(self, tip):
+    def revision_id(self, revision):
         """Extract the revision identifier from a push_to_try result"""
-        return tip.hexsha
+        return revision
 
     def clean(self):
         """Reset the local checkout to a pristine state.

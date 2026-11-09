@@ -113,9 +113,11 @@ def test_add_try_commit(PhabricatorMock, mock_mc_git):
     records the commit the stack was applied on as the push's base revision."""
     base = mock_mc_git.repo.commit(mock_mc_git.default_revision).hexsha
     build = make_build(PhabricatorMock)
-    mock_mc_git.apply_build(build)
+    parent = mock_mc_git.apply_build(build)
     assert mock_mc_git.base_commit == base
-    mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS)
+    assert parent == mock_mc_git.repo.head.commit.hexsha
+    commit = mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS, parent)
+    assert commit == mock_mc_git.repo.head.commit.hexsha
 
     config_path = os.path.join(mock_mc_git.dir, "try_task_config.json")
     assert os.path.exists(config_path)
@@ -145,18 +147,19 @@ def test_add_try_commit(PhabricatorMock, mock_mc_git):
 def test_push_to_try(PhabricatorMock, mock_mc_git):
     """push_to_try pushes the prepared HEAD to the configured branch/remote."""
     build = make_build(PhabricatorMock)
-    mock_mc_git.apply_build(build)
-    mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS)
+    parent = mock_mc_git.apply_build(build)
+    commit = mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS, parent)
 
-    pushed = mock_mc_git.push_to_try()
+    pushed = mock_mc_git.push_to_try(commit)
 
-    assert pushed == mock_mc_git.repo.head.commit
+    assert pushed == commit == mock_mc_git.repo.head.commit.hexsha
+    assert mock_mc_git.revision_id(pushed) == commit
 
     # The remote try repo received the configured branch at the pushed commit
     from git import Repo
 
     remote = Repo(mock_mc_git.try_url)
-    assert remote.refs["code-review"].commit.hexsha == pushed.hexsha
+    assert remote.refs["code-review"].commit.hexsha == pushed
 
 
 def test_clean(mock_mc_git):
@@ -184,8 +187,8 @@ def test_clean_drops_previous_build(PhabricatorMock, mock_mc_git):
 
     # First build: apply the stack and the try_task_config commit
     build = make_build(PhabricatorMock)
-    mock_mc_git.apply_build(build)
-    mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS)
+    parent = mock_mc_git.apply_build(build)
+    mock_mc_git.add_try_commit(build, LINT_EXTRA_PARAMS, parent)
 
     # Those commits live on a detached HEAD; the branch has not moved
     assert mock_mc_git.repo.head.is_detached
