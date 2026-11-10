@@ -251,8 +251,7 @@ class GitRepository(BaseRepository):
         """Move the working tree to a revision, unless it is there already.
 
         HEAD is detached so the patches committed on top stay throwaway drafts
-        and never advance a branch; clean() then discards them by returning to
-        the base.
+        and never advance a branch.
         """
         if (
             self.repo.head.is_detached
