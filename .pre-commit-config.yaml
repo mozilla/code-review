@@ -54,6 +54,8 @@ repos:
           - types-PyYAML
           - types-jsonschema
           - json-e==4.8.4
+          - django-stubs
+          - djangorestframework-stubs
         pass_filenames: true
   - repo: meta
     hooks:

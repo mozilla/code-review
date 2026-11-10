@@ -5,12 +5,18 @@ requires = ["setuptools==74.1.2", "setuptools-scm==8.1.0"]
 
 [tool.mypy]
 mypy_path = "$MYPY_CONFIG_FILE_DIR/bot,$MYPY_CONFIG_FILE_DIR/backend,$MYPY_CONFIG_FILE_DIR/integration,$MYPY_CONFIG_FILE_DIR/tools"
+plugins = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main",
+]
+
+[tool.django-stubs]
+django_settings_module = "code_review_backend.app.settings"
 
 [[tool.mypy.overrides]]
 module = [
     "debug_toolbar.*",
     "conftest",
-    "django.*",
     "django_extensions.*",
     "drf_yasg.*",
     "environ.*",
@@ -21,13 +27,9 @@ module = [
     "jsone.*",
     "libmozdata.*",
     "parsepatch.*",
-    "pytest.*",
     "responses.*",
     "rs_parsepatch.*",
-    "sentry_sdk.*",
-    "structlog.*",
     "taskcluster.*",
-    "rest_framework.*",
 ]
 ignore_missing_imports = true
 
