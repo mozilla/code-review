@@ -117,9 +117,11 @@ class GitRepository(BaseRepository):
         super().__init__(config, cache_root)
 
         # Branch template pushed to the remote try repository, rendered per
-        # build so concurrent analyses never overwrite each other.
-        # Supported placeholders: {revision_id}, {diff_id}
-        self.head_branch = config.get("head_branch") or "code-review/D{revision_id}"
+        # build so two analyses never push the same branch, not even two
+        # diffs of one revision. Supported placeholders: {revision_id}, {diff_id}
+        self.head_branch = (
+            config.get("head_branch") or "code-review/D{revision_id}-{diff_id}"
+        )
         self.push_branch = None
 
         # GitHub App credentials used to generate short-lived push tokens

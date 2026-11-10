@@ -496,7 +496,7 @@ def test_head_branch_template(tmpdir, PhabricatorMock, mock_mc_git):
     """The default head_branch is rendered per build, custom templates too."""
     build = make_build(PhabricatorMock)
 
-    # Default configuration builds a unique branch per revision
+    # Default configuration builds a unique branch per diff
     config = {
         "name": "mozilla-central",
         "url": "https://github.com/mozilla/test",
@@ -505,13 +505,13 @@ def test_head_branch_template(tmpdir, PhabricatorMock, mock_mc_git):
         "default_revision": "main",
     }
     repo = GitRepository(config, str(tmpdir.realpath()))
-    assert repo.head_branch == "code-review/D{revision_id}"
-    assert repo.render_push_branch(build) == "code-review/D5678"
+    assert repo.head_branch == "code-review/D{revision_id}-{diff_id}"
+    assert repo.render_push_branch(build) == "code-review/D5678-1234"
 
     # An unset repository head_branch reaches the config as None and still
     # falls back to the default template
     repo = GitRepository({**config, "head_branch": None}, str(tmpdir.realpath()))
-    assert repo.head_branch == "code-review/D{revision_id}"
+    assert repo.head_branch == "code-review/D{revision_id}-{diff_id}"
 
     # Environments pick their own pattern, e.g. the dev prefix
     repo = GitRepository(

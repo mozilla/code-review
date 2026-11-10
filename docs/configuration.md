@@ -83,10 +83,11 @@ common:
       repo_type: hg
 
       # (Optional, git only) Branch template used for pushes to the try repository
-      # Rendered per analysis so concurrent pushes never overwrite each other
+      # Rendered per analysis so concurrent pushes never overwrite each other,
+      # which needs both placeholders: a revision gets a new diff on every update
       # Supported placeholders: {revision_id}, {diff_id}
       # A template without placeholder produces a single fixed branch
-      head_branch: "code-review/D{revision_id}"
+      head_branch: "code-review/D{revision_id}-{diff_id}"
 
       # (Optional, git only) Branch the patches are applied on: the clone starts
       # on it and the checkout returns to its tip before each analysis.

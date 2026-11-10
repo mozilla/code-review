@@ -34,7 +34,7 @@ RepositoryConf = collections.namedtuple(
     # repo_type is optional and defaults to Mercurial so existing repository
     # secrets keep working; set it to "git" to push to a Git remote instead.
     # head_branch is optional and only used by Git repositories: a branch
-    # template rendered per build (e.g. "dev/code-review/D{revision_id}"),
+    # template rendered per build (e.g. "dev/code-review/D{revision_id}-{diff_id}"),
     # so each environment can pick its own branch naming pattern.
     # branch is optional and only used by Git repositories: the branch the
     # patches apply on, overriding the default branch of the Phabricator
