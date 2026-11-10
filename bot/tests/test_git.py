@@ -205,22 +205,69 @@ def test_clean_drops_previous_build(PhabricatorMock, mock_mc_git):
     assert not os.path.exists(os.path.join(mock_mc_git.dir, "try_task_config.json"))
 
 
-def test_clean_requires_pristine_base(tmpdir):
-    """Without a configured default_revision nor an origin remote, clean()
-    fails loudly instead of silently keeping the previous build's commits."""
+def test_branch_is_required(tmpdir):
+    """A Git repository holds every branch, so the one the patches apply on
+    has to be configured: there is no safe default."""
+    config = {
+        "name": "no-branch",
+        "url": "https://github.com/mozilla/test",
+        "try_url": str(tmpdir.mkdir("no-branch-try.git").realpath()),
+    }
+    with pytest.raises(ValueError, match="needs the branch"):
+        GitRepository(config, str(tmpdir.realpath()))
+    with pytest.raises(ValueError, match="needs the branch"):
+        GitRepository({**config, "default_revision": None}, str(tmpdir.realpath()))
+
+
+def test_clean_requires_the_branch(tmpdir, mock_mc_git):
+    """clean() fails loudly when the branch exists neither on origin nor in
+    the clone, instead of silently keeping the previous build's commits."""
+    mock_mc_git.branch = "nope"
+    assert mock_mc_git.default_revision == "nope"
+
+    with pytest.raises(Exception, match="Branch nope is neither on origin"):
+        mock_mc_git.clean()
+
+
+def test_clone_starts_on_the_branch(tmpdir):
+    """The clone checks out the configured branch, and the default revision
+    follows that branch on origin across builds."""
     from conftest import build_git_repository
 
-    repo = build_git_repository(tmpdir, "no-default")
+    # An origin with a second branch, one commit ahead of the default one
+    origin = build_git_repository(tmpdir, "origin-repo")
+    default_branch = origin.active_branch.name
+    base = origin.head.commit.hexsha
+    origin.git.checkout("-b", "beta")
+    with open(os.path.join(origin.working_dir, "beta.txt"), "w") as f:
+        f.write("beta only")
+    origin.index.add(["beta.txt"])
+    beta_tip = origin.index.commit("beta commit").hexsha
+    origin.git.checkout(default_branch)
+
     config = {
-        "name": "no-default",
-        "url": "https://github.com/mozilla/test",
-        "try_url": str(tmpdir.mkdir("no-default-try.git").realpath()),
+        "name": "clone-test",
+        "url": origin.working_dir,
+        "try_url": str(tmpdir.mkdir("clone-test-try.git").realpath()),
+        "default_revision": "beta",
     }
     git_repo = GitRepository(config, str(tmpdir.realpath()))
-    git_repo._repo = repo
+    git_repo.clone()
 
-    with pytest.raises(Exception, match="configure default_revision"):
-        git_repo.clean()
+    assert git_repo.repo.active_branch.name == "beta"
+    assert git_repo.repo.head.commit.hexsha == beta_tip
+    assert git_repo.default_revision == "origin/beta"
+    assert git_repo.repo.commit(f"origin/{default_branch}").hexsha == base
+
+    # A later build picks up the branch's new tip, not the default branch
+    origin.git.checkout("beta")
+    with open(os.path.join(origin.working_dir, "beta.txt"), "w") as f:
+        f.write("beta update")
+    origin.index.add(["beta.txt"])
+    new_tip = origin.index.commit("beta update").hexsha
+    git_repo.clean()
+    assert git_repo.repo.head.commit.hexsha == new_tip
+    assert git_repo.repo.commit(git_repo.default_revision).hexsha == new_tip
 
 
 def test_clean_picks_up_remote_updates(tmpdir, mock_mc_git):
@@ -274,6 +321,7 @@ def test_github_token(monkeypatch, tmpdir):
         "name": "app-repo",
         "url": "https://github.com/mozilla-releng/staging-firefox",
         "try_url": "https://github.com/mozilla-releng/staging-firefox.git",
+        "default_revision": "main",
         "github_app_id": 12345,
         "github_app_privkey": "AppPrivateKey",
     }
@@ -454,6 +502,7 @@ def test_head_branch_template(tmpdir, PhabricatorMock, mock_mc_git):
         "url": "https://github.com/mozilla/test",
         "try_url": "https://github.com/mozilla/test-try",
         "try_name": "try",
+        "default_revision": "main",
     }
     repo = GitRepository(config, str(tmpdir.realpath()))
     assert repo.head_branch == "code-review/D{revision_id}"

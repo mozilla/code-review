@@ -107,11 +107,11 @@ class GitRepository(BaseRepository):
 
     Notable differences from the Mercurial implementation:
     - the base revision is already a Git hash, so there is no Lando ``git2hg`` lookup;
+    - one repository holds many branches, so the branch the patches apply on
+      is part of the configuration (``default_revision``) instead of a default;
     - pushes are authenticated over HTTPS with a short-lived GitHub App
       installation token generated at push time and sent as an HTTP header.
     """
-
-    DEFAULT_REVISION = "HEAD"
 
     def __init__(self, config, cache_root):
         super().__init__(config, cache_root)
@@ -138,6 +138,27 @@ class GitRepository(BaseRepository):
             logger.info(f"Git open {self.dir}")
             self._repo = Repo(self.dir)
         return self._repo
+
+    @property
+    def default_revision(self):
+        """Tip of the branch the patches apply on, as last fetched from origin
+        so it follows upstream across builds, or the local branch when the
+        clone has no origin remote."""
+        upstream = f"origin/{self.branch}"
+        if self.has_revision(upstream):
+            return upstream
+        return self.branch
+
+    @default_revision.setter
+    def default_revision(self, branch):
+        # The branch the revision was submitted to: with every branch in one
+        # repository, no default is safe
+        if not branch:
+            raise ValueError(
+                f"Repository {self.name} needs the branch the patches apply on "
+                "(default_revision)"
+            )
+        self.branch = branch
 
     def github_token(self):
         """Short-lived GitHub App installation token for the try repository.
@@ -197,7 +218,9 @@ class GitRepository(BaseRepository):
             self._repo = Repo(self.dir)
             self.repo.remotes.origin.fetch()
         else:
-            self._repo = Repo.clone_from(self.url, self.dir)
+            # Start on the target branch: beta, release or ESR diverge a lot
+            # from the remote's default branch
+            self._repo = Repo.clone_from(self.url, self.dir, branch=self.branch)
         logger.info("Full checkout finished")
 
     def has_revision(self, revision):
@@ -240,7 +263,7 @@ class GitRepository(BaseRepository):
     def apply_build(self, build):
         parent = super().apply_build(build)
         # Resolved to a hash so the try_task_config.json can carry it even when
-        # the base is a symbolic revision such as HEAD
+        # the base is a symbolic revision such as origin/main
         base = getattr(build, "actual_base_revision", None) or parent
         self.base_commit = self.repo.commit(base).hexsha
         return parent
@@ -361,7 +384,7 @@ class GitRepository(BaseRepository):
         Mirrors the Mercurial ``clean()`` (revert + strip outgoing drafts +
         pull): a reused clone can hold the patch commits and ``try_task_config``
         commit from a previous build, so we discard local changes, refresh from
-        the remote and return to the base revision.
+        the remote and return to the tip of the target branch.
         """
         logger.info("Cleaning git checkout")
 
@@ -373,19 +396,12 @@ class GitRepository(BaseRepository):
         if any(remote.name == "origin" for remote in self.repo.remotes):
             self.repo.remotes.origin.fetch()
 
-        # Return to the pristine base, dropping any previously applied commits.
-        # Prefer the remote-tracking base so we also pick up upstream updates.
-        upstream = f"origin/{self.default_revision}"
-        if self.has_revision(upstream):
-            target = upstream
-        elif self.default_revision != "HEAD":
-            target = self.default_revision
-        else:
-            # A bare HEAD cannot identify a pristine base once patches have
-            # been committed on top of it
+        # Return to the pristine tip of the branch, dropping any previously
+        # applied commits
+        target = self.default_revision
+        if not self.has_revision(target):
             raise Exception(
-                "Cannot determine the base to reset to: configure default_revision "
-                "or make sure the repository has an origin remote"
+                f"Branch {self.branch} is neither on origin nor in the local clone"
             )
         self.repo.git.checkout(target, force=True, detach=True)
 

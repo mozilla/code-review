@@ -392,6 +392,7 @@ class PhabricatorRevision(Revision):
             base_changeset="default",
             base_repository=repository.url,
             base_repository_conf=repository,
+            phabricator_repository=phab_repo,
             repository_try_name=repository.try_name,
             repository_type=repository.repo_type,
         )
