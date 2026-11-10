@@ -3,3 +3,4 @@
 *.egg-info
 *.sqlite*
 backend/hgmo
+uv.lock
