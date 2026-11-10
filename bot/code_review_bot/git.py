@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import asyncio
+import base64
 import os
 import re
 import tempfile
@@ -107,7 +108,7 @@ class GitRepository(BaseRepository):
     Notable differences from the Mercurial implementation:
     - the base revision is already a Git hash, so there is no Lando ``git2hg`` lookup;
     - pushes are authenticated over HTTPS with a short-lived GitHub App
-      installation token generated at push time.
+      installation token generated at push time and sent as an HTTP header.
     """
 
     DEFAULT_REVISION = "HEAD"
@@ -168,15 +169,25 @@ class GitRepository(BaseRepository):
         finally:
             await auth.close()
 
-    def authenticated_url(self, url):
-        """Inject an installation token in an HTTPS GitHub url.
+    def push_environment(self, url):
+        """Environment variables authenticating Git commands on an HTTPS url.
 
-        Other urls (e.g. local paths in the test suite) are returned unchanged.
+        The installation token travels as an Authorization header, configured
+        through the environment like actions/checkout does, so it never shows
+        up on a command line nor in the error messages built from one.
+        Other urls (e.g. local paths in the test suite) need no credentials.
         """
         parts = urlparse(url)
         if parts.scheme not in ("http", "https"):
-            return url
-        return f"{parts.scheme}://git:{self.github_token()}@{parts.netloc}{parts.path}"
+            return {}
+        credentials = base64.b64encode(
+            f"x-access-token:{self.github_token()}".encode()
+        ).decode()
+        return {
+            "GIT_CONFIG_COUNT": "1",
+            "GIT_CONFIG_KEY_0": f"http.{parts.scheme}://{parts.netloc}/.extraheader",
+            "GIT_CONFIG_VALUE_0": f"AUTHORIZATION: basic {credentials}",
+        }
 
     def clone(self):
         # Read operations use the plain url: the repositories are public, only
@@ -334,11 +345,10 @@ class GitRepository(BaseRepository):
         """Push a commit to the remote try repository."""
         branch = self.push_branch or self.head_branch
         logger.info("Pushing patches to try", rev=revision, branch=branch)
-        self.repo.git.push(
-            self.authenticated_url(self.try_url),
-            f"{revision}:refs/heads/{branch}",
-            force=True,
-        )
+        with self.repo.git.custom_environment(**self.push_environment(self.try_url)):
+            self.repo.git.push(
+                self.try_url, f"{revision}:refs/heads/{branch}", force=True
+            )
         return revision
 
     def revision_id(self, revision):

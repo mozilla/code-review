@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import base64
 import json
 import os.path
 from unittest.mock import MagicMock
@@ -303,18 +304,61 @@ def test_github_token(monkeypatch, tmpdir):
     assert git_repo.github_token() == "generated-token"
     assert len(calls) == 1
 
-    # The token is injected in https urls only
-    assert (
-        git_repo.authenticated_url(
-            "https://github.com/mozilla-releng/staging-firefox.git"
-        )
-        == "https://git:generated-token@github.com/mozilla-releng/staging-firefox.git"
-    )
+    # The token is sent as a basic authorization header for the url's host,
+    # configured through git's environment instead of the url itself
+    credentials = base64.b64encode(b"x-access-token:generated-token").decode()
+    assert git_repo.push_environment(
+        "https://github.com/mozilla-releng/staging-firefox.git"
+    ) == {
+        "GIT_CONFIG_COUNT": "1",
+        "GIT_CONFIG_KEY_0": "http.https://github.com/.extraheader",
+        "GIT_CONFIG_VALUE_0": f"AUTHORIZATION: basic {credentials}",
+    }
 
 
-def test_authenticated_url_local_paths(mock_mc_git):
+def test_push_environment_local_paths(mock_mc_git):
     """Local paths (as used by the test remotes) are never authenticated."""
-    assert mock_mc_git.authenticated_url(mock_mc_git.try_url) == mock_mc_git.try_url
+    assert mock_mc_git.push_environment(mock_mc_git.try_url) == {}
+
+
+def test_push_to_try_keeps_token_off_the_command_line(
+    PhabricatorMock, mock_mc_git, monkeypatch
+):
+    """The push command only carries the plain url: the token is scoped to
+    the push through git's environment and stays out of the error messages
+    GitPython builds from the command line."""
+    from git.cmd import Git
+
+    build = make_build(PhabricatorMock)
+    try_url = "https://github.com/mozilla/test-try.git"
+    mock_mc_git.try_url = try_url
+    mock_mc_git.github_token = MagicMock(return_value="secret-token")
+
+    pushes = []
+    real_execute = Git.execute
+
+    def fake_execute(self, command, *args, **kwargs):
+        if "push" not in command:
+            return real_execute(self, command, *args, **kwargs)
+        pushes.append((command, dict(self.environment())))
+        raise GitCommandError(command, 128, b"fatal: denied")
+
+    monkeypatch.setattr(Git, "execute", fake_execute)
+
+    worker = GitWorker()
+    mode, _, details = worker.run(mock_mc_git, build, LINT_EXTRA_PARAMS)
+
+    assert mode == "fail:git"
+    assert "secret-token" not in details["message"]
+    assert len(pushes) == 1
+    command, environment = pushes[0]
+    tip = mock_mc_git.repo.head.commit.hexsha
+    assert command[:2] == ["git", "push"]
+    assert try_url in command and f"{tip}:refs/heads/code-review" in command
+    assert all("secret-token" not in arg for arg in command)
+    assert environment == mock_mc_git.push_environment(try_url)
+    # The push environment is dropped once the push is over
+    assert mock_mc_git.repo.git.environment() == {}
 
 
 def test_worker_run_success(PhabricatorMock, mock_mc_git):
