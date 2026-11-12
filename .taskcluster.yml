@@ -83,7 +83,7 @@ tasks:
                   - sh
                   - -lxce
                   - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    uv run --locked --only-group lint pre-commit run -a --show-diff-on-failure"
+                    uv run --locked pre-commit run -a --show-diff-on-failure"
               metadata:
                 name: "Code Review Bot checks: linting"
                 description: Check code style with pre-commit hooks

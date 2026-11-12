@@ -16,8 +16,6 @@ updates:
       semver-minor-days: 7
       semver-patch-days: 3
     open-pull-requests-limit: 99
-    allow:
-      - dependency-type: direct
   - package-ecosystem: docker
     directory: "/bot/docker"
     schedule:

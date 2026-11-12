@@ -2,17 +2,17 @@
 
 ## Developer setup
 
-The code review bot is a Python 3 application, part of the repository's [uv](https://docs.astral.sh/uv/) workspace. From the `bot` directory, create a virtual environment with the bot and its development dependencies:
+The code review bot is a Python 3 application, so it should be easy to bootstrap on your computer:
 
 ```
 uv sync
 ```
 
-You should now be able to run unit tests, and linting (from the repository root):
+You should now be able to run linting and unit tests:
 
 ```
+uv run pre-commit run -a
 uv run pytest
-cd .. && uv run --only-group lint pre-commit run -a
 ```
 
 If those tests are OK, you can run the bot locally, by using a local configuration file with your Phabricator API token (see details at the end of this README), and a task reference to analyze.

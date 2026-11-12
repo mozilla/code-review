@@ -10,7 +10,7 @@ members = [
 ]
 
 [manifest.dependency-groups]
-lint = [{ name = "pre-commit", specifier = "==4.7.0" }]
+dev = [{ name = "pre-commit", specifier = "==4.7.0" }]
 
 [[package]]
 name = "aiohappyeyeballs"

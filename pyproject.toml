@@ -2,7 +2,7 @@
 members = ["backend", "bot", "integration"]
 
 [dependency-groups]
-lint = ["pre-commit==4.7.0"]
+dev = ["pre-commit==4.7.0"]
 
 [tool.ruff]
 
