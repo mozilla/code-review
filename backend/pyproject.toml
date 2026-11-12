@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "code-review-backend"
 dynamic = ["version"]
 description = "Store and compare issues found in Mozilla code review tasks"
-authors = [{ name = "Mozilla Release Management", email = "release-mgmt-analysis@mozilla.com" }]
+authors = [{ name = "Mozilla Engineering Workflow", email = "release-mgmt-analysis@mozilla.com" }]
 license = "MPL-2.0"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -21,7 +21,6 @@ dependencies = [
     "parsepatch==0.1.3",
     "psycopg2-binary==2.9.13",
     "sentry-sdk==2.73.0",
-    "setuptools==84.1.0",
     "sqlparse==0.6.0",
     "taskcluster==113.2.0",
     "tqdm==4.70.1",

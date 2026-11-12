@@ -354,7 +354,6 @@ dependencies = [
     { name = "parsepatch" },
     { name = "psycopg2-binary" },
     { name = "sentry-sdk" },
-    { name = "setuptools" },
     { name = "sqlparse" },
     { name = "taskcluster" },
     { name = "tqdm" },
@@ -379,7 +378,6 @@ requires-dist = [
     { name = "parsepatch", specifier = "==0.1.3" },
     { name = "psycopg2-binary", specifier = "==2.9.13" },
     { name = "sentry-sdk", specifier = "==2.73.0" },
-    { name = "setuptools", specifier = "==84.1.0" },
     { name = "sqlparse", specifier = "==0.6.0" },
     { name = "taskcluster", specifier = "==113.2.0" },
     { name = "tqdm", specifier = "==4.70.1" },
@@ -405,7 +403,6 @@ dependencies = [
     { name = "pyyaml" },
     { name = "rs-parsepatch" },
     { name = "sentry-sdk" },
-    { name = "setuptools" },
     { name = "structlog" },
     { name = "taskcluster" },
 ]
@@ -429,7 +426,6 @@ requires-dist = [
     { name = "pyyaml", specifier = "==6.0.3" },
     { name = "rs-parsepatch", specifier = "==0.4.6" },
     { name = "sentry-sdk", specifier = "==2.73.0" },
-    { name = "setuptools", specifier = "==84.1.0" },
     { name = "structlog", specifier = "==26.1.0" },
     { name = "taskcluster", specifier = "==113.2.0" },
 ]
