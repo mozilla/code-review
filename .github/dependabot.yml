@@ -1,24 +1,6 @@
 version: 2
 updates:
   - package-ecosystem: pip
-    directory: "/tools"
-    schedule:
-      interval: weekly
-    groups:
-      patch:
-        applies-to: version-updates
-        patterns:
-          - "*"
-        update-types:
-          - patch
-    cooldown:
-      semver-major-days: 14
-      semver-minor-days: 7
-      semver-patch-days: 3
-    open-pull-requests-limit: 99
-    labels:
-      - tools
-  - package-ecosystem: pip
     directory: "/integration"
     schedule:
       interval: weekly
