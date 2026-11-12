@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "code-review-bot"
+dynamic = ["version"]
+description = "Reports issues found in Mozilla code review tasks"
+authors = [{ name = "Mozilla Engineering Workflow", email = "release-mgmt-analysis@mozilla.com" }]
+license = "MPL-2.0"
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "aiohttp<4",
+    "gitpython==3.1.62",
+    "influxdb==5.3.2",
+    "libmozdata==0.2.20",
+    "PyGithub==2.10.0",
+    "python-hglib==2.6.2",
+    "pyyaml==6.0.3",
+    "rs_parsepatch==0.4.6",
+    "sentry-sdk==2.73.0",
+    "structlog==26.1.0",
+    "taskcluster==113.2.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/mozilla/code-review"
+
+[project.scripts]
+code-review-bot = "code_review_bot.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "pytest-responses==0.6.0",
+    "pytest-structlog==1.2",
+    "responses==0.26.3",
+]
+
+[tool.hatch.version]
+path = "VERSION"
+pattern = "(?P<version>.+)"
+
+[tool.hatch.build.targets.sdist]
+include = ["/code_review_bot", "/VERSION"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["code_review_bot"]
+
+[tool.uv]
+cache-keys = [{ file = "pyproject.toml" }, { file = "VERSION" }]

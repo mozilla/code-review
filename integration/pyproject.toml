@@ -1,0 +1,23 @@
+[project]
+name = "code-review-integration"
+# Not a distributable package (see tool.uv.package): the version is a placeholder,
+# the integration VERSION file remains the source of truth.
+version = "0"
+description = "Integration tests for Mozilla code review"
+requires-python = ">=3.14"
+dependencies = [
+    "MozPhab==2.23.0",
+    "pyyaml==6.0.3",
+    "structlog==26.1.0",
+    "taskcluster==113.2.0",
+]
+
+[dependency-groups]
+dev = [
+    "json-e==4.8.4",
+    "jsonschema==4.26.0",
+    "pytest==9.1.1",
+]
+
+[tool.uv]
+package = false

@@ -4,29 +4,28 @@
 
 ### Run the application
 
-You may want to install dependencies in a virtual environment an run the development test server with a base fixure for development purpose:
+Dependencies are managed with the repository's [uv](https://docs.astral.sh/uv/) workspace. Install them in a virtual environment and run the development test server with a base fixture for development purpose:
 
 ```
-mkvirtualenv code-review-backend
-pip install -e ./tools -e ./backend -r ./backend/requirements-dev.txt
 cd backend
-./manage.py migrate
-./manage.py createsuperuser
-./manage.py loaddata fixtures/repositories.json
-./manage.py runserver
+uv sync
+uv run ./manage.py migrate
+uv run ./manage.py createsuperuser
+uv run ./manage.py loaddata fixtures/repositories.json
+uv run ./manage.py runserver
 ```
 
 At this point, you can log into http://127.0.0.1:8000/admin/ with the credentials you mentioned during the `createsuperuser` step.
 
 ### Debugging tools
 
-Run `pip install -r requirements-dev.txt` to install all the available optional dev tools for the backend.
+The optional dev tools for the backend are part of the `dev` dependency group, installed by default by `uv sync`.
 
 [Django Debug Toolbar](https://django-debug-toolbar.readthedocs.io/en/latest/) provides you with a neat debug sidebar that will help diagnosing slow API endpoints.
 
 [Django Extensions](https://django-extensions.readthedocs.io/en/latest/) adds a _lot_ of `manage.py` commands ; the most important one is `./manage.py shell_plus` which runs the usual shell but with all the available models pre-imported.
 
-You may also want to use IPython (`pip install ipython`) to get a nicer shell with syntax highlighting, auto reloading and much more via `./manage.py shell`.
+You may also want to use IPython (`uv pip install ipython`) to get a nicer shell with syntax highlighting, auto reloading and much more via `./manage.py shell`.
 
 ## Load existing issues
 

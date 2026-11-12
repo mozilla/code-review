@@ -5,16 +5,14 @@
 The code review bot is a Python 3 application, so it should be easy to bootstrap on your computer:
 
 ```
-mkvirtualenv -p /usr/bin/python3 code-review
-pip install -r requirements.txt -r requirements-dev.txt
-pip install -e .
+uv sync
 ```
 
 You should now be able to run linting and unit tests:
 
 ```
-flake8
-pytest
+uv run pre-commit run -a
+uv run pytest
 ```
 
 If those tests are OK, you can run the bot locally, by using a local configuration file with your Phabricator API token (see details at the end of this README), and a task reference to analyze.
@@ -22,7 +20,7 @@ If those tests are OK, you can run the bot locally, by using a local configurati
 ```
 export TRY_TASK_ID=XXX
 export TRY_TASK_GROUP_ID=XXX
-code-review-bot --configuration=path/to/config.yaml
+uv run code-review-bot --configuration=path/to/config.yaml
 ```
 
 ## Configuration
