@@ -88,9 +88,6 @@ class PhabricatorReporter(Reporter):
     """
 
     def __init__(self, configuration={}, *args, **kwargs):
-        if kwargs.get("api") is not None:
-            self.setup_api(kwargs["api"])
-
         self.analyzers_skipped = configuration.get("analyzers_skipped", [])
         assert isinstance(
             self.analyzers_skipped, list
@@ -99,18 +96,28 @@ class PhabricatorReporter(Reporter):
         self.frontend_diff_url = configuration.get(
             "frontend_diff_url", "https://code-review.moz.tools/#/diff/{diff_id}"
         )
-        self.phabricator_diff_url = urljoin(
-            configuration.get(
-                "phabricator_base_url", "https://phabricator.services.mozilla.com"
-            ),
-            "differential/diff/{diff_id}/",
+        # When unset, the diff links follow the Phabricator instance the API
+        # client talks to (see setup_api), so a dev instance links to itself
+        self.phabricator_base_url = configuration.get("phabricator_base_url")
+        self.phabricator_diff_url = self.build_diff_url(
+            self.phabricator_base_url or "https://phabricator.services.mozilla.com"
         )
         # Setup Code Review backend API client
         self.backend_api = BackendAPI()
 
+        if kwargs.get("api") is not None:
+            self.setup_api(kwargs["api"])
+
+    @staticmethod
+    def build_diff_url(base_url):
+        return urljoin(base_url, "differential/diff/{diff_id}/")
+
     def setup_api(self, api):
         assert isinstance(api, PhabricatorAPI)
         self.api = api
+        if self.phabricator_base_url is None:
+            # PhabricatorAPI guarantees the url ends with /api/
+            self.phabricator_diff_url = self.build_diff_url(api.url[: -len("api/")])
         logger.info("Phabricator reporter enabled")
 
     @staticmethod
