@@ -210,7 +210,12 @@ class GitRepository(BaseRepository):
     def clone(self):
         # Read operations use the plain url: the repositories are public, only
         # pushes need authentication
-        logger.info("Checking out git repository", repo=self.url, dir=self.dir)
+        logger.info(
+            "Checking out git repository",
+            repo=self.url,
+            branch=self.branch,
+            dir=self.dir,
+        )
         if os.path.isdir(os.path.join(self.dir, ".git")):
             self._repo = Repo(self.dir)
             self.repo.remotes.origin.fetch()
