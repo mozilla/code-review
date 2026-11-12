@@ -1,4 +1,4 @@
-FROM python:3.14.7-slim
+FROM python:3.15.0-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
 ENV UV_COMPILE_BYTECODE=1 \
