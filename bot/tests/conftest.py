@@ -1299,17 +1299,25 @@ def mock_mc_git(tmpdir):
     from code_review_bot.git import GitRepository
 
     repo = build_git_repository(tmpdir, "mozilla-central")
+    branch = repo.active_branch.name
 
-    # A local bare repo acts as the remote "try" target (no network access)
+    # A local bare repo acts as origin, holding the branch at its base commit
+    # like the clone of a real upstream (no network access)
+    origin_dir = str(tmpdir.mkdir("origin.git").realpath())
+    Repo.init(origin_dir, bare=True)
+    repo.create_remote("origin", origin_dir).push(branch)
+    repo.remotes.origin.fetch()
+
+    # A local bare repo acts as the remote "try" target
     try_dir = str(tmpdir.mkdir("try.git").realpath())
     Repo.init(try_dir, bare=True)
 
     config = {
         "name": "mozilla-central",
-        "url": "https://github.com/mozilla/test",
+        "url": origin_dir,
         "try_url": try_dir,
         "try_name": "staging-firefox",
-        "default_revision": repo.active_branch.name,
+        "default_revision": branch,
         "head_branch": "code-review",
     }
     git_repo = GitRepository(config, str(tmpdir.realpath()))

@@ -144,12 +144,8 @@ class GitRepository(BaseRepository):
     @property
     def default_revision(self):
         """Tip of the branch the patches apply on, as last fetched from origin
-        so it follows upstream across builds, or the local branch when the
-        clone has no origin remote."""
-        upstream = f"origin/{self.branch}"
-        if self.has_revision(upstream):
-            return upstream
-        return self.branch
+        so it follows upstream across builds."""
+        return f"origin/{self.branch}"
 
     @default_revision.setter
     def default_revision(self, branch):
@@ -393,17 +389,14 @@ class GitRepository(BaseRepository):
         self.repo.git.reset("--hard")
         self.repo.git.clean("-fxd")
 
-        # Refresh from the remote when one is configured (mirrors hg pull)
-        if any(remote.name == "origin" for remote in self.repo.remotes):
-            self.repo.remotes.origin.fetch()
+        # Refresh from the remote (mirrors hg pull)
+        self.repo.remotes.origin.fetch()
 
         # Return to the pristine tip of the branch, dropping any previously
         # applied commits
         target = self.default_revision
         if not self.has_revision(target):
-            raise Exception(
-                f"Branch {self.branch} is neither on origin nor in the local clone"
-            )
+            raise Exception(f"Branch {self.branch} is not on origin")
         self.repo.git.checkout(target, force=True, detach=True)
 
 

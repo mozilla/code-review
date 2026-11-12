@@ -220,12 +220,12 @@ def test_branch_is_required(tmpdir):
 
 
 def test_clean_requires_the_branch(tmpdir, mock_mc_git):
-    """clean() fails loudly when the branch exists neither on origin nor in
-    the clone, instead of silently keeping the previous build's commits."""
+    """clean() fails loudly when the branch is not on origin, instead of
+    silently keeping the previous build's commits."""
     mock_mc_git.branch = "nope"
-    assert mock_mc_git.default_revision == "nope"
+    assert mock_mc_git.default_revision == "origin/nope"
 
-    with pytest.raises(Exception, match="Branch nope is neither on origin"):
+    with pytest.raises(Exception, match="Branch nope is not on origin"):
         mock_mc_git.clean()
 
 
@@ -275,26 +275,30 @@ def test_clean_picks_up_remote_updates(tmpdir, mock_mc_git):
     landed since the last build are picked up (mirrors hg pull)."""
     from git import Actor, Repo
 
-    # Clone the repo to act as its origin, and move it one commit ahead
-    origin_dir = str(tmpdir.mkdir("origin-repo").realpath())
-    origin = mock_mc_git.repo.clone(origin_dir)
-    with origin.config_writer() as cw:
+    # Land a commit on origin through another clone, as upstream would
+    upstream_dir = str(tmpdir.mkdir("upstream").realpath())
+    upstream = Repo.clone_from(mock_mc_git.url, upstream_dir)
+    with upstream.config_writer() as cw:
         cw.set_value("user", "name", "test")
         cw.set_value("user", "email", "test")
         cw.set_value("commit", "gpgsign", "false")
-    with open(os.path.join(origin_dir, "update.txt"), "w") as f:
+    with open(os.path.join(upstream_dir, "update.txt"), "w") as f:
         f.write("upstream update")
-    origin.index.add(["update.txt"])
+    upstream.index.add(["update.txt"])
     actor = Actor("test", "test")
-    upstream_tip = origin.index.commit("upstream update", author=actor, committer=actor)
+    upstream_tip = upstream.index.commit(
+        "upstream update", author=actor, committer=actor
+    )
+    upstream.remotes.origin.push(mock_mc_git.branch)
 
-    mock_mc_git.repo.create_remote("origin", origin_dir)
+    # The local clone still sees the previous tip until cleanup fetches
+    assert mock_mc_git.repo.commit(mock_mc_git.default_revision) != upstream_tip
     mock_mc_git.clean()
 
     assert mock_mc_git.repo.head.commit.hexsha == upstream_tip.hexsha
     assert os.path.exists(os.path.join(mock_mc_git.dir, "update.txt"))
-    # The remote in the local clone is untouched by cleanup
-    assert Repo(origin_dir).head.commit.hexsha == upstream_tip.hexsha
+    # Origin is untouched by cleanup
+    assert Repo(mock_mc_git.url).commit(mock_mc_git.branch) == upstream_tip
 
 
 def test_worker_failure_git(PhabricatorMock, mock_mc_git):
