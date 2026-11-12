@@ -17,7 +17,7 @@ The code review bot is not a single piece, but a distributed system using severa
 7. The Try server creates a decision task on Taskcluster,
 8. The Decision tasks creates followup tasks, with code analyzers, and a custom code-review task.
 9. The code analyzers run on the stack we produced, and list potential issues in a JSON file, that is stored and shared as a Taskcluster artifact,
-10. The final code-review task is triggered once all analyzers complete and just sends a Pulse message.
+10. The final code-review task is triggered once all analyzers have resolved and just sends a Pulse message. If an analyzer can never run because one of its own dependencies failed, the reaper cancels it so the code-review task is not stuck (see [Blocked tasks](#blocked-tasks)).
 11. The pulse messages triggers our own task hosted in a Taskcluster hook (see [bot](projects/bot.md) for more information)
 12. That task retrieves all the analyzers artifacts with issues, filters them, and updates the Phabricator build, reporting potential issues.
 13. That same task also publishes the issues on our backend hosted on Heroku (see [backend](projects/backend.md) for more information).
@@ -49,6 +49,17 @@ This has brought us several advantages:
 - we can trigger the hook from different projects, with different rules and workflows
 - we get a trigger history for free thanks to the Taskcluster hook system
 - we can run several versions of the hook in parallel (the testing environment can receive the same pulse messages than production, allowing to run in _shadow mode_ - see [debugging](debugging.md) for that)
+
+## Blocked tasks
+
+The code-review tasks use `requires: all-resolved`, so they run even when an analyzer or build fails. However, a task whose own dependency failed (e.g. a toolchain, fetch or docker image task) is never scheduled until it reaches its deadline, which would delay any publication by about a day.
+
+Two pieces prevent that:
+
+- The `code-review-watch` task, from the same `code-review` kind in mozilla-central, has no dependencies and completes as soon as the task group starts. Its index route registers the task group under `project.relman.codereview.v1.task_groups.<head revision>`, which both channels read.
+- The `project-relman/code-review-reaper-{channel}` hook runs every few minutes, and looks at each registered task group whose code-review tasks are still unscheduled. In that task group, every task that can never run because a dependency failed, was cancelled or reached its deadline is cancelled. Reruns of a failed task are not accounted for: its dependents are cancelled regardless.
+
+Once those tasks are cancelled, the code-review task runs as soon as the remaining tasks resolve, and the publication task reports them as task failures: a failed task that other tasks depend on is reported on its own, and tasks that ended in an exception (including cancelled tasks) are grouped as tasks that could not be analysed.
 
 ## Backend
 

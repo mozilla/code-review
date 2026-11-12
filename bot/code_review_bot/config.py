@@ -53,6 +53,7 @@ class Settings:
         self.generic_group_id = None
         self.phabricator_build_target = None
         self.analysis_mode = None
+        self.reap = False
         self.repositories = []
         self.decision_env_prefixes = []
 
@@ -101,9 +102,13 @@ class Settings:
         taskcluster_parallel_requests=None,
     ):
         # Detect source from env
+        # reaping mode: identify stuck reviewbot task groups and cancel enough
+        # tasks to allow `code-review` tasks to run and trigger publication
+        if os.environ.get("CODE_REVIEW_REAP"):
+            self.reap = True
         # publication mode for builds & tests (we're looking at an entire
         # task group)
-        if "TRY_TASK_GROUP_ID" in os.environ:
+        elif "TRY_TASK_GROUP_ID" in os.environ:
             self.try_group_id = os.environ["TRY_TASK_GROUP_ID"]
             mode = os.environ.get("ANALYSIS_MODE")
             if mode is None:

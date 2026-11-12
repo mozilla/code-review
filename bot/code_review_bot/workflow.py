@@ -36,7 +36,12 @@ from code_review_bot.sources.phabricator import (
     PhabricatorActions,
     PhabricatorBuildState,
 )
-from code_review_bot.tasks.base import AnalysisTask, BaseTask, NoticeTask
+from code_review_bot.tasks.base import (
+    AnalysisTask,
+    BaseTask,
+    BlockedTask,
+    NoticeTask,
+)
 from code_review_bot.tasks.build import BuildTask
 from code_review_bot.tasks.clang_format import ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
@@ -46,11 +51,19 @@ from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
+from code_review_bot.tools.taskcluster import (
+    find_ancestors,
+    find_blocked,
+    is_code_review_task,
+    load_statuses,
+    load_task_group,
+)
 
 logger = structlog.get_logger(__name__)
 
 TASKCLUSTER_NAMESPACE = "project.relman.{channel}.code-review.{name}"
 TASKCLUSTER_INDEX_TTL = 7  # in days
+TASK_GROUP_NAMESPACE = "project.relman.codereview.v1.task_groups"
 
 DECISION_TASK_ROUTE = "gecko.v2.{repo}.revision.{revision}.taskgraph.decision"
 PUBLICATION_LOG_ARTIFACT = "public/logs/live_backing.log"
@@ -831,6 +844,106 @@ class Workflow:
         except Exception as e:
             logger.warn("Failed to find a decision task", route=route, error=str(e))
 
+    def reap_blocked_tasks(self):
+        entries = []
+
+        def _load_entries(page):
+            entries.extend(page["tasks"])
+
+        self.index_service.listTasks(
+            TASK_GROUP_NAMESPACE, paginationHandler=_load_entries
+        )
+        logger.info(
+            "Loaded task groups", namespace=TASK_GROUP_NAMESPACE, nb=len(entries)
+        )
+
+        with ThreadPoolExecutor(
+            max_workers=settings.taskcluster_parallel_requests
+        ) as executor:
+            cancelled = executor.map(self.reap_task_group, entries)
+            return [task_id for group in cancelled for task_id in group]
+
+    def reap_task_group(self, task_group_entry):
+        try:
+            status = self.queue_service.status(task_group_entry["taskId"])["status"]
+            group_id = status["taskGroupId"]
+            tasks = load_task_group(self.queue_service, group_id)
+        except Exception as e:
+            logger.warn(
+                "Failed to load a task group",
+                namespace=task_group_entry["namespace"],
+                error=str(e),
+            )
+            return []
+
+        code_review_ids = [
+            task_id
+            for task_id, task in tasks.items()
+            if is_code_review_task(task["task"])
+            and task["status"]["state"] == "unscheduled"
+        ]
+        if not code_review_ids:
+            return []
+
+        statuses = {task_id: task["status"] for task_id, task in tasks.items()}
+        external_ids = {
+            dep_id
+            for task in tasks.values()
+            if task["status"]["state"] == "unscheduled"
+            for dep_id in task["task"].get("dependencies", [])
+            if dep_id not in tasks
+        }
+        statuses.update(load_statuses(self.queue_service, external_ids))
+        cancelled = []
+        blocked = find_blocked(tasks, statuses, code_review_ids)
+        for task_id in sorted(blocked):
+            try:
+                self.queue_service.cancelTask(task_id)
+            except Exception as e:
+                logger.warn(
+                    "Failed to cancel a blocked task",
+                    task=task_id,
+                    task_group_id=group_id,
+                    error=str(e),
+                )
+                continue
+
+            logger.info(
+                "Cancelled a task blocked by a dependency",
+                task=task_id,
+                task_group_id=group_id,
+            )
+            cancelled.append(task_id)
+
+        return cancelled
+
+    def find_unanalysed_tasks(self, tasks, ancestors, analysed):
+        unanalysed = []
+        dependencies = {
+            dep_id
+            for task_id in ancestors
+            for dep_id in tasks[task_id]["task"].get("dependencies", [])
+        }
+        for task_id in sorted(ancestors):
+            task = tasks[task_id]
+            state = task["status"]["state"]
+            if (
+                task_id in analysed
+                or task["task"]["metadata"].get("name") in self.task_failures_ignored
+            ):
+                continue
+            if state == "failed" and task_id in dependencies:
+                unanalysed.append(BaseTask(task_id, task))
+            elif state == "exception":
+                blocked = "started" not in task["status"]["runs"][-1] and any(
+                    tasks[dep_id]["status"]["state"] in ("failed", "exception")
+                    for dep_id in task["task"].get("dependencies", [])
+                    if dep_id in tasks
+                )
+                task_class = BlockedTask if blocked else BaseTask
+                unanalysed.append(task_class(task_id, task))
+        return unanalysed
+
     def index(self, revision, namespace_suffixes=None, **kwargs):
         """
         Index current task on Taskcluster index
@@ -959,9 +1072,7 @@ class Workflow:
         Find all issues on remote Taskcluster task group
         """
         # Load all tasks in task group
-        tasks = self.queue_service.listTaskGroup(group_id)
-        assert "tasks" in tasks
-        tasks = {task["status"]["taskId"]: task for task in tasks["tasks"]}
+        tasks = load_task_group(self.queue_service, group_id)
         assert len(tasks) > 0
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
 
@@ -978,6 +1089,7 @@ class Workflow:
                 break
         else:
             assert False, "No code-review-issues task"
+        code_review_id = task["status"]["taskId"]
 
         # Load task description
         dependencies = task["task"]["dependencies"]
@@ -1013,6 +1125,7 @@ class Workflow:
         issues = []
         task_failures = []
         notices = []
+        analysed = set()
         for dep in dependencies:
             try:
                 if isinstance(dep, type) and issubclass(dep, AnalysisTask):
@@ -1025,6 +1138,7 @@ class Workflow:
                     continue
                 artifacts = task.load_artifacts(self.queue_service)
                 if artifacts is not None:
+                    analysed.add(task.id)
                     task_issues, task_patches = [], []
                     if isinstance(task, AnalysisTask):
                         task_issues = task.parse_issues(artifacts, revision)
@@ -1074,39 +1188,41 @@ class Workflow:
         reviewers = (
             task.extra_reviewers_groups if task and isinstance(task, BaseTask) else []
         )
+
+        task_failures += self.find_unanalysed_tasks(
+            tasks, find_ancestors(tasks, [code_review_id]), analysed
+        )
+
         return issues, task_failures, notices, reviewers
 
     def find_build_test_issues(self, revision, group_id):
-        tasks = {}
-
-        def _load_tasks(page):
-            assert "tasks" in page
-            tasks.update({task["status"]["taskId"]: task for task in page["tasks"]})
-
-        self.queue_service.listTaskGroup(group_id, paginationHandler=_load_tasks)
+        tasks = load_task_group(self.queue_service, group_id)
         assert len(tasks) > 0
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
 
+        code_review_ids = [
+            task_id
+            for task_id, task in tasks.items()
+            if task["task"]["metadata"]["name"] == "code-review-build-test-issues"
+        ]
+        ancestors = find_ancestors(tasks, code_review_ids)
+
         issues = []
-        task_failures = []
         notices = []
         reviewers = []
         analysis_tasks = []
+        analysed = set()
 
         try:
             for taskId, status in tasks.items():
-                if not status["status"]["runs"]:
+                if taskId not in ancestors or not status["status"]["runs"]:
                     continue
 
                 task = self.build_task(status)
-                if task is None:
+                if task is None or task.state == "exception":
                     continue
 
-                if task.state == "exception":
-                    if task.status["runs"][-1].get("reasonResolved") != "canceled":
-                        task_failures.append(task)
-                    continue
-
+                analysed.add(taskId)
                 if isinstance(task, AnalysisTask):
                     analysis_tasks.append(task)
 
@@ -1133,6 +1249,8 @@ class Workflow:
                 error=e,
             )
             raise
+
+        task_failures = self.find_unanalysed_tasks(tasks, ancestors, analysed)
 
         return issues, task_failures, notices, reviewers
 

@@ -15,6 +15,7 @@ from code_review_bot import Level
 from code_review_bot.analysis import AnalysisMode
 from code_review_bot.report.phabricator import PhabricatorReporter
 from code_review_bot.revisions import ImprovementPatch, PhabricatorRevision, Revision
+from code_review_bot.tasks.base import BaseTask, BlockedTask
 from code_review_bot.tasks.build import BuildIssue, BuildTask
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
@@ -1678,6 +1679,57 @@ def test_phabricator_build_test_task_failure(
         "The analysis task [build-linux64/opt](https://treeherder.mozilla.org/"
         in phab.comments[51][0]
     )
+
+
+def test_phabricator_build_test_task_failures(
+    mock_config,
+    mock_phabricator,
+    mock_taskcluster_config,
+    phab,
+    mock_decision_task,
+    mock_task,
+):
+    mock_taskcluster_config.secrets = {}
+    with mock_phabricator as api:
+        revision = Revision.from_try_decision_task(
+            mock_decision_task, "PHID-HMBT-test", api
+        )
+        revision.id = 52
+        reporter = PhabricatorReporter({}, api=api)
+
+    def _exception_task(task_class, task_id, name):
+        return task_class(
+            task_id,
+            {
+                "task": {"metadata": {"name": name}},
+                "status": {
+                    "state": "exception",
+                    "runs": [{"runId": 0, "reasonResolved": "canceled"}],
+                },
+            },
+        )
+
+    failed = mock_task(BaseTask, "toolchain-linux64-clang")
+    blocked = _exception_task(BlockedTask, "build-ID", "build-linux64/opt")
+    canceled = _exception_task(BaseTask, "test-ID", "test-linux64/opt-xpcshell")
+    reporter.publish(
+        [], revision, [failed, blocked, canceled], [], [], AnalysisMode.BuildTest
+    )
+
+    assert len(phab.comments[51]) == 1
+    assert (
+        "The analysis task [toolchain-linux64-clang](https://treeherder.mozilla.org/"
+        in phab.comments[51][0]
+    )
+    assert (
+        "1 task did not run because of upstream failures: "
+        "[build-linux64/opt](https://treeherder.mozilla.org/"
+    ) in phab.comments[51][0]
+    assert (
+        "1 task could not be analysed, please check it manually: "
+        "[test-linux64/opt-xpcshell](https://treeherder.mozilla.org/"
+    ) in phab.comments[51][0]
+    assert "The analysis task [build-linux64/opt]" not in phab.comments[51][0]
 
 
 def test_phabricator_lint_skips_build_issues(

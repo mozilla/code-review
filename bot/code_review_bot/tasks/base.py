@@ -147,6 +147,10 @@ class BaseTask:
         return out
 
 
+class BlockedTask(BaseTask):
+    pass
+
+
 class AnalysisTask(BaseTask, ABC):
     """
     An analysis CI task running on Taskcluster
