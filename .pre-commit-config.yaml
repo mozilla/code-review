@@ -11,7 +11,6 @@ repos:
     rev: v2.7.1
     hooks:
       - id: prettier
-        language_version: "22.23.0"
         exclude: fixtures|mocks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
@@ -47,7 +46,13 @@ repos:
     rev: v2.4.1
     hooks:
       - id: mypy
-        args: [--explicit-package-bases, --show-traceback]
+        entry: env DEBUG=false mypy
+        args:
+          [
+            --config-file=pyproject.toml,
+            --explicit-package-bases,
+            --show-traceback,
+          ]
         exclude: (^|/)(migrations/.*\.py|setup\.py|conftest\.py|test_stats\.py|test_workflow\.py)$
         additional_dependencies:
           - types-requests
@@ -62,7 +67,9 @@ repos:
           - drf-yasg
           - parsepatch
           - sentry-sdk
+          - structlog
           - taskcluster
+          - pytest
           - django-stubs
           - djangorestframework-stubs
         pass_filenames: true
