@@ -27,7 +27,6 @@ repos:
       - id: name-tests-test
         args: ["--django"]
       - id: check-json
-      - id: requirements-txt-fixer
       - id: check-vcs-permalinks
   - repo: https://github.com/codespell-project/codespell
     rev: v2.2.4

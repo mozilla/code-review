@@ -50,8 +50,7 @@ tasks:
 
     taskboot_image: "mozilla/taskboot:0.4.1"
 
-    pip_install: "pip install --disable-pip-version-check --no-cache-dir --quiet"
-    python_version: "3.12"
+    uv_image: "astral/uv:python3.14-trixie"
 
     provisionerId:
       $if: 'taskcluster_root_url == "https://firefox-ci-tc.services.mozilla.com"'
@@ -79,13 +78,12 @@ tasks:
               deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
-                image: "python:${python_version}"
+                image: "${uv_image}"
                 command:
                   - sh
                   - -lxce
                   - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    cd /src/bot && ${pip_install} -r requirements-dev.txt &&
-                    cd /src && pre-commit run -a --show-diff-on-failure"
+                    uv run --locked --only-group lint pre-commit run -a --show-diff-on-failure"
               metadata:
                 name: "Code Review Bot checks: linting"
                 description: Check code style with pre-commit hooks
@@ -101,15 +99,14 @@ tasks:
               deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
-                image: "python:${python_version}-slim"
+                image: "${uv_image}"
                 command:
                   - sh
                   - -lxce
                   - "apt-get update -q && apt-get install -q -y --no-install-recommends git &&
                     git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
                     /src/tools/docker/bootstrap-mercurial.sh &&
-                    cd /src/bot && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
-                    pytest -v"
+                    cd /src/bot && uv run --locked pytest -v"
               metadata:
                 name: "Code Review Bot checks: unit tests"
                 description: Check python code with pytest
@@ -170,14 +167,14 @@ tasks:
               deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
-                image: "python:${python_version}"
+                image: "${uv_image}"
                 command:
                   - sh
                   - -lxce
                   - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    cd /src/backend && ${pip_install} . && ${pip_install} -r requirements-dev.txt &&
+                    cd /src/backend && uv sync --locked &&
                     ./ci/setup_postgres.sh &&
-                    ./manage.py test && ./manage.py makemigrations --check --noinput --dry-run -v 3"
+                    uv run --locked ./manage.py test && uv run --locked ./manage.py makemigrations --check --noinput --dry-run -v 3"
                 env:
                   DATABASE_URL: postgres://tester@127.0.0.1/code-review
               metadata:
@@ -253,13 +250,12 @@ tasks:
               deadline: { $fromNow: "1 hour" }
               payload:
                 maxRunTime: 3600
-                image: "python:${python_version}"
+                image: "${uv_image}"
                 command:
                   - sh
                   - -lxce
                   - "git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
-                    cd /src/integration && ${pip_install} -r requirements.txt -r requirements-dev.txt &&
-                    pytest -v"
+                    cd /src/integration && uv run --locked pytest -v"
               metadata:
                 name: "Code Review Integration checks: unit tests"
                 description: Check python code with pytest

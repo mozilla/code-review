@@ -1,10 +1,15 @@
 FROM python:3.14.7-slim
 
-# TODO: remove by switching to modern pyproject.toml
-RUN pip install setuptools==74.1.2 --disable-pip-version-check --no-cache-dir --quiet
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /bin/uv
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_NO_CACHE=1 \
+    UV_PYTHON_DOWNLOADS=never
 
+ADD pyproject.toml uv.lock /src/
 ADD bot /src/bot
-RUN cd /src/bot && python setup.py install
+RUN cd /src && uv sync --frozen --no-dev --no-editable --package code-review-bot
+ENV PATH="/src/.venv/bin:$PATH"
 
 # Add mercurial & robustcheckout
 ADD tools/docker /src/tools/docker
