@@ -6,7 +6,7 @@ version = "0"
 description = "Integration tests for Mozilla code review"
 requires-python = ">=3.14"
 dependencies = [
-    "MozPhab==2.23.0",
+    "mozphab==2.23.0",
     "pyyaml==6.0.3",
     "structlog==26.1.0",
     "taskcluster==113.2.0",
