@@ -30,20 +30,17 @@ TaskCluster = collections.namedtuple(
 )
 RepositoryConf = collections.namedtuple(
     "RepositoryConf",
-    "name, try_name, url, try_url, decision_env_prefix, ssh_user, repo_type, head_branch, branch, git_rollout",
+    "name, try_name, url, try_url, decision_env_prefix, ssh_user, repo_type, head_branch, git_rollout",
     # repo_type is optional and defaults to Mercurial so existing repository
     # secrets keep working; set it to "git" to push to a Git remote instead.
     # head_branch is optional and only used by Git repositories: a branch
     # template rendered per build (e.g. "dev/code-review/D{revision_id}-{diff_id}"),
     # so each environment can pick its own branch naming pattern.
-    # branch is optional and only used by Git repositories: the branch the
-    # patches apply on, overriding the default branch of the Phabricator
-    # repository the revision was submitted to.
     # git_rollout is optional and only used by Mercurial repositories: a dict
     # with the name of a Git repository of the same list under "repository",
     # the Phabricator "usernames" whose revisions are routed to it and a
     # "percentage" (0-100) of the other revisions routed to it as well.
-    defaults=("hg", None, None, None),
+    defaults=("hg", None, None),
 )
 
 

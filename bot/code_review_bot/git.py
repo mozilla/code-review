@@ -153,8 +153,7 @@ class GitRepository(BaseRepository):
         # repository, no default is safe
         if not branch:
             raise ValueError(
-                f"Repository {self.name} needs the branch the patches apply on "
-                "(default_revision)"
+                f"Repository {self.name} needs the branch the patches apply on"
             )
         self.branch = branch
 

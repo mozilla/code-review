@@ -433,15 +433,9 @@ def test_repository_conf_repo_type():
         conf._replace(head_branch="dev/code-review/D{revision_id}").head_branch
         == "dev/code-review/D{revision_id}"
     )
-    # branch is optional: unset means the Phabricator repository's default branch
-    assert conf.branch is None
-    assert conf._replace(branch="autoland").branch == "autoland"
 
 
-@pytest.mark.parametrize(
-    "repo_type, uses_git, branch",
-    [("git", True, None), ("git", True, "autoland"), ("hg", False, None)],
-)
+@pytest.mark.parametrize("repo_type, uses_git", [("git", True), ("hg", False)])
 def test_start_analysis_selects_backend(
     mock_phabricator,
     mock_workflow,
@@ -450,10 +444,9 @@ def test_start_analysis_selects_backend(
     monkeypatch,
     repo_type,
     uses_git,
-    branch,
 ):
     """start_analysis picks the Git or Mercurial backend from repo_type, and
-    the Git branch from the Phabricator repository unless configured."""
+    the Git branch from the Phabricator repository of the revision."""
     # Import lazily: a module-level import binds taskcluster.utils.stringDate in
     # code_review_bot.workflow at collection time, before the autouse
     # mock_taskcluster_date fixture can patch it, breaking the date assertions
@@ -467,8 +460,7 @@ def test_start_analysis_selects_backend(
 
     # Force the configured repository's backend type
     mock_config.repositories = [
-        conf._replace(repo_type=repo_type, branch=branch)
-        for conf in mock_config.repositories
+        conf._replace(repo_type=repo_type) for conf in mock_config.repositories
     ]
 
     # Build never expires so the analysis proceeds
@@ -505,8 +497,7 @@ def test_start_analysis_selects_backend(
         assert conf["github_app_id"] == 12345
         assert conf["github_app_privkey"] == "AppPrivateKey"
         # The branch comes from the mocked Phabricator repository ("default")
-        # unless the configuration overrides it
-        assert conf["default_revision"] == (branch or "default")
+        assert conf["default_revision"] == "default"
     else:
         assert hg_repo.called and hg_worker.called
         assert not git_repo.called and not git_worker.called
@@ -516,6 +507,33 @@ def test_start_analysis_selects_backend(
     mock_config.mercurial_cache = None
     mock_config.git_cache = None
     mock_config.ssh_key = None
+    mock_config.github = {}
+
+
+def test_start_analysis_requires_the_phabricator_branch(
+    mock_phabricator, mock_workflow, mock_config, tmpdir, monkeypatch
+):
+    """The Git backend applies the patches on the default branch of the
+    Phabricator repository: without one the analysis stops before cloning."""
+    mock_config.git_cache = tmpdir
+    mock_config.github = {"app_id": 12345, "app_privkey": "AppPrivateKey"}
+    mock_config.repositories = [
+        conf._replace(repo_type="git") for conf in mock_config.repositories
+    ]
+    monkeypatch.setattr(PhabricatorActions, "is_expired_build", lambda _, build: False)
+    mock_workflow.update_build = False
+
+    with mock_phabricator as api:
+        mock_workflow.phabricator = api
+        revision = PhabricatorRevision.from_phabricator_trigger(
+            build_target_phid="PHID-HMBT-test",
+            phabricator=api,
+        )
+        del revision.phabricator_repository["fields"]["defaultBranch"]
+        with pytest.raises(ValueError, match="needs the branch the patches apply on"):
+            mock_workflow.start_analysis(revision, AnalysisMode.Lint)
+
+    mock_config.git_cache = None
     mock_config.github = {}
 
 

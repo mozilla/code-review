@@ -382,8 +382,8 @@ class Workflow:
         base_conf = revision.base_repository_conf
         if base_conf.repo_type == "git":
             # Patches apply on the branch the revision was submitted to:
-            # Phabricator has one repository per branch. The configuration
-            # overrides it for a repository standing in for another one.
+            # Phabricator has one repository per branch. The Git backend
+            # refuses to run without it.
             phabricator_fields = (revision.phabricator_repository or {}).get(
                 "fields", {}
             )
@@ -393,8 +393,7 @@ class Workflow:
                     "try_name": base_conf.try_name,
                     "url": base_conf.url,
                     "try_url": base_conf.try_url,
-                    "default_revision": base_conf.branch
-                    or phabricator_fields.get("defaultBranch"),
+                    "default_revision": phabricator_fields.get("defaultBranch"),
                     "head_branch": base_conf.head_branch,
                     # GitHub App credentials to generate short-lived push tokens
                     "github_app_id": settings.github.get("app_id"),

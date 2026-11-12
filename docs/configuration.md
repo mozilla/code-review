@@ -89,14 +89,6 @@ common:
       # A template without placeholder produces a single fixed branch
       head_branch: "code-review/D{revision_id}-{diff_id}"
 
-      # (Optional, git only) Branch the patches are applied on: the clone starts
-      # on it and the checkout returns to its tip before each analysis.
-      # Defaults to the default branch of the Phabricator repository the revision
-      # was submitted to, as Phabricator has one repository per branch, so it is
-      # only needed when that repository stands in for another one (e.g. a
-      # testing instance of Phabricator pointing at a test repository)
-      branch: main
-
       # Prefix of the environment variables used by the bot to detect which repository
       # is setup from a decision task (more details on the bot documentation)
       decision_env_prefix: GECKO
