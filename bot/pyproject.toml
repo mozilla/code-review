@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=77"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "code-review-bot"
@@ -39,11 +39,15 @@ dev = [
     "responses==0.26.3",
 ]
 
-[tool.setuptools.dynamic]
-version = { file = "VERSION" }
+[tool.hatch.version]
+path = "VERSION"
+pattern = "(?P<version>.+)"
 
-[tool.setuptools.packages.find]
-include = ["code_review_bot*"]
+[tool.hatch.build.targets.sdist]
+include = ["/code_review_bot", "/VERSION"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["code_review_bot"]
 
 [tool.uv]
 cache-keys = [{ file = "pyproject.toml" }, { file = "VERSION" }]
