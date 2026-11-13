@@ -525,7 +525,7 @@ class MercurialWorker(BaseWorker):
                 return data.get("result", {}).get("status")
 
         start = time.monotonic()
-        while status := get_status() != "open":
+        while (status := get_status()) != "open":
             if time.monotonic() - start >= TRY_STATUS_MAX_WAIT:
                 logger.error(
                     f"Try tree status still closed after {TRY_STATUS_MAX_WAIT} seconds, skipping",
