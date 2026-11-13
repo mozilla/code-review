@@ -46,6 +46,16 @@ common:
     api_key: api-xxxx
     publish: true
 
+  # GitHub App credentials used by the bot to push patch stacks to Git try
+  # repositories (see repo_type below). The App must be installed on the
+  # target repositories, with "Contents" read & write permission.
+  GITHUB:
+    app_id: 123456
+    app_privkey: |
+      -----BEGIN RSA PRIVATE KEY-----
+      xxxx
+      -----END RSA PRIVATE KEY-----
+
   repositories:
     # A unique display name for the repository
     - name: mozilla-central
@@ -67,6 +77,18 @@ common:
       # - default, to use the default hg clone (for small repositories only)
       checkout: robust
 
+      # (Optional) Version control system of the repository: hg (default) or git
+      # A git repository is pushed to its try_url over HTTPS, authenticated with
+      # a short-lived token generated from the GITHUB App credentials
+      repo_type: hg
+
+      # (Optional, git only) Branch template used for pushes to the try repository
+      # Rendered per analysis so concurrent pushes never overwrite each other,
+      # which needs both placeholders: a revision gets a new diff on every update
+      # Supported placeholders: {revision_id}, {diff_id}
+      # A template without placeholder produces a single fixed branch
+      head_branch: "code-review/D{revision_id}-{diff_id}"
+
       # Prefix of the environment variables used by the bot to detect which repository
       # is setup from a decision task (more details on the bot documentation)
       decision_env_prefix: GECKO
@@ -80,6 +102,23 @@ common:
       # (Optional) Force the application of the patches on top of the repository tip
       # instead of the base revision specified by Phabricator
       use_latest_revision: true
+
+      # (Optional, hg only) Gradual migration to a Git repository of this list:
+      # the revisions selected below are analyzed through the named Git repository
+      # (its clone, try push and links) instead of this one, the others keep
+      # using Mercurial. Growing the selection only needs a secret update.
+      git_rollout:
+        # Name of a repository of this list with repo_type git
+        repository: firefox
+
+        # Phabricator usernames whose revisions always use the Git repository
+        usernames:
+          - someone
+
+        # (Optional) Share of the other revisions using the Git repository, from
+        # 0 (default) to 100, picked from the revision id so a revision keeps
+        # the same backend for all its diffs
+        percentage: 0
 
 # This main section is only used by the bot project
 bot:

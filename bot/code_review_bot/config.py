@@ -30,7 +30,17 @@ TaskCluster = collections.namedtuple(
 )
 RepositoryConf = collections.namedtuple(
     "RepositoryConf",
-    "name, try_name, url, try_url, decision_env_prefix, ssh_user",
+    "name, try_name, url, try_url, decision_env_prefix, ssh_user, repo_type, head_branch, git_rollout",
+    # repo_type is optional and defaults to Mercurial so existing repository
+    # secrets keep working; set it to "git" to push to a Git remote instead.
+    # head_branch is optional and only used by Git repositories: a branch
+    # template rendered per build (e.g. "dev/code-review/D{revision_id}-{diff_id}"),
+    # so each environment can pick its own branch naming pattern.
+    # git_rollout is optional and only used by Mercurial repositories: a dict
+    # with the name of a Git repository of the same list under "repository",
+    # the Phabricator "usernames" whose revisions are routed to it and a
+    # "percentage" (0-100) of the other revisions routed to it as well.
+    defaults=("hg", None, None),
 )
 
 
@@ -80,9 +90,16 @@ class Settings:
         # SSH Key used to push on try
         self.ssh_key = None
 
+        # GitHub App credentials used to push on Git try repositories
+        self.github = {}
+
         # List of users that should trigger a new analysis
         # Indexed by their Phabricator ID
         self.user_blacklist = {}
+
+        # Users whose revisions are routed to a Git repository during a rollout
+        # Indexed by repository name, then by their Phabricator ID
+        self.git_rollout_users = {}
 
         # Always cleanup at the end of the execution
         atexit.register(self.cleanup)
@@ -99,6 +116,7 @@ class Settings:
         git_cache=None,
         backend_parallel_requests=None,
         taskcluster_parallel_requests=None,
+        github=None,
     ):
         # Detect source from env
         # publication mode for builds & tests (we're looking at an entire
@@ -169,16 +187,48 @@ class Settings:
             assert isinstance(
                 repo, dict
             ), "Repository configuration #{nb+1} is not a dict"
-            data = []
+            data = {}
             for key in RepositoryConf._fields:
-                assert (
-                    key in repo
-                ), f"Missing key {key} in repository configuration #{nb+1}"
-                data.append(repo[key])
-            return RepositoryConf._make(data)
+                if key in repo:
+                    data[key] = repo[key]
+                elif key in RepositoryConf._field_defaults:
+                    # Optional field, fall back to its default (e.g. repo_type)
+                    data[key] = RepositoryConf._field_defaults[key]
+                else:
+                    raise AssertionError(
+                        f"Missing key {key} in repository configuration #{nb+1}"
+                    )
+            return RepositoryConf(**data)
 
         self.repositories = [build_conf(i, repo) for i, repo in enumerate(repositories)]
         assert self.repositories, "No repositories available"
+        self.git_rollout_users = {}
+
+        # A rollout must point to a Git repository of the same list
+        known_repos = {repo.name: repo for repo in self.repositories}
+        for repo in self.repositories:
+            rollout = repo.git_rollout
+            if rollout is None:
+                continue
+            assert isinstance(
+                rollout, dict
+            ), f"git_rollout of repository {repo.name} is not a dict"
+            assert (
+                repo.repo_type == "hg"
+            ), f"git_rollout of repository {repo.name} only applies to Mercurial"
+            target = known_repos.get(rollout.get("repository"))
+            assert (
+                target is not None and target.repo_type == "git"
+            ), f"git_rollout of repository {repo.name} must name a known Git repository"
+            usernames = rollout.get("usernames", [])
+            assert (
+                isinstance(usernames, list)
+                and all(isinstance(username, str) for username in usernames)
+            ), f"git_rollout usernames of repository {repo.name} must be a list of strings"
+            percentage = rollout.get("percentage", 0)
+            assert (
+                isinstance(percentage, int) and 0 <= percentage <= 100
+            ), f"git_rollout percentage of repository {repo.name} must be between 0 and 100"
 
         # Save prefixes for decision environment variables
         self.decision_env_prefixes = [
@@ -207,6 +257,8 @@ class Settings:
             # Fallback to mercurial cache to ease migration on production systems
             self.git_cache = self.mercurial_cache
 
+        self.github = github or {}
+
     def load_user_blacklist(self, usernames, phabricator_api):
         """
         Load all black listed users from Phabricator API
@@ -218,6 +270,54 @@ class Settings:
             )
         }
         logger.info("Blacklisted users", names=self.user_blacklist.values())
+
+    def load_git_rollout_users(self, phabricator_api):
+        """
+        Load the users routed to a Git repository by a rollout from Phabricator API
+        """
+        self.git_rollout_users = {}
+        for repo in self.repositories:
+            usernames = (repo.git_rollout or {}).get("usernames")
+            if not usernames:
+                continue
+            self.git_rollout_users[repo.name] = {
+                user["phid"]: user["fields"]["username"]
+                for user in phabricator_api.search_users(
+                    constraints={"usernames": usernames}
+                )
+            }
+            logger.info(
+                "Users routed to Git",
+                repository=repo.name,
+                names=self.git_rollout_users[repo.name].values(),
+            )
+
+    def git_rollout_repository(self, repository, author_phid, revision_id):
+        """
+        Get the Git repository a revision is routed to by the rollout of its
+        Mercurial repository, or None to keep using that repository.
+        Users listed in the rollout always go to Git, then the percentage is
+        applied on the revision id so a revision keeps its backend across diffs.
+        """
+        rollout = repository.git_rollout
+        if not rollout:
+            return None
+        if author_phid in self.git_rollout_users.get(repository.name, {}):
+            reason = "author"
+        elif int(revision_id) % 100 < rollout.get("percentage", 0):
+            reason = "percentage"
+        else:
+            return None
+        target = next(
+            repo for repo in self.repositories if repo.name == rollout["repository"]
+        )
+        logger.info(
+            "Routing revision to the Git repository",
+            repository=target.name,
+            revision=revision_id,
+            reason=reason,
+        )
+        return target
 
     def __getattr__(self, key):
         if key not in self.config:

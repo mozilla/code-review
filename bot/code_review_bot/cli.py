@@ -98,6 +98,7 @@ def main():
             "ALLOWED_PATHS": ["*"],
             "task_failures_ignored": [],
             "ssh_key": None,
+            "GITHUB": {},
             "user_blacklist": [],
         },
         local_secrets=yaml.safe_load(args.configuration)
@@ -132,6 +133,7 @@ def main():
         taskcluster_parallel_requests=taskcluster.secrets.get(
             "TASKCLUSTER_PARALLEL_REQUESTS"
         ),
+        github=taskcluster.secrets["GITHUB"],
     )
 
     # Setup statistics
@@ -174,6 +176,9 @@ def main():
 
     # We need Phabricator API to list black-listed users
     settings.load_user_blacklist(taskcluster.secrets["user_blacklist"], phabricator_api)
+
+    # And the users routed to Git by a repository rollout
+    settings.load_git_rollout_users(phabricator_api)
 
     # Run workflow according to source
     w = Workflow(
