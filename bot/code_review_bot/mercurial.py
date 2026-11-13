@@ -8,7 +8,6 @@ import io
 import os
 import tempfile
 import time
-from datetime import datetime
 
 import hglib
 import requests
@@ -525,9 +524,9 @@ class MercurialWorker(BaseWorker):
             else:
                 return data.get("result", {}).get("status")
 
-        start = datetime.utcnow()
-        while status := get_status() != "open":
-            if (datetime.utcnow() - start).seconds >= TRY_STATUS_MAX_WAIT:
+        start = time.monotonic()
+        while (status := get_status()) != "open":
+            if time.monotonic() - start >= TRY_STATUS_MAX_WAIT:
                 logger.error(
                     f"Try tree status still closed after {TRY_STATUS_MAX_WAIT} seconds, skipping",
                     exc_info=True,
