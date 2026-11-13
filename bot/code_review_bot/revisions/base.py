@@ -81,6 +81,7 @@ class Revision(ABC):
 
         # Patch analysis
         self.files = []
+        self.deleted_files = set()
         self.lines = {}
 
     def persistent_id(self):
@@ -139,6 +140,9 @@ class Revision(ABC):
 
         # Shortcut to files modified
         self.files = self.lines.keys()
+        self.deleted_files = {
+            stat["filename"] for stat in patch_stats if stat["deleted"]
+        }
 
         # Report nb of files and lines analyzed
         stats.add_metric("analysis.files", len(self.files))
