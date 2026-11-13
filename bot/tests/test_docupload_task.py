@@ -102,6 +102,17 @@ def test_build_notice_only_one_file(mock_revision, mock_doc_upload_task):
     assert notice == ONE_DIRECT_LINK
 
 
+def test_build_notice_deleted_file(mock_revision, mock_doc_upload_task):
+    mock_revision.files = [
+        "docs/folderA/index.rst",
+        "docs/folderA/removed.md",
+        "mots.yaml",
+    ]
+    mock_revision.deleted_files = {"docs/folderA/removed.md", "mots.yaml"}
+    notice = mock_doc_upload_task.build_notice(ARTIFACTS, mock_revision)
+    assert notice == ONE_DIRECT_LINK
+
+
 def test_build_notice_various_files(mock_revision, mock_doc_upload_task):
     mock_revision.files = [
         "file1.txt",  # not a documentation file (bad prefix and bad extension)

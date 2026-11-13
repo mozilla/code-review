@@ -94,14 +94,17 @@ class DocUploadTask(DefaultTask, NoticeTask):
         doc_files = [
             file
             for file in revision.files
-            if (
-                any(
-                    os.path.dirname(file).startswith(prefix)
-                    for prefix in trees.values()
+            if file not in revision.deleted_files
+            and (
+                (
+                    any(
+                        os.path.dirname(file).startswith(prefix)
+                        for prefix in trees.values()
+                    )
+                    and file.endswith(DOC_FILE_SUFFIXES)
                 )
-                and file.endswith(DOC_FILE_SUFFIXES)
+                or file in EXTRA_DOC_FILES
             )
-            or file in EXTRA_DOC_FILES
         ]
         nb_docs = len(doc_files)
         if not nb_docs:

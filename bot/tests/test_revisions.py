@@ -176,9 +176,18 @@ index 83db48f8..84275f99 100644
  line2
  line3
 +line4
+diff --git a/removed.txt b/removed.txt
+deleted file mode 100644
+index 83db48f8..00000000
+--- a/removed.txt
++++ /dev/null
+@@ -1,2 +0,0 @@
+-line1
+-line2
 """
 
     mock_revision.analyze_patch()
+    assert mock_revision.deleted_files == {"removed.txt"}
     assert "new.txt" in mock_revision.lines
     assert mock_revision.lines["new.txt"] == {1, 2, 3}
     assert "modified.txt" in mock_revision.lines
