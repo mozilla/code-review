@@ -6,6 +6,36 @@ dev = ["pre-commit==4.7.0"]
 
 [tool.ruff]
 
+[tool.mypy]
+mypy_path = "$MYPY_CONFIG_FILE_DIR/bot,$MYPY_CONFIG_FILE_DIR/backend,$MYPY_CONFIG_FILE_DIR/integration,$MYPY_CONFIG_FILE_DIR/tools"
+plugins = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main",
+]
+
+[tool.django-stubs]
+django_settings_module = "code_review_backend.app.settings"
+
+[[tool.mypy.overrides]]
+module = [
+    "debug_toolbar.*",
+    "conftest",
+    "django_extensions.*",
+    "drf_yasg.*",
+    "environ.*",
+    "github.*",
+    "git.*",
+    "hglib.*",
+    "influxdb.*",
+    "jsone.*",
+    "libmozdata.*",
+    "parsepatch.*",
+    "responses.*",
+    "rs_parsepatch.*",
+    "taskcluster.*",
+]
+ignore_missing_imports = true
+
 [tool.ruff.lint]
 select = ["W", "E", "F", "I", "T10", "UP"]
 ignore = [
