@@ -886,6 +886,22 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
     ]
 
 
+@pytest.mark.parametrize(
+    "error, eligible",
+    [
+        ("abort: push failed on remote\n", True),
+        (
+            "remote: Connection closed by 63.245.208.203 port 22\n"
+            "abort: no suitable response from remote hg\n",
+            True,
+        ),
+        ("abort: patch failed to apply\n", False),
+    ],
+)
+def test_is_eligible_for_retry(error, eligible):
+    assert mercurial.MercurialWorker().is_eligible_for_retry(error) is eligible
+
+
 def test_push_failure_max_retries(PhabricatorMock, mock_mc, monkeypatch):
     """
     When a fail occurs while pushing the file configuring try

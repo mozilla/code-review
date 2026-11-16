@@ -506,6 +506,8 @@ class MercurialWorker(BaseWorker):
             "push failed on remote",
             "stream ended unexpectedly",
             "error: EOF occurred in violation of protocol",
+            # The SSH connection to hg.mozilla.org dropped before the push started
+            "no suitable response from remote hg",
         ]
     ]
 
