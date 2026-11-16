@@ -21,7 +21,7 @@ logger = structlog.get_logger(__name__)
 
 DEFAULT_AUTHOR = "code review bot <release-mgmt-analysis@mozilla.com>"
 # On build failure, check try status until available every 5 minutes and up to 24h
-TRY_STATUS_URL = "https://treestatus.prod.lando.prod.cloudops.mozgcp.net/trees/try"
+TRY_STATUS_URL = "https://lando.moz.tools/api/treestatus/trees/try"
 TRY_STATUS_DELAY = 5 * 60
 TRY_STATUS_MAX_WAIT = 24 * 60 * 60
 
