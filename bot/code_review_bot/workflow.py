@@ -11,7 +11,13 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
 import structlog
-from libmozdata.phabricator import BuildState, ConduitError, PhabricatorAPI
+from libmozdata.phabricator import (
+    BuildState,
+    ConduitError,
+    PhabricatorAPI,
+    UnitResult,
+    UnitResultState,
+)
 from taskcluster.utils import stringDate
 
 from code_review_bot import Level, stats
@@ -56,6 +62,12 @@ TASKCLUSTER_INDEX_TTL = 7  # in days
 
 DECISION_TASK_ROUTE = "gecko.v2.{repo}.revision.{revision}.taskgraph.decision"
 PUBLICATION_LOG_ARTIFACT = "public/logs/live_backing.log"
+BUILD_TEST_SKIPPED_MESSAGE = (
+    "Build and test analysis was skipped because the try push for this revision "
+    "did not include build and test tasks. This usually means the revision is "
+    "based on an older version of the tree; rebasing it should enable build and "
+    "test analysis."
+)
 TREEHERDER_LINK_REGEX = re.compile(
     rb"treeherder\.mozilla\.org/(?:#/)?jobs\?repo=(?P<repo>[\w-]+)"
     rb"&revision=(?P<revision>[0-9a-f]{12,40})"
@@ -135,9 +147,11 @@ class Workflow:
         # Analyze revision patch to get files/lines data
         revision.analyze_patch()
 
-        dependencies = self.load_ending_task_dependencies(
-            settings.try_group_id, "code-review-issues"
-        )
+        tasks = self.load_task_group(settings.try_group_id)
+        if self.find_task_by_name(tasks, "code-review-build-test-issues") is None:
+            self.skip_build_test_analysis(revision)
+
+        dependencies = self.ending_task_dependencies(tasks, "code-review-issues")
 
         # Store the revision in the backend (or retrieve an existing one)
         rev = self.backend_api.publish_revision(revision)
@@ -219,8 +233,9 @@ class Workflow:
                 url=settings.taskcluster_url,
             )
 
-        dependencies = self.load_ending_task_dependencies(
-            settings.try_group_id, "code-review-build-test-issues"
+        dependencies = self.ending_task_dependencies(
+            self.load_task_group(settings.try_group_id),
+            "code-review-build-test-issues",
         )
         issues, task_failures, notices, reviewers = self.find_build_test_issues(
             revision, dependencies
@@ -1088,17 +1103,18 @@ class Workflow:
         logger.info("Loaded Taskcluster group", id=group_id, tasks=len(tasks))
         return tasks
 
-    def load_ending_task_dependencies(self, group_id, ending_task_name):
-        tasks = self.load_task_group(group_id)
-
-        ending_task = next(
+    def find_task_by_name(self, tasks, name):
+        return next(
             (
                 task
                 for task in tasks.values()
-                if task["task"]["metadata"]["name"] == ending_task_name
+                if task["task"]["metadata"]["name"] == name
             ),
             None,
         )
+
+    def ending_task_dependencies(self, tasks, ending_task_name):
+        ending_task = self.find_task_by_name(tasks, ending_task_name)
         assert ending_task is not None, f"No {ending_task_name} task"
 
         dependencies = ending_task["task"]["dependencies"]
@@ -1225,6 +1241,41 @@ class Workflow:
 
         self.phabricator.update_build_target(revision.build_target_phid, state)
         logger.info("Updated HarborMaster status", state=state, revision=revision)
+
+    def skip_build_test_analysis(self, revision):
+        if not isinstance(revision, PhabricatorRevision):
+            return
+
+        logger.info(
+            "No build/test tasks in the try push, skipping build/test analysis",
+            revision=revision,
+        )
+
+        if self.update_build and revision.build_target_phid:
+            try:
+                build_test_target_phid = find_build_test_target(
+                    self.phabricator, revision.build_target_phid
+                )
+                self.phabricator.update_build_target(
+                    build_test_target_phid,
+                    BuildState.Pass,
+                    unit=[
+                        UnitResult(
+                            namespace="code-review",
+                            name="build-test",
+                            result=UnitResultState.Skip,
+                            details=BUILD_TEST_SKIPPED_MESSAGE,
+                            format="remarkup",
+                            duration=0,
+                        )
+                    ],
+                )
+            except Exception:
+                logger.exception("Failed to set build/test build target to Pass")
+
+        lando_reporter = self.reporters.get("lando")
+        if lando_reporter is not None:
+            lando_reporter.publish([], revision, [], [], [], AnalysisMode.BuildTest)
 
     def publish_link(self, revision: Revision, slug: str, name: str, url: str):
         """
