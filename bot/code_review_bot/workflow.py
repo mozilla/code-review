@@ -492,12 +492,13 @@ class Workflow:
             build_test_target_phid = find_build_test_target(
                 self.phabricator, revision.build_target_phid
             )
-            mode, output_build, extras = output
-            build_test_build = copy.copy(output_build)
-            build_test_build.target_phid = build_test_target_phid
-            publish_analysis_phabricator(
-                (mode, build_test_build, extras), self.phabricator
-            )
+            if build_test_target_phid is not None:
+                mode, output_build, extras = output
+                build_test_build = copy.copy(output_build)
+                build_test_build.target_phid = build_test_target_phid
+                publish_analysis_phabricator(
+                    (mode, build_test_build, extras), self.phabricator
+                )
         else:
             logger.info("Skipping Phabricator publication")
 
@@ -1256,20 +1257,21 @@ class Workflow:
                 build_test_target_phid = find_build_test_target(
                     self.phabricator, revision.build_target_phid
                 )
-                self.phabricator.update_build_target(
-                    build_test_target_phid,
-                    BuildState.Pass,
-                    unit=[
-                        UnitResult(
-                            namespace="code-review",
-                            name="build-test",
-                            result=UnitResultState.Skip,
-                            details=BUILD_TEST_SKIPPED_MESSAGE,
-                            format="remarkup",
-                            duration=0,
-                        )
-                    ],
-                )
+                if build_test_target_phid is not None:
+                    self.phabricator.update_build_target(
+                        build_test_target_phid,
+                        BuildState.Pass,
+                        unit=[
+                            UnitResult(
+                                namespace="code-review",
+                                name="build-test",
+                                result=UnitResultState.Skip,
+                                details=BUILD_TEST_SKIPPED_MESSAGE,
+                                format="remarkup",
+                                duration=0,
+                            )
+                        ],
+                    )
             except Exception:
                 logger.exception("Failed to set build/test build target to Pass")
 

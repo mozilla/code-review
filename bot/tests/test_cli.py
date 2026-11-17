@@ -201,3 +201,19 @@ def test_failure(
             if analysis_mode == AnalysisMode.BuildTest
             else "PHID-HMBT-test"
         )
+
+
+def test_failure_without_build_test_build(mock_cli, mock_revision):
+    cli, workflow, lando_api = mock_cli(
+        AnalysisMode.Lint, trigger="analysis", error=Exception("boom")
+    )
+    workflow.find_build_test_target.return_value = None
+    mock_revision.build_target_phid = "PHID-HMBT-test"
+
+    with pytest.raises(Exception, match="boom"):
+        cli.main()
+
+    workflow.find_build_test_target.assert_called_once()
+    assert [
+        call.args[0] for call in workflow.phabricator.update_build_target.call_args_list
+    ] == ["PHID-HMBT-test"]

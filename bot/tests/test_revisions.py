@@ -246,50 +246,59 @@ def test_revision_before_after(mock_config, mock_revision, mock_taskcluster_conf
 
 
 @pytest.mark.parametrize(
-    "secrets, find_diff_build, expected",
+    "secrets, search_build, search_build_target, expected",
     [
         (
             {"BUILD_TEST_PLAN_PHID": "PHID-HMCP-buildtest"},
+            {"return_value": [{"phid": "PHID-HMBD-1"}]},
             {
-                "return_value": (
-                    {"phid": "PHID-HBLD-1"},
-                    [
-                        {"id": 1, "phid": "PHID-HMBT-old"},
-                        {"id": 3, "phid": "PHID-HMBT-new"},
-                        {"id": 2, "phid": "PHID-HMBT-middle"},
-                    ],
-                )
+                "return_value": [
+                    {"id": 1, "phid": "PHID-HMBT-old"},
+                    {"id": 3, "phid": "PHID-HMBT-new"},
+                    {"id": 2, "phid": "PHID-HMBT-middle"},
+                ]
             },
             "PHID-HMBT-new",
         ),
         (
             {},
-            {"return_value": ({}, [{"id": 1, "phid": "PHID-HMBT-x"}])},
+            {"return_value": [{"phid": "PHID-HMBD-1"}]},
+            {"return_value": [{"id": 1, "phid": "PHID-HMBT-x"}]},
             "Cannot find build/test build target",
         ),
         (
             {"BUILD_TEST_PLAN_PHID": "PHID-HMCP-buildtest"},
-            {"side_effect": IndexError("list index out of range")},
-            "list index out of range",
+            {"return_value": []},
+            {"return_value": []},
+            None,
         ),
         (
             {"BUILD_TEST_PLAN_PHID": "PHID-HMCP-buildtest"},
-            {"return_value": ({"phid": "PHID-HBLD-1"}, [])},
+            {"side_effect": Exception("conduit error")},
+            {"return_value": []},
+            "conduit error",
+        ),
+        (
+            {"BUILD_TEST_PLAN_PHID": "PHID-HMCP-buildtest"},
+            {"return_value": [{"phid": "PHID-HMBD-1"}]},
+            {"return_value": []},
             "No build/test build target found",
         ),
     ],
 )
 def test_find_build_test_target(
-    mock_taskcluster_config, secrets, find_diff_build, expected
+    mock_taskcluster_config, secrets, search_build, search_build_target, expected
 ):
     mock_taskcluster_config.secrets = secrets
     phabricator = mock.Mock()
     phabricator.find_target_buildable.return_value = {
-        "fields": {"objectPHID": "PHID-DIFF-test"}
+        "phid": "PHID-HMBB-test",
+        "fields": {"objectPHID": "PHID-DIFF-test"},
     }
-    phabricator.find_diff_build = mock.Mock(**find_diff_build)
+    phabricator.search_build = mock.Mock(**search_build)
+    phabricator.search_build_target = mock.Mock(**search_build_target)
 
-    if expected.startswith("PHID-"):
+    if expected is None or expected.startswith("PHID-"):
         assert (
             phabricator_revisions.find_build_test_target(phabricator, "PHID-HMBT-lint")
             == expected
@@ -300,9 +309,16 @@ def test_find_build_test_target(
 
     if secrets:
         phabricator.find_target_buildable.assert_called_once_with("PHID-HMBT-lint")
-        phabricator.find_diff_build.assert_called_once_with(
-            "PHID-DIFF-test", "PHID-HMCP-buildtest"
+        phabricator.search_build.assert_called_once_with(
+            buildable_phid="PHID-HMBB-test", plans=["PHID-HMCP-buildtest"]
         )
     else:
         phabricator.find_target_buildable.assert_not_called()
-        phabricator.find_diff_build.assert_not_called()
+        phabricator.search_build.assert_not_called()
+
+    if secrets and search_build.get("return_value"):
+        phabricator.search_build_target.assert_called_once_with(
+            build_phid="PHID-HMBD-1"
+        )
+    else:
+        phabricator.search_build_target.assert_not_called()

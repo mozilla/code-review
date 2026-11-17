@@ -340,9 +340,10 @@ def main():
                     build_test_build_target = find_build_test_target(
                         phabricator_api, revision.build_target_phid
                     )
-                    w.phabricator.update_build_target(
-                        build_test_build_target, BuildState.Fail, unit=[failure]
-                    )
+                    if build_test_build_target is not None:
+                        w.phabricator.update_build_target(
+                            build_test_build_target, BuildState.Fail, unit=[failure]
+                        )
                 except Exception:
                     logger.exception("Failed to set build/test build target to Fail")
 

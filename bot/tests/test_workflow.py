@@ -445,6 +445,25 @@ def test_skip_build_test_analysis_lookup_failure(
     )
 
 
+def test_skip_build_test_analysis_no_build_test_build(
+    mock_workflow, mock_revision, monkeypatch
+):
+    find = mock.Mock(return_value=None)
+    monkeypatch.setattr("code_review_bot.workflow.find_build_test_target", find)
+    mock_workflow.update_build = True
+    mock_workflow.phabricator = mock.Mock()
+    lando = mock.Mock()
+    mock_workflow.reporters = {"lando": lando}
+
+    mock_workflow.skip_build_test_analysis(mock_revision)
+
+    find.assert_called_once_with(mock_workflow.phabricator, "PHID-HMBT-test")
+    mock_workflow.phabricator.update_build_target.assert_not_called()
+    lando.publish.assert_called_once_with(
+        [], mock_revision, [], [], [], AnalysisMode.BuildTest
+    )
+
+
 def test_skip_build_test_analysis_without_update_build(
     mock_workflow, mock_revision, monkeypatch
 ):
