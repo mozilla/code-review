@@ -4,6 +4,7 @@
 import base64
 import json
 import os.path
+from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -535,6 +536,74 @@ def test_head_branch_template(tmpdir, PhabricatorMock, mock_mc_git):
     mock_mc_git.head_branch = "cr/{unknown}"
     with pytest.raises(Exception, match="Invalid head_branch template"):
         mock_mc_git.render_push_branch(build)
+
+
+def test_git_clone_fetches_the_pushed_commit_by_sha(tmpdir, monkeypatch):
+    """Publication clones the pushed commit by SHA and checks it out: a later
+    force push moving the branch (the other analysis mode of the same diff, a
+    re-fired build) must not hide it, as a Mercurial try head stays
+    addressable by hash."""
+    from conftest import build_git_repository
+    from git import Actor, Repo
+
+    from code_review_bot.git import git_clone
+
+    # Local paths stand in for the github urls
+    monkeypatch.setattr(
+        "code_review_bot.git.build_repo_slug",
+        lambda url: os.path.basename(url.rstrip("/")).removesuffix(".git"),
+    )
+
+    origin = build_git_repository(tmpdir, "origin-repo")
+    base = origin.head.commit.hexsha
+    actor = Actor("test", "test")
+
+    # The try repository serves any commit by SHA, as GitHub does
+    try_dir = str(tmpdir.mkdir("try.git").realpath())
+    try_repo = Repo.init(try_dir, bare=True)
+    with try_repo.config_writer() as cw:
+        cw.set_value("uploadpack", "allowAnySHA1InWant", "true")
+
+    # The pushes come from another clone, so that the commits only exist on
+    # the try repository (origin's objects are shared with the local clone)
+    pusher = Repo.clone_from(origin.working_dir, str(tmpdir.mkdir("pusher")))
+    with pusher.config_writer() as cw:
+        cw.set_value("user", "name", "test")
+        cw.set_value("user", "email", "test")
+        cw.set_value("commit", "gpgsign", "false")
+
+    def push(name):
+        """Commit a file on top of the base and force push it to the branch"""
+        with open(os.path.join(pusher.working_dir, f"{name}.txt"), "w") as f:
+            f.write(name)
+        pusher.index.add([f"{name}.txt"])
+        commit = pusher.index.commit(name, author=actor, committer=actor).hexsha
+        pusher.git.push(try_dir, f"{commit}:refs/heads/code-review/D1-2", force=True)
+        pusher.git.reset("--hard", base)
+        return commit
+
+    lint = push("lint")
+    build = push("build")
+    # The second push moved the branch: the first commit is unreachable
+    assert Repo(try_dir).refs["code-review/D1-2"].commit.hexsha == build
+    assert Repo(try_dir).git.branch("--contains", lint) == ""
+
+    cache = tmpdir.mkdir("git-cache")
+    repo = git_clone(origin.working_dir, try_dir, lint, Path(str(cache)))
+
+    assert repo.working_dir == str(cache.join("origin-repo"))
+    assert repo.head.is_detached
+    assert repo.head.commit.hexsha == lint
+    # The working tree holds that commit's files, nothing else
+    assert open(os.path.join(repo.working_dir, "lint.txt")).read() == "lint"
+    assert not os.path.exists(os.path.join(repo.working_dir, "build.txt"))
+    assert repo.git.status("--short") == ""
+
+    # A reused clone is moved to another pushed commit the same way
+    repo = git_clone(origin.working_dir, try_dir, build, Path(str(cache)))
+    assert repo.head.commit.hexsha == build
+    assert open(os.path.join(repo.working_dir, "build.txt")).read() == "build"
+    assert not os.path.exists(os.path.join(repo.working_dir, "lint.txt"))
 
 
 def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):

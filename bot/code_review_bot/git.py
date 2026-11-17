@@ -89,13 +89,17 @@ def git_clone(base_repository, head_repository, revision, destination):
         # Setup new remote
         head = repo.create_remote(head_slug, head_repository)
 
-    # Always fetch, as creating a remote does not fetch automatically
-    logger.info("Fetch remote head", url=head.url)
-    head.fetch()
+    # Fetch the exact commit rather than the branches: a later force push on the
+    # same branch (the other analysis mode of the diff, a re-fired build) leaves
+    # it unreachable from any ref, but GitHub still serves it by SHA, like a
+    # Mercurial try head stays addressable by hash
+    logger.info("Fetch remote head", url=head.url, revision=revision)
+    repo.git.fetch(head_slug, revision)
 
-    # Detach head to specified revision
+    # Check the working tree out at that commit: issue hashes and file
+    # existence checks read the files from it
     logger.info("Checkout to head", revision=revision)
-    repo.head.reference = repo.commit(revision)
+    repo.git.checkout(revision, force=True, detach=True)
 
     return repo
 
