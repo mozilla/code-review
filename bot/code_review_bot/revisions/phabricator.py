@@ -29,7 +29,7 @@ logger = structlog.get_logger(__name__)
 
 def find_build_test_target(
     phabricator: PhabricatorAPI, lint_build_target_phid: str
-) -> str:
+) -> str | None:
     plan_phid = taskcluster.secrets.get("BUILD_TEST_PLAN_PHID")
     if not plan_phid:
         logger.error(
@@ -43,7 +43,18 @@ def find_build_test_target(
     assert diff_phid.startswith("PHID-DIFF-")
 
     try:
-        _, targets = phabricator.find_diff_build(diff_phid, plan_phid)
+        builds = phabricator.search_build(
+            buildable_phid=buildable["phid"], plans=[plan_phid]
+        )
+        if not builds:
+            logger.info(
+                "No build/test build exists for this diff",
+                lint_build_target_phid=lint_build_target_phid,
+                diff_phid=diff_phid,
+                plan=plan_phid,
+            )
+            return None
+        targets = phabricator.search_build_target(build_phid=builds[0]["phid"])
     except Exception as e:
         logger.error(
             "Failed to find the build/test build target",

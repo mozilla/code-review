@@ -368,6 +368,11 @@ def test_workflow(
             ["PHID-HMBT-test", "PHID-HMBT-buildtest"],
             [AnalysisMode.Lint, AnalysisMode.BuildTest],
         ),
+        (
+            None,
+            ["PHID-HMBT-test"],
+            [AnalysisMode.Lint, AnalysisMode.BuildTest],
+        ),
     ],
 )
 def test_start_analysis_publication(
