@@ -5,6 +5,7 @@
 from datetime import datetime
 
 from code_review_bot import stats
+from code_review_bot.stats import Metric
 
 
 class MockInflux:
@@ -12,10 +13,11 @@ class MockInflux:
     Mock the InfluxDb python client to retrieve data sent
     """
 
-    points = []
+    def __init__(self):
+        self.points: list[Metric] = []
 
-    def write_points(self, points):
-        self.points += points
+    def write_points(self, points: list[Metric]) -> None:
+        self.points.extend(points)
 
 
 def test_base_stats():

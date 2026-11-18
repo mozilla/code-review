@@ -339,7 +339,7 @@ class Settings:
         analysis and publication tasks running on the same worker.
         """
         if self.mercurial_cache is None:
-            return
+            return None
 
         if repository_url:
             for repository in self.repositories:

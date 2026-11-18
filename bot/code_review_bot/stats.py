@@ -6,6 +6,7 @@ import atexit
 import time
 from contextlib import contextmanager
 from datetime import datetime
+from typing import TypedDict
 
 import structlog
 from influxdb import InfluxDBClient
@@ -16,6 +17,13 @@ from code_review_bot.tasks.base import AnalysisTask
 logger = structlog.get_logger(__name__)
 
 
+class Metric(TypedDict):
+    measurement: str
+    tags: dict[str, str | None]
+    time: str
+    fields: dict[str, int | float]
+
+
 class InfluxDb:
     """
     Log metrics using InfluxDb REST api
@@ -23,7 +31,7 @@ class InfluxDb:
 
     def __init__(self):
         self.client = None
-        self.metrics = []
+        self.metrics: list[Metric] = []
 
         # Always flush at the end of the execution
         atexit.register(self.flush)
@@ -44,10 +52,17 @@ class InfluxDb:
             "InfluxDb reporting enabled", database=conf["database"], host=conf["host"]
         )
 
-    def add_metric(self, name, value=1, tags={}):
+    def add_metric(
+        self,
+        name: str,
+        value: int | float = 1,
+        tags: dict[str, str | None] | None = None,
+    ) -> None:
         """
         Store a metric in memory, using InfluxDb point format
         """
+        if tags is None:
+            tags = {}
         tags.update({"app": "code-review-bot", "channel": settings.app_channel})
         self.metrics.append(
             {

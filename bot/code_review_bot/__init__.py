@@ -2,12 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+from __future__ import annotations
+
 import abc
 import enum
 import hashlib
 import json
 import os
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 import requests
 import structlog
@@ -22,6 +25,9 @@ from code_review_bot.stats import InfluxDb
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
+
+if TYPE_CHECKING:
+    from code_review_bot.revisions import Revision
 
 
 def positive_int(name, x):
@@ -73,6 +79,7 @@ class IssueType(enum.Enum):
 
 class BaseIssue(abc.ABC):
     type_: IssueType
+    revision: Revision | None
 
     def __init__(
         self, analyzer, revision, level: Level = Level.Warning, message: str = ""
@@ -208,11 +215,11 @@ class Issue(BaseIssue):
         line: int,
         nb_lines: int,
         check: str,
-        column: int = None,
+        column: int | None = None,
         message: str = "",
         level: Level = Level.Warning,
-        fix: str = None,
-        language: str = None,
+        fix: str | None = None,
+        language: str | None = None,
     ):
         super().__init__(analyzer, revision, level, message)
 

@@ -18,12 +18,12 @@ ARTIFACT_DOWNLOAD_TIMEOUT = 60
 
 
 class BaseTask:
-    artifacts = []
-    streamed_artifacts = []
-    route = None
-    valid_states = ("completed", "failed")
-    skipped_states = ()
-    extra_reviewers_groups = []
+    artifacts: list[str] = []
+    streamed_artifacts: list[str] = []
+    route: str | None = None
+    valid_states: tuple[str, ...] = ("completed", "failed")
+    skipped_states: tuple[str, ...] = ()
+    extra_reviewers_groups: list[str] = []
 
     def __init__(self, task_id, task_status):
         self.id = task_id
