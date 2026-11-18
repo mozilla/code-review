@@ -48,59 +48,51 @@ def build_repo_slug(repo_url):
     return path.replace("/", "_")
 
 
+def ensure_remote(repo, name, url):
+    """Return the remote `name` of `repo` pointing at `url`, creating or
+    updating it as needed."""
+    try:
+        remote = repo.remotes[name]
+    except IndexError:
+        return repo.create_remote(name, url)
+    if remote.url != url:
+        logger.info("Update remote url", remote=name, url=url)
+        remote.set_url(url)
+    return remote
+
+
 def git_clone(base_repository, head_repository, revision, destination):
     """
-    Clone a git repo at a specific revision in a directory
-    If the repo is already present, fetches and checkout
-    """
+    Make the files of a pushed commit available under destination/<base slug>,
+    like `cat_files` does for Mercurial: issue hashes and file existence checks
+    read them from there.
 
-    # Build slug
+    The commit is fetched by SHA from the head repository with depth 1: there
+    is no need for the history, and a later force push on the same branch (the
+    other analysis mode of the diff, a re-fired build) leaves it unreachable
+    from any ref while GitHub still serves it by SHA, as a Mercurial try head
+    stays addressable by hash.
+    An existing repository is reused.
+    """
     base_slug = build_repo_slug(base_repository)
     head_slug = build_repo_slug(head_repository)
 
-    # Clone or fetch upstream
     path = destination / base_slug
     if path.exists() and (path / ".git").is_dir():
         logger.info("Use existing repo", path=path)
+        repo = Repo(path)
+    else:
+        logger.info("Init git repository", path=path)
         repo = Repo.init(path)
 
-        # Make sure origin matches the url
-        origin = repo.remotes["origin"]
-        if origin.url != base_repository:
-            logger.info("Update remote origin", url=base_repository)
-            origin.set_url(base_repository)
+    ensure_remote(repo, "origin", base_repository)
+    head = ensure_remote(repo, head_slug, head_repository)
 
-        # Always update the references for base repo
-        logger.info("Fetch remote origin")
-        origin.fetch()
-    else:
-        logger.info("Clone git repository", url=base_repository, path=path)
-        repo = Repo.clone_from(base_repository, path)
-
-    # Fetch head repository as a remote on top of base
-    try:
-        head = repo.remotes[head_slug]
-
-        # Make sure head matches the url
-        if head.url != head_repository:
-            head.set_url(head_repository)
-
-    except IndexError:
-        # Setup new remote
-        head = repo.create_remote(head_slug, head_repository)
-
-    # Fetch the exact commit rather than the branches: a later force push on the
-    # same branch (the other analysis mode of the diff, a re-fired build) leaves
-    # it unreachable from any ref, but GitHub still serves it by SHA, like a
-    # Mercurial try head stays addressable by hash
     logger.info("Fetch remote head", url=head.url, revision=revision)
-    repo.git.fetch(head_slug, revision)
+    repo.git.fetch("--depth=1", head_slug, revision)
 
-    # Check the working tree out at that commit: issue hashes and file
-    # existence checks read the files from it
     logger.info("Checkout to head", revision=revision)
     repo.git.checkout(revision, force=True, detach=True)
-
     return repo
 
 

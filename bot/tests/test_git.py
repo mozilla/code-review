@@ -544,7 +544,7 @@ def test_git_clone_fetches_the_pushed_commit_by_sha(tmpdir, monkeypatch):
     re-fired build) must not hide it, as a Mercurial try head stays
     addressable by hash."""
     from conftest import build_git_repository
-    from git import Actor, Repo
+    from git import Repo
 
     from code_review_bot.git import git_clone
 
@@ -555,33 +555,7 @@ def test_git_clone_fetches_the_pushed_commit_by_sha(tmpdir, monkeypatch):
     )
 
     origin = build_git_repository(tmpdir, "origin-repo")
-    base = origin.head.commit.hexsha
-    actor = Actor("test", "test")
-
-    # The try repository serves any commit by SHA, as GitHub does
-    try_dir = str(tmpdir.mkdir("try.git").realpath())
-    try_repo = Repo.init(try_dir, bare=True)
-    with try_repo.config_writer() as cw:
-        cw.set_value("uploadpack", "allowAnySHA1InWant", "true")
-
-    # The pushes come from another clone, so that the commits only exist on
-    # the try repository (origin's objects are shared with the local clone)
-    pusher = Repo.clone_from(origin.working_dir, str(tmpdir.mkdir("pusher")))
-    with pusher.config_writer() as cw:
-        cw.set_value("user", "name", "test")
-        cw.set_value("user", "email", "test")
-        cw.set_value("commit", "gpgsign", "false")
-
-    def push(name):
-        """Commit a file on top of the base and force push it to the branch"""
-        with open(os.path.join(pusher.working_dir, f"{name}.txt"), "w") as f:
-            f.write(name)
-        pusher.index.add([f"{name}.txt"])
-        commit = pusher.index.commit(name, author=actor, committer=actor).hexsha
-        pusher.git.push(try_dir, f"{commit}:refs/heads/code-review/D1-2", force=True)
-        pusher.git.reset("--hard", base)
-        return commit
-
+    try_dir, push = make_try_repository(tmpdir, origin)
     lint = push("lint")
     build = push("build")
     # The second push moved the branch: the first commit is unreachable
@@ -604,6 +578,42 @@ def test_git_clone_fetches_the_pushed_commit_by_sha(tmpdir, monkeypatch):
     assert repo.head.commit.hexsha == build
     assert open(os.path.join(repo.working_dir, "build.txt")).read() == "build"
     assert not os.path.exists(os.path.join(repo.working_dir, "lint.txt"))
+
+
+def make_try_repository(tmpdir, origin):
+    """A bare "try" repository serving any commit by SHA and partial fetches,
+    as GitHub does, and a push() helper committing a file on top of origin's
+    tip in another clone and force pushing it to the branch code-review/D1-2,
+    so the commit only exists on the try repository."""
+    from git import Actor, Repo
+
+    base = origin.head.commit.hexsha
+    actor = Actor("test", "test")
+    try_dir = str(tmpdir.mkdir("try.git").realpath())
+    try_repo = Repo.init(try_dir, bare=True)
+    with try_repo.config_writer() as cw:
+        cw.set_value("uploadpack", "allowAnySHA1InWant", "true")
+        cw.set_value("uploadpack", "allowFilter", "true")
+
+    pusher = Repo.clone_from(origin.working_dir, str(tmpdir.mkdir("pusher")))
+    with pusher.config_writer() as cw:
+        cw.set_value("user", "name", "test")
+        cw.set_value("user", "email", "test")
+        cw.set_value("commit", "gpgsign", "false")
+
+    def push(name, files=None):
+        for path, content in (files or {f"{name}.txt": name}).items():
+            full = os.path.join(pusher.working_dir, path)
+            os.makedirs(os.path.dirname(full), exist_ok=True)
+            with open(full, "w") as f:
+                f.write(content)
+            pusher.index.add([path])
+        commit = pusher.index.commit(name, author=actor, committer=actor).hexsha
+        pusher.git.push(try_dir, f"{commit}:refs/heads/code-review/D1-2", force=True)
+        pusher.git.reset("--hard", base)
+        return commit
+
+    return try_dir, push
 
 
 def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):
