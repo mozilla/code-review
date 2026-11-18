@@ -384,17 +384,19 @@ class GitRepository(BaseRepository):
         else:
             # Start on the target branch: beta, release or ESR diverge a lot
             # from the remote's default branch. Only that branch is cloned,
-            # and without the file contents of its history (a blob-less
-            # partial clone): the blobs of one revision are fetched when it
-            # is checked out, so a Firefox clone costs about 1.7 GB instead
-            # of 5 GB while short hashes and ancestry still resolve locally,
-            # which keeps the pushes down to the new commits.
+            # without the file contents of its history (a blob-less partial
+            # clone) nor a working tree: the patches apply on the index and
+            # only the contents of the files they touch are fetched, so a
+            # Firefox clone costs about 0.9 GB instead of 5 GB while short
+            # hashes and ancestry still resolve locally, which keeps the
+            # pushes down to the new commits.
             self._repo = Repo.clone_from(
                 self.url,
                 self.dir,
                 branch=self.branch,
                 single_branch=True,
                 filter="blob:none",
+                no_checkout=True,
             )
         with self.repo.config_writer() as writer:
             # Negotiate the commits in common with the try repository instead
@@ -427,19 +429,55 @@ class GitRepository(BaseRepository):
             return self.default_revision
         return needed_stack[0].base_revision
 
-    def update_working_copy(self, revision):
-        """Move the working tree to a revision, unless it is there already.
+    def update_index(self, revision, reload=False):
+        """Detach HEAD at a revision and load its tree in the index, unless
+        it is there already (`reload` loads it again).
 
-        HEAD is detached so the patches committed on top stay throwaway drafts
-        and never advance a branch.
+        No file is written: the patches apply on the index and the commits
+        are built from it, so the working tree stays empty whatever the size
+        of the repository. HEAD is detached so the patches committed on top
+        stay throwaway drafts and never advance a branch.
         """
+        commit = self.repo.commit(revision).hexsha
         if (
-            self.repo.head.is_detached
-            and self.repo.head.commit.hexsha == self.repo.commit(revision).hexsha
+            not reload
+            and self.repo.head.is_detached
+            and self.repo.head.commit.hexsha == commit
         ):
             return
         logger.info(f"Updating repo to revision {revision}")
-        self.repo.git.checkout(revision, force=True, detach=True)
+        self.repo.git.update_ref("--no-deref", "HEAD", commit)
+        self.repo.git.read_tree(commit)
+
+    def commit_index(self, message, author_name, author_email):
+        """Commit the index on top of HEAD and move HEAD to the new commit,
+        with the plumbing commands as they need no working tree. Return the
+        new commit hash."""
+        env = {
+            "GIT_AUTHOR_NAME": author_name,
+            "GIT_AUTHOR_EMAIL": author_email,
+            "GIT_COMMITTER_NAME": DEFAULT_AUTHOR_NAME,
+            "GIT_COMMITTER_EMAIL": DEFAULT_AUTHOR_EMAIL,
+        }
+        with self.repo.git.custom_environment(**env):
+            # The index refers to file contents the partial clone has not
+            # fetched: without --missing-ok, write-tree would fetch them one
+            # by one for every directory the patch touches to check they exist
+            tree = self.repo.git.write_tree("--missing-ok")
+            commit = self.repo.git.commit_tree(tree, "-p", "HEAD", "-m", message)
+        self.repo.git.update_ref("--no-deref", "HEAD", commit)
+        return commit
+
+    def prefetch_patched_files(self, patch_path, revision):
+        """Fetch in one go the contents of the files a patch changes, which
+        `git apply` needs to apply its hunks and would otherwise fetch one by
+        one. Best effort: `git apply` reports a bad patch itself."""
+        try:
+            numstat = self.repo.git.apply("--numstat", "-z", patch_path)
+        except GitCommandError:
+            return
+        paths = [entry.split("\t", 2)[2] for entry in numstat.split("\0") if entry]
+        prefetch_blobs(self.repo, "origin", revision, paths)
 
     def apply_build(self, build):
         parent = super().apply_build(build)
@@ -479,10 +517,10 @@ class GitRepository(BaseRepository):
         return "\n".join(lines) + "\n"
 
     def apply_patch(self, patch, message, commit, parent):
-        """Apply a single unified diff on top of `parent`, commit it and
-        return the new commit hash."""
+        """Apply a single unified diff on the index on top of `parent`,
+        commit it and return the new commit hash."""
         name, email = self.get_author(commit)
-        self.update_working_copy(parent)
+        self.update_index(parent)
 
         with tempfile.NamedTemporaryFile(
             mode="w", suffix=".diff", delete=False
@@ -491,33 +529,18 @@ class GitRepository(BaseRepository):
             patch_path = patch_file.name
 
         try:
-            self.repo.git.apply("--index", patch_path)
-            env = {
-                "GIT_AUTHOR_NAME": name,
-                "GIT_AUTHOR_EMAIL": email,
-                "GIT_COMMITTER_NAME": DEFAULT_AUTHOR_NAME,
-                "GIT_COMMITTER_EMAIL": DEFAULT_AUTHOR_EMAIL,
-            }
-            with self.repo.git.custom_environment(**env):
-                self.repo.git.commit("--no-verify", "-m", message)
+            self.prefetch_patched_files(patch_path, parent)
+            self.repo.git.apply("--cached", patch_path)
+            return self.commit_index(message, name, email)
         finally:
             os.unlink(patch_path)
-        return self.repo.head.commit.hexsha
 
     def commit_try_task_config(self, path, message, parent):
         """Commit the try_task_config.json file as the bot on top of `parent`
         and return the new commit hash"""
-        self.update_working_copy(parent)
+        self.update_index(parent)
         self.repo.git.add(path)
-        env = {
-            "GIT_AUTHOR_NAME": DEFAULT_AUTHOR_NAME,
-            "GIT_AUTHOR_EMAIL": DEFAULT_AUTHOR_EMAIL,
-            "GIT_COMMITTER_NAME": DEFAULT_AUTHOR_NAME,
-            "GIT_COMMITTER_EMAIL": DEFAULT_AUTHOR_EMAIL,
-        }
-        with self.repo.git.custom_environment(**env):
-            self.repo.git.commit("--no-verify", "-m", message)
-        return self.repo.head.commit.hexsha
+        return self.commit_index(message, DEFAULT_AUTHOR_NAME, DEFAULT_AUTHOR_EMAIL)
 
     def render_push_branch(self, build):
         """Render the head_branch template for a specific build."""
@@ -560,28 +583,27 @@ class GitRepository(BaseRepository):
         return revision
 
     def clean(self):
-        """Reset the local checkout to a pristine state.
+        """Reset the local clone to a pristine state.
 
         Mirrors the Mercurial ``clean()`` (revert + strip outgoing drafts +
         pull): a reused clone can hold the patch commits and ``try_task_config``
-        commit from a previous build, so we discard local changes, refresh from
-        the remote and return to the tip of the target branch.
+        commit from a previous build, so we refresh from the remote, load the
+        tip of the target branch in the index and drop the untracked files.
         """
         logger.info("Cleaning git checkout")
-
-        # Discard uncommitted changes and untracked/ignored files
-        self.repo.git.reset("--hard")
-        self.repo.git.clean("-fxd")
 
         # Refresh from the remote (mirrors hg pull)
         self.repo.remotes.origin.fetch()
 
         # Return to the pristine tip of the branch, dropping any previously
-        # applied commits
+        # applied commits and whatever a failed build left in the index
         target = self.default_revision
         if not self.has_revision(target):
             raise Exception(f"Branch {self.branch} is not on origin")
-        self.repo.git.checkout(target, force=True, detach=True)
+        self.update_index(target, reload=True)
+
+        # Only the try_task_config.json of a previous build is on disk
+        self.repo.git.clean("-fdxq")
 
 
 class GitWorker(BaseWorker):

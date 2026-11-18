@@ -98,9 +98,10 @@ def test_apply_patches(PhabricatorMock, mock_mc_git):
 
     mock_mc_git.apply_build(build)
 
-    # The patched file now has the expected content
-    assert os.path.exists(target)
-    assert open(target).read() == "First Line\nSecond Line\n"
+    # The patched file is committed with the expected content, without ever
+    # being written to the working tree
+    assert mock_mc_git.repo.git.show("HEAD:test.txt") == "First Line\nSecond Line"
+    assert not os.path.exists(target)
 
     # The unknown base revision is recorded on the build with the fallback used
     assert build.missing_base_revision is True
@@ -134,7 +135,7 @@ def test_add_try_commit(PhabricatorMock, mock_mc_git):
 
     config_path = os.path.join(mock_mc_git.dir, "try_task_config.json")
     assert os.path.exists(config_path)
-    assert json.load(open(config_path)) == {
+    config = {
         "version": 2,
         "parameters": {
             "target_tasks_method": "codereview",
@@ -143,6 +144,8 @@ def test_add_try_commit(PhabricatorMock, mock_mc_git):
             "base_rev": base,
         },
     }
+    assert json.load(open(config_path)) == config
+    assert json.loads(mock_mc_git.repo.git.show("HEAD:try_task_config.json")) == config
     # The caller's parameters are left untouched
     assert "base_rev" not in LINT_EXTRA_PARAMS
 
@@ -176,20 +179,22 @@ def test_push_to_try(PhabricatorMock, mock_mc_git):
 
 
 def test_clean(mock_mc_git):
-    """clean() resets tracked changes and removes untracked files."""
+    """clean() reloads the branch tip in the index, dropping what a failed
+    build staged, and removes untracked files."""
     untracked = os.path.join(mock_mc_git.dir, "untracked.txt")
     with open(untracked, "w") as f:
         f.write("dirty")
     readme = os.path.join(mock_mc_git.dir, "README.md")
     with open(readme, "w") as f:
         f.write("changed")
-    assert mock_mc_git.repo.is_dirty(untracked_files=True)
+    mock_mc_git.repo.git.add("README.md")
+    assert mock_mc_git.repo.git.diff("--cached", "--name-only") == "README.md"
 
     mock_mc_git.clean()
 
-    assert not mock_mc_git.repo.is_dirty(untracked_files=True)
+    assert mock_mc_git.repo.git.diff("--cached", "--name-only") == ""
+    assert mock_mc_git.repo.git.show("HEAD:README.md") == "Hello World"
     assert not os.path.exists(untracked)
-    assert open(readme).read() == "Hello World"
 
 
 def test_clean_drops_previous_build(PhabricatorMock, mock_mc_git):
@@ -206,14 +211,14 @@ def test_clean_drops_previous_build(PhabricatorMock, mock_mc_git):
     # Those commits live on a detached HEAD; the branch has not moved
     assert mock_mc_git.repo.head.is_detached
     assert mock_mc_git.repo.commit(branch).hexsha == base
-    assert os.path.exists(os.path.join(mock_mc_git.dir, "test.txt"))
+    assert "test.txt" in mock_mc_git.repo.git.ls_files().splitlines()
 
     # Cleaning returns to the pristine base, dropping the build's commits
     mock_mc_git.clean()
 
     assert mock_mc_git.repo.head.commit.hexsha == base
     assert mock_mc_git.repo.git.rev_list("--count", branch).strip() == "1"
-    assert not os.path.exists(os.path.join(mock_mc_git.dir, "test.txt"))
+    assert "test.txt" not in mock_mc_git.repo.git.ls_files().splitlines()
     assert not os.path.exists(os.path.join(mock_mc_git.dir, "try_task_config.json"))
 
 
@@ -251,9 +256,9 @@ def serve_partial_clones(repo):
 
 
 def test_clone_starts_on_the_branch(tmpdir):
-    """The clone checks out the configured branch, and only that one, without
-    the file contents of its history; the default revision follows that
-    branch on origin across builds."""
+    """The clone starts on the configured branch, and only that one, without
+    the file contents of its history nor a working tree; the default revision
+    follows that branch on origin across builds."""
     from conftest import build_git_repository
 
     # An origin with a second branch, one commit ahead of the default one
@@ -283,7 +288,9 @@ def test_clone_starts_on_the_branch(tmpdir):
     assert git_repo.repo.git.config("remote.origin.promisor") == "true"
     assert git_repo.repo.git.config("remote.origin.partialclonefilter") == "blob:none"
     assert git_repo.repo.git.config("push.negotiate") == "true"
-    assert open(os.path.join(git_repo.dir, "beta.txt")).read() == "beta only"
+    # The branch's files are in the clone, not on disk
+    assert git_repo.repo.git.show("origin/beta:beta.txt") == "beta only"
+    assert os.listdir(git_repo.dir) == [".git"]
 
     # A later build picks up the branch's new tip, not the default branch
     origin.git.checkout("beta")
@@ -294,6 +301,9 @@ def test_clone_starts_on_the_branch(tmpdir):
     git_repo.clean()
     assert git_repo.repo.head.commit.hexsha == new_tip
     assert git_repo.repo.commit(git_repo.default_revision).hexsha == new_tip
+    # The index follows the tip, the working tree stays empty
+    assert git_repo.repo.git.ls_files().splitlines() == ["README.md", "beta.txt"]
+    assert os.listdir(git_repo.dir) == [".git"]
 
 
 def test_clean_picks_up_remote_updates(tmpdir, mock_mc_git):
@@ -322,7 +332,7 @@ def test_clean_picks_up_remote_updates(tmpdir, mock_mc_git):
     mock_mc_git.clean()
 
     assert mock_mc_git.repo.head.commit.hexsha == upstream_tip.hexsha
-    assert os.path.exists(os.path.join(mock_mc_git.dir, "update.txt"))
+    assert "update.txt" in mock_mc_git.repo.git.ls_files().splitlines()
     # Origin is untouched by cleanup
     assert Repo(mock_mc_git.url).commit(mock_mc_git.branch) == upstream_tip
 
@@ -702,44 +712,47 @@ def test_git_clone_fetches_the_issue_files_ahead(tmpdir, monkeypatch):
     assert files.exists("dom/first.cpp") is False
 
 
-def test_worker_pushes_from_a_partial_clone(tmpdir, PhabricatorMock):
-    """The whole analysis runs on a blob-less clone: the files of the base
-    revision are fetched when it is checked out, the patches apply on them
-    and the push carries the new commits; what the try repository lacks on
-    top of that is fetched from origin on the way."""
+def make_partial_origin(tmpdir, name="origin-repo"):
+    """An origin served for partial clones, with a second version of the
+    Readme on its tip so that there is history and two promised blobs."""
     from conftest import build_git_repository
-    from git import Actor, Repo
+    from git import Actor
 
-    origin = build_git_repository(tmpdir, "origin-repo")
-    branch = origin.active_branch.name
+    origin = build_git_repository(tmpdir, name)
     actor = Actor("test", "test")
-    # A second version of the Readme: the clone never fetches the first one
     with open(os.path.join(origin.working_dir, "README.md"), "w") as f:
-        f.write("Hello World v2")
+        f.write("Hello World v2\n")
     origin.index.add(["README.md"])
     tip = origin.index.commit("Readme v2", author=actor, committer=actor).hexsha
+    return origin, tip
 
-    try_dir = str(tmpdir.mkdir("partial-try.git").realpath())
-    Repo.init(try_dir, bare=True)
+
+def make_partial_repository(tmpdir, origin, try_dir):
     config = {
         "name": "partial",
         "url": serve_partial_clones(origin),
         "try_url": try_dir,
         "try_name": "staging-firefox",
-        "default_revision": branch,
+        "default_revision": origin.active_branch.name,
         "head_branch": "code-review/D{revision_id}-{diff_id}",
     }
-    git_repo = GitRepository(config, str(tmpdir.realpath()))
+    return GitRepository(config, str(tmpdir.realpath()))
+
+
+def test_worker_pushes_from_a_partial_clone(tmpdir, PhabricatorMock):
+    """The whole analysis runs on a blob-less clone with no working tree: the
+    patches apply on the index and the push carries the new commits; what the
+    try repository lacks on top of that is fetched from origin on the way."""
+    from git import Repo
+
+    origin, tip = make_partial_origin(tmpdir)
+    try_dir = str(tmpdir.mkdir("partial-try.git").realpath())
+    Repo.init(try_dir, bare=True)
+    git_repo = make_partial_repository(tmpdir, origin, try_dir)
     git_repo.clone()
     assert git_repo.repo.head.commit.hexsha == tip
-    missing = [
-        line
-        for line in git_repo.repo.git.rev_list(
-            "--objects", "--missing=print", "--all"
-        ).splitlines()
-        if line.startswith("?")
-    ]
-    assert len(missing) == 1, "the first Readme blob should be a promised object"
+    assert len(missing_blobs(git_repo.repo)) == 2, "no file content is fetched"
+    assert os.listdir(git_repo.dir) == [".git"]
 
     build = make_build(PhabricatorMock)
     mode, out_build, details = GitWorker().run(git_repo, build, LINT_EXTRA_PARAMS)
@@ -748,7 +761,7 @@ def test_worker_pushes_from_a_partial_clone(tmpdir, PhabricatorMock):
 
     pushed = Repo(try_dir).refs["code-review/D5678-1234"].commit
     assert pushed.hexsha == details["revision"] == git_repo.repo.head.commit.hexsha
-    assert (pushed.tree / "README.md").data_stream.read() == b"Hello World v2"
+    assert (pushed.tree / "README.md").data_stream.read() == b"Hello World v2\n"
     assert (pushed.tree / "test.txt").data_stream.read() == b"First Line\nSecond Line\n"
     assert (
         json.load((pushed.tree / "try_task_config.json").data_stream)["parameters"][
@@ -756,8 +769,81 @@ def test_worker_pushes_from_a_partial_clone(tmpdir, PhabricatorMock):
         ]
         == tip
     )
-    # The push went through on the partial clone, which stays one
+    # The push went through on the partial clone, which stays one; only the
+    # try_task_config.json was ever written to disk
     assert git_repo.repo.git.config("remote.origin.promisor") == "true"
+    assert sorted(os.listdir(git_repo.dir)) == [".git", "try_task_config.json"]
+
+
+def test_worker_pushes_without_fetching_the_base_files(tmpdir, PhabricatorMock):
+    """When the try repository holds the base revision, as GitHub's fork of
+    Firefox does, the push carries the new commits only and no file content
+    of the base is ever fetched."""
+    from git import Repo
+
+    origin, tip = make_partial_origin(tmpdir)
+    branch = origin.active_branch.name
+    try_dir = str(tmpdir.mkdir("partial-try.git").realpath())
+    Repo.init(try_dir, bare=True)
+    origin.git.push(try_dir, f"{branch}:refs/heads/{branch}")
+
+    git_repo = make_partial_repository(tmpdir, origin, try_dir)
+    git_repo.clone()
+    missing = missing_blobs(git_repo.repo)
+    assert len(missing) == 2
+
+    build = make_build(PhabricatorMock)
+    mode, _, details = GitWorker().run(git_repo, build, LINT_EXTRA_PARAMS)
+    assert mode == "success", details
+
+    pushed = Repo(try_dir).refs["code-review/D5678-1234"].commit
+    assert pushed.hexsha == details["revision"]
+    assert (pushed.tree / "test.txt").data_stream.read() == b"First Line\nSecond Line\n"
+    assert missing_blobs(git_repo.repo) == missing
+    assert sorted(os.listdir(git_repo.dir)) == [".git", "try_task_config.json"]
+
+
+def test_apply_patch_fetches_the_patched_files_ahead(tmpdir, monkeypatch):
+    """A patch changing a file needs that file's content: it is fetched in
+    one go before `git apply`, which would otherwise fetch the files one by
+    one, and the file is still never written to disk."""
+    from git import Repo
+
+    from code_review_bot import git as git_module
+
+    origin, tip = make_partial_origin(tmpdir)
+    try_dir = str(tmpdir.mkdir("partial-try.git").realpath())
+    Repo.init(try_dir, bare=True)
+    git_repo = make_partial_repository(tmpdir, origin, try_dir)
+    git_repo.clone()
+    git_repo.clean()
+
+    # The patch is built by origin itself so its hunks are exact
+    with open(os.path.join(origin.working_dir, "README.md"), "w") as f:
+        f.write("Hello World v3\n")
+    patch = MagicMock(patch=origin.git.diff() + "\n")
+    origin.git.checkout("--", "README.md")
+
+    fetched = []
+    prefetch_blobs = git_module.prefetch_blobs
+    monkeypatch.setattr(
+        git_module,
+        "prefetch_blobs",
+        lambda *args: fetched.append(prefetch_blobs(*args)),
+    )
+    missing = missing_blobs(git_repo.repo)
+    current = git_repo.repo.git.rev_parse(f"{tip}:README.md")
+    assert current in missing
+
+    commit = {"author": {"name": "John Doe", "email": "john@allizom.org"}}
+    new = git_repo.apply_patch(patch, "Readme v3", commit, git_repo.default_revision)
+
+    assert git_repo.repo.head.commit.hexsha == new
+    assert git_repo.repo.git.show("HEAD:README.md") == "Hello World v3"
+    assert git_repo.repo.head.commit.author.email == "john@allizom.org"
+    assert fetched == [1]
+    assert missing - missing_blobs(git_repo.repo) == {current}
+    assert os.listdir(git_repo.dir) == [".git"]
 
 
 def test_git_files_reads_a_revision_in_place(tmpdir):
