@@ -29,7 +29,7 @@ from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 from code_review_bot.tasks.tgdiff import COMMENT_TASKGRAPH_DIFF
 
 VALID_BUILD_TEST_MESSAGE = """
-Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 build error found by [build-linux64/opt](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/build-linux64/opt-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
@@ -39,7 +39,7 @@ IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_BUILD_TEST_WITH_ERRORS_MESSAGE = """
@@ -67,7 +67,7 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 """
 
 VALID_CLANG_TIDY_MESSAGE = """
-Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 defect found by [clang-tidy](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-tidy-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
@@ -80,11 +80,11 @@ You can run this analysis locally with:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_BUILD_ERROR_MESSAGE = """
-Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 build error found by [clang-tidy](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/mock-clang-tidy-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 IMPORTANT: Found 1 defect (error level) that must be fixed before landing.
@@ -97,11 +97,11 @@ You can run this analysis locally with:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_CLANG_FORMAT_MESSAGE = """
-Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 defect found by [clang-format](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-format-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
@@ -116,11 +116,11 @@ For your convenience, [here is a patch]({results}/source-test-clang-format-PHID-
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_FLAKE8_MESSAGE = """
-Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 defect found by [eslint (Mozlint)](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-mozlint-eslint-ID/runs/0/artifacts/public/logs/live_backing.log)
  - 1 defect found by [py-flake8 (Mozlint)](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-mozlint-py-flake8-ID/runs/0/artifacts/public/logs/live_backing.log)
 
@@ -136,11 +136,11 @@ You can run this analysis locally with:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_COVERAGE_MESSAGE = """
-Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 defect found by [code coverage analysis](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/coverage-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
@@ -156,11 +156,11 @@ Should they have tests, or are they dead code?
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_DEFAULT_MESSAGE = """
-Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 defect found by [full-file-analyzer](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/full-file-analyzer-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
@@ -170,7 +170,7 @@ WARNING: Found 1 defect (warning level) that can be dismissed.
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_TASK_FAILURES_MESSAGE = """
@@ -184,7 +184,7 @@ If you see a problem in this automated review, [please report it here](https://b
 """
 
 VALID_MOZLINT_MESSAGE = """
-Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](http://phabricator.test/differential/diff/42/):
  - 2 defects found by [dummy (Mozlint)](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-mozlint-dummy-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
@@ -199,11 +199,11 @@ You can run this analysis locally with:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_CLANG_TIDY_COVERAGE_MESSAGE = """
-Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 defect found by [clang-tidy](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-tidy-ID/runs/0/artifacts/public/logs/live_backing.log)
  - 1 defect found by [code coverage analysis](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/coverage-ID/runs/0/artifacts/public/logs/live_backing.log)
 
@@ -223,7 +223,7 @@ Should they have tests, or are they dead code?
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_NOTICE_MESSAGE = """
@@ -236,7 +236,7 @@ If you see a problem in this automated review, [please report it here](https://b
 """
 
 VALID_EXTERNAL_TIDY_MESSAGE = """
-Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 defect found by [private static analysis](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-external-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
@@ -257,14 +257,14 @@ You can run this analysis locally with:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 FOLLOW_UP_DIFF_MESSAGE = """
-Code analysis found 2 defects in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 2 defects in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 defect found by [clang-format](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-format-ID/runs/0/artifacts/public/logs/live_backing.log)
  - 1 defect found by [code coverage analysis](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/coverage-ID/runs/0/artifacts/public/logs/live_backing.log)
-1 defect unresolved and 1 defect closed compared to the previous diff [41](https://phabricator.services.mozilla.com/differential/diff/41/).
+1 defect unresolved and 1 defect closed compared to the previous diff [41](http://phabricator.test/differential/diff/41/).
 
 WARNING: Found 2 defects (warning level) that can be dismissed.
 
@@ -281,11 +281,11 @@ Should they have tests, or are they dead code?
 ---
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).\n
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 VALID_CLANG_BEFORE_AFTER_MESSAGE = """
-Code analysis found 1 defect in diff [42](https://phabricator.services.mozilla.com/differential/diff/42/):
+Code analysis found 1 defect in diff [42](http://phabricator.test/differential/diff/42/):
  - 1 defect found by [clang-format](https://firefox-ci-tc.services.mozilla.com/api/queue/v1/task/source-test-clang-format-ID/runs/0/artifacts/public/logs/live_backing.log)
 
 WARNING: Found 1 defect (warning level) that can be dismissed.
@@ -298,7 +298,7 @@ You can run this analysis locally with:
 
 If you see a problem in this automated review, [please report it here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer+Infrastructure&component=Source+Code+Analysis&short_desc=[Automated+review]+THIS+IS+A+PLACEHOLDER&comment=**Phabricator+URL:**+https://phabricator.services.mozilla.com/...&format=__default__).
 
-You can view these defects in the Diff Detail section of [Phabricator diff 42](https://phabricator.services.mozilla.com/differential/diff/42/).
+You can view these defects in the Diff Detail section of [Phabricator diff 42](http://phabricator.test/differential/diff/42/).
 """
 
 
