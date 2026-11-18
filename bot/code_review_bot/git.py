@@ -6,7 +6,10 @@ import asyncio
 import base64
 import os
 import re
+import subprocess
 import tempfile
+import threading
+from functools import lru_cache
 from urllib.parse import urlparse
 
 import structlog
@@ -31,8 +34,8 @@ DIFF_HEADER_TIMESTAMP = re.compile(
     r"[ \t]+\w{3}\s+\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4}\s+[+-]\d{4}\s*$"
 )
 
-# Number of paths handed to one git command when checking out issue files
-FILES_CHUNK = 500
+# Number of paths or object ids handed to one git command
+OBJECTS_CHUNK = 500
 
 
 def build_repo_slug(repo_url):
@@ -64,36 +67,168 @@ def ensure_remote(repo, name, url):
     return remote
 
 
-def files_in_revision(repo, revision, paths):
-    """Keep the paths that are files in `revision`: `git checkout` refuses a
-    pathspec matching nothing, and a directory would bring its whole content.
-    Paths are checked in chunks to keep the command lines short."""
+def chunks(items):
+    for start in range(0, len(items), OBJECTS_CHUNK):
+        yield items[start : start + OBJECTS_CHUNK]
+
+
+def tree_blobs(repo, revision, paths):
+    """Object ids of the files among `paths` in `revision`. A directory is
+    left out (listing it would bring its whole content), so are the paths
+    that cannot be part of a tree."""
     candidates = [
         path for path in paths if path and not path.startswith("/") and ".." not in path
     ]
-    found = set()
-    for start in range(0, len(candidates), FILES_CHUNK):
-        chunk = candidates[start : start + FILES_CHUNK]
-        out = repo.git.ls_tree("-r", "--name-only", "-z", revision, "--", *chunk)
-        found.update(name for name in out.split("\0") if name)
-    return [path for path in candidates if path in found]
+    wanted = set(candidates)
+    blobs = []
+    for chunk in chunks(candidates):
+        out = repo.git.ls_tree("-r", "-z", revision, "--", *chunk)
+        for entry in out.split("\0"):
+            if not entry:
+                continue
+            info, _, path = entry.partition("\t")
+            _, type_, oid = info.split()
+            if type_ == "blob" and path in wanted:
+                blobs.append(oid)
+    return blobs
+
+
+def missing_objects(repo, oids):
+    """The object ids among `oids` that a partial clone has not fetched yet,
+    found without fetching them."""
+    missing = []
+    for chunk in chunks(oids):
+        out = repo.git.rev_list("--objects", "--missing=print", "--no-walk", *chunk)
+        missing.extend(line[1:] for line in out.splitlines() if line.startswith("?"))
+    return missing
+
+
+def prefetch_blobs(repo, remote, revision, paths):
+    """Fetch in one round trip the contents of the files `paths` of
+    `revision` that a blob-less clone has not got: Git would fetch them one by
+    one when they are first read, which takes minutes for a few hundred files.
+    Best effort, a failure leaves that lazy fetch in charge."""
+    try:
+        missing = missing_objects(repo, tree_blobs(repo, revision, paths))
+        if not missing:
+            return 0
+        logger.info("Fetch file contents", remote=remote, blobs=len(missing))
+        # The command Git runs itself to fetch promised objects
+        for chunk in chunks(missing):
+            repo.git(c="fetch.negotiationAlgorithm=noop").fetch(
+                "--no-tags",
+                "--no-write-fetch-head",
+                "--recurse-submodules=no",
+                "--filter=blob:none",
+                remote,
+                *chunk,
+            )
+        return len(missing)
+    except GitCommandError as e:
+        logger.warning("Failed to fetch file contents ahead", error=str(e))
+        return 0
+
+
+class GitFiles:
+    """
+    Files of one revision read from a local repository through a single
+    `git cat-file --batch` process, with no working tree: a file is read
+    when an issue needs it and kept for the next one, a path that is not a
+    file of the revision reads as None. The blobs a partial clone lacks are
+    fetched by Git on the way.
+    """
+
+    def __init__(self, repo_dir, revision):
+        self.repo_dir = str(repo_dir)
+        self.revision = revision
+        self._process = None
+        self._lock = threading.Lock()
+        self._contents = {}
+
+    def read(self, path):
+        """Content of the file as bytes, None for a missing path or a directory"""
+        if path not in self._contents:
+            content = None
+            # A path out of the tree ends the git process, a newline would
+            # be read as a second request
+            if (
+                path
+                and not path.startswith("/")
+                and ".." not in path.split("/")
+                and "\n" not in path
+            ):
+                with self._lock:
+                    content = self._request(path)
+            self._contents[path] = content
+        return self._contents[path]
+
+    def _request(self, path):
+        if self._process is None:
+            self._process = subprocess.Popen(
+                ["git", "cat-file", "--batch"],
+                cwd=self.repo_dir,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+            )
+        try:
+            self._process.stdin.write(f"{self.revision}:{path}\n".encode())
+            self._process.stdin.flush()
+            header = self._process.stdout.readline()
+        except (BrokenPipeError, ValueError) as e:
+            logger.warning("Failed to read file from git", path=path, error=str(e))
+            self.close()
+            return None
+        if not header or header.endswith(b" missing\n"):
+            return None
+        # "<oid> <type> <size>", then the object followed by a newline
+        _, type_, size = header.split()
+        content = self._process.stdout.read(int(size) + 1)[:-1]
+        return content if type_ == b"blob" else None
+
+    def read_text(self, path):
+        """Content of the file decoded as UTF-8, with replacement characters
+        where it is not valid UTF-8, so hashes of UTF-8 files are unchanged
+        and no file crashes the hashing"""
+        content = self.read(path)
+        if content is None:
+            return None
+        return content.decode("utf-8", errors="replace")
+
+    def exists(self, path):
+        return self.read(path) is not None
+
+    def close(self):
+        if self._process is not None:
+            try:
+                self._process.stdin.close()
+            except OSError:
+                pass
+            self._process.wait()
+            self._process = None
+
+
+@lru_cache(maxsize=None)
+def git_files(repo_dir, revision):
+    """The reader of the files of `revision` in the repository at `repo_dir`,
+    one per revision for the run so every issue shares its git process"""
+    return GitFiles(repo_dir, revision)
 
 
 def git_clone(base_repository, head_repository, revision, destination, paths=None):
     """
-    Make the files of a pushed commit available under destination/<base slug>,
-    like `cat_files` does for Mercurial: issue hashes and file existence checks
-    read them from there.
+    Make the files of a pushed commit readable under destination/<base slug>
+    through `GitFiles`, like `cat_files` extracts them for Mercurial: issue
+    hashes and file existence checks read them from there, nothing is checked
+    out.
 
     The commit is fetched by SHA from the head repository with depth 1: there
     is no need for the history, and a later force push on the same branch (the
     other analysis mode of the diff, a re-fired build) leaves it unreachable
     from any ref while GitHub still serves it by SHA, as a Mercurial try head
-    stays addressable by hash. When `paths` is given, the fetch leaves the
-    blobs out and only those files are checked out, so a 10 GB repository
-    costs seconds instead of a full clone; with `paths` at None the whole
-    working tree is checked out.
-    An existing repository is reused, its previous files dropped first.
+    stays addressable by hash. The fetch leaves the file contents out: those
+    of `paths` (the files the issues point at) are fetched in one round trip,
+    any other file when it is first read, so a 10 GB repository costs seconds.
+    An existing repository is reused.
     """
     base_slug = build_repo_slug(base_repository)
     head_slug = build_repo_slug(head_repository)
@@ -102,8 +237,8 @@ def git_clone(base_repository, head_repository, revision, destination, paths=Non
     if path.exists() and (path / ".git").is_dir():
         logger.info("Use existing repo", path=path)
         repo = Repo(path)
-        # Drop the files of the previous revision: a stale file would pass the
-        # existence check of an issue on a path the new revision does not have
+        # Drop the working tree a previous run may have left: no file is read
+        # from it
         repo.git.read_tree("--empty")
         repo.git.clean("-fdxq")
     else:
@@ -114,34 +249,15 @@ def git_clone(base_repository, head_repository, revision, destination, paths=Non
     head = ensure_remote(repo, head_slug, head_repository)
 
     logger.info("Fetch remote head", url=head.url, revision=revision)
-    options = ["--depth=1"]
-    if paths is not None:
-        options.append("--filter=blob:none")
-    repo.git.fetch(*options, head_slug, revision)
-
-    if paths is None:
-        logger.info("Checkout to head", revision=revision)
-        repo.git.checkout(revision, force=True, detach=True)
-        return repo
-
-    # The checkout below reads the files from the commit itself and does not
-    # need HEAD; HEAD is still detached on the commit so the cache directory
-    # names the analysed revision (git log, git show) when a worker is
-    # inspected, for the cost of one ref update
+    repo.git.fetch("--depth=1", "--filter=blob:none", head_slug, revision)
+    # Nothing below needs HEAD, the files are read as <revision>:<path>; HEAD
+    # is still detached on the commit so the cache directory names the
+    # analysed revision (git log, git show) when a worker is inspected, for
+    # the cost of one ref update
     repo.git.update_ref("--no-deref", "HEAD", revision)
-    files = files_in_revision(repo, revision, sorted(set(paths)))
-    logger.info(
-        "Checkout files to head",
-        revision=revision,
-        files=len(files),
-        requested=len(paths),
-    )
-    # The paths travel on the command line and a revision can carry thousands
-    # of issue files (a tree-wide reformat), so they go in chunks to stay well
-    # under the kernel's limit on argument size; the missing blobs are fetched
-    # on the way
-    for start in range(0, len(files), FILES_CHUNK):
-        repo.git.checkout(revision, "--", *files[start : start + FILES_CHUNK])
+
+    if paths:
+        prefetch_blobs(repo, head_slug, revision, sorted(set(paths)))
 
     return repo
 
