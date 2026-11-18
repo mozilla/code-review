@@ -78,6 +78,17 @@ def test_get_base_identifier_no_git2hg(mock_mc_git):
     assert mock_mc_git.get_base_identifier([absent]) == "abcdef123456"
 
 
+def missing_blobs(repo):
+    """Object ids of the blobs a partial clone has not fetched"""
+    return {
+        line[1:]
+        for line in repo.git.rev_list(
+            "--objects", "--missing=print", "--all"
+        ).splitlines()
+        if line.startswith("?")
+    }
+
+
 def test_apply_patches(PhabricatorMock, mock_mc_git):
     """Apply a Phabricator stack as Git commits onto the default revision."""
     build = make_build(PhabricatorMock)
@@ -553,10 +564,9 @@ def test_head_branch_template(tmpdir, PhabricatorMock, mock_mc_git):
 
 
 def test_git_clone_fetches_the_pushed_commit_by_sha(tmpdir, monkeypatch):
-    """Publication clones the pushed commit by SHA and checks it out: a later
-    force push moving the branch (the other analysis mode of the same diff, a
-    re-fired build) must not hide it, as a Mercurial try head stays
-    addressable by hash."""
+    """Publication fetches the pushed commit by SHA: a later force push moving
+    the branch (the other analysis mode of the same diff, a re-fired build)
+    must not hide it, as a Mercurial try head stays addressable by hash."""
     from conftest import build_git_repository
     from git import Repo
 
@@ -582,16 +592,15 @@ def test_git_clone_fetches_the_pushed_commit_by_sha(tmpdir, monkeypatch):
     assert repo.working_dir == str(cache.join("origin-repo"))
     assert repo.head.is_detached
     assert repo.head.commit.hexsha == lint
-    # The working tree holds that commit's files, nothing else
-    assert open(os.path.join(repo.working_dir, "lint.txt")).read() == "lint"
-    assert not os.path.exists(os.path.join(repo.working_dir, "build.txt"))
-    assert repo.git.status("--short") == ""
+    # That commit's files are readable, nothing is checked out
+    assert repo.git.show(f"{lint}:lint.txt") == "lint"
+    assert os.listdir(repo.working_dir) == [".git"]
 
     # A reused clone is moved to another pushed commit the same way
     repo = git_clone(origin.working_dir, try_dir, build, Path(str(cache)))
     assert repo.head.commit.hexsha == build
-    assert open(os.path.join(repo.working_dir, "build.txt")).read() == "build"
-    assert not os.path.exists(os.path.join(repo.working_dir, "lint.txt"))
+    assert repo.git.show(f"{build}:build.txt") == "build"
+    assert os.listdir(repo.working_dir) == [".git"]
 
 
 def make_try_repository(tmpdir, origin):
@@ -630,13 +639,14 @@ def make_try_repository(tmpdir, origin):
     return try_dir, push
 
 
-def test_git_clone_checks_out_only_the_issue_files(tmpdir, monkeypatch):
+def test_git_clone_fetches_the_issue_files_ahead(tmpdir, monkeypatch):
     """With the issue paths, publication fetches the pushed commit without its
-    history nor blobs and checks out only those files, as `cat_files` extracts
-    them for Mercurial: the repository is never cloned in full."""
+    history nor blobs, then the contents of those files in one go, as
+    `cat_files` extracts them for Mercurial: the repository is never cloned
+    in full and nothing is checked out, the files are read in place."""
     from conftest import build_git_repository
 
-    from code_review_bot.git import git_clone
+    from code_review_bot.git import GitFiles, git_clone
 
     monkeypatch.setattr(
         "code_review_bot.git.build_repo_slug",
@@ -663,32 +673,33 @@ def test_git_clone_checks_out_only_the_issue_files(tmpdir, monkeypatch):
     assert repo.working_dir == str(cache.join("origin-repo"))
     assert repo.head.is_detached
     assert repo.head.commit.hexsha == first
-    work = Path(repo.working_dir)
-    assert (work / "dom/first.cpp").read_text() == "int first;"
-    # Only the requested files exist locally, not the rest of the tree
-    assert not (work / "js/src/other.cpp").exists()
-    assert not (work / "README.md").exists()
-    assert not (work / "missing.cpp").exists()
-    # No history and no other blobs were fetched
+    assert os.listdir(repo.working_dir) == [".git"]
+
+    def blob(path):
+        return repo.git.rev_parse(f"{repo.head.commit.hexsha}:{path}")
+
+    # The content of the issue file was fetched, the rest of the tree was not
+    assert blob("dom/first.cpp") not in missing_blobs(repo)
+    assert {blob("js/src/other.cpp"), blob("README.md")} <= missing_blobs(repo)
+    # No history was fetched
     assert repo.git.rev_list("--count", first) == "1"
     assert repo.git.config("remote.try.promisor") == "true"
     # Nothing was cloned or fetched from the base repository
     assert repo.git.rev_list("--all", "--count") == "1"
 
-    # A reused repository drops the previous files before the new revision,
-    # so a file removed upstream does not pass the existence checks
+    # A reused repository is moved to the new revision the same way
     repo = git_clone(
         origin.working_dir, try_dir, second, Path(str(cache)), paths=["dom/second.cpp"]
     )
     assert repo.head.commit.hexsha == second
-    assert (work / "dom/second.cpp").read_text() == "int second;"
-    assert not (work / "dom/first.cpp").exists()
+    assert blob("dom/second.cpp") not in missing_blobs(repo)
 
-    # Without paths, the whole tree is checked out as before
-    repo = git_clone(origin.working_dir, try_dir, first, Path(str(cache)))
-    assert (work / "dom/first.cpp").exists()
-    assert (work / "js/src/other.cpp").exists()
-    assert (work / "README.md").exists()
+    # The files are read from the clone: a file of the revision whether its
+    # content was fetched ahead or not, nothing for a path it does not have
+    files = GitFiles(repo.working_dir, second)
+    assert files.read_text("dom/second.cpp") == "int second;"
+    assert files.read("README.md") == b"Hello World"
+    assert files.exists("dom/first.cpp") is False
 
 
 def test_worker_pushes_from_a_partial_clone(tmpdir, PhabricatorMock):
@@ -747,6 +758,46 @@ def test_worker_pushes_from_a_partial_clone(tmpdir, PhabricatorMock):
     )
     # The push went through on the partial clone, which stays one
     assert git_repo.repo.git.config("remote.origin.promisor") == "true"
+
+
+def test_git_files_reads_a_revision_in_place(tmpdir):
+    """GitFiles reads the files of a revision through one git process, as
+    bytes, with None for what is not a file there; the text decoding never
+    fails on a file that is not UTF-8."""
+    from conftest import build_git_repository
+
+    from code_review_bot.git import GitFiles, git_files
+
+    repo = build_git_repository(tmpdir, "files-repo")
+    os.makedirs(os.path.join(repo.working_dir, "dom"))
+    with open(os.path.join(repo.working_dir, "dom/a.cpp"), "wb") as f:
+        f.write(b"int a;\r\nint b;\n")
+    with open(os.path.join(repo.working_dir, "latin.txt"), "wb") as f:
+        f.write(b"\xe9t\xe9\n")
+    repo.index.add(["dom/a.cpp", "latin.txt"])
+    revision = repo.index.commit("files").hexsha
+
+    files = GitFiles(repo.working_dir, revision)
+    assert files.read("dom/a.cpp") == b"int a;\r\nint b;\n"
+    assert files.read_text("dom/a.cpp") == "int a;\r\nint b;\n"
+    assert files.read_text("latin.txt") == "�t�\n"
+    assert files.exists("README.md") is True
+    # A directory, an unknown path, a path outside the tree or one that
+    # would break the request are not files of the revision
+    for path in ("dom", "nope.cpp", "../etc/passwd", "/etc/passwd", "a\nb", ""):
+        assert files.read(path) is None, path
+        assert files.exists(path) is False, path
+    # Nothing from a previous revision either
+    assert GitFiles(repo.working_dir, f"{revision}~1").exists("dom/a.cpp") is False
+    files.close()
+
+    # Readers are shared per revision
+    assert git_files(repo.working_dir, revision) is git_files(
+        repo.working_dir, revision
+    )
+    assert git_files(repo.working_dir, revision) is not git_files(
+        repo.working_dir, f"{revision}~1"
+    )
 
 
 def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):
@@ -816,11 +867,11 @@ def test_git_clone_reuses_a_full_checkout(tmpdir, monkeypatch):
     """A publication cache left by a previous version of the bot (a full
     clone with every file checked out, HEAD on a branch) is reused: its files
     are dropped, the pushed commit is fetched without history nor blobs on
-    top of it, and only the issue files come back."""
+    top of it, and the issue files are fetched ahead, nothing checked out."""
     from conftest import build_git_repository
     from git import Repo
 
-    from code_review_bot.git import git_clone
+    from code_review_bot.git import GitFiles, git_clone
 
     monkeypatch.setattr(
         "code_review_bot.git.build_repo_slug",
@@ -843,11 +894,11 @@ def test_git_clone_reuses_a_full_checkout(tmpdir, monkeypatch):
     assert repo.working_dir == previous.working_dir
     assert repo.head.is_detached
     assert repo.head.commit.hexsha == first
-    work = Path(repo.working_dir)
-    assert (work / "dom/first.cpp").read_text() == "int first;"
-    # The files of the previous checkout are gone
-    assert not (work / "README.md").exists()
-    assert not (work / "test.txt").exists()
+    # The files of the previous checkout are gone, nothing is checked out
+    assert os.listdir(repo.working_dir) == [".git"]
+    # The issue file was fetched ahead and reads in place
+    assert repo.git.rev_parse(f"{first}:dom/first.cpp") not in missing_blobs(repo)
+    assert GitFiles(repo.working_dir, first).read_text("dom/first.cpp") == "int first;"
     # The pushed commit came from the try repository, as a partial fetch
     assert repo.git.config("remote.try.promisor") == "true"
     assert repo.git.rev_list("--count", first) == "1"

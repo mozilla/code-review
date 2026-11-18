@@ -519,8 +519,9 @@ class Workflow:
         """
         Clone the repo locally when configured
         On production this should use a Taskcluster cache
-        For Mercurial, only the files with issues are extracted from the repository,
-        as updating the whole working directory is slow
+        Only the files with issues are extracted from the repository (Mercurial)
+        or fetched then read in place (Git), as updating the whole working
+        directory is slow
         """
         if self.clone_available:
             logger.debug("Local clone already setup")
