@@ -230,15 +230,24 @@ def test_clean_requires_the_branch(tmpdir, mock_mc_git):
         mock_mc_git.clean()
 
 
+def serve_partial_clones(repo):
+    """Let a local repository serve blob-less partial clones over file://, as
+    GitHub does (a plain local path would silently ignore the filter)."""
+    with repo.config_writer() as cw:
+        cw.set_value("uploadpack", "allowFilter", "true")
+        cw.set_value("uploadpack", "allowAnySHA1InWant", "true")
+    return f"file://{repo.working_dir if not repo.bare else repo.git_dir}"
+
+
 def test_clone_starts_on_the_branch(tmpdir):
-    """The clone checks out the configured branch, and the default revision
-    follows that branch on origin across builds."""
+    """The clone checks out the configured branch, and only that one, without
+    the file contents of its history; the default revision follows that
+    branch on origin across builds."""
     from conftest import build_git_repository
 
     # An origin with a second branch, one commit ahead of the default one
     origin = build_git_repository(tmpdir, "origin-repo")
     default_branch = origin.active_branch.name
-    base = origin.head.commit.hexsha
     origin.git.checkout("-b", "beta")
     with open(os.path.join(origin.working_dir, "beta.txt"), "w") as f:
         f.write("beta only")
@@ -248,7 +257,7 @@ def test_clone_starts_on_the_branch(tmpdir):
 
     config = {
         "name": "clone-test",
-        "url": origin.working_dir,
+        "url": serve_partial_clones(origin),
         "try_url": str(tmpdir.mkdir("clone-test-try.git").realpath()),
         "default_revision": "beta",
     }
@@ -258,7 +267,12 @@ def test_clone_starts_on_the_branch(tmpdir):
     assert git_repo.repo.active_branch.name == "beta"
     assert git_repo.repo.head.commit.hexsha == beta_tip
     assert git_repo.default_revision == "origin/beta"
-    assert git_repo.repo.commit(f"origin/{default_branch}").hexsha == base
+    # A single-branch, blob-less partial clone that negotiates its pushes
+    assert [ref.name for ref in git_repo.repo.remotes.origin.refs] == ["origin/beta"]
+    assert git_repo.repo.git.config("remote.origin.promisor") == "true"
+    assert git_repo.repo.git.config("remote.origin.partialclonefilter") == "blob:none"
+    assert git_repo.repo.git.config("push.negotiate") == "true"
+    assert open(os.path.join(git_repo.dir, "beta.txt")).read() == "beta only"
 
     # A later build picks up the branch's new tip, not the default branch
     origin.git.checkout("beta")
@@ -675,6 +689,64 @@ def test_git_clone_checks_out_only_the_issue_files(tmpdir, monkeypatch):
     assert (work / "dom/first.cpp").exists()
     assert (work / "js/src/other.cpp").exists()
     assert (work / "README.md").exists()
+
+
+def test_worker_pushes_from_a_partial_clone(tmpdir, PhabricatorMock):
+    """The whole analysis runs on a blob-less clone: the files of the base
+    revision are fetched when it is checked out, the patches apply on them
+    and the push carries the new commits; what the try repository lacks on
+    top of that is fetched from origin on the way."""
+    from conftest import build_git_repository
+    from git import Actor, Repo
+
+    origin = build_git_repository(tmpdir, "origin-repo")
+    branch = origin.active_branch.name
+    actor = Actor("test", "test")
+    # A second version of the Readme: the clone never fetches the first one
+    with open(os.path.join(origin.working_dir, "README.md"), "w") as f:
+        f.write("Hello World v2")
+    origin.index.add(["README.md"])
+    tip = origin.index.commit("Readme v2", author=actor, committer=actor).hexsha
+
+    try_dir = str(tmpdir.mkdir("partial-try.git").realpath())
+    Repo.init(try_dir, bare=True)
+    config = {
+        "name": "partial",
+        "url": serve_partial_clones(origin),
+        "try_url": try_dir,
+        "try_name": "staging-firefox",
+        "default_revision": branch,
+        "head_branch": "code-review/D{revision_id}-{diff_id}",
+    }
+    git_repo = GitRepository(config, str(tmpdir.realpath()))
+    git_repo.clone()
+    assert git_repo.repo.head.commit.hexsha == tip
+    missing = [
+        line
+        for line in git_repo.repo.git.rev_list(
+            "--objects", "--missing=print", "--all"
+        ).splitlines()
+        if line.startswith("?")
+    ]
+    assert len(missing) == 1, "the first Readme blob should be a promised object"
+
+    build = make_build(PhabricatorMock)
+    mode, out_build, details = GitWorker().run(git_repo, build, LINT_EXTRA_PARAMS)
+    assert mode == "success", details
+    assert out_build is build
+
+    pushed = Repo(try_dir).refs["code-review/D5678-1234"].commit
+    assert pushed.hexsha == details["revision"] == git_repo.repo.head.commit.hexsha
+    assert (pushed.tree / "README.md").data_stream.read() == b"Hello World v2"
+    assert (pushed.tree / "test.txt").data_stream.read() == b"First Line\nSecond Line\n"
+    assert (
+        json.load((pushed.tree / "try_task_config.json").data_stream)["parameters"][
+            "base_rev"
+        ]
+        == tip
+    )
+    # The push went through on the partial clone, which stays one
+    assert git_repo.repo.git.config("remote.origin.promisor") == "true"
 
 
 def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):

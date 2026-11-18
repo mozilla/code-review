@@ -261,9 +261,25 @@ class GitRepository(BaseRepository):
             self.repo.remotes.origin.fetch()
         else:
             # Start on the target branch: beta, release or ESR diverge a lot
-            # from the remote's default branch
-            self._repo = Repo.clone_from(self.url, self.dir, branch=self.branch)
-        logger.info("Full checkout finished")
+            # from the remote's default branch. Only that branch is cloned,
+            # and without the file contents of its history (a blob-less
+            # partial clone): the blobs of one revision are fetched when it
+            # is checked out, so a Firefox clone costs about 1.7 GB instead
+            # of 5 GB while short hashes and ancestry still resolve locally,
+            # which keeps the pushes down to the new commits.
+            self._repo = Repo.clone_from(
+                self.url,
+                self.dir,
+                branch=self.branch,
+                single_branch=True,
+                filter="blob:none",
+            )
+            with self._repo.config_writer() as writer:
+                # Negotiate the commits in common with the try repository
+                # instead of trusting its advertised refs alone, so a push
+                # never carries the base revision's tree
+                writer.set_value("push", "negotiate", "true")
+        logger.info("Checkout finished")
 
     def has_revision(self, revision):
         """Check whether a revision exists in the local Git repository."""
@@ -408,6 +424,10 @@ class GitRepository(BaseRepository):
     def push_to_try(self, revision):
         """Push a commit to the remote try repository."""
         branch = self.push_branch or self.head_branch
+        # Know the current tip of the branch: the try repository shares its
+        # objects with upstream, so the push then only carries the commits
+        # applied on top of the base revision
+        self.repo.remotes.origin.fetch(self.branch)
         logger.info("Pushing patches to try", rev=revision, branch=branch)
         with self.repo.git.custom_environment(**self.push_environment(self.try_url)):
             self.repo.git.push(
