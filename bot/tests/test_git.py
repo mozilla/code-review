@@ -616,6 +616,67 @@ def make_try_repository(tmpdir, origin):
     return try_dir, push
 
 
+def test_git_clone_checks_out_only_the_issue_files(tmpdir, monkeypatch):
+    """With the issue paths, publication fetches the pushed commit without its
+    history nor blobs and checks out only those files, as `cat_files` extracts
+    them for Mercurial: the repository is never cloned in full."""
+    from conftest import build_git_repository
+
+    from code_review_bot.git import git_clone
+
+    monkeypatch.setattr(
+        "code_review_bot.git.build_repo_slug",
+        lambda url: os.path.basename(url.rstrip("/")).removesuffix(".git"),
+    )
+
+    origin = build_git_repository(tmpdir, "origin-repo")
+    try_dir, push = make_try_repository(tmpdir, origin)
+    first = push(
+        "first", {"dom/first.cpp": "int first;", "js/src/other.cpp": "int other;"}
+    )
+    second = push("second", {"dom/second.cpp": "int second;"})
+
+    cache = tmpdir.mkdir("git-cache")
+    repo = git_clone(
+        origin.working_dir,
+        try_dir,
+        first,
+        Path(str(cache)),
+        # Issue paths may be missing from the commit, or not even be files
+        paths=["dom/first.cpp", "missing.cpp", "js/src", "/etc/passwd", "../x"],
+    )
+
+    assert repo.working_dir == str(cache.join("origin-repo"))
+    assert repo.head.is_detached
+    assert repo.head.commit.hexsha == first
+    work = Path(repo.working_dir)
+    assert (work / "dom/first.cpp").read_text() == "int first;"
+    # Only the requested files exist locally, not the rest of the tree
+    assert not (work / "js/src/other.cpp").exists()
+    assert not (work / "README.md").exists()
+    assert not (work / "missing.cpp").exists()
+    # No history and no other blobs were fetched
+    assert repo.git.rev_list("--count", first) == "1"
+    assert repo.git.config("remote.try.promisor") == "true"
+    # Nothing was cloned or fetched from the base repository
+    assert repo.git.rev_list("--all", "--count") == "1"
+
+    # A reused repository drops the previous files before the new revision,
+    # so a file removed upstream does not pass the existence checks
+    repo = git_clone(
+        origin.working_dir, try_dir, second, Path(str(cache)), paths=["dom/second.cpp"]
+    )
+    assert repo.head.commit.hexsha == second
+    assert (work / "dom/second.cpp").read_text() == "int second;"
+    assert not (work / "dom/first.cpp").exists()
+
+    # Without paths, the whole tree is checked out as before
+    repo = git_clone(origin.working_dir, try_dir, first, Path(str(cache)))
+    assert (work / "dom/first.cpp").exists()
+    assert (work / "js/src/other.cpp").exists()
+    assert (work / "README.md").exists()
+
+
 def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):
     """The rendered per-build branch is what lands on the try remote."""
     from git import Repo

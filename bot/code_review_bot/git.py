@@ -31,6 +31,9 @@ DIFF_HEADER_TIMESTAMP = re.compile(
     r"[ \t]+\w{3}\s+\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4}\s+[+-]\d{4}\s*$"
 )
 
+# Number of paths handed to one git command when checking out issue files
+FILES_CHUNK = 500
+
 
 def build_repo_slug(repo_url):
     """
@@ -61,7 +64,22 @@ def ensure_remote(repo, name, url):
     return remote
 
 
-def git_clone(base_repository, head_repository, revision, destination):
+def files_in_revision(repo, revision, paths):
+    """Keep the paths that are files in `revision`: `git checkout` refuses a
+    pathspec matching nothing, and a directory would bring its whole content.
+    Paths are checked in chunks to keep the command lines short."""
+    candidates = [
+        path for path in paths if path and not path.startswith("/") and ".." not in path
+    ]
+    found = set()
+    for start in range(0, len(candidates), FILES_CHUNK):
+        chunk = candidates[start : start + FILES_CHUNK]
+        out = repo.git.ls_tree("-r", "--name-only", "-z", revision, "--", *chunk)
+        found.update(name for name in out.split("\0") if name)
+    return [path for path in candidates if path in found]
+
+
+def git_clone(base_repository, head_repository, revision, destination, paths=None):
     """
     Make the files of a pushed commit available under destination/<base slug>,
     like `cat_files` does for Mercurial: issue hashes and file existence checks
@@ -71,8 +89,11 @@ def git_clone(base_repository, head_repository, revision, destination):
     is no need for the history, and a later force push on the same branch (the
     other analysis mode of the diff, a re-fired build) leaves it unreachable
     from any ref while GitHub still serves it by SHA, as a Mercurial try head
-    stays addressable by hash.
-    An existing repository is reused.
+    stays addressable by hash. When `paths` is given, the fetch leaves the
+    blobs out and only those files are checked out, so a 10 GB repository
+    costs seconds instead of a full clone; with `paths` at None the whole
+    working tree is checked out.
+    An existing repository is reused, its previous files dropped first.
     """
     base_slug = build_repo_slug(base_repository)
     head_slug = build_repo_slug(head_repository)
@@ -81,6 +102,10 @@ def git_clone(base_repository, head_repository, revision, destination):
     if path.exists() and (path / ".git").is_dir():
         logger.info("Use existing repo", path=path)
         repo = Repo(path)
+        # Drop the files of the previous revision: a stale file would pass the
+        # existence check of an issue on a path the new revision does not have
+        repo.git.read_tree("--empty")
+        repo.git.clean("-fdxq")
     else:
         logger.info("Init git repository", path=path)
         repo = Repo.init(path)
@@ -89,10 +114,29 @@ def git_clone(base_repository, head_repository, revision, destination):
     head = ensure_remote(repo, head_slug, head_repository)
 
     logger.info("Fetch remote head", url=head.url, revision=revision)
-    repo.git.fetch("--depth=1", head_slug, revision)
+    options = ["--depth=1"]
+    if paths is not None:
+        options.append("--filter=blob:none")
+    repo.git.fetch(*options, head_slug, revision)
 
-    logger.info("Checkout to head", revision=revision)
-    repo.git.checkout(revision, force=True, detach=True)
+    if paths is None:
+        logger.info("Checkout to head", revision=revision)
+        repo.git.checkout(revision, force=True, detach=True)
+        return repo
+
+    # Detach HEAD at the commit without touching the working tree, then check
+    # out only the files of interest: the blobs are fetched in one batch
+    repo.git.update_ref("--no-deref", "HEAD", revision)
+    files = files_in_revision(repo, revision, sorted(set(paths)))
+    logger.info(
+        "Checkout files to head",
+        revision=revision,
+        files=len(files),
+        requested=len(paths),
+    )
+    for start in range(0, len(files), FILES_CHUNK):
+        repo.git.checkout(revision, "--", *files[start : start + FILES_CHUNK])
+
     return repo
 
 
