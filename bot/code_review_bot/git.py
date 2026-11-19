@@ -124,8 +124,10 @@ def git_clone(base_repository, head_repository, revision, destination, paths=Non
         repo.git.checkout(revision, force=True, detach=True)
         return repo
 
-    # Detach HEAD at the commit without touching the working tree, then check
-    # out only the files of interest: the blobs are fetched in one batch
+    # The checkout below reads the files from the commit itself and does not
+    # need HEAD; HEAD is still detached on the commit so the cache directory
+    # names the analysed revision (git log, git show) when a worker is
+    # inspected, for the cost of one ref update
     repo.git.update_ref("--no-deref", "HEAD", revision)
     files = files_in_revision(repo, revision, sorted(set(paths)))
     logger.info(
@@ -134,6 +136,10 @@ def git_clone(base_repository, head_repository, revision, destination, paths=Non
         files=len(files),
         requested=len(paths),
     )
+    # The paths travel on the command line and a revision can carry thousands
+    # of issue files (a tree-wide reformat), so they go in chunks to stay well
+    # under the kernel's limit on argument size; the missing blobs are fetched
+    # on the way
     for start in range(0, len(files), FILES_CHUNK):
         repo.git.checkout(revision, "--", *files[start : start + FILES_CHUNK])
 
@@ -274,11 +280,13 @@ class GitRepository(BaseRepository):
                 single_branch=True,
                 filter="blob:none",
             )
-            with self._repo.config_writer() as writer:
-                # Negotiate the commits in common with the try repository
-                # instead of trusting its advertised refs alone, so a push
-                # never carries the base revision's tree
-                writer.set_value("push", "negotiate", "true")
+        with self.repo.config_writer() as writer:
+            # Negotiate the commits in common with the try repository instead
+            # of trusting its advertised refs alone: the try repository is a
+            # fork of upstream and holds the base revision, so the push carries
+            # the new commits only, never the base revision's tree. Set on a
+            # reused clone too, which may predate this setting.
+            writer.set_value("push", "negotiate", "true")
         logger.info("Checkout finished")
 
     def has_revision(self, revision):
@@ -424,10 +432,6 @@ class GitRepository(BaseRepository):
     def push_to_try(self, revision):
         """Push a commit to the remote try repository."""
         branch = self.push_branch or self.head_branch
-        # Know the current tip of the branch: the try repository shares its
-        # objects with upstream, so the push then only carries the commits
-        # applied on top of the base revision
-        self.repo.remotes.origin.fetch(self.branch)
         logger.info("Pushing patches to try", rev=revision, branch=branch)
         with self.repo.git.custom_environment(**self.push_environment(self.try_url)):
             self.repo.git.push(

@@ -763,3 +763,91 @@ def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):
     tip = mock_mc_git.repo.head.commit
     remote = Repo(mock_mc_git.try_url)
     assert remote.refs["code-review/D5678"].commit.hexsha == tip.hexsha
+
+
+def test_clone_reuses_a_full_clone(tmpdir, PhabricatorMock):
+    """A clone left by a previous version of the bot (every branch, every
+    blob, no push setting) is reused as it is: refreshed, given the push
+    setting, and a build pushes from it like from a partial clone."""
+    from conftest import build_git_repository
+    from git import Repo
+
+    origin = build_git_repository(tmpdir, "origin-repo")
+    branch = origin.active_branch.name
+    try_dir = str(tmpdir.mkdir("full-try.git").realpath())
+    Repo.init(try_dir, bare=True)
+    config = {
+        "name": "full",
+        "url": origin.working_dir,
+        "try_url": try_dir,
+        "try_name": "staging-firefox",
+        "default_revision": branch,
+        "head_branch": "code-review/D{revision_id}-{diff_id}",
+    }
+    cache_root = str(tmpdir.realpath())
+    previous = Repo.clone_from(origin.working_dir, os.path.join(cache_root, "full"))
+    assert (
+        previous.git.config("--local", "--get", "push.negotiate", with_exceptions=False)
+        == ""
+    )
+
+    git_repo = GitRepository(config, cache_root)
+    git_repo.clone()
+    assert git_repo.repo.working_dir == previous.working_dir
+    # The full clone stays one, with the push setting added
+    assert (
+        git_repo.repo.git.config(
+            "--local", "--get", "remote.origin.promisor", with_exceptions=False
+        )
+        == ""
+    )
+    assert git_repo.repo.git.config("push.negotiate") == "true"
+
+    build = make_build(PhabricatorMock)
+    mode, out_build, details = GitWorker().run(git_repo, build, LINT_EXTRA_PARAMS)
+    assert mode == "success", details
+    assert out_build is build
+    pushed = Repo(try_dir).refs["code-review/D5678-1234"].commit
+    assert pushed.hexsha == details["revision"] == git_repo.repo.head.commit.hexsha
+    assert (pushed.tree / "test.txt").data_stream.read() == b"First Line\nSecond Line\n"
+
+
+def test_git_clone_reuses_a_full_checkout(tmpdir, monkeypatch):
+    """A publication cache left by a previous version of the bot (a full
+    clone with every file checked out, HEAD on a branch) is reused: its files
+    are dropped, the pushed commit is fetched without history nor blobs on
+    top of it, and only the issue files come back."""
+    from conftest import build_git_repository
+    from git import Repo
+
+    from code_review_bot.git import git_clone
+
+    monkeypatch.setattr(
+        "code_review_bot.git.build_repo_slug",
+        lambda url: os.path.basename(url.rstrip("/")).removesuffix(".git"),
+    )
+
+    origin = build_git_repository(tmpdir, "origin-repo")
+    try_dir, push = make_try_repository(tmpdir, origin)
+    first = push("first", {"dom/first.cpp": "int first;"})
+
+    cache = tmpdir.mkdir("git-cache")
+    previous = Repo.clone_from(origin.working_dir, str(cache.join("origin-repo")))
+    assert not previous.head.is_detached
+    assert (Path(previous.working_dir) / "README.md").exists()
+
+    repo = git_clone(
+        origin.working_dir, try_dir, first, Path(str(cache)), paths=["dom/first.cpp"]
+    )
+
+    assert repo.working_dir == previous.working_dir
+    assert repo.head.is_detached
+    assert repo.head.commit.hexsha == first
+    work = Path(repo.working_dir)
+    assert (work / "dom/first.cpp").read_text() == "int first;"
+    # The files of the previous checkout are gone
+    assert not (work / "README.md").exists()
+    assert not (work / "test.txt").exists()
+    # The pushed commit came from the try repository, as a partial fetch
+    assert repo.git.config("remote.try.promisor") == "true"
+    assert repo.git.rev_list("--count", first) == "1"
