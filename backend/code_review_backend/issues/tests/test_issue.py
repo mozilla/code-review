@@ -80,6 +80,65 @@ class IssueTestCase(TestCase):
         self.err_link.in_patch = True
         self.assertTrue(self.err_link.publishable)
 
+    def build_publishable_links(self):
+        """
+        Link issues to a diff with every combination of level and in_patch,
+        returning the expected publishable value for each issue hash
+        """
+        diff = self.revision.diffs.create(
+            provider_id="PHID-DIFF-publishable",
+            review_task_id="task",
+            mercurial_hash="3" * 40,
+            repository=self.repo,
+        )
+        expected = {}
+        for level in (LEVEL_ERROR, LEVEL_WARNING):
+            for in_patch in (True, False, None):
+                issue = Issue.objects.create(
+                    path="publishable/file",
+                    level=level,
+                    hash=f"{level}-{in_patch}",
+                    analyzer="analyzer-X",
+                    analyzer_check="check-1",
+                )
+                self.revision.issue_links.create(
+                    issue=issue, diff=diff, line=1, in_patch=in_patch
+                )
+                expected[issue.hash] = in_patch is True or level == LEVEL_ERROR
+        return diff, expected
+
+    def test_list_diff_issues_publishable(self):
+        """
+        Issues listed on a diff are publishable when in the patch or an error
+        """
+        diff, expected = self.build_publishable_links()
+        response = self.client.get(f"/v1/diff/{diff.provider_id}/issues/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertDictEqual(
+            {
+                issue["hash"]: issue["publishable"]
+                for issue in response.json()["results"]
+            },
+            expected,
+        )
+
+    def test_check_details_publishable(self):
+        """
+        Issues listed for a check are publishable when in the patch or an error
+        """
+        _, expected = self.build_publishable_links()
+        response = self.client.get(
+            "/v1/check/repo_slug/analyzer-X/check-1/?publishable=all"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertDictEqual(
+            {
+                issue["hash"]: issue["publishable"]
+                for issue in response.json()["results"]
+            },
+            expected,
+        )
+
     def test_list_repository_issues_wrong_values(self):
         """
         A HTTP error 400 is raised when fields are set incorrectly
