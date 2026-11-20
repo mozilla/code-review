@@ -74,7 +74,7 @@ def test_as_text(mock_revision, mock_task):
     )
 
 
-def test_as_dict(mock_revision, mock_hgmo, mock_task):
+def test_as_dict(mock_revision, mock_hgmo, mock_task, mock_taskcluster_config):
     """
     Test text export for ClangTidyIssue
     """
@@ -109,7 +109,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task):
     }
 
 
-def test_as_markdown(mock_revision, mock_task):
+def test_as_markdown(mock_revision, mock_task, mock_taskcluster_config):
     """
     Test markdown generation for ClangTidyIssue
     """
@@ -198,7 +198,7 @@ def test_missing_clang_format_diff(mock_task, mock_revision, capsys):
     )
 
 
-def test_real_patch(mock_revision, mock_task):
+def test_real_patch(mock_revision, mock_task, mock_taskcluster_config):
     """
     Test clang format patch parsing with a real patch
     """

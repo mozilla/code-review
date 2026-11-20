@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 from textwrap import dedent
 
+import pytest
 import responses
 from conftest import FIXTURES_DIR
 from responses import matchers
@@ -25,6 +26,20 @@ MAIL_CONTENT_BUILD_ERRORS = """
 **Message**: ```Unidentified symbol```
 **Location**: some/file/path:1
 """
+
+
+@pytest.fixture
+def mock_github_reporter_secrets(mock_taskcluster_config):
+    mock_taskcluster_config.secrets = {
+        "REPORTERS": [
+            {
+                "reporter": "github",
+                "client_id": "client_id",
+                "private_key_pem": (Path(FIXTURES_DIR) / "private_key.pem").read_text(),
+                "installation_id": 123456789,
+            }
+        ]
+    }
 
 
 def test_builderrors_taskcluster(
@@ -65,21 +80,11 @@ def test_builderrors_github(
     mock_clang_tidy_issues,
     mock_github_revision,
     mock_taskcluster_config,
+    mock_github_reporter_secrets,
 ):
     """
     Test builderrors commenting on the github Pull Request to mention build errors
     """
-    mock_taskcluster_config.secrets = {
-        "REPORTERS": [
-            {
-                "reporter": "github",
-                "client_id": "client_id",
-                "private_key_pem": (Path(FIXTURES_DIR) / "private_key.pem").read_text(),
-                "installation_id": 123456789,
-            }
-        ]
-    }
-
     responses.add(
         responses.POST,
         "https://api.github.com:443/repos/owner/repo-name/pulls/1/comments",
@@ -168,6 +173,7 @@ def test_builderrors_github_build_issues(
     mock_config,
     mock_github_revision,
     mock_taskcluster_config,
+    mock_github_reporter_secrets,
     mock_task,
 ):
     responses.add(
@@ -259,6 +265,7 @@ def test_builderrors_github_build_issues_too_large(
     mock_config,
     mock_github_revision,
     mock_taskcluster_config,
+    mock_github_reporter_secrets,
     mock_task,
 ):
     responses.add(

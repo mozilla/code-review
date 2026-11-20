@@ -63,7 +63,9 @@ def test_flake8_checks(mock_config, mock_revision, mock_hgmo, mock_task):
     }
 
 
-def test_as_text(mock_config, mock_revision, mock_hgmo, mock_task):
+def test_as_text(
+    mock_config, mock_revision, mock_hgmo, mock_task, mock_taskcluster_config
+):
     """
     Test text export for ClangTidyIssue
     """

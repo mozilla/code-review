@@ -18,7 +18,7 @@ class MockInflux:
         self.points += points
 
 
-def test_base_stats():
+def test_base_stats(mock_config):
     """
     Test simple stat management
     """

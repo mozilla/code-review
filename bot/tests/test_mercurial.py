@@ -1053,7 +1053,7 @@ def test_get_base_identifier(mock_mc):
     ), "`default` commit should be used when `use_latest_revision` is `True`."
 
 
-def test_get_base_identifier_from_git(mock_mc):
+def test_get_base_identifier_from_git(mock_mc, mock_libmozdata_config):
     stack = [
         PhabricatorPatch(1, "PHID-abc", "", "a" * 12, None, False),
         PhabricatorPatch(2, "PHID-def", "", "def", None, False),

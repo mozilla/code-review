@@ -20,6 +20,7 @@ from unittest.mock import MagicMock
 import hglib
 import pytest
 import responses
+from libmozdata import config as libmozdata_config
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import IssueType, Level, stats
@@ -33,6 +34,7 @@ from code_review_bot.sources.phabricator import (
 )
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from code_review_bot.tasks.default import DefaultTask
+from code_review_bot.tools.libmozdata import LocalConfig
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -159,6 +161,13 @@ def mock_clang_tidy_issues(mock_revision, mock_task):
         )
         for i in range(2)
     ]
+
+
+@pytest.fixture
+def mock_libmozdata_config(monkeypatch):
+    monkeypatch.setattr(
+        libmozdata_config, "__config", LocalConfig("code-review-bot", "1.0")
+    )
 
 
 @pytest.fixture
@@ -768,6 +777,7 @@ def mock_taskcluster_config():
     from code_review_bot import taskcluster
 
     taskcluster.options = {"rootUrl": "http://taskcluster.test"}
+    taskcluster.secrets = {}
 
     # Shared instance by fixture
     queue = MockQueue()
@@ -1328,7 +1338,7 @@ def mock_mc_git(tmpdir):
 
 @pytest.fixture
 @contextmanager
-def PhabricatorMock():
+def PhabricatorMock(mock_libmozdata_config):
     """
     Mock phabricator authentication process
     """
