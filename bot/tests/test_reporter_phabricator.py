@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
 import unittest
 from unittest.mock import MagicMock
 
@@ -1254,7 +1253,7 @@ def test_phabricator_newer_diff(
     assert issue.is_publishable()
 
     with capture_logs() as cap_logs:
-        os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
+        monkeypatch.setenv("SPECIAL_NAME", "PHID-DREV-zzzzz-updated")
 
         issues, patches = reporter.publish(
             [issue], revision, [], [], [], AnalysisMode.Lint
@@ -1298,9 +1297,6 @@ def test_phabricator_newer_diff(
 
     # Check the comment hasn't been posted
     assert phab.comments[51] == []
-
-    # Clear the environment
-    del os.environ["SPECIAL_NAME"]
 
 
 def test_phabricator_former_diff_comparison(
@@ -1394,7 +1390,7 @@ def test_phabricator_former_diff_comparison(
         {"id": 42},
     ]
 
-    os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
+    monkeypatch.setenv("SPECIAL_NAME", "PHID-DREV-zzzzz-updated")
 
     with capture_logs() as cap_logs:
         issues, patches = reporter.publish(
@@ -1448,9 +1444,6 @@ def test_phabricator_former_diff_comparison(
     ]
 
     assert phab.comments[51] == [FOLLOW_UP_DIFF_MESSAGE]
-
-    # Clear the environment
-    del os.environ["SPECIAL_NAME"]
 
 
 def test_phabricator_before_after_comment(

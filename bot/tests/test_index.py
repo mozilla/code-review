@@ -26,13 +26,15 @@ class MockPhabricatorRevision(PhabricatorRevision):
         return self._details
 
 
-def test_taskcluster_index(mock_config, mock_workflow):
+def test_taskcluster_index(mock_config, mock_workflow, monkeypatch):
     """
     Test the Taskcluster indexing API
     by mocking an online taskcluster state
     """
 
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    )
     mock_workflow.index_service = mock.Mock()
     rev = MockPhabricatorRevision(
         namespaces=["mock.1234"],
@@ -69,13 +71,15 @@ def test_taskcluster_index(mock_config, mock_workflow):
     assert "indexed" in args["data"]
 
 
-def test_taskcluster_index_with_suffix(mock_config, mock_workflow):
+def test_taskcluster_index_with_suffix(mock_config, mock_workflow, monkeypatch):
     """
     Test the Taskcluster indexing API
     by mocking an online taskcluster state
     """
 
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    )
     mock_workflow.index_service = mock.Mock()
     rev = MockPhabricatorRevision(
         namespaces=["mock.1234"],
@@ -115,13 +119,17 @@ def test_taskcluster_index_with_suffix(mock_config, mock_workflow):
     assert "indexed" in args["data"]
 
 
-def test_taskcluster_index_with_multiple_suffixes(mock_config, mock_workflow):
+def test_taskcluster_index_with_multiple_suffixes(
+    mock_config, mock_workflow, monkeypatch
+):
     """
     Test the Taskcluster indexing API
     by mocking an online taskcluster state
     """
 
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    )
     mock_workflow.index_service = mock.Mock()
     rev = MockPhabricatorRevision(
         namespaces=["mock.1234"],
@@ -188,6 +196,7 @@ def test_index_autoland(
     mock_config,
     mock_workflow,
     mock_taskcluster_date,
+    monkeypatch,
 ):
     """
     Check the Taskcluster index generated for an autoland task
@@ -197,7 +206,9 @@ def test_index_autoland(
         revision = PhabricatorRevision.from_decision_task(mock_autoland_task, api)
 
     mock_workflow.index_service = mock.Mock()
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    )
 
     mock_workflow.index(revision, state="unit-test")
 
@@ -236,7 +247,7 @@ def test_index_autoland(
 
 
 def test_index_phabricator(
-    mock_phabricator, mock_workflow, mock_config, mock_taskcluster_date
+    mock_phabricator, mock_workflow, mock_config, mock_taskcluster_date, monkeypatch
 ):
     """
     Check the Taskcluster index generated for a task triggered by Phabricator
@@ -249,7 +260,9 @@ def test_index_phabricator(
         )
 
     mock_workflow.index_service = mock.Mock()
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    )
 
     mock_workflow.index(revision, state="unit-test")
 
@@ -300,6 +313,7 @@ def test_index_from_try(
     mock_workflow,
     mock_config,
     mock_taskcluster_date,
+    monkeypatch,
 ):
     """
     Check the Taskcluster index generated for a task triggered by end of try push
@@ -312,7 +326,9 @@ def test_index_from_try(
         assert isinstance(revision, PhabricatorRevision)
 
     mock_workflow.index_service = mock.Mock()
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    )
 
     mock_workflow.index(revision, state="unit-test")
 
@@ -364,9 +380,12 @@ def test_github_index(
     mock_workflow,
     mock_config,
     mock_taskcluster_date,
+    monkeypatch,
 ):
     mock_workflow.index_service = mock.Mock()
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "12345deadbeef", 0, False)
+    )
 
     mock_workflow.index(mock_github_revision, state="unit-test")
 

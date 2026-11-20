@@ -828,7 +828,7 @@ def test_crash_utf8_author(PhabricatorMock, mock_mc):
     assert details["revision"] == mock_mc.repo.tip().node.decode("utf-8")
 
 
-def test_unexpected_push_failure(PhabricatorMock, mock_mc):
+def test_unexpected_push_failure(PhabricatorMock, mock_mc, monkeypatch):
     """
     When a fail occurs while pushing the file configuring try
     A new task for the build is added to the bus
@@ -845,11 +845,11 @@ def test_unexpected_push_failure(PhabricatorMock, mock_mc):
 
     from code_review_bot import mercurial, vcs
 
-    vcs.MAX_PUSH_RETRIES = 1
-    mercurial.TRY_STATUS_URL = "http://test.status/try"
-    vcs.PUSH_RETRY_EXPONENTIAL_DELAY = 0
-    mercurial.TRY_STATUS_DELAY = 0
-    mercurial.TRY_STATUS_MAX_WAIT = 0
+    monkeypatch.setattr(vcs, "MAX_PUSH_RETRIES", 1)
+    monkeypatch.setattr(mercurial, "TRY_STATUS_URL", "http://test.status/try")
+    monkeypatch.setattr(vcs, "PUSH_RETRY_EXPONENTIAL_DELAY", 0)
+    monkeypatch.setattr(mercurial, "TRY_STATUS_DELAY", 0)
+    monkeypatch.setattr(mercurial, "TRY_STATUS_MAX_WAIT", 0)
 
     responses.get(
         "http://test.status/try", status=200, json={"result": {"status": "open"}}
@@ -924,11 +924,11 @@ def test_push_failure_max_retries(PhabricatorMock, mock_mc, monkeypatch):
 
     from code_review_bot import mercurial, vcs
 
-    vcs.MAX_PUSH_RETRIES = 2
-    mercurial.TRY_STATUS_URL = "http://test.status/try"
-    vcs.PUSH_RETRY_EXPONENTIAL_DELAY = 2
-    mercurial.TRY_STATUS_DELAY = 0
-    mercurial.TRY_STATUS_MAX_WAIT = 0
+    monkeypatch.setattr(vcs, "MAX_PUSH_RETRIES", 2)
+    monkeypatch.setattr(mercurial, "TRY_STATUS_URL", "http://test.status/try")
+    monkeypatch.setattr(vcs, "PUSH_RETRY_EXPONENTIAL_DELAY", 2)
+    monkeypatch.setattr(mercurial, "TRY_STATUS_DELAY", 0)
+    monkeypatch.setattr(mercurial, "TRY_STATUS_MAX_WAIT", 0)
 
     responses.get(
         "http://test.status/try", status=200, json={"result": {"status": "open"}}
@@ -980,11 +980,11 @@ def test_push_closed_try(PhabricatorMock, mock_mc, monkeypatch):
 
     from code_review_bot import mercurial, vcs
 
-    vcs.MAX_PUSH_RETRIES = 2
-    mercurial.TRY_STATUS_URL = "http://test.status/try"
-    vcs.PUSH_RETRY_EXPONENTIAL_DELAY = 2
-    mercurial.TRY_STATUS_DELAY = 42
-    mercurial.TRY_STATUS_MAX_WAIT = 1
+    monkeypatch.setattr(vcs, "MAX_PUSH_RETRIES", 2)
+    monkeypatch.setattr(mercurial, "TRY_STATUS_URL", "http://test.status/try")
+    monkeypatch.setattr(vcs, "PUSH_RETRY_EXPONENTIAL_DELAY", 2)
+    monkeypatch.setattr(mercurial, "TRY_STATUS_DELAY", 42)
+    monkeypatch.setattr(mercurial, "TRY_STATUS_MAX_WAIT", 1)
 
     # Do not really sleep between retries
     sleep_history = []
