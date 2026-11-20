@@ -116,7 +116,7 @@ tasks:
                   - "apt-get update -q && apt-get install -q -y --no-install-recommends git &&
                     git clone --quiet ${repository} /src && cd /src && git checkout ${head_rev} -b checks &&
                     /src/tools/docker/bootstrap-mercurial.sh &&
-                    cd /src/bot && uv run --locked pytest -v"
+                    cd /src/bot && uv run --locked pytest -v -n auto"
               metadata:
                 name: "Code Review Bot checks: unit tests"
                 description: Check python code with pytest
