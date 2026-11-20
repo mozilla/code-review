@@ -203,14 +203,6 @@ def main():
             )
             w.ingest_revision(revision, settings.generic_group_id)
         elif settings.phabricator_build_target:
-            # TODO: remove this block once the phabricator build plan
-            # no longer fires the analysis task for build/test
-            if settings.analysis_mode == AnalysisMode.BuildTest:
-                logger.info(
-                    "Build/test analysis is started by the Lint analysis, nothing to do"
-                )
-                return 0
-
             # Only Phabricator revisions is supported from build target
             revision = PhabricatorRevision.from_phabricator_trigger(
                 settings.phabricator_build_target,
