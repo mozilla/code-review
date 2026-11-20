@@ -562,7 +562,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mozphab", specifier = "==2.23.0" },
+    { name = "mozphab", specifier = "==2.25.0" },
     { name = "pyyaml", specifier = "==6.0.3" },
     { name = "structlog", specifier = "==26.1.0" },
     { name = "taskcluster", specifier = "==115.0.1" },
@@ -1161,7 +1161,7 @@ wheels = [
 
 [[package]]
 name = "mozphab"
-version = "2.23.0"
+version = "2.25.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "colorama" },
@@ -1173,9 +1173,9 @@ dependencies = [
     { name = "setuptools" },
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/20/11/ba2eccb55142fcd7dca4d53c8ade03f38c059f965555c5288b63a880e73a/mozphab-2.23.0.tar.gz", hash = "sha256:1877cb763a94b167ae79dca000a30ebcf049881ae9da19112e411e53883b7f20", size = 323434, upload-time = "2026-10-16T16:46:59.36Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1d/29/6a76e7cb43c40be9c5c3b5b0ac9b1a4cadcec2f6cd7bf827cd96ab19e3ae/mozphab-2.25.0.tar.gz", hash = "sha256:a6bf0fa13ccce4fabdc69c85fda4a42f859541546462191249c144d2dd3107f3", size = 346616, upload-time = "2026-11-12T23:49:49.056Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a7/7b/5cb8e28d7d1f2aced5daa4d4f03951bd7d117f79a47b0c50c82db75158ec/mozphab-2.23.0-py3-none-any.whl", hash = "sha256:0a3c13569fa488cdd8b5f44d492f47f071d2ab0922515086960afc89684fb78d", size = 157080, upload-time = "2026-10-16T16:46:57.693Z" },
+    { url = "https://files.pythonhosted.org/packages/04/44/cdf4db53df2ce0792c91df9f3cbe722414a36e2d93792d5e0fae17a60f33/mozphab-2.25.0-py3-none-any.whl", hash = "sha256:c1451926a2f47bd71e5975b86355b54d40231cce84d50ea6228dbf11c9413e4e", size = 170070, upload-time = "2026-11-12T23:49:47.64Z" },
 ]
 
 [[package]]
