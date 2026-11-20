@@ -2,7 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-import os
 import unittest
 from unittest.mock import MagicMock
 
@@ -302,7 +301,9 @@ You can view these defects in the Diff Detail section of [Phabricator diff 42](h
 """
 
 
-def test_phabricator_clang_tidy(mock_phabricator, phab, mock_decision_task, mock_task):
+def test_phabricator_clang_tidy(
+    mock_phabricator, phab, mock_decision_task, mock_task, mock_taskcluster_config
+):
     """
     Test Phabricator reporter publication on a mock clang-tidy issue
     """
@@ -340,7 +341,12 @@ def test_phabricator_clang_tidy(mock_phabricator, phab, mock_decision_task, mock
 
 
 def test_phabricator_clang_format(
-    mock_config, mock_phabricator, phab, mock_decision_task, mock_task
+    mock_config,
+    mock_phabricator,
+    phab,
+    mock_decision_task,
+    mock_task,
+    mock_taskcluster_config,
 ):
     """
     Test Phabricator reporter publication on a mock clang-format issue
@@ -384,7 +390,12 @@ def test_phabricator_clang_format(
 
 
 def test_phabricator_mozlint(
-    mock_config, mock_phabricator, phab, mock_decision_task, mock_task
+    mock_config,
+    mock_phabricator,
+    phab,
+    mock_decision_task,
+    mock_task,
+    mock_taskcluster_config,
 ):
     """
     Test Phabricator reporter publication on two mock mozlint issues
@@ -478,6 +489,7 @@ def test_phabricator_coverage(
     phab,
     mock_decision_task,
     mock_task,
+    mock_taskcluster_config,
 ):
     """
     Test Phabricator reporter publication on a mock coverage issue
@@ -581,6 +593,7 @@ def test_phabricator_clang_tidy_and_coverage(
     phab,
     mock_decision_task,
     mock_task,
+    mock_taskcluster_config,
 ):
     """
     Test Phabricator reporter publication on a mock coverage issue
@@ -703,6 +716,8 @@ def test_phabricator_analyzers(
     mock_phabricator,
     mock_decision_task,
     mock_task,
+    mock_hgmo,
+    mock_taskcluster_config,
 ):
     """
     Test analyzers filtering on phabricator reporter
@@ -791,7 +806,7 @@ def test_phabricator_analyzers(
 
 
 def test_phabricator_clang_tidy_build_error(
-    mock_phabricator, phab, mock_decision_task, mock_task
+    mock_phabricator, phab, mock_decision_task, mock_task, mock_taskcluster_config
 ):
     """
     Test Phabricator Lint for a ClangTidyIssue with build error
@@ -855,7 +870,14 @@ def test_phabricator_clang_tidy_build_error(
         assert phab.comments[51] == [VALID_BUILD_ERROR_MESSAGE]
 
 
-def test_full_file(mock_config, mock_phabricator, phab, mock_decision_task, mock_task):
+def test_full_file(
+    mock_config,
+    mock_phabricator,
+    phab,
+    mock_decision_task,
+    mock_task,
+    mock_taskcluster_config,
+):
     """
     Test Phabricator reporter supports an issue on a full file
     """
@@ -920,7 +942,9 @@ def test_full_file(mock_config, mock_phabricator, phab, mock_decision_task, mock
     ]
 
 
-def test_task_failures(mock_phabricator, phab, mock_decision_task):
+def test_task_failures(
+    mock_phabricator, phab, mock_decision_task, mock_taskcluster_config
+):
     """
     Test Phabricator reporter publication with some task failures
     """
@@ -946,7 +970,9 @@ def test_task_failures(mock_phabricator, phab, mock_decision_task):
     assert phab.comments[51] == [VALID_TASK_FAILURES_MESSAGE]
 
 
-def test_extra_errors(mock_phabricator, mock_decision_task, phab, mock_task):
+def test_extra_errors(
+    mock_phabricator, mock_decision_task, phab, mock_task, mock_taskcluster_config
+):
     """
     Test Phabricator reporter publication with some errors outside of patch
     """
@@ -1042,7 +1068,9 @@ def test_extra_errors(mock_phabricator, mock_decision_task, phab, mock_task):
     assert phab.comments[51] == [VALID_MOZLINT_MESSAGE]
 
 
-def test_phabricator_notices(mock_phabricator, phab, mock_decision_task):
+def test_phabricator_notices(
+    mock_phabricator, phab, mock_decision_task, mock_taskcluster_config
+):
     """
     Test Phabricator reporter publication on a mock clang-format issue
     """
@@ -1095,7 +1123,9 @@ def test_phabricator_notices(mock_phabricator, phab, mock_decision_task):
     ]
 
 
-def test_phabricator_tgdiff(mock_phabricator, phab, mock_decision_task):
+def test_phabricator_tgdiff(
+    mock_phabricator, phab, mock_decision_task, mock_taskcluster_config
+):
     """
     Test Phabricator reporter publication on a mock clang-format issue
     """
@@ -1129,7 +1159,7 @@ def test_phabricator_tgdiff(mock_phabricator, phab, mock_decision_task):
 
 
 def test_phabricator_external_tidy(
-    mock_phabricator, phab, mock_decision_task, mock_task
+    mock_phabricator, phab, mock_decision_task, mock_task, mock_taskcluster_config
 ):
     """
     Test Phabricator reporter publication on a mock external-tidy issue
@@ -1188,7 +1218,12 @@ def test_phabricator_external_tidy(
 
 
 def test_phabricator_newer_diff(
-    monkeypatch, mock_phabricator, phab, mock_decision_task, mock_task
+    monkeypatch,
+    mock_phabricator,
+    phab,
+    mock_decision_task,
+    mock_task,
+    mock_taskcluster_config,
 ):
     """
     Test Phabricator reporter publication won't be called when a newer diff exists for the patch
@@ -1218,7 +1253,7 @@ def test_phabricator_newer_diff(
     assert issue.is_publishable()
 
     with capture_logs() as cap_logs:
-        os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
+        monkeypatch.setenv("SPECIAL_NAME", "PHID-DREV-zzzzz-updated")
 
         issues, patches = reporter.publish(
             [issue], revision, [], [], [], AnalysisMode.Lint
@@ -1263,12 +1298,14 @@ def test_phabricator_newer_diff(
     # Check the comment hasn't been posted
     assert phab.comments[51] == []
 
-    # Clear the environment
-    del os.environ["SPECIAL_NAME"]
-
 
 def test_phabricator_former_diff_comparison(
-    monkeypatch, mock_phabricator, phab, mock_decision_task, mock_task
+    monkeypatch,
+    mock_phabricator,
+    phab,
+    mock_decision_task,
+    mock_task,
+    mock_backend_secret,
 ):
     """
     Test Phabricator reporter publication shows the number of unresolved
@@ -1353,7 +1390,7 @@ def test_phabricator_former_diff_comparison(
         {"id": 42},
     ]
 
-    os.environ["SPECIAL_NAME"] = "PHID-DREV-zzzzz-updated"
+    monkeypatch.setenv("SPECIAL_NAME", "PHID-DREV-zzzzz-updated")
 
     with capture_logs() as cap_logs:
         issues, patches = reporter.publish(
@@ -1407,9 +1444,6 @@ def test_phabricator_former_diff_comparison(
     ]
 
     assert phab.comments[51] == [FOLLOW_UP_DIFF_MESSAGE]
-
-    # Clear the environment
-    del os.environ["SPECIAL_NAME"]
 
 
 def test_phabricator_before_after_comment(

@@ -126,8 +126,8 @@ def test_workflow_private_build(
     A build that never becomes public must stop the analysis
     without raising nor touching the mercurial repository
     """
-    mock_config.mercurial_cache = tmpdir
-    mock_config.ssh_key = "Dummy Private SSH Key"
+    monkeypatch.setattr(mock_config, "mercurial_cache", tmpdir)
+    monkeypatch.setattr(mock_config, "ssh_key", "Dummy Private SSH Key")
 
     # Capture hg calls
     hgrun_calls = []
@@ -158,10 +158,6 @@ def test_workflow_private_build(
     # No clone nor push happened
     assert hgrun_calls == []
     assert mock_mercurial_repo._calls == []
-
-    # Reset settings for following tests
-    mock_config.mercurial_cache = None
-    mock_config.ssh_key = None
 
 
 @pytest.mark.parametrize(
@@ -194,8 +190,8 @@ def test_workflow(
     """
 
     # Enable clone & push in settings
-    mock_config.mercurial_cache = tmpdir
-    mock_config.ssh_key = "Dummy Private SSH Key"
+    monkeypatch.setattr(mock_config, "mercurial_cache", tmpdir)
+    monkeypatch.setattr(mock_config, "ssh_key", "Dummy Private SSH Key")
 
     # Capture hg calls
     hgrun_calls = []
@@ -355,10 +351,6 @@ def test_workflow(
         ),
     ]
 
-    # Reset settings for following tests
-    mock_config.mercurial_cache = None
-    mock_config.ssh_key = None
-
 
 @pytest.mark.parametrize(
     "build_test_target, expected_targets, expected_lando_modes",
@@ -387,8 +379,8 @@ def test_start_analysis_publication(
 ):
     from code_review_bot import workflow
 
-    mock_config.mercurial_cache = tmpdir
-    mock_config.ssh_key = "Dummy Private SSH Key"
+    monkeypatch.setattr(mock_config, "mercurial_cache", tmpdir)
+    monkeypatch.setattr(mock_config, "ssh_key", "Dummy Private SSH Key")
 
     monkeypatch.setattr(workflow, "MercurialRepository", mock.Mock())
 
@@ -446,9 +438,6 @@ def test_start_analysis_publication(
         ("fail:mercurial", mode) for mode in expected_lando_modes
     ]
     assert revision.build_target_phid == "PHID-HMBT-test"
-
-    mock_config.mercurial_cache = None
-    mock_config.ssh_key = None
 
 
 def test_publish_analysis_phabricator_duplicate_harbormaster_uri():
@@ -532,15 +521,19 @@ def test_start_analysis_selects_backend(
     # of unrelated tests (e.g. test_index.py)
     from code_review_bot import workflow as workflow_module
 
-    mock_config.mercurial_cache = tmpdir
-    mock_config.git_cache = tmpdir
-    mock_config.ssh_key = "Dummy Private SSH Key"
-    mock_config.github = {"app_id": 12345, "app_privkey": "AppPrivateKey"}
+    monkeypatch.setattr(mock_config, "mercurial_cache", tmpdir)
+    monkeypatch.setattr(mock_config, "git_cache", tmpdir)
+    monkeypatch.setattr(mock_config, "ssh_key", "Dummy Private SSH Key")
+    monkeypatch.setattr(
+        mock_config, "github", {"app_id": 12345, "app_privkey": "AppPrivateKey"}
+    )
 
     # Force the configured repository's backend type
-    mock_config.repositories = [
-        conf._replace(repo_type=repo_type) for conf in mock_config.repositories
-    ]
+    monkeypatch.setattr(
+        mock_config,
+        "repositories",
+        [conf._replace(repo_type=repo_type) for conf in mock_config.repositories],
+    )
 
     # Build never expires so the analysis proceeds
     monkeypatch.setattr(PhabricatorActions, "is_expired_build", lambda _, build: False)
@@ -582,23 +575,21 @@ def test_start_analysis_selects_backend(
         assert not git_repo.called and not git_worker.called
         assert hg_repo.call_args.kwargs["config"]["ssh_key"] == "Dummy Private SSH Key"
 
-    # Reset settings for following tests
-    mock_config.mercurial_cache = None
-    mock_config.git_cache = None
-    mock_config.ssh_key = None
-    mock_config.github = {}
-
 
 def test_start_analysis_requires_the_phabricator_branch(
     mock_phabricator, mock_workflow, mock_config, tmpdir, monkeypatch
 ):
     """The Git backend applies the patches on the default branch of the
     Phabricator repository: without one the analysis stops before cloning."""
-    mock_config.git_cache = tmpdir
-    mock_config.github = {"app_id": 12345, "app_privkey": "AppPrivateKey"}
-    mock_config.repositories = [
-        conf._replace(repo_type="git") for conf in mock_config.repositories
-    ]
+    monkeypatch.setattr(mock_config, "git_cache", tmpdir)
+    monkeypatch.setattr(
+        mock_config, "github", {"app_id": 12345, "app_privkey": "AppPrivateKey"}
+    )
+    monkeypatch.setattr(
+        mock_config,
+        "repositories",
+        [conf._replace(repo_type="git") for conf in mock_config.repositories],
+    )
     monkeypatch.setattr(PhabricatorActions, "is_expired_build", lambda _, build: False)
     mock_workflow.update_build = False
 
@@ -611,9 +602,6 @@ def test_start_analysis_requires_the_phabricator_branch(
         del revision.phabricator_repository["fields"]["defaultBranch"]
         with pytest.raises(ValueError, match="needs the branch the patches apply on"):
             mock_workflow.start_analysis(revision)
-
-    mock_config.git_cache = None
-    mock_config.github = {}
 
 
 GIT_ROLLOUT_REPOSITORIES = [
@@ -720,7 +708,9 @@ def test_git_rollout_users(mock_config):
         ({}, 1, 100, True),
     ],
 )
-def test_git_rollout_repository(mock_config, users, percentage, revision_id, routed):
+def test_git_rollout_repository(
+    mock_config, users, percentage, revision_id, routed, monkeypatch
+):
     """A revision is routed to Git by its author or by the percentage."""
     mock_config.setup(
         "test",
@@ -733,7 +723,7 @@ def test_git_rollout_repository(mock_config, users, percentage, revision_id, rou
             GIT_ROLLOUT_REPOSITORIES[1],
         ],
     )
-    mock_config.git_rollout_users = {"mozilla-central": users}
+    monkeypatch.setattr(mock_config, "git_rollout_users", {"mozilla-central": users})
     hg, git = mock_config.repositories
 
     target = mock_config.git_rollout_repository(hg, "PHID-USER-someone", revision_id)
@@ -744,15 +734,17 @@ def test_git_rollout_repository(mock_config, users, percentage, revision_id, rou
 
 
 @pytest.mark.parametrize("routed", [True, False])
-def test_revision_git_rollout(mock_phabricator, mock_config, routed):
+def test_revision_git_rollout(mock_phabricator, mock_config, routed, monkeypatch):
     """The revision carries the Git repository configuration when routed."""
     mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES)
 
     with mock_phabricator as api:
         author = mock_author_phid(api)
-        mock_config.git_rollout_users = {
-            "mozilla-central": {author: "someone"} if routed else {}
-        }
+        monkeypatch.setattr(
+            mock_config,
+            "git_rollout_users",
+            {"mozilla-central": {author: "someone"} if routed else {}},
+        )
         revision = PhabricatorRevision.from_phabricator_trigger(
             build_target_phid="PHID-HMBT-test",
             phabricator=api,
@@ -777,9 +769,11 @@ def test_start_analysis_git_rollout(
     from code_review_bot import workflow as workflow_module
 
     mock_config.setup("test", [], GIT_ROLLOUT_REPOSITORIES)
-    mock_config.mercurial_cache = tmpdir
-    mock_config.git_cache = tmpdir
-    mock_config.github = {"app_id": 12345, "app_privkey": "AppPrivateKey"}
+    monkeypatch.setattr(mock_config, "mercurial_cache", tmpdir)
+    monkeypatch.setattr(mock_config, "git_cache", tmpdir)
+    monkeypatch.setattr(
+        mock_config, "github", {"app_id": 12345, "app_privkey": "AppPrivateKey"}
+    )
     monkeypatch.setattr(PhabricatorActions, "is_expired_build", lambda _, build: False)
 
     git_repo, git_worker = mock.MagicMock(), mock.MagicMock()
@@ -793,9 +787,11 @@ def test_start_analysis_git_rollout(
 
     with mock_phabricator as api:
         mock_workflow.phabricator = api
-        mock_config.git_rollout_users = {
-            "mozilla-central": {mock_author_phid(api): "someone"}
-        }
+        monkeypatch.setattr(
+            mock_config,
+            "git_rollout_users",
+            {"mozilla-central": {mock_author_phid(api): "someone"}},
+        )
         revision = PhabricatorRevision.from_phabricator_trigger(
             build_target_phid="PHID-HMBT-test",
             phabricator=api,
@@ -810,10 +806,6 @@ def test_start_analysis_git_rollout(
     assert conf["head_branch"] == "code-review/D{revision_id}"
     # The branch still comes from the Phabricator repository of the revision
     assert conf["default_revision"] == "default"
-
-    mock_config.mercurial_cache = None
-    mock_config.git_cache = None
-    mock_config.github = {}
 
 
 @pytest.mark.parametrize("missing_base", [False, True])

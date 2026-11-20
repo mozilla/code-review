@@ -12,13 +12,14 @@ class MockInflux:
     Mock the InfluxDb python client to retrieve data sent
     """
 
-    points = []
+    def __init__(self):
+        self.points = []
 
     def write_points(self, points):
         self.points += points
 
 
-def test_base_stats():
+def test_base_stats(mock_config):
     """
     Test simple stat management
     """

@@ -612,7 +612,12 @@ def test_no_tasks(
 
 
 def test_zero_coverage_option(
-    mock_config, mock_revision, mock_workflow, mock_backend, bypass_publication_check
+    mock_config,
+    mock_revision,
+    mock_workflow,
+    mock_backend,
+    mock_hgmo,
+    bypass_publication_check,
 ):
     """
     Test the zero coverage trigger on the workflow

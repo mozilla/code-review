@@ -98,7 +98,7 @@ def test_indentation_effect(mock_revision, mock_hgmo, mock_task):
     )
 
 
-def test_full_file(mock_revision, mock_hgmo, mock_task):
+def test_full_file(mock_revision, mock_hgmo, mock_task, mock_taskcluster_config):
     """
     Test build hash algorithm when using a full file (line is -1)
     """

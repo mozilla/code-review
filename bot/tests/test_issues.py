@@ -36,7 +36,7 @@ def test_allowed_paths(mock_config, mock_revision, mock_task):
         assert _allowed(path) is result
 
 
-def test_backend_publication(mock_revision, mock_task):
+def test_backend_publication(mock_revision, mock_task, mock_taskcluster_config):
     """
     Test the backend publication status modifies an issue publication
     """

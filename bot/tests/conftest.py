@@ -6,12 +6,10 @@ import collections
 import json
 import os.path
 import re
-import tempfile
 import urllib
 import urllib.parse
 import uuid
 from collections import defaultdict, namedtuple
-from configparser import ConfigParser
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from textwrap import dedent
@@ -20,6 +18,7 @@ from unittest.mock import MagicMock
 import hglib
 import pytest
 import responses
+from libmozdata import config as libmozdata_config
 from libmozdata.phabricator import PhabricatorAPI
 
 from code_review_bot import IssueType, Level, stats
@@ -33,6 +32,7 @@ from code_review_bot.sources.phabricator import (
 )
 from code_review_bot.tasks.clang_tidy import ClangTidyIssue, ClangTidyTask
 from code_review_bot.tasks.default import DefaultTask
+from code_review_bot.tools.libmozdata import LocalConfig
 
 MOCK_DIR = os.path.join(os.path.dirname(__file__), "mocks")
 FIXTURES_DIR = os.path.join(os.path.dirname(__file__), "fixtures")
@@ -66,18 +66,17 @@ def mock_repositories():
 
 
 @pytest.fixture(scope="function")
-def mock_config(mock_repositories):
+def mock_config(mock_repositories, monkeypatch):
     """
     Mock configuration for bot
     Using try source
     """
     # Make sure we are running in local mode
-    if "TASK_ID" in os.environ:
-        del os.environ["TASK_ID"]
-    os.environ["TRY_TASK_ID"] = "remoteTryTask"
-    os.environ["TRY_TASK_GROUP_ID"] = "remoteTryGroup"
-    os.environ["BULK_ISSUE_CHUNKS"] = "10"
-    os.environ["ANALYSIS_MODE"] = "Lint"
+    monkeypatch.delenv("TASK_ID", raising=False)
+    monkeypatch.setenv("TRY_TASK_ID", "remoteTryTask")
+    monkeypatch.setenv("TRY_TASK_GROUP_ID", "remoteTryGroup")
+    monkeypatch.setenv("BULK_ISSUE_CHUNKS", "10")
+    monkeypatch.setenv("ANALYSIS_MODE", "Lint")
     settings.setup(
         "test",
         ["dom/*", "tests/*.py", "test/*.c"],
@@ -162,8 +161,15 @@ def mock_clang_tidy_issues(mock_revision, mock_task):
 
 
 @pytest.fixture
+def mock_libmozdata_config(monkeypatch):
+    monkeypatch.setattr(
+        libmozdata_config, "__config", LocalConfig("code-review-bot", "1.0")
+    )
+
+
+@pytest.fixture
 @contextmanager
-def mock_phabricator(mock_config):
+def mock_phabricator(mock_config, mock_libmozdata_config):
     """
     Mock phabricator authentication process
     """
@@ -312,18 +318,6 @@ def mock_phabricator(mock_config):
         body=_response("harbormaster_createartifact"),
         content_type="application/json",
     )
-
-    config_file = tempfile.NamedTemporaryFile()
-    with open(config_file.name, "w") as f:
-        custom_conf = ConfigParser()
-        custom_conf.add_section("User-Agent")
-        custom_conf.set("User-Agent", "name", "code-review-bot/1.0")
-        custom_conf.write(f)
-        f.seek(0)
-
-    from libmozdata import config
-
-    config.set_config(config.ConfigIni(config_file.name))
 
     yield PhabricatorAPI(url="http://phabricator.test/api/", api_key="deadbeef")
 
@@ -693,7 +687,8 @@ class MockIndex:
 
 
 class MockNotify:
-    emails = []
+    def __init__(self):
+        self.emails = []
 
     def email(self, payload):
         self.emails.append(payload)
@@ -761,13 +756,14 @@ def mock_coverage_artifact():
 
 
 @pytest.fixture
-def mock_taskcluster_config():
+def mock_taskcluster_config(monkeypatch):
     """
     Mock a taskcluster proxy usage
     """
     from code_review_bot import taskcluster
 
-    taskcluster.options = {"rootUrl": "http://taskcluster.test"}
+    monkeypatch.setattr(taskcluster, "options", {"rootUrl": "http://taskcluster.test"})
+    monkeypatch.setattr(taskcluster, "secrets", {})
 
     # Shared instance by fixture
     queue = MockQueue()
@@ -784,7 +780,7 @@ def mock_taskcluster_config():
         else:
             raise NotImplementedError
 
-    taskcluster.get_service = _get_service
+    monkeypatch.setattr(taskcluster, "get_service", _get_service)
 
     return taskcluster
 
@@ -1170,17 +1166,6 @@ def mock_mercurial_repo(monkeypatch):
 
 class MockBuild(PhabricatorBuild):
     def __init__(self, diff_id, repo_phid, revision_id, target_phid, diff):
-        config_file = tempfile.NamedTemporaryFile()
-        with open(config_file.name, "w") as f:
-            custom_conf = ConfigParser()
-            custom_conf.add_section("User-Agent")
-            custom_conf.set("User-Agent", "name", "code-review-bot/1.0")
-            custom_conf.write(f)
-            f.seek(0)
-        from libmozdata import config
-
-        config.set_config(config.ConfigIni(config_file.name))
-
         self.diff_id = diff_id
         self.repo_phid = repo_phid
         self.revision_id = revision_id
@@ -1328,7 +1313,7 @@ def mock_mc_git(tmpdir):
 
 @pytest.fixture
 @contextmanager
-def PhabricatorMock():
+def PhabricatorMock(mock_libmozdata_config):
     """
     Mock phabricator authentication process
     """

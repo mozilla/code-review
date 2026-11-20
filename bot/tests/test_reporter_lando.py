@@ -33,7 +33,7 @@ class MockLandoWarnings:
         self.warning = warning
 
 
-def test_lando(log, mock_clang_tidy_issues, mock_revision):
+def test_lando(log, mock_clang_tidy_issues, mock_revision, mock_taskcluster_config):
     """
     Test lando reporter
     """

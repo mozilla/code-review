@@ -3,7 +3,6 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 import base64
-import os
 from datetime import datetime
 from unittest import mock
 from urllib.parse import unquote_plus
@@ -51,13 +50,25 @@ from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
         ("build-docker-image-debian12-base", None, True),
     ],
 )
-def test_build_task(task_name, result, on_autoland, mock_config, mock_workflow):
+def test_build_task(
+    task_name, result, on_autoland, mock_config, mock_workflow, monkeypatch
+):
     """
     Test the build_task method with different task payloads
     """
     # Setup autoland id
-    mock_config.autoland_task_id = "someTaskId" if on_autoland else None
-    mock_config.autoland_group_id = "someGroupId" if on_autoland else None
+    monkeypatch.setattr(
+        mock_config,
+        "autoland_task_id",
+        "someTaskId" if on_autoland else None,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        mock_config,
+        "autoland_group_id",
+        "someGroupId" if on_autoland else None,
+        raising=False,
+    )
 
     task_status = {
         "task": {"metadata": {"name": task_name}},
@@ -624,7 +635,7 @@ def test_publish_to_backend(
     assert mock_revision._state == BuildState.Fail
 
 
-def test_on_production(mock_config, mock_repositories):
+def test_on_production(mock_config, mock_repositories, monkeypatch):
     """
     Test the production environment detection
     """
@@ -635,8 +646,8 @@ def test_on_production(mock_config, mock_repositories):
     assert mock_config.taskcluster_url is None
 
     # Taskcluster env + testing is not production
-    os.environ["TASK_ID"] = "testingTask"
-    os.environ["RUN_ID"] = "0"
+    monkeypatch.setenv("TASK_ID", "testingTask")
+    monkeypatch.setenv("RUN_ID", "0")
     testing = Settings()
     testing.setup("testing", [], mock_repositories)
     assert testing.app_channel == "testing"
@@ -648,8 +659,8 @@ def test_on_production(mock_config, mock_repositories):
     )
 
     # Taskcluster env + production is production
-    os.environ["TASK_ID"] = "prodTask"
-    os.environ["RUN_ID"] = "0"
+    monkeypatch.setenv("TASK_ID", "prodTask")
+    monkeypatch.setenv("RUN_ID", "0")
     testing = Settings()
     testing.setup("production", [], mock_repositories)
     assert testing.app_channel == "production"
@@ -661,18 +672,18 @@ def test_on_production(mock_config, mock_repositories):
     )
 
 
-def test_mercurial_cache_checkout(mock_config, tmpdir):
+def test_mercurial_cache_checkout(mock_config, tmpdir, monkeypatch):
     """
     Test the checkout used to build issues is shared with the analysis task
     for configured repositories
     """
-    mock_config.mercurial_cache = None
+    monkeypatch.setattr(mock_config, "mercurial_cache", None)
     assert (
         mock_config.mercurial_cache_checkout("https://hg.mozilla.org/mozilla-central")
         is None
     )
 
-    mock_config.mercurial_cache = tmpdir
+    monkeypatch.setattr(mock_config, "mercurial_cache", tmpdir)
     # Same directory as the one used by the analysis task (named after the repository)
     assert (
         mock_config.mercurial_cache_checkout("https://hg.mozilla.org/mozilla-central")
@@ -985,12 +996,14 @@ def abort_calls(phabricator):
     ]
 
 
-def test_cancel_previous(mock_config, mock_workflow):
+def test_cancel_previous(mock_config, mock_workflow, monkeypatch):
     """
     Task groups of previous try pushes are cancelled, and the buildables of the
     previous updates are aborted
     """
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    )
     mock_workflow.phabricator = mock_harbormaster(
         {
             "PHID-FILE-old-headers": ("PHID-HMBT-old", "HTTP 200\n"),
@@ -1023,12 +1036,16 @@ def test_cancel_previous(mock_config, mock_workflow):
     ]
 
 
-def test_cancel_previous_without_previous_build(mock_config, mock_workflow):
+def test_cancel_previous_without_previous_build(
+    mock_config, mock_workflow, monkeypatch
+):
     """
     A revision whose only buildable is the current one has nothing to cancel
     nor to abort, and no Conduit call is made past the buildable lookup
     """
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    )
     mock_workflow.phabricator = mock_harbormaster(
         {
             "PHID-FILE-current-body": (
@@ -1053,11 +1070,15 @@ def test_cancel_previous_without_previous_build(mock_config, mock_workflow):
     mock_workflow.phabricator.request.assert_called_once()
 
 
-def test_cancel_previous_without_publication_task(mock_config, mock_workflow):
+def test_cancel_previous_without_publication_task(
+    mock_config, mock_workflow, monkeypatch
+):
     """
     A previous buildable whose logs hold no publication task is still aborted
     """
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    )
     mock_workflow.phabricator = mock_harbormaster(
         {"PHID-FILE-old-headers": ("PHID-HMBT-old", "HTTP 200\n")}
     )
@@ -1077,11 +1098,13 @@ def test_cancel_previous_without_publication_task(mock_config, mock_workflow):
     ]
 
 
-def test_cancel_previous_abort_failure(mock_config, mock_workflow):
+def test_cancel_previous_abort_failure(mock_config, mock_workflow, monkeypatch):
     """
     A Conduit failure while aborting a buildable does not break the workflow
     """
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    )
     mock_workflow.phabricator = mock_harbormaster(
         {
             "PHID-FILE-old-body": ("PHID-HMBT-old", '{"taskId": "oldPublicationTask"}'),
@@ -1109,12 +1132,16 @@ def test_cancel_previous_abort_failure(mock_config, mock_workflow):
     ]
 
 
-def test_cancel_previous_publication_tasks_failure(mock_config, mock_workflow):
+def test_cancel_previous_publication_tasks_failure(
+    mock_config, mock_workflow, monkeypatch
+):
     """
     A Conduit failure while looking for publication tasks does not prevent the
     previous buildables from being aborted
     """
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    )
     mock_workflow.phabricator = mock_harbormaster({})
     harbormaster = mock_workflow.phabricator.request.side_effect
 
@@ -1139,11 +1166,13 @@ def test_cancel_previous_publication_tasks_failure(mock_config, mock_workflow):
     ]
 
 
-def test_cancel_previous_conduit_failure(mock_config, mock_workflow):
+def test_cancel_previous_conduit_failure(mock_config, mock_workflow, monkeypatch):
     """
     A Conduit failure while listing previous buildables is swallowed
     """
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    )
     mock_workflow.phabricator = mock.MagicMock()
     mock_workflow.phabricator.request.side_effect = ConduitError("Boom")
 
@@ -1159,12 +1188,16 @@ def test_cancel_previous_conduit_failure(mock_config, mock_workflow):
     mock_workflow.phabricator.request.assert_called_once()
 
 
-def test_cancel_previous_ignores_later_buildables(mock_config, mock_workflow):
+def test_cancel_previous_ignores_later_buildables(
+    mock_config, mock_workflow, monkeypatch
+):
     """
     The buildable of a later diff is left alone: it belongs to an update that is
     itself superseding the one being processed
     """
-    mock_config.taskcluster = TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    monkeypatch.setattr(
+        mock_config, "taskcluster", TaskCluster("/tmp/dummy", "currentTask", 0, False)
+    )
     mock_workflow.phabricator = mock_harbormaster(
         {
             "PHID-FILE-old-body": ("PHID-HMBT-old", '{"taskId": "oldPublicationTask"}'),
@@ -1252,7 +1285,7 @@ def test_clone_repository_extracts_issues_files(
     Only the files with issues are extracted from the local repository,
     outside of the persisted cache
     """
-    mock_config.mercurial_cache = tmp_path
+    monkeypatch.setattr(mock_config, "mercurial_cache", tmp_path)
     files_dir = mock_config.mercurial_cache_files
     assert tmp_path not in files_dir.parents
 
@@ -1282,29 +1315,26 @@ def test_clone_repository_extracts_issues_files(
         revision=mock_revision,
     )
 
-    try:
-        mock_workflow.clone_available = False
-        mock_workflow.clone_repository(mock_revision, [issue, issue])
+    mock_workflow.clone_available = False
+    mock_workflow.clone_repository(mock_revision, [issue, issue])
 
-        assert checkouts == [
-            {
-                "repo_upstream_url": mock_revision.base_repository,
-                "repo_url": mock_revision.head_repository,
-                "revision": mock_revision.head_changeset,
-                "checkout_dir": tmp_path / "mozilla-central",
-                "sharebase_dir": tmp_path / "shared",
-                "noupdate": True,
-            }
-        ]
-        cat_files.assert_called_once_with(
-            repo_dir=tmp_path / "mozilla-central",
-            revision=mock_revision.head_changeset,
-            paths=["dom/file.js"],
-            output_dir=files_dir,
-        )
+    assert checkouts == [
+        {
+            "repo_upstream_url": mock_revision.base_repository,
+            "repo_url": mock_revision.head_repository,
+            "revision": mock_revision.head_changeset,
+            "checkout_dir": tmp_path / "mozilla-central",
+            "sharebase_dir": tmp_path / "shared",
+            "noupdate": True,
+        }
+    ]
+    cat_files.assert_called_once_with(
+        repo_dir=tmp_path / "mozilla-central",
+        revision=mock_revision.head_changeset,
+        paths=["dom/file.js"],
+        output_dir=files_dir,
+    )
 
-        # The hash is built from the extracted file
-        assert issue.hash is not None
-        assert issue.file_exists is True
-    finally:
-        mock_config.mercurial_cache = None
+    # The hash is built from the extracted file
+    assert issue.hash is not None
+    assert issue.file_exists is True
