@@ -18,6 +18,7 @@ from libmozdata.phabricator import LintResult
 from taskcluster.helper import TaskclusterConfig
 
 from code_review_bot.config import settings
+from code_review_bot.git import git_files
 from code_review_bot.stats import InfluxDb
 from code_review_bot.tasks.base import AnalysisTask
 
@@ -289,10 +290,7 @@ class Issue(BaseIssue):
         # content, not on the revision provider
         local_repository = None
         if self.revision.repository_type == "git":
-            assert (
-                settings.git_cache
-            ), "Git cache repository is mandatory to analyse a git revision"
-            local_repository = settings.git_cache / self.revision.repository_slug
+            local_repository = self.local_git_files
         else:
             local_repository = settings.mercurial_cache_files
 
@@ -340,6 +338,18 @@ class Issue(BaseIssue):
         # Finally build the MD5 hash
         return hashlib.md5(payload).hexdigest()
 
+    @property
+    def local_git_files(self):
+        """Reader of the files of the revision's pushed commit in the local
+        git clone, nothing being checked out"""
+        assert (
+            settings.git_cache
+        ), "Git cache repository is mandatory to analyse a git revision"
+        return git_files(
+            str(settings.git_cache / self.revision.repository_slug),
+            self.revision.head_changeset,
+        )
+
     @cached_property
     def file_exists(self):
         """
@@ -349,9 +359,7 @@ class Issue(BaseIssue):
             logger.debug(
                 "Using the local git repository to check if the file that caused the issue still exists."
             )
-            return (
-                settings.git_cache / self.revision.repository_slug / self.path
-            ).exists()
+            return self.local_git_files.exists(self.path)
         elif settings.mercurial_cache_files:
             logger.debug(
                 "Using the files extracted from the local repository to check if the file that caused the issue still exists."

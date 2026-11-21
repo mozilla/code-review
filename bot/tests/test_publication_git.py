@@ -103,8 +103,10 @@ def test_clone_repository_follows_repository_type(mock_workflow, monkeypatch, tm
         head_repository="https://github.com/mozilla-releng/staging-firefox",
         head_changeset="b" * 40,
     )
+    # Only the files of the issues are needed, each path once
+    issues = [MagicMock(path=path) for path in ("dom/b.cpp", "dom/a.cpp", "dom/b.cpp")]
     mock_workflow.clone_available = False
-    mock_workflow.clone_repository(revision, [])
+    mock_workflow.clone_repository(revision, issues)
     assert git_clone.call_count == 1
     assert robust_checkout.call_count == 0
     assert git_clone.call_args.kwargs == {
@@ -112,6 +114,7 @@ def test_clone_repository_follows_repository_type(mock_workflow, monkeypatch, tm
         "head_repository": "https://github.com/mozilla-releng/staging-firefox",
         "revision": "b" * 40,
         "destination": tmp_path,
+        "paths": ["dom/a.cpp", "dom/b.cpp"],
     }
 
     revision.repository_type = "hg"
@@ -119,3 +122,44 @@ def test_clone_repository_follows_repository_type(mock_workflow, monkeypatch, tm
     mock_workflow.clone_repository(revision, [])
     assert git_clone.call_count == 1
     assert robust_checkout.call_count == 1
+
+
+def test_git_issue_reads_the_local_clone(mock_config, mock_task, monkeypatch, tmpdir):
+    """The hash and the existence check of an issue on a git revision read the
+    file from the local clone of the pushed commit, nothing being checked out,
+    and come out empty for a path the revision does not have."""
+    from pathlib import Path
+
+    from conftest import build_git_repository
+
+    from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
+
+    repo = build_git_repository(tmpdir, "mozilla-releng_staging-firefox")
+    monkeypatch.setattr(settings, "git_cache", Path(str(tmpdir)))
+    revision = PhabricatorRevision(
+        base_repository="https://github.com/mozilla-releng/staging-firefox",
+        head_changeset=repo.head.commit.hexsha,
+        repository_type="git",
+    )
+
+    def issue(path):
+        return MozLintIssue(
+            mock_task(MozLintTask, "source-test-mozlint-eslint"),
+            path,
+            column=1,
+            level="warning",
+            lineno=1,
+            linter="eslint",
+            message="Some issue",
+            check="no-shadow",
+            revision=revision,
+        )
+
+    readme = issue("README.md")
+    assert readme.file_exists is True
+    assert readme.hash == issue("README.md").hash
+    assert readme.hash is not None
+
+    missing = issue("dom/missing.cpp")
+    assert missing.file_exists is False
+    assert missing.hash is None
