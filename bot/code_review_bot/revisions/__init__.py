@@ -6,4 +6,4 @@ from code_review_bot.revisions.base import ImprovementPatch, Revision
 from code_review_bot.revisions.github import GithubRevision
 from code_review_bot.revisions.phabricator import PhabricatorRevision
 
-__all__ = [ImprovementPatch, Revision, PhabricatorRevision, GithubRevision]
+__all__ = ["ImprovementPatch", "Revision", "PhabricatorRevision", "GithubRevision"]

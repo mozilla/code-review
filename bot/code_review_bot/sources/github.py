@@ -59,7 +59,7 @@ class GithubClient:
         # setup API
         self.api = self.installation.get_github_for_installation()
 
-        self.review_comments = []
+        self.review_comments: list[ReviewComment] = []
 
     @classmethod
     def from_configuration(cls, configuration: dict):
@@ -93,7 +93,7 @@ class GithubClient:
     def publish_comment(
         self,
         revision: GithubRevision,
-        message: str | None = None,
+        message: str,
     ):
         """
         Publish a comment on a pull request

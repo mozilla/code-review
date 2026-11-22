@@ -39,6 +39,8 @@ dev = [
     "pytest-structlog==1.2",
     "pytest-xdist==3.8.0",
     "responses==0.26.3",
+    "types-pyyaml==6.0.12.20261111",
+    "types-requests==2.33.0.20261030",
 ]
 
 [tool.hatch.version]
@@ -53,3 +55,17 @@ packages = ["code_review_bot"]
 
 [tool.uv]
 cache-keys = [{ file = "pyproject.toml" }, { file = "VERSION" }]
+
+[tool.mypy]
+
+[[tool.mypy.overrides]]
+# These dependencies ship neither type hints nor stubs
+module = [
+    "hglib.*",
+    "influxdb.*",
+    "libmozdata.*",
+    "rs_parsepatch.*",
+    "simple_github.*",
+    "taskcluster.*",
+]
+ignore_missing_imports = true

@@ -5,6 +5,7 @@
 from datetime import datetime
 
 from code_review_bot import stats
+from code_review_bot.stats import Metric
 
 
 class MockInflux:
@@ -13,10 +14,10 @@ class MockInflux:
     """
 
     def __init__(self):
-        self.points = []
+        self.points: list[Metric] = []
 
-    def write_points(self, points):
-        self.points += points
+    def write_points(self, points: list[Metric]) -> None:
+        self.points.extend(points)
 
 
 def test_base_stats(mock_config):
@@ -45,3 +46,19 @@ def test_base_stats(mock_config):
     stats.flush()
     assert len(stats.metrics) == 0
     assert len(stats.client.points) == 1
+
+
+def test_add_metric_copies_tags(mock_config):
+    stats.metrics = []
+    tags = {"task": "analysis"}
+
+    stats.add_metric("first", tags=tags)
+    stats.add_metric("second", tags=tags)
+
+    assert tags == {"task": "analysis"}
+    assert stats.metrics[0]["tags"] == {
+        "task": "analysis",
+        "app": "code-review-bot",
+        "channel": "test",
+    }
+    assert stats.metrics[0]["tags"] is not stats.metrics[1]["tags"]

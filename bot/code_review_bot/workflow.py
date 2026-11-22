@@ -54,6 +54,7 @@ from code_review_bot.tasks.default import DefaultTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
+from code_review_bot.vcs import BaseRepository, BaseWorker
 
 logger = structlog.get_logger(__name__)
 
@@ -406,6 +407,8 @@ class Workflow:
         # Initialize the repository and worker for the configured backend.
         # Git is selected per-repository via repo_type; Mercurial is the default.
         base_conf = revision.base_repository_conf
+        repository: BaseRepository
+        worker: BaseWorker
         if base_conf.repo_type == "git":
             # Patches apply on the branch the revision was submitted to:
             # Phabricator has one repository per branch. The Git backend

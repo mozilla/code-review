@@ -28,7 +28,7 @@ class TaskGraphDiffTask(NoticeTask):
     Notify when CI task configuration has changed.
     """
 
-    artifact_urls = {}  # map of artifact name to url
+    artifact_urls: dict[str, str] = {}  # map of artifact name to url
 
     @property
     def display_name(self):
