@@ -57,6 +57,7 @@ packages = ["code_review_bot"]
 cache-keys = [{ file = "pyproject.toml" }, { file = "VERSION" }]
 
 [tool.mypy]
+cache_dir = ".mypy_cache/bot"
 
 [[tool.mypy.overrides]]
 # These dependencies ship neither type hints nor stubs

@@ -25,6 +25,7 @@ dev = [
 package = false
 
 [tool.mypy]
+cache_dir = ".mypy_cache/integration"
 
 [[tool.mypy.overrides]]
 # These dependencies ship neither type hints nor stubs

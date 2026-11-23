@@ -52,6 +52,7 @@ packages = ["code_review_backend"]
 cache-keys = [{ file = "pyproject.toml" }, { file = "VERSION" }]
 
 [tool.mypy]
+cache_dir = ".mypy_cache/backend"
 plugins = [
     "mypy_django_plugin.main",
     "mypy_drf_plugin.main",
