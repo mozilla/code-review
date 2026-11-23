@@ -17,7 +17,19 @@ dev = [
     "json-e==4.8.4",
     "jsonschema==4.26.0",
     "pytest==9.2.0",
+    "types-jsonschema==4.26.0.20261006",
+    "types-pyyaml==6.0.12.20261111",
 ]
 
 [tool.uv]
 package = false
+
+[tool.mypy]
+
+[[tool.mypy.overrides]]
+# These dependencies ship neither type hints nor stubs
+module = [
+    "jsone.*",
+    "taskcluster.*",
+]
+ignore_missing_imports = true

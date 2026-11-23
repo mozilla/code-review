@@ -41,6 +41,33 @@ repos:
     rev: v1.5.0
     hooks:
       - id: yesqa
+  # mypy runs from the locked uv workspace env, so it type-checks against the
+  # dependency versions we deploy. One hook per project keeps each project's
+  # config (e.g. the Django plugin) scoped to its own files.
+  - repo: local
+    hooks:
+      - id: mypy-backend
+        name: mypy (backend)
+        entry: uv run --locked mypy --config-file=backend/pyproject.toml
+        language: system
+        types: [python]
+        files: ^backend/
+        exclude: ^backend/code_review_backend/issues/migrations/
+        require_serial: true
+      - id: mypy-bot
+        name: mypy (bot)
+        entry: uv run --locked mypy --config-file=bot/pyproject.toml
+        language: system
+        types: [python]
+        files: ^bot/
+        require_serial: true
+      - id: mypy-integration
+        name: mypy (integration)
+        entry: uv run --locked mypy --config-file=integration/pyproject.toml
+        language: system
+        types: [python]
+        files: ^integration/
+        require_serial: true
   - repo: meta
     hooks:
       - id: check-useless-excludes

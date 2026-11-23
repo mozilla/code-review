@@ -34,6 +34,8 @@ Homepage = "https://github.com/mozilla/code-review"
 dev = [
     "django-debug-toolbar==8.0.0",
     "django-extensions==4.1",
+    "django-stubs==6.1.2",
+    "djangorestframework-stubs==3.18.2",
 ]
 
 [tool.hatch.version]
@@ -48,3 +50,22 @@ packages = ["code_review_backend"]
 
 [tool.uv]
 cache-keys = [{ file = "pyproject.toml" }, { file = "VERSION" }]
+
+[tool.mypy]
+plugins = [
+    "mypy_django_plugin.main",
+    "mypy_drf_plugin.main",
+]
+
+[[tool.mypy.overrides]]
+# These dependencies ship neither type hints nor stubs
+module = [
+    "drf_yasg.*",
+    "environ.*",
+    "parsepatch.*",
+    "taskcluster.*",
+]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "code_review_backend.app.settings"

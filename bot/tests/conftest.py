@@ -519,7 +519,7 @@ class SessionMock:
     """
 
     # A dict mapping a method and an url to the associated response
-    _callable = {}
+    _callable: dict[tuple[str, str], object] = {}
 
     def reset(self):
         self._callable = {}
@@ -688,9 +688,9 @@ class MockIndex:
 
 class MockNotify:
     def __init__(self):
-        self.emails = []
+        self.emails: list[dict[str, str]] = []
 
-    def email(self, payload):
+    def email(self, payload: dict[str, str]) -> None:
         self.emails.append(payload)
 
 
