@@ -230,15 +230,24 @@ def test_clean_requires_the_branch(tmpdir, mock_mc_git):
         mock_mc_git.clean()
 
 
+def serve_partial_clones(repo):
+    """Let a local repository serve blob-less partial clones over file://, as
+    GitHub does (a plain local path would silently ignore the filter)."""
+    with repo.config_writer() as cw:
+        cw.set_value("uploadpack", "allowFilter", "true")
+        cw.set_value("uploadpack", "allowAnySHA1InWant", "true")
+    return f"file://{repo.working_dir if not repo.bare else repo.git_dir}"
+
+
 def test_clone_starts_on_the_branch(tmpdir):
-    """The clone checks out the configured branch, and the default revision
-    follows that branch on origin across builds."""
+    """The clone checks out the configured branch, and only that one, without
+    the file contents of its history; the default revision follows that
+    branch on origin across builds."""
     from conftest import build_git_repository
 
     # An origin with a second branch, one commit ahead of the default one
     origin = build_git_repository(tmpdir, "origin-repo")
     default_branch = origin.active_branch.name
-    base = origin.head.commit.hexsha
     origin.git.checkout("-b", "beta")
     with open(os.path.join(origin.working_dir, "beta.txt"), "w") as f:
         f.write("beta only")
@@ -248,7 +257,7 @@ def test_clone_starts_on_the_branch(tmpdir):
 
     config = {
         "name": "clone-test",
-        "url": origin.working_dir,
+        "url": serve_partial_clones(origin),
         "try_url": str(tmpdir.mkdir("clone-test-try.git").realpath()),
         "default_revision": "beta",
     }
@@ -258,7 +267,12 @@ def test_clone_starts_on_the_branch(tmpdir):
     assert git_repo.repo.active_branch.name == "beta"
     assert git_repo.repo.head.commit.hexsha == beta_tip
     assert git_repo.default_revision == "origin/beta"
-    assert git_repo.repo.commit(f"origin/{default_branch}").hexsha == base
+    # A single-branch, blob-less partial clone that negotiates its pushes
+    assert [ref.name for ref in git_repo.repo.remotes.origin.refs] == ["origin/beta"]
+    assert git_repo.repo.git.config("remote.origin.promisor") == "true"
+    assert git_repo.repo.git.config("remote.origin.partialclonefilter") == "blob:none"
+    assert git_repo.repo.git.config("push.negotiate") == "true"
+    assert open(os.path.join(git_repo.dir, "beta.txt")).read() == "beta only"
 
     # A later build picks up the branch's new tip, not the default branch
     origin.git.checkout("beta")
@@ -544,7 +558,7 @@ def test_git_clone_fetches_the_pushed_commit_by_sha(tmpdir, monkeypatch):
     re-fired build) must not hide it, as a Mercurial try head stays
     addressable by hash."""
     from conftest import build_git_repository
-    from git import Actor, Repo
+    from git import Repo
 
     from code_review_bot.git import git_clone
 
@@ -555,33 +569,7 @@ def test_git_clone_fetches_the_pushed_commit_by_sha(tmpdir, monkeypatch):
     )
 
     origin = build_git_repository(tmpdir, "origin-repo")
-    base = origin.head.commit.hexsha
-    actor = Actor("test", "test")
-
-    # The try repository serves any commit by SHA, as GitHub does
-    try_dir = str(tmpdir.mkdir("try.git").realpath())
-    try_repo = Repo.init(try_dir, bare=True)
-    with try_repo.config_writer() as cw:
-        cw.set_value("uploadpack", "allowAnySHA1InWant", "true")
-
-    # The pushes come from another clone, so that the commits only exist on
-    # the try repository (origin's objects are shared with the local clone)
-    pusher = Repo.clone_from(origin.working_dir, str(tmpdir.mkdir("pusher")))
-    with pusher.config_writer() as cw:
-        cw.set_value("user", "name", "test")
-        cw.set_value("user", "email", "test")
-        cw.set_value("commit", "gpgsign", "false")
-
-    def push(name):
-        """Commit a file on top of the base and force push it to the branch"""
-        with open(os.path.join(pusher.working_dir, f"{name}.txt"), "w") as f:
-            f.write(name)
-        pusher.index.add([f"{name}.txt"])
-        commit = pusher.index.commit(name, author=actor, committer=actor).hexsha
-        pusher.git.push(try_dir, f"{commit}:refs/heads/code-review/D1-2", force=True)
-        pusher.git.reset("--hard", base)
-        return commit
-
+    try_dir, push = make_try_repository(tmpdir, origin)
     lint = push("lint")
     build = push("build")
     # The second push moved the branch: the first commit is unreachable
@@ -606,6 +594,161 @@ def test_git_clone_fetches_the_pushed_commit_by_sha(tmpdir, monkeypatch):
     assert not os.path.exists(os.path.join(repo.working_dir, "lint.txt"))
 
 
+def make_try_repository(tmpdir, origin):
+    """A bare "try" repository serving any commit by SHA and partial fetches,
+    as GitHub does, and a push() helper committing a file on top of origin's
+    tip in another clone and force pushing it to the branch code-review/D1-2,
+    so the commit only exists on the try repository."""
+    from git import Actor, Repo
+
+    base = origin.head.commit.hexsha
+    actor = Actor("test", "test")
+    try_dir = str(tmpdir.mkdir("try.git").realpath())
+    try_repo = Repo.init(try_dir, bare=True)
+    with try_repo.config_writer() as cw:
+        cw.set_value("uploadpack", "allowAnySHA1InWant", "true")
+        cw.set_value("uploadpack", "allowFilter", "true")
+
+    pusher = Repo.clone_from(origin.working_dir, str(tmpdir.mkdir("pusher")))
+    with pusher.config_writer() as cw:
+        cw.set_value("user", "name", "test")
+        cw.set_value("user", "email", "test")
+        cw.set_value("commit", "gpgsign", "false")
+
+    def push(name, files=None):
+        for path, content in (files or {f"{name}.txt": name}).items():
+            full = os.path.join(pusher.working_dir, path)
+            os.makedirs(os.path.dirname(full), exist_ok=True)
+            with open(full, "w") as f:
+                f.write(content)
+            pusher.index.add([path])
+        commit = pusher.index.commit(name, author=actor, committer=actor).hexsha
+        pusher.git.push(try_dir, f"{commit}:refs/heads/code-review/D1-2", force=True)
+        pusher.git.reset("--hard", base)
+        return commit
+
+    return try_dir, push
+
+
+def test_git_clone_checks_out_only_the_issue_files(tmpdir, monkeypatch):
+    """With the issue paths, publication fetches the pushed commit without its
+    history nor blobs and checks out only those files, as `cat_files` extracts
+    them for Mercurial: the repository is never cloned in full."""
+    from conftest import build_git_repository
+
+    from code_review_bot.git import git_clone
+
+    monkeypatch.setattr(
+        "code_review_bot.git.build_repo_slug",
+        lambda url: os.path.basename(url.rstrip("/")).removesuffix(".git"),
+    )
+
+    origin = build_git_repository(tmpdir, "origin-repo")
+    try_dir, push = make_try_repository(tmpdir, origin)
+    first = push(
+        "first", {"dom/first.cpp": "int first;", "js/src/other.cpp": "int other;"}
+    )
+    second = push("second", {"dom/second.cpp": "int second;"})
+
+    cache = tmpdir.mkdir("git-cache")
+    repo = git_clone(
+        origin.working_dir,
+        try_dir,
+        first,
+        Path(str(cache)),
+        # Issue paths may be missing from the commit, or not even be files
+        paths=["dom/first.cpp", "missing.cpp", "js/src", "/etc/passwd", "../x"],
+    )
+
+    assert repo.working_dir == str(cache.join("origin-repo"))
+    assert repo.head.is_detached
+    assert repo.head.commit.hexsha == first
+    work = Path(repo.working_dir)
+    assert (work / "dom/first.cpp").read_text() == "int first;"
+    # Only the requested files exist locally, not the rest of the tree
+    assert not (work / "js/src/other.cpp").exists()
+    assert not (work / "README.md").exists()
+    assert not (work / "missing.cpp").exists()
+    # No history and no other blobs were fetched
+    assert repo.git.rev_list("--count", first) == "1"
+    assert repo.git.config("remote.try.promisor") == "true"
+    # Nothing was cloned or fetched from the base repository
+    assert repo.git.rev_list("--all", "--count") == "1"
+
+    # A reused repository drops the previous files before the new revision,
+    # so a file removed upstream does not pass the existence checks
+    repo = git_clone(
+        origin.working_dir, try_dir, second, Path(str(cache)), paths=["dom/second.cpp"]
+    )
+    assert repo.head.commit.hexsha == second
+    assert (work / "dom/second.cpp").read_text() == "int second;"
+    assert not (work / "dom/first.cpp").exists()
+
+    # Without paths, the whole tree is checked out as before
+    repo = git_clone(origin.working_dir, try_dir, first, Path(str(cache)))
+    assert (work / "dom/first.cpp").exists()
+    assert (work / "js/src/other.cpp").exists()
+    assert (work / "README.md").exists()
+
+
+def test_worker_pushes_from_a_partial_clone(tmpdir, PhabricatorMock):
+    """The whole analysis runs on a blob-less clone: the files of the base
+    revision are fetched when it is checked out, the patches apply on them
+    and the push carries the new commits; what the try repository lacks on
+    top of that is fetched from origin on the way."""
+    from conftest import build_git_repository
+    from git import Actor, Repo
+
+    origin = build_git_repository(tmpdir, "origin-repo")
+    branch = origin.active_branch.name
+    actor = Actor("test", "test")
+    # A second version of the Readme: the clone never fetches the first one
+    with open(os.path.join(origin.working_dir, "README.md"), "w") as f:
+        f.write("Hello World v2")
+    origin.index.add(["README.md"])
+    tip = origin.index.commit("Readme v2", author=actor, committer=actor).hexsha
+
+    try_dir = str(tmpdir.mkdir("partial-try.git").realpath())
+    Repo.init(try_dir, bare=True)
+    config = {
+        "name": "partial",
+        "url": serve_partial_clones(origin),
+        "try_url": try_dir,
+        "try_name": "staging-firefox",
+        "default_revision": branch,
+        "head_branch": "code-review/D{revision_id}-{diff_id}",
+    }
+    git_repo = GitRepository(config, str(tmpdir.realpath()))
+    git_repo.clone()
+    assert git_repo.repo.head.commit.hexsha == tip
+    missing = [
+        line
+        for line in git_repo.repo.git.rev_list(
+            "--objects", "--missing=print", "--all"
+        ).splitlines()
+        if line.startswith("?")
+    ]
+    assert len(missing) == 1, "the first Readme blob should be a promised object"
+
+    build = make_build(PhabricatorMock)
+    mode, out_build, details = GitWorker().run(git_repo, build, LINT_EXTRA_PARAMS)
+    assert mode == "success", details
+    assert out_build is build
+
+    pushed = Repo(try_dir).refs["code-review/D5678-1234"].commit
+    assert pushed.hexsha == details["revision"] == git_repo.repo.head.commit.hexsha
+    assert (pushed.tree / "README.md").data_stream.read() == b"Hello World v2"
+    assert (pushed.tree / "test.txt").data_stream.read() == b"First Line\nSecond Line\n"
+    assert (
+        json.load((pushed.tree / "try_task_config.json").data_stream)["parameters"][
+            "base_rev"
+        ]
+        == tip
+    )
+    # The push went through on the partial clone, which stays one
+    assert git_repo.repo.git.config("remote.origin.promisor") == "true"
+
+
 def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):
     """The rendered per-build branch is what lands on the try remote."""
     from git import Repo
@@ -620,3 +763,91 @@ def test_worker_pushes_templated_branch(PhabricatorMock, mock_mc_git):
     tip = mock_mc_git.repo.head.commit
     remote = Repo(mock_mc_git.try_url)
     assert remote.refs["code-review/D5678"].commit.hexsha == tip.hexsha
+
+
+def test_clone_reuses_a_full_clone(tmpdir, PhabricatorMock):
+    """A clone left by a previous version of the bot (every branch, every
+    blob, no push setting) is reused as it is: refreshed, given the push
+    setting, and a build pushes from it like from a partial clone."""
+    from conftest import build_git_repository
+    from git import Repo
+
+    origin = build_git_repository(tmpdir, "origin-repo")
+    branch = origin.active_branch.name
+    try_dir = str(tmpdir.mkdir("full-try.git").realpath())
+    Repo.init(try_dir, bare=True)
+    config = {
+        "name": "full",
+        "url": origin.working_dir,
+        "try_url": try_dir,
+        "try_name": "staging-firefox",
+        "default_revision": branch,
+        "head_branch": "code-review/D{revision_id}-{diff_id}",
+    }
+    cache_root = str(tmpdir.realpath())
+    previous = Repo.clone_from(origin.working_dir, os.path.join(cache_root, "full"))
+    assert (
+        previous.git.config("--local", "--get", "push.negotiate", with_exceptions=False)
+        == ""
+    )
+
+    git_repo = GitRepository(config, cache_root)
+    git_repo.clone()
+    assert git_repo.repo.working_dir == previous.working_dir
+    # The full clone stays one, with the push setting added
+    assert (
+        git_repo.repo.git.config(
+            "--local", "--get", "remote.origin.promisor", with_exceptions=False
+        )
+        == ""
+    )
+    assert git_repo.repo.git.config("push.negotiate") == "true"
+
+    build = make_build(PhabricatorMock)
+    mode, out_build, details = GitWorker().run(git_repo, build, LINT_EXTRA_PARAMS)
+    assert mode == "success", details
+    assert out_build is build
+    pushed = Repo(try_dir).refs["code-review/D5678-1234"].commit
+    assert pushed.hexsha == details["revision"] == git_repo.repo.head.commit.hexsha
+    assert (pushed.tree / "test.txt").data_stream.read() == b"First Line\nSecond Line\n"
+
+
+def test_git_clone_reuses_a_full_checkout(tmpdir, monkeypatch):
+    """A publication cache left by a previous version of the bot (a full
+    clone with every file checked out, HEAD on a branch) is reused: its files
+    are dropped, the pushed commit is fetched without history nor blobs on
+    top of it, and only the issue files come back."""
+    from conftest import build_git_repository
+    from git import Repo
+
+    from code_review_bot.git import git_clone
+
+    monkeypatch.setattr(
+        "code_review_bot.git.build_repo_slug",
+        lambda url: os.path.basename(url.rstrip("/")).removesuffix(".git"),
+    )
+
+    origin = build_git_repository(tmpdir, "origin-repo")
+    try_dir, push = make_try_repository(tmpdir, origin)
+    first = push("first", {"dom/first.cpp": "int first;"})
+
+    cache = tmpdir.mkdir("git-cache")
+    previous = Repo.clone_from(origin.working_dir, str(cache.join("origin-repo")))
+    assert not previous.head.is_detached
+    assert (Path(previous.working_dir) / "README.md").exists()
+
+    repo = git_clone(
+        origin.working_dir, try_dir, first, Path(str(cache)), paths=["dom/first.cpp"]
+    )
+
+    assert repo.working_dir == previous.working_dir
+    assert repo.head.is_detached
+    assert repo.head.commit.hexsha == first
+    work = Path(repo.working_dir)
+    assert (work / "dom/first.cpp").read_text() == "int first;"
+    # The files of the previous checkout are gone
+    assert not (work / "README.md").exists()
+    assert not (work / "test.txt").exists()
+    # The pushed commit came from the try repository, as a partial fetch
+    assert repo.git.config("remote.try.promisor") == "true"
+    assert repo.git.rev_list("--count", first) == "1"

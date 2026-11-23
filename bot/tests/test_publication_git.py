@@ -103,8 +103,10 @@ def test_clone_repository_follows_repository_type(mock_workflow, monkeypatch, tm
         head_repository="https://github.com/mozilla-releng/staging-firefox",
         head_changeset="b" * 40,
     )
+    # Only the files of the issues are needed, each path once
+    issues = [MagicMock(path=path) for path in ("dom/b.cpp", "dom/a.cpp", "dom/b.cpp")]
     mock_workflow.clone_available = False
-    mock_workflow.clone_repository(revision, [])
+    mock_workflow.clone_repository(revision, issues)
     assert git_clone.call_count == 1
     assert robust_checkout.call_count == 0
     assert git_clone.call_args.kwargs == {
@@ -112,6 +114,7 @@ def test_clone_repository_follows_repository_type(mock_workflow, monkeypatch, tm
         "head_repository": "https://github.com/mozilla-releng/staging-firefox",
         "revision": "b" * 40,
         "destination": tmp_path,
+        "paths": ["dom/a.cpp", "dom/b.cpp"],
     }
 
     revision.repository_type = "hg"

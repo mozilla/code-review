@@ -546,6 +546,7 @@ class Workflow:
                 head_repository=revision.head_repository,
                 revision=revision.head_changeset,
                 destination=settings.git_cache,
+                paths=sorted({issue.path for issue in issues}),
             )
         else:
             if not settings.mercurial_cache:

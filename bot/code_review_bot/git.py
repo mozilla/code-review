@@ -31,6 +31,9 @@ DIFF_HEADER_TIMESTAMP = re.compile(
     r"[ \t]+\w{3}\s+\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2}\s+\d{4}\s+[+-]\d{4}\s*$"
 )
 
+# Number of paths handed to one git command when checking out issue files
+FILES_CHUNK = 500
+
 
 def build_repo_slug(repo_url):
     """
@@ -48,58 +51,97 @@ def build_repo_slug(repo_url):
     return path.replace("/", "_")
 
 
-def git_clone(base_repository, head_repository, revision, destination):
-    """
-    Clone a git repo at a specific revision in a directory
-    If the repo is already present, fetches and checkout
-    """
+def ensure_remote(repo, name, url):
+    """Return the remote `name` of `repo` pointing at `url`, creating or
+    updating it as needed."""
+    try:
+        remote = repo.remotes[name]
+    except IndexError:
+        return repo.create_remote(name, url)
+    if remote.url != url:
+        logger.info("Update remote url", remote=name, url=url)
+        remote.set_url(url)
+    return remote
 
-    # Build slug
+
+def files_in_revision(repo, revision, paths):
+    """Keep the paths that are files in `revision`: `git checkout` refuses a
+    pathspec matching nothing, and a directory would bring its whole content.
+    Paths are checked in chunks to keep the command lines short."""
+    candidates = [
+        path for path in paths if path and not path.startswith("/") and ".." not in path
+    ]
+    found = set()
+    for start in range(0, len(candidates), FILES_CHUNK):
+        chunk = candidates[start : start + FILES_CHUNK]
+        out = repo.git.ls_tree("-r", "--name-only", "-z", revision, "--", *chunk)
+        found.update(name for name in out.split("\0") if name)
+    return [path for path in candidates if path in found]
+
+
+def git_clone(base_repository, head_repository, revision, destination, paths=None):
+    """
+    Make the files of a pushed commit available under destination/<base slug>,
+    like `cat_files` does for Mercurial: issue hashes and file existence checks
+    read them from there.
+
+    The commit is fetched by SHA from the head repository with depth 1: there
+    is no need for the history, and a later force push on the same branch (the
+    other analysis mode of the diff, a re-fired build) leaves it unreachable
+    from any ref while GitHub still serves it by SHA, as a Mercurial try head
+    stays addressable by hash. When `paths` is given, the fetch leaves the
+    blobs out and only those files are checked out, so a 10 GB repository
+    costs seconds instead of a full clone; with `paths` at None the whole
+    working tree is checked out.
+    An existing repository is reused, its previous files dropped first.
+    """
     base_slug = build_repo_slug(base_repository)
     head_slug = build_repo_slug(head_repository)
 
-    # Clone or fetch upstream
     path = destination / base_slug
     if path.exists() and (path / ".git").is_dir():
         logger.info("Use existing repo", path=path)
+        repo = Repo(path)
+        # Drop the files of the previous revision: a stale file would pass the
+        # existence check of an issue on a path the new revision does not have
+        repo.git.read_tree("--empty")
+        repo.git.clean("-fdxq")
+    else:
+        logger.info("Init git repository", path=path)
         repo = Repo.init(path)
 
-        # Make sure origin matches the url
-        origin = repo.remotes["origin"]
-        if origin.url != base_repository:
-            logger.info("Update remote origin", url=base_repository)
-            origin.set_url(base_repository)
+    ensure_remote(repo, "origin", base_repository)
+    head = ensure_remote(repo, head_slug, head_repository)
 
-        # Always update the references for base repo
-        logger.info("Fetch remote origin")
-        origin.fetch()
-    else:
-        logger.info("Clone git repository", url=base_repository, path=path)
-        repo = Repo.clone_from(base_repository, path)
-
-    # Fetch head repository as a remote on top of base
-    try:
-        head = repo.remotes[head_slug]
-
-        # Make sure head matches the url
-        if head.url != head_repository:
-            head.set_url(head_repository)
-
-    except IndexError:
-        # Setup new remote
-        head = repo.create_remote(head_slug, head_repository)
-
-    # Fetch the exact commit rather than the branches: a later force push on the
-    # same branch (the other analysis mode of the diff, a re-fired build) leaves
-    # it unreachable from any ref, but GitHub still serves it by SHA, like a
-    # Mercurial try head stays addressable by hash
     logger.info("Fetch remote head", url=head.url, revision=revision)
-    repo.git.fetch(head_slug, revision)
+    options = ["--depth=1"]
+    if paths is not None:
+        options.append("--filter=blob:none")
+    repo.git.fetch(*options, head_slug, revision)
 
-    # Check the working tree out at that commit: issue hashes and file
-    # existence checks read the files from it
-    logger.info("Checkout to head", revision=revision)
-    repo.git.checkout(revision, force=True, detach=True)
+    if paths is None:
+        logger.info("Checkout to head", revision=revision)
+        repo.git.checkout(revision, force=True, detach=True)
+        return repo
+
+    # The checkout below reads the files from the commit itself and does not
+    # need HEAD; HEAD is still detached on the commit so the cache directory
+    # names the analysed revision (git log, git show) when a worker is
+    # inspected, for the cost of one ref update
+    repo.git.update_ref("--no-deref", "HEAD", revision)
+    files = files_in_revision(repo, revision, sorted(set(paths)))
+    logger.info(
+        "Checkout files to head",
+        revision=revision,
+        files=len(files),
+        requested=len(paths),
+    )
+    # The paths travel on the command line and a revision can carry thousands
+    # of issue files (a tree-wide reformat), so they go in chunks to stay well
+    # under the kernel's limit on argument size; the missing blobs are fetched
+    # on the way
+    for start in range(0, len(files), FILES_CHUNK):
+        repo.git.checkout(revision, "--", *files[start : start + FILES_CHUNK])
 
     return repo
 
@@ -225,9 +267,27 @@ class GitRepository(BaseRepository):
             self.repo.remotes.origin.fetch()
         else:
             # Start on the target branch: beta, release or ESR diverge a lot
-            # from the remote's default branch
-            self._repo = Repo.clone_from(self.url, self.dir, branch=self.branch)
-        logger.info("Full checkout finished")
+            # from the remote's default branch. Only that branch is cloned,
+            # and without the file contents of its history (a blob-less
+            # partial clone): the blobs of one revision are fetched when it
+            # is checked out, so a Firefox clone costs about 1.7 GB instead
+            # of 5 GB while short hashes and ancestry still resolve locally,
+            # which keeps the pushes down to the new commits.
+            self._repo = Repo.clone_from(
+                self.url,
+                self.dir,
+                branch=self.branch,
+                single_branch=True,
+                filter="blob:none",
+            )
+        with self.repo.config_writer() as writer:
+            # Negotiate the commits in common with the try repository instead
+            # of trusting its advertised refs alone: the try repository is a
+            # fork of upstream and holds the base revision, so the push carries
+            # the new commits only, never the base revision's tree. Set on a
+            # reused clone too, which may predate this setting.
+            writer.set_value("push", "negotiate", "true")
+        logger.info("Checkout finished")
 
     def has_revision(self, revision):
         """Check whether a revision exists in the local Git repository."""
