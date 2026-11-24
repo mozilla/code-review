@@ -16,6 +16,7 @@ from code_review_bot import Issue, stats, taskcluster
 from code_review_bot.config import (
     settings,
 )
+from code_review_bot.git import GitFiles
 from code_review_bot.tasks.base import AnalysisTask
 
 logger = structlog.get_logger(__name__)
@@ -185,9 +186,14 @@ class Revision(ABC):
         return issue.path in self.files
 
     def get_file_content(
-        self, file_path: str, local_cache_repository: Path | None = None
+        self, file_path: str, local_cache_repository: Path | GitFiles | None = None
     ):
-        if local_cache_repository:
+        if isinstance(local_cache_repository, GitFiles):
+            logger.debug("Using the local git repository to build issue's hash")
+            file_content = local_cache_repository.read_text(file_path)
+            if file_content is None:
+                logger.warning("Failed to find issue's related file", path=file_path)
+        elif local_cache_repository:
             logger.debug("Using the local repository to build issue's hash")
             try:
                 with (local_cache_repository / file_path).open() as f:
