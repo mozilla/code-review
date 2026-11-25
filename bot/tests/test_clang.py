@@ -92,6 +92,7 @@ def test_as_dict(mock_revision, mock_hgmo, mock_task, mock_taskcluster_config):
         Reliability.Low,
     )
 
+    assert issue.hash == "89cc9f47b63f3184d0914797ca740b9b"
     assert issue.as_dict() == {
         "analyzer": "clang-tidy",
         "path": "test.cpp",

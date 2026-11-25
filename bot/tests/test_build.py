@@ -141,6 +141,13 @@ def test_load_artifacts_not_failed(state):
     queue.session.get.assert_not_called()
 
 
+def test_build_issue_dict_includes_hash(mock_revision):
+    issue = build_task("failed").parse_issues({}, mock_revision)[0]
+
+    assert "hash" not in issue.__dict__
+    assert issue.as_dict()["hash"] == f"{mock_revision}-build-linux64/opt"
+
+
 def test_build_issue(mock_revision):
     issue = build_task("failed").parse_issues({}, mock_revision)[0]
 

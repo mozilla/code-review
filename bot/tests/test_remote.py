@@ -546,6 +546,7 @@ def test_clang_format_task(
     assert issue.fix == "Multi\nlines"
     assert issue.language == "c++"
     assert issue.column is None
+    assert issue.hash == "9a517e384b1dbbe92025c48ea6b7eab9"
     assert issue.as_dict() == {
         "analyzer": "source-test-clang-format",
         "check": "invalid-styling",

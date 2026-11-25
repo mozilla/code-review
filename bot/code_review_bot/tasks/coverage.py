@@ -40,6 +40,9 @@ class CoverageIssue(Issue):
         """
         return self.validates() and self.file_exists
 
+    def needs_file_content(self):
+        return self.validates()
+
     def validates(self):
         """
         Coverage issues are always publishable, unless they are in header files

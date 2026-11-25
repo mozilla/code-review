@@ -20,6 +20,7 @@ from code_review_bot.tasks.build import BuildIssue, BuildTask
 from code_review_bot.tasks.clang_format import ClangFormatIssue, ClangFormatTask
 from code_review_bot.tasks.clang_tidy import ClangTidyTask
 from code_review_bot.tasks.clang_tidy_external import ExternalTidyTask
+from code_review_bot.tasks.coverage import CoverageIssue, ZeroCoverageTask
 from code_review_bot.tasks.docupload import DocUploadTask
 from code_review_bot.tasks.lint import MozLintIssue, MozLintTask
 from code_review_bot.tasks.tgdiff import TaskGraphDiffTask
@@ -1231,32 +1232,36 @@ def test_cancel_previous_ignores_later_buildables(
 
 
 @pytest.mark.parametrize("before_after_ratio", [0, 1])
-@pytest.mark.parametrize("has_issues", [False, True])
-def test_clone_repository_skipped_without_issues(
+@pytest.mark.parametrize("issues_kind", ["none", "silent", "publishable"])
+def test_clone_repository_only_for_issues_needing_files(
     mock_taskcluster_config,
     mock_workflow,
     mock_task,
     mock_revision,
     before_after_ratio,
-    has_issues,
+    issues_kind,
 ):
-    """
-    The local clone is only needed to build the issues hashes,
-    so it is skipped when there are no issues
-    """
     mock_taskcluster_config.secrets = {"BEFORE_AFTER_RATIO": before_after_ratio}
-    issues = (
-        [
-            ClangFormatIssue(
-                mock_task(ClangFormatTask, "source-test-clang-format"),
-                "dom/file.cpp",
-                [(42, 42, b"This is a new warning.")],
-                mock_revision,
-            )
-        ]
-        if has_issues
-        else []
+    silent = ClangFormatIssue(
+        mock_task(ClangFormatTask, "source-test-clang-format"),
+        "dom/file.cpp",
+        [(42, 42, b"This is a new warning.")],
+        mock_revision,
     )
+    error = MozLintIssue(
+        mock_task(MozLintTask, "source-test-mozlint-eslint"),
+        "dom/other.js",
+        column=1,
+        level="error",
+        lineno=12,
+        linter="eslint",
+        message="Some error",
+        check="no-undef",
+        revision=mock_revision,
+    )
+    issues = {"none": [], "silent": [silent], "publishable": [silent, error]}[
+        issues_kind
+    ]
     mock_workflow.publish = mock.Mock()
     mock_workflow.load_task_group = mock.Mock(return_value={})
     mock_workflow.ending_task_dependencies = mock.Mock(return_value=[])
@@ -1271,11 +1276,105 @@ def test_clone_repository_skipped_without_issues(
 
     mock_workflow.run(mock_revision, AnalysisMode.Lint)
 
-    if has_issues:
+    if before_after_ratio and issues:
         mock_workflow.clone_repository.assert_called_once_with(mock_revision, issues)
+    elif issues_kind == "publishable":
+        mock_workflow.clone_repository.assert_called_once_with(mock_revision, [error])
     else:
         mock_workflow.clone_repository.assert_not_called()
     assert mock_workflow.find_previous_issues.called is bool(before_after_ratio)
+
+
+def test_debug_hash_not_built_for_files_not_extracted(
+    mock_config, mock_workflow, mock_task, mock_revision, tmp_path, monkeypatch
+):
+    mock_config.mercurial_cache = tmp_path
+    monkeypatch.setattr("code_review_bot.workflow.robust_checkout", mock.Mock())
+
+    def _cat_files(repo_dir, revision, paths, output_dir):
+        for path in paths:
+            (output_dir / path).parent.mkdir(parents=True, exist_ok=True)
+            (output_dir / path).write_text("\n" * 11 + "content\n")
+
+    cat_files = mock.Mock(side_effect=_cat_files)
+    monkeypatch.setattr("code_review_bot.workflow.cat_files", cat_files)
+
+    silent = ClangFormatIssue(
+        mock_task(ClangFormatTask, "source-test-clang-format"),
+        "dom/file.cpp",
+        [(42, 42, b"This is a new warning.")],
+        mock_revision,
+    )
+    error = MozLintIssue(
+        mock_task(MozLintTask, "source-test-mozlint-eslint"),
+        "dom/other.js",
+        column=1,
+        level="error",
+        lineno=12,
+        linter="eslint",
+        message="Some error",
+        check="no-undef",
+        revision=mock_revision,
+    )
+    mock_workflow.find_issues = mock.Mock(return_value=([silent, error], [], [], []))
+    mock_workflow.publish = mock.Mock()
+    mock_workflow.load_task_group = mock.Mock(return_value={})
+    mock_workflow.ending_task_dependencies = mock.Mock(return_value=[])
+    mock_workflow.backend_api.publish_revision = lambda rev: {}
+
+    try:
+        mock_workflow.clone_available = False
+        mock_workflow.run(mock_revision, AnalysisMode.Lint)
+
+        assert cat_files.call_args.kwargs["paths"] == ["dom/other.js"]
+        assert error.hash is not None
+
+        with capture_logs() as logs:
+            assert silent.as_dict()["hash"] is None
+            assert error.as_dict()["hash"] == error.hash
+        assert not [log for log in logs if log["log_level"] == "warning"]
+    finally:
+        mock_config.mercurial_cache = None
+
+
+def test_clone_repository_extracts_coverage_files(
+    mock_config, mock_workflow, mock_task, mock_revision, tmp_path, monkeypatch
+):
+    mock_config.mercurial_cache = tmp_path
+    monkeypatch.setattr("code_review_bot.workflow.robust_checkout", mock.Mock())
+
+    def _cat_files(repo_dir, revision, paths, output_dir):
+        for path in paths:
+            (output_dir / path).parent.mkdir(parents=True, exist_ok=True)
+            (output_dir / path).write_text("content\n")
+
+    cat_files = mock.Mock(side_effect=_cat_files)
+    monkeypatch.setattr("code_review_bot.workflow.cat_files", cat_files)
+
+    analyzer = mock_task(ZeroCoverageTask, "coverage")
+    uncovered = CoverageIssue(
+        analyzer, "dom/file.cpp", 0, "This file is uncovered", mock_revision
+    )
+    header = CoverageIssue(
+        analyzer, "dom/file.h", 0, "This file is uncovered", mock_revision
+    )
+    mock_workflow.find_issues = mock.Mock(
+        return_value=([uncovered, header], [], [], [])
+    )
+    mock_workflow.publish = mock.Mock()
+    mock_workflow.load_task_group = mock.Mock(return_value={})
+    mock_workflow.ending_task_dependencies = mock.Mock(return_value=[])
+    mock_workflow.backend_api.publish_revision = lambda rev: {}
+
+    try:
+        mock_workflow.clone_available = False
+        mock_workflow.run(mock_revision, AnalysisMode.Lint)
+
+        assert cat_files.call_args.kwargs["paths"] == ["dom/file.cpp"]
+        assert uncovered.is_publishable() is True
+        assert header.is_publishable() is False
+    finally:
+        mock_config.mercurial_cache = None
 
 
 def test_clone_repository_extracts_issues_files(

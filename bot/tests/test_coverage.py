@@ -37,6 +37,7 @@ def test_coverage(
 
     assert issue.validates()
 
+    assert issue.hash == "c43a516d74b257b21495bc3183f0543e"
     assert issue.as_dict() == {
         "analyzer": "coverage",
         "path": "my/path/file1.cpp",
@@ -86,6 +87,7 @@ This file is uncovered
 
     assert issue.validates()
 
+    assert issue.hash == "79a322a555198ec03ccce3daf086ef81"
     assert issue.as_dict() == {
         "analyzer": "coverage",
         "path": "test/dummy/thirdparty.c",
@@ -132,6 +134,7 @@ This file is uncovered
 
     assert not issue.validates()
 
+    assert issue.hash == "db03e65242d5bf27abf532026f782d2d"
     assert issue.as_dict() == {
         "analyzer": "coverage",
         "path": "my/path/header.h",

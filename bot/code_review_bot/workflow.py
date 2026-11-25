@@ -192,10 +192,17 @@ class Workflow:
                 f"Found {new_issues_count} new issues (over {len(issues)} total detected issues)",
                 task=settings.try_group_id,
             )
-        elif issues:
-            # Clone local repo when required
-            # as publication need the hashes
-            self.clone_repository(revision, issues)
+        else:
+            issues_with_files = [
+                issue for issue in issues if issue.needs_file_content()
+            ]
+            logger.info(
+                "Found issues needing their file content",
+                nb=len(issues_with_files),
+                total=len(issues),
+            )
+            if issues_with_files:
+                self.clone_repository(revision, issues_with_files)
 
         if (
             all(issue.new_issue is False for issue in issues)
@@ -519,9 +526,9 @@ class Workflow:
         """
         Clone the repo locally when configured
         On production this should use a Taskcluster cache
-        Only the files with issues are extracted from the repository (Mercurial)
-        or fetched then read in place (Git), as updating the whole working
-        directory is slow
+        Only the files relevant to the provided issues are extracted from the
+        repository (Mercurial) or fetched then read in place (Git), as updating
+        the whole working directory is slow
         """
         if self.clone_available:
             logger.debug("Local clone already setup")
