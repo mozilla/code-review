@@ -179,6 +179,10 @@ class NoticeTask(BaseTask, ABC):
     A task that simply displays information.
     """
 
+    # When True, a failed run that produced a notice is not reported
+    # as a generic task failure
+    notice_replaces_failure = False
+
     @abstractmethod
     def build_notice(self, artifacts, revision):
         """
