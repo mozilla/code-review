@@ -39,7 +39,7 @@ dev = [
     "pytest-structlog==1.2",
     "pytest-xdist==3.8.0",
     "responses==0.26.3",
-    "types-pyyaml==6.0.12.20261111",
+    "types-pyyaml==6.0.12.20261122",
     "types-requests==2.33.0.20261030",
 ]
 
