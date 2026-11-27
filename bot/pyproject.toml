@@ -18,7 +18,7 @@ dependencies = [
     "libmozdata==0.2.20",
     "pygithub==2.10.0",
     "python-hglib==2.6.2",
-    "pyyaml==6.0.3",
+    "pyyaml==6.0.4",
     "rs-parsepatch==0.4.7",
     "sentry-sdk==2.75.0",
     "simple-github==3.1.0",
