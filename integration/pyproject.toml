@@ -9,7 +9,7 @@ dependencies = [
     "mozphab==2.23.0",
     "pyyaml==6.0.3",
     "structlog==26.1.0",
-    "taskcluster==115.0.1",
+    "taskcluster==116.0.0",
 ]
 
 [dependency-groups]

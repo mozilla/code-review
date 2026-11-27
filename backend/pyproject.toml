@@ -22,7 +22,7 @@ dependencies = [
     "psycopg2-binary==2.9.13",
     "sentry-sdk==2.75.0",
     "sqlparse==0.6.0",
-    "taskcluster==115.0.1",
+    "taskcluster==116.0.0",
     "tqdm==4.70.1",
     "whitenoise==6.12.0",
 ]

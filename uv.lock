@@ -550,7 +550,7 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = "==2.9.13" },
     { name = "sentry-sdk", specifier = "==2.75.0" },
     { name = "sqlparse", specifier = "==0.6.0" },
-    { name = "taskcluster", specifier = "==115.0.1" },
+    { name = "taskcluster", specifier = "==116.0.0" },
     { name = "tqdm", specifier = "==4.70.1" },
     { name = "whitenoise", specifier = "==6.12.0" },
 ]
@@ -607,7 +607,7 @@ requires-dist = [
     { name = "sentry-sdk", specifier = "==2.75.0" },
     { name = "simple-github", specifier = "==3.1.0" },
     { name = "structlog", specifier = "==26.1.0" },
-    { name = "taskcluster", specifier = "==115.0.1" },
+    { name = "taskcluster", specifier = "==116.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -646,7 +646,7 @@ requires-dist = [
     { name = "mozphab", specifier = "==2.23.0" },
     { name = "pyyaml", specifier = "==6.0.3" },
     { name = "structlog", specifier = "==26.1.0" },
-    { name = "taskcluster", specifier = "==115.0.1" },
+    { name = "taskcluster", specifier = "==116.0.0" },
 ]
 
 [package.metadata.requires-dev]
@@ -2285,7 +2285,7 @@ wheels = [
 
 [[package]]
 name = "taskcluster"
-version = "115.0.1"
+version = "116.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiohttp" },
@@ -2296,9 +2296,9 @@ dependencies = [
     { name = "slugid" },
     { name = "taskcluster-urls" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/34/c1/5184db79c69b4780590018b46fd0b0cfc5206d7dacf9e81b93f4110c3ed3/taskcluster-115.0.1.tar.gz", hash = "sha256:0f71b590e7094dc91c9d4183959328072cf3a2f7c7a4306bfe20634c0ecb0d1d", size = 359006, upload-time = "2026-11-04T18:52:23.894Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/7c/f0/9ab63a17e11e886459ae33078aafc1e40b5c9fbf064e384f7a54d459f52b/taskcluster-116.0.0.tar.gz", hash = "sha256:7a11bfc1bfb29fec2d92ef7d3292e0040e6d1ddbad02bc0ec6ad0da41df14262", size = 359002, upload-time = "2026-11-10T21:02:14.968Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/16/48/b8fe14c644fd225efb69294b00915f73ee003ed41cda57747cf352206c31/taskcluster-115.0.1-py3-none-any.whl", hash = "sha256:83ea6427cc424c858f4dabe9df9f30b1cb2d1bb55cd3b001bdc5640ca5e9e470", size = 152461, upload-time = "2026-11-04T18:52:22.194Z" },
+    { url = "https://files.pythonhosted.org/packages/b3/30/54b214fd70069f81bdf8b8da98c495a7342bd52425f921ce175022b1cee7/taskcluster-116.0.0-py3-none-any.whl", hash = "sha256:e830738294b5dd0ab7b726db6f18d76fc697abe29b974e72e292d9035f468f0c", size = 152459, upload-time = "2026-11-10T21:02:12.959Z" },
 ]
 
 [[package]]
